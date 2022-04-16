@@ -1,0 +1,1 @@
+binance-connector~=1.11

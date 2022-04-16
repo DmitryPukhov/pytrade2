@@ -1,3 +1,10 @@
+# Config files
+/biml/cfg/app.yaml
+
+# Idea
+.idea
+*.iml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
