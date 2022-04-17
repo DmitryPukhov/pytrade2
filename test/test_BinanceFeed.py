@@ -1,9 +1,9 @@
 from unittest import TestCase
 
-from biml.Feed import Feed
+from biml.feed.BinanceFeed import BinanceFeed
 
 
-class TestFeed(TestCase):
+class TestBinanceFeed(TestCase):
     def test_read(self):
         # Raw data from binance
         fast = [
@@ -16,7 +16,7 @@ class TestFeed(TestCase):
              1650190019999, '5956.46023199', 86, '0.11014100', '4264.84945024', '0']]
 
         # Read raw data to feed
-        feed = Feed(spot_client=None, ticker=None)
+        feed = BinanceFeed(spot_client=None, ticker=None)
         feed.read_raw(fast, medium)
 
         # Assert fast candles have been read

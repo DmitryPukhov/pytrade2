@@ -4,9 +4,8 @@ import sys
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
-from datetime import datetime, timedelta
 
-from biml.Feed import Feed
+from biml.feed.BinanceFeed import BinanceFeed
 
 
 class App:
@@ -33,8 +32,7 @@ class App:
         self.spot_client: Client = Client(key=key, base_url=url)
 
         # Create feed
-        self.feed = Feed(self.spot_client, self.ticker)
-
+        self.feed = BinanceFeed(self.spot_client, self.ticker)
         logging.info("App initialized")
 
     @staticmethod
@@ -66,7 +64,11 @@ class App:
         Application entry point
         """
         logging.info("Starting the app")
-        self.feed.read_binance()
+        # Read feed from binance
+        self.feed.read()
+        logging.info(self.feed.candles_fast.head())
+        logging.info(self.feed.candles_medium.head())
+
         logging.info("The end")
 
 

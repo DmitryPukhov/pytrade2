@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 import pandas as pd
 
 
-class Feed:
+class BaseFeed:
     """
-    Binance price data feed. Read data from binance, provide pandas dataframes with that data
+    Base class for price data feed. Read data, provide pandas dataframes with that data
     """
 
     def __init__(self, spot_client: Client, ticker: str):
@@ -16,7 +16,7 @@ class Feed:
         # Fast and medium candles
         self.candle_fast_interval = "1m"
         self.candle_medium_interval = "15m"
-        self.candle_fast_limit = 60
+        self.candle_fast_limit = 15
         self.candle_medium_limit = 20
         # Column names of binance candle data
         self.candle_columns = ["open_time", "open", "high", "low", "close", "vol", "close_time", "quote_asset_volume",
@@ -31,23 +31,8 @@ class Feed:
             f"candle_medium_interval: {self.candle_medium_interval}, candle_medium_limit:{self.candle_medium_limit},\n"
             f"candle_columns: {self.candle_columns},\n")
 
-    def read_raw(self, fast: list, medium: list):
+    def read(self):
         """
-        Read from raw data buffer to pandas
+        Read data to pandas
         """
-        self.candles_fast = self.candles_fast.append(other=pd.DataFrame(data=fast, columns=self.candle_columns))
-        self.candles_medium = self.candles_medium.append(other=pd.DataFrame(data=medium, columns=self.candle_columns))
-
-    def read_binance(self):
-        """
-        Read data from binance to pandas
-        """
-        # Call binance for the data
-        fast = self.spot_client.klines(symbol=self.ticker,
-                                       interval=self.candle_fast_interval,
-                                       limit=self.candle_fast_limit)
-        medium = self.spot_client.klines(symbol=self.ticker,
-                                         interval=self.candle_medium_interval,
-                                         limit=self.candle_medium_limit)
-        # Load raw data to pandas dataframes
-        self.read_raw(fast=fast, medium=medium)
+        pass
