@@ -1,1 +1,2 @@
 binance-connector~=1.11
+pandas~=1.2.1

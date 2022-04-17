@@ -4,6 +4,9 @@ import sys
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
+from datetime import datetime, timedelta
+
+from biml.Feed import Feed
 
 
 class App:
@@ -20,14 +23,17 @@ class App:
         config_logging(logging, loglevel)  # self._init_logger(self.config['log.dir'])
         logging.info(f"Set log level to {loglevel}")
 
+        # Set ticker
+        self.ticker = config["biml.ticker"]
+        logging.info(f"Main ticker: {self.ticker}")
+
         # Create spot client
         key, url = config["biml.connector.key"], config["biml.connector.url"]
         logging.info(f"Init binance client, url: {url}")
         self.spot_client: Client = Client(key=key, base_url=url)
 
-        # Set ticker
-        self.ticker = config["biml.ticker"]
-        logging.info(f"Main ticker: {self.ticker}")
+        # Create feed
+        self.feed = Feed(self.spot_client, self.ticker)
 
         logging.info("App initialized")
 
@@ -55,22 +61,13 @@ class App:
         config.update(os.environ)
         return config
 
-    def feed(self):
-        """
-        Get price data for configured ticker
-        """
-        # Get price history for configured ticker
-        logging.info(f"Getting history for {self.ticker}")
-        history = self.spot_client.historical_trades(symbol=self.ticker, limit=10)
-        logging.info(history)
-        # todo: save to csv for future use
-
     def main(self):
         """
         Application entry point
         """
         logging.info("Starting the app")
-        self.feed()
+        self.feed.read_binance()
+        logging.info("The end")
 
 
 if __name__ == "__main__":
