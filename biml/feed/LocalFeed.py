@@ -3,7 +3,6 @@ import logging.config
 from pathlib import Path
 
 import pandas as pd
-from binance.spot import Spot as Client
 
 from biml.feed.BaseFeed import BaseFeed
 
@@ -13,9 +12,10 @@ class LocalFeed(BaseFeed):
     Read data from local folder, provide pandas dataframes with that data
     """
 
-    def __init__(self, spot_client: Client, ticker: str, data_folder: str = "./data"):
-        super().__init__(spot_client=spot_client, ticker=ticker)
-        self.data_folder = data_folder
+    def __init__(self, ticker: str, data_dir: str, candle_fast_interval: str, candle_fast_limit: int,
+                 candle_medium_interval: str, candle_medium_limit: int):
+        super().__init__(ticker, candle_fast_interval, candle_fast_limit, candle_medium_interval, candle_medium_limit)
+        self.data_dir = data_dir
 
     @staticmethod
     def extract_time(file_name: str):
@@ -29,7 +29,7 @@ class LocalFeed(BaseFeed):
         """
         Find last time of existing local data
         """
-        pattern = f"{self.data_folder}/{self.ticker}/{self.ticker}_{interval}_*.csv"
+        pattern = f"{self.data_dir}/{self.ticker}/{self.ticker}_{interval}_*.csv"
         files = glob.glob(pattern)
         last_file = max(files) if files else None
         last_time = self.extract_time(str(last_file)) if last_file else None
@@ -39,7 +39,7 @@ class LocalFeed(BaseFeed):
         """
         Create file name for file data: folder/ticker/ticker_interval_time.csv
         """
-        return f"{self.data_folder}/{self.ticker}/{self.ticker}_{interval}_{time}.csv"
+        return f"{self.data_dir}/{self.ticker}/{self.ticker}_{interval}_{time}.csv"
 
     def write_new(self, interval, all_data: pd.DataFrame):
         """

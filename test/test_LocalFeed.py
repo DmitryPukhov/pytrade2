@@ -9,11 +9,13 @@ from biml.feed.LocalFeed import LocalFeed
 class TestLocalFeed(TestCase):
 
     def test__get_file_name(self):
-        feed = LocalFeed(spot_client=None, ticker="ticker1", data_folder="folder1")
+        feed = LocalFeed(ticker="ticker1", data_dir="folder1", candle_fast_interval="", candle_fast_limit=0,
+                         candle_medium_interval="", candle_medium_limit=0)
         self.assertEqual(feed.get_file_name("interval1", "time1"), "folder1/ticker1/ticker1_interval1_time1.csv")
 
     def test__extract_time(self):
-        feed = LocalFeed(spot_client=None, ticker=None, data_folder=None)
+        feed = LocalFeed(ticker="", data_dir="", candle_fast_interval="", candle_fast_limit=0,
+                         candle_medium_interval="", candle_medium_limit=0)
         self.assertEqual(feed.extract_time("folder1/ticker1_interval1_time1.csv"), "time1")
         self.assertEqual(feed.extract_time("ticker1_interval1_time1.csv"), "time1")
         self.assertEqual(feed.extract_time("ticker1_interval1_time1.json"), "time1")
@@ -21,7 +23,8 @@ class TestLocalFeed(TestCase):
         self.assertIsNone(feed.extract_time(None))
 
     def test__write_new(self):
-        feed = LocalFeed(spot_client=None, ticker="ticker1", data_folder="data1")
+        feed = LocalFeed(ticker="ticker1", data_dir="data1", candle_fast_interval="", candle_fast_limit=0,
+                         candle_medium_interval="", candle_medium_limit=0)
         df = pd.DataFrame(data=[
             [1000000000001, '38633.76000000', '38806.49000000', '38593.09000000', '38806.49000000', '0.15386700',
              1000000000002, '5956.46023199', 86, '0.11014100', '4264.84945024', '0'],

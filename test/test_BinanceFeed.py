@@ -16,8 +16,8 @@ class TestBinanceFeed(TestCase):
              1650190019999, '5956.46023199', 86, '0.11014100', '4264.84945024', '0']]
 
         # Read raw data to feed
-        feed = BinanceFeed(spot_client=None, ticker=None)
-        feed.read_raw(fast, medium)
+        feed = BinanceFeed(spot_client=None, ticker="", read_interval="", candle_fast_interval="", candle_fast_limit=0, candle_medium_interval="", candle_medium_limit=0)
+        feed.read_raw_candles(fast, medium)
 
         # Assert fast candles have been read
         assert len(feed.candles_fast) == len(fast)

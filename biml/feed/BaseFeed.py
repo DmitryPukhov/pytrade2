@@ -9,15 +9,15 @@ class BaseFeed:
     Base class for price data feed. Read data, provide pandas dataframes with that data
     """
 
-    def __init__(self, spot_client: Client, ticker: str):
-        self.spot_client: Client = spot_client
+    def __init__(self, ticker: str, candle_fast_interval: str, candle_fast_limit: int,  candle_medium_interval: str,
+                 candle_medium_limit: int):
         self.ticker = ticker
 
         # Fast and medium candles
-        self.candle_fast_interval = "1m"
-        self.candle_medium_interval = "15m"
-        self.candle_fast_limit = 15
-        self.candle_medium_limit = 20
+        self.candle_fast_interval = candle_fast_interval
+        self.candle_medium_interval = candle_medium_interval
+        self.candle_fast_limit = candle_fast_limit
+        self.candle_medium_limit = candle_medium_limit
         # Column names of binance candle data
         self.candle_columns = ["open_time", "open", "high", "low", "close", "vol", "close_time", "quote_asset_volume",
                                "number_of_trades", " taker_buy_base_asset_volume", "taker_buy_quote_asset_volume",
