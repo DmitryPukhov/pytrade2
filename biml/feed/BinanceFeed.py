@@ -1,8 +1,8 @@
-import logging.config
-from typing import Optional
-
+import threading
+import time
+from threading import Thread
 from binance.spot import Spot as Client
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
 from biml.feed.BaseFeed import BaseFeed
 
@@ -25,7 +25,9 @@ class BinanceFeed(BaseFeed):
         """
         Read data periodically
         """
-        self.read()
+        while True:
+            self.read()
+            time.sleep(self.read_interval.total_seconds())
 
     def read_raw_candles(self, fast: list, medium: list):
         """
