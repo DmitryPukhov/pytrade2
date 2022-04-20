@@ -1,9 +1,7 @@
-import threading
 import time
-from threading import Thread
-from binance.spot import Spot as Client
-from datetime import datetime
 import pandas as pd
+from binance.spot import Spot as Client
+
 from biml.feed.BaseFeed import BaseFeed
 
 
@@ -19,7 +17,6 @@ class BinanceFeed(BaseFeed):
         self.spot_client: Client = spot_client
         self.read_interval = pd.Timedelta(read_interval)
         self.last_candle_time_ms = None
-        self.last_read_time = None
 
     def run(self):
         """
@@ -41,10 +38,6 @@ class BinanceFeed(BaseFeed):
         """
         Read data from binance to pandas
         """
-        if self.last_read_time and (datetime.now() - self.last_read_time) < self.read_interval:
-            # If read interval is not elapsed yet
-            return
-
         # Call binance for the data, read only new candles
         start_candle_time = self.last_candle_time_ms + 1 if self.last_candle_time_ms else None
         fast = self.spot_client.klines(symbol=self.ticker,
@@ -58,4 +51,3 @@ class BinanceFeed(BaseFeed):
         # Load raw data to pandas dataframes
         self.read_raw_candles(fast=fast, medium=medium)
 
-        self.last_read_time = datetime.now()
