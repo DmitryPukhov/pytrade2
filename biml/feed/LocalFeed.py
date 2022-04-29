@@ -1,6 +1,7 @@
 import glob
 import logging.config
 from pathlib import Path
+from typing import List, Dict
 
 import pandas as pd
 
@@ -12,9 +13,8 @@ class LocalFeed(BaseFeed):
     Read data from local folder, provide pandas dataframes with that data
     """
 
-    def __init__(self, ticker: str, data_dir: str, candle_fast_interval: str, candle_fast_limit: int,
-                 candle_medium_interval: str, candle_medium_limit: int):
-        super().__init__(ticker, candle_fast_interval, candle_fast_limit, candle_medium_interval, candle_medium_limit)
+    def __init__(self, ticker: str, data_dir: str, limits: Dict[str,int]):
+        super().__init__(ticker, limits)
         self.data_dir = data_dir
 
     @staticmethod

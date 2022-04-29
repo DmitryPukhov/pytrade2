@@ -1,33 +1,29 @@
 import logging.config
+from typing import Dict
+
 import pandas as pd
 
 
 class BaseFeed:
     """
     Base class for price data feed. Read data, provide pandas dataframes with that data
+    :param ticker: asset code like BTCUSDT
+    :param intervals: {"M1":"1m10s"}
     """
 
-    def __init__(self, ticker: str, candle_fast_interval: str, candle_fast_limit: int, candle_medium_interval: str,
-                 candle_medium_limit: int):
+    def __init__(self, ticker: str, limits: Dict[str, int]):
         self.ticker = ticker
-
-        # Fast and medium candles
-        self.candle_fast_interval = candle_fast_interval
-        self.candle_medium_interval = candle_medium_interval
-        self.candle_fast_limit = candle_fast_limit
-        self.candle_medium_limit = candle_medium_limit
-        # Column names of binance candle data
         self.candle_columns = ["open_time", "open", "high", "low", "close", "vol", "close_time", "quote_asset_volume",
                                "number_of_trades", " taker_buy_base_asset_volume", "taker_buy_quote_asset_volume",
                                "ignore"]
+        # Dictionary interval:limit to read from binance
+        self.limits = limits
         # Pandas dataframes to hold data
-        self.candles_fast = pd.DataFrame(columns=self.candle_columns)
-        self.candles_medium = pd.DataFrame(columns=self.candle_columns)
-
+        self.candles: Dict[str, pd.DataFrame] = dict(
+            [(interval, pd.DataFrame(columns=self.candle_columns)) for interval in limits])
         logging.info(
             f"Feed initialized. "
-            f"candle_fast_interval: {self.candle_fast_interval}, candle_fast_limit:{self.candle_fast_limit}"
-            f"candle_medium_interval: {self.candle_medium_interval}, candle_medium_limit:{self.candle_medium_limit},\n"
+            f"intervals with read limits: {self.limits}"
             f"candle_columns: {self.candle_columns},\n")
 
     def read(self):

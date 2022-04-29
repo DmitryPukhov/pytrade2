@@ -32,12 +32,12 @@ class App:
         self.spot_client: Client = Client(key=key, base_url=url)
 
         # Create feed
-        self.feed = BinanceFeed(self.spot_client, self.ticker,
-                                self.config["biml.feed.read.interval"],
-                                self.config["biml.feed.candle.fast.interval"],
-                                self.config["biml.feed.candle.fast.limit"],
-                                self.config["biml.feed.candle.medium.interval"],
-                                self.config["biml.feed.candle.medium.limit"])
+        intervals = str(self.config["biml.feed.candle.interval.intervals"]).split(",")
+        limits = [int(limitStr) for limitStr in str(self.config["biml.feed.candle.interval.limits"]).split(",")]
+
+        self.feed = BinanceFeed(spot_client=self.spot_client, ticker=self.ticker,
+                                read_interval=self.config["biml.feed.read.interval"],
+                                limits=dict(zip(intervals, limits)))
         logging.info("App initialized")
 
     @staticmethod
