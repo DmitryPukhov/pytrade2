@@ -25,6 +25,8 @@ class BaseFeed:
             f"Feed initialized. "
             f"intervals with read limits: {self.limits}"
             f"candle_columns: {self.candle_columns},\n")
+        self.consumers = []
+        self.last_candle_time_ms = 0
 
     def read(self):
         """
