@@ -1,11 +1,14 @@
 import logging.config
 import os
 import sys
+from typing import List
+
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
 
 from biml.feed.BinanceFeed import BinanceFeed
+from biml.feed.TickerInfo import TickerInfo
 
 
 class App:
@@ -23,22 +26,25 @@ class App:
         logging.info(f"Set log level to {loglevel}")
 
         # Set ticker
-        self.ticker = self.config["biml.ticker"]
-        logging.info(f"Main ticker: {self.ticker}")
+        # self.ticker = self.config["biml.ticker"]
+        # logging.info(f"Main ticker: {self.ticker}")
 
         # Create spot client
         key, url = self.config["biml.connector.key"], self.config["biml.connector.url"]
         logging.info(f"Init binance client, url: {url}")
         self.spot_client: Client = Client(key=key, base_url=url)
-
-        # Create feed
-        intervals = str(self.config["biml.feed.candle.interval.intervals"]).split(",")
-        limits = [int(limitStr) for limitStr in str(self.config["biml.feed.candle.interval.limits"]).split(",")]
-
-        self.feed = BinanceFeed(spot_client=self.spot_client, ticker=self.ticker,
-                                read_interval=self.config["biml.feed.read.interval"],
-                                limits=dict(zip(intervals, limits)))
+        tickers = list(App.read_candle_config(self.config))
+        self.feed = BinanceFeed(spot_client=self.spot_client, tickers=tickers)
         logging.info("App initialized")
+
+    @staticmethod
+    def read_candle_config(conf) -> List[TickerInfo]:
+        tickers = conf["biml.tickers"].split(',')
+        for ticker in tickers:
+            # biml.feed.BTCUSDT.candle.intervals: 1m,15m
+            intervals = conf[f"biml.feed.{ticker}.candle.intervals"].split(",")
+            limits = [int(l) for l in conf[f"biml.feed.{ticker}.candle.limits"].split(",")]
+            yield TickerInfo(ticker, intervals, limits)
 
     @staticmethod
     def _load_config():

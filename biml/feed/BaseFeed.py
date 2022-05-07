@@ -1,7 +1,10 @@
 import logging.config
-from typing import Dict
+from datetime import datetime
+from typing import Dict, List
 
 import pandas as pd
+
+from biml.feed.TickerInfo import TickerInfo
 
 
 class BaseFeed:
@@ -12,22 +15,20 @@ class BaseFeed:
     """
 
     candle_columns = ["open_time", "open", "high", "low", "close", "vol", "close_time", "quote_asset_volume",
-                                       "number_of_trades", " taker_buy_base_asset_volume", "taker_buy_quote_asset_volume",
-                                       "ignore"]
+                      "number_of_trades", " taker_buy_base_asset_volume", "taker_buy_quote_asset_volume",
+                      "ignore"]
 
-    def __init__(self, ticker: str, limits: Dict[str, int]):
-        self.ticker = ticker
+    def __init__(self, tickers: List[TickerInfo]):
+        self.tickers = tickers
+
         # Dictionary interval:limit to read from binance
-        self.limits = limits
         # Pandas dataframes to hold data
-        self.candles: Dict[str, pd.DataFrame] = dict(
-            [(interval, pd.DataFrame(columns=BaseFeed.candle_columns)) for interval in limits])
+        # for ti in self.tickers:
+        #     ti.candles = [pd.DataFrame(columns=BaseFeed.candle_columns) for _ in ti.candle_intervals]
         logging.info(
-            f"Feed initialized. "
-            f"intervals with read limits: {self.limits}"
+            f"Feed initialized. {self.tickers}"
             f"candle_columns: {BaseFeed.candle_columns},\n")
         self.consumers = []
-        self.last_candle_time_ms = 0
 
     def read(self):
         """
