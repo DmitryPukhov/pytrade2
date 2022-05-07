@@ -11,9 +11,10 @@ class LocalFeed(BaseFeed):
     Read data from local folder, provide pandas dataframes with that data
     """
 
-    def __init__(self, ticker: str, data_dir: str, limits: Dict[str,int]):
+    def __init__(self, ticker: str, data_dir: str, limits: Dict[str, int]):
         super().__init__(ticker, limits)
         self.data_dir = data_dir
+
     #
     # @staticmethod
     # def extract_time(file_name: str):
