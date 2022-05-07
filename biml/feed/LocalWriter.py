@@ -21,16 +21,18 @@ class LocalWriter:
         for ticker in candles_dict:
             for interval in candles_dict[ticker]:
                 candles = candles_dict[ticker][interval]
-                date = candles["close_time"].max()
-                file_path = self.get_file_name(ticker, interval, date)
-                logging.info(f"Writing to {file_path}")
-                # Write
-                Path(file_path).parent.mkdir(parents=True, exist_ok=True)
-                candles.to_csv(file_path, header=not Path(file_path).exists(), mode='a')
+                # If candles are for diferent days, write each day to it's file
+                dates = candles["close_time"].dt.date.unique()
+                for date in dates:
+                    file_path = self.get_file_name(ticker, interval, date)
+                    logging.info(f"Writing to {file_path}")
+                    Path(file_path).parent.mkdir(parents=True, exist_ok=True)
+                    # Write
+                    candles.to_csv(file_path, header=not Path(file_path).exists(), mode='a')
 
-    def get_file_name(self, ticker, interval: str, time_millis: datetime):
+    def get_file_name(self, ticker, interval: str, time: datetime):
         """
         Create file name for file data: folder/ticker/ticker_interval_time.csv
         """
-        date = pd.to_datetime(time_millis, unit="ms").date()
+        date = pd.to_datetime(time).date()
         return f"{self.data_dir}/{ticker}/{date}_{ticker}_{interval}.csv"

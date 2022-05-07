@@ -23,12 +23,12 @@ class TestLocalWriter(TestCase):
         dt3 = datetime.fromisoformat("2022-05-06 21:21")
         dt4 = datetime.fromisoformat("2022-05-06 21:22")
         df = pd.DataFrame(data=[
-            [dt1.timestamp() * 1000, '38633.76000000', '38806.49000000', '38593.09000000', '38806.49000000',
+            [dt1, '38633.76000000', '38806.49000000', '38593.09000000', '38806.49000000',
              '0.15386700',
-             dt2.timestamp() * 1000, '5956.46023199', 86, '0.11014100', '4264.84945024', '0'],
-            [dt3.timestamp() * 1000, '38715.21000000', '38768.33000000', '38613.08000000', '38768.33000000',
+             dt2, '5956.46023199', 86, '0.11014100', '4264.84945024', '0'],
+            [dt3, '38715.21000000', '38768.33000000', '38613.08000000', '38768.33000000',
              '0.10214000',
-             dt4.timestamp() * 1000, '3953.02369390', 67, '0.04700300', '1820.88901191', '0']],
+             dt4, '3953.02369390', 67, '0.04700300', '1820.88901191', '0']],
             columns=BaseFeed.candle_columns)
         candles = {"ticker1": {"interval1": df}}
 
@@ -41,9 +41,9 @@ class TestLocalWriter(TestCase):
         # New candles2
         dt5 = datetime.fromisoformat("2022-05-06 21:28")
         df = pd.DataFrame(
-            [[dt5.timestamp() * 1000, '38715.21000000', '38768.33000000', '38613.08000000', '38768.33000000',
+            [[dt5, '38715.21000000', '38768.33000000', '38613.08000000', '38768.33000000',
               '0.10214000',
-              dt5.timestamp() * 1000, '3953.02369390', 67, '0.04700300', '1820.88901191', '0']],
+              dt5, '3953.02369390', 67, '0.04700300', '1820.88901191', '0']],
             columns=df.columns)
         candles = {"ticker1": {"interval1": df}}
 
@@ -51,7 +51,7 @@ class TestLocalWriter(TestCase):
         writer.on_candles(candles)
 
         # New data should be appended to the same date
-        actual_df = pd.read_csv("data1/ticker1/2022-05-06_ticker1_interval1.csv", header=0)
-        self.assertEqual(actual_df["close_time"].max(), dt5.timestamp() * 1000)
-        self.assertEqual(actual_df["open_time"].min(), dt1.timestamp() * 1000)
+        actual_df = pd.read_csv("data1/ticker1/2022-05-06_ticker1_interval1.csv", parse_dates= ["open_time","close_time"], header=0)
+        self.assertEqual(actual_df["close_time"].max(), dt5)
+        self.assertEqual(actual_df["open_time"].min(), dt1)
         self.assertEqual(len(actual_df), 3)
