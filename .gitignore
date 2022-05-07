@@ -1,6 +1,7 @@
 # Config files
 /biml/cfg/app.yaml
 /test/_trial_temp
+/biml/data
 
 # Idea
 .idea

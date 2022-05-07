@@ -1,9 +1,9 @@
 import logging
+from datetime import datetime
 from typing import Any, Dict
-
 import pandas as pd
-
 from biml.App import App
+from biml.feed.LocalWriter import LocalWriter
 
 
 class Downloader(App):
@@ -17,15 +17,10 @@ class Downloader(App):
 
     # def run(self, binance_feed: BinanceFeed, local_feed:LocalFeed,  ticker: str):
     def run(self):
-        logging.info("Run downloader")
-        self.feed.consumers.append(self)
+        logging.info(f"Run downloader, data dir: {self.data_dir}")
+        # Run feed with local writer consumer
+        self.feed.consumers.append(LocalWriter(self.data_dir))
         self.feed.run()
-
-    def on_candles(self, src: Any, candles: Dict[str, pd.DataFrame], new_data_start_time_ms: int):
-        for interval in candles:
-            c = candles[interval]
-            new_candles = c[c["close_time"] >= new_data_start_time_ms]
-            new_candles.to_csv()
 
 
 if __name__ == "__main__":
