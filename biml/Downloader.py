@@ -1,5 +1,4 @@
 import logging
-
 from biml.App import App
 from biml.feed.LocalWriter import LocalWriter
 
@@ -13,10 +12,9 @@ class Downloader(App):
         super().__init__()
         self.data_dir = self.config["biml.data.dir"]
 
-    # def run(self, binance_feed: BinanceFeed, local_feed:LocalFeed,  ticker: str):
     def run(self):
         logging.info(f"Run downloader, data dir: {self.data_dir}")
-        # Run feed with local writer consumer
+        # Run binance feed with local writer consumer
         self.feed.consumers.append(LocalWriter(self.data_dir))
         self.feed.run()
 

@@ -1,12 +1,9 @@
-import logging.config
-from collections import defaultdict
-from datetime import datetime
-from typing import Dict, Any, List
-import pandas as pd
-from pathlib import Path
 import glob
-
-from biml.feed.TickerInfo import TickerInfo
+import logging.config
+from datetime import datetime
+from pathlib import Path
+from typing import Dict
+import pandas as pd
 
 
 class LocalWriter:
@@ -18,6 +15,7 @@ class LocalWriter:
         self.data_dir = data_dir
         # {ticker:{interval: last existing date}}
         self.last_time_dict: Dict[str, Dict[str, datetime]] = {}
+        logging.info(f"Initialized. data_dir={self.data_dir}")
 
     def on_candles(self, ticker: str, interval: str, candles: pd.DataFrame):
         """
@@ -25,11 +23,12 @@ class LocalWriter:
         """
         logging.debug(f"Got candles for {ticker}, {interval}")
 
-        # Filter candles after last time only
+        # Get last candle time
         if ticker not in self.last_time_dict:
             self.last_time_dict[ticker] = {interval: self.get_last_data_time(ticker, interval)}
         elif interval not in self.last_time_dict[ticker]:
             self.last_time_dict[ticker][interval] = self.get_last_data_time(ticker, interval)
+        # Skip already received candles
         candles = candles[candles["open_time"] > self.last_time_dict[ticker][interval]]
 
         # If candles are for diferent days, write each day to it's file
@@ -40,6 +39,7 @@ class LocalWriter:
             Path(file_path).parent.mkdir(parents=True, exist_ok=True)
             # Write
             candles.to_csv(file_path, header=not Path(file_path).exists(), mode='a')
+        # Remember last candle time to skip already received
         self.last_time_dict[ticker][interval] = max(self.last_time_dict[ticker][interval],
                                                     candles["close_time"].max())
         logging.debug(f"Processed candles. New last times: {self.last_time_dict}")

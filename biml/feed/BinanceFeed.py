@@ -50,7 +50,7 @@ class BinanceFeed(BaseFeed):
                 # Prepare params
                 limit = ticker.candle_limits[interval]
                 start_time = ticker.candle_last_times[interval]
-                start_time_millis = start_time.value//10**6 if start_time else None
+                start_time_millis = start_time.value // 10 ** 6 if start_time else None
 
                 logging.debug(f"Read data from binance. ticker={ticker.ticker}, interval={interval}, "
                               f"start_time={start_time}, start_time_millis={start_time_millis} limit={limit}")
