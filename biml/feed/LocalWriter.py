@@ -38,7 +38,7 @@ class LocalWriter:
             logging.debug(f"Writing to {file_path}")
             Path(file_path).parent.mkdir(parents=True, exist_ok=True)
             # Write
-            candles.to_csv(file_path, header=not Path(file_path).exists(), mode='a')
+            candles.to_csv(file_path, header=not Path(file_path).exists(), mode='a', index=False)
         # Remember last candle time to skip already received
         self.last_time_dict[ticker][interval] = max(self.last_time_dict[ticker][interval],
                                                     candles["close_time"].max())
