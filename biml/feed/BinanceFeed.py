@@ -4,8 +4,8 @@ from datetime import timedelta
 from typing import List
 import pandas as pd
 from binance.spot import Spot as Client
-from biml.feed.BaseFeed import BaseFeed
-from biml.feed.TickerInfo import TickerInfo
+from feed.BaseFeed import BaseFeed
+from feed.TickerInfo import TickerInfo
 
 
 class BinanceFeed(BaseFeed):

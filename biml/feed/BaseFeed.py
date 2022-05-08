@@ -1,6 +1,6 @@
 import logging.config
 from typing import List
-from biml.feed.TickerInfo import TickerInfo
+from feed.TickerInfo import TickerInfo
 
 
 class BaseFeed:

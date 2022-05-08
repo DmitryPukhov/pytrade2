@@ -1,6 +1,6 @@
 import logging
-from biml.App import App
-from biml.feed.LocalWriter import LocalWriter
+from App import App
+from feed.LocalWriter import LocalWriter
 
 
 class Downloader(App):

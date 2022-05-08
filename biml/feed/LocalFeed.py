@@ -1,6 +1,6 @@
 from typing import List
-from biml.feed.BaseFeed import BaseFeed
-from biml.feed.TickerInfo import TickerInfo
+from feed.BaseFeed import BaseFeed
+from feed.TickerInfo import TickerInfo
 
 
 class LocalFeed(BaseFeed):

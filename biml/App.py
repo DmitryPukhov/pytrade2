@@ -5,8 +5,8 @@ from typing import List
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
-from biml.feed.BinanceFeed import BinanceFeed
-from biml.feed.TickerInfo import TickerInfo
+from feed.BinanceFeed import BinanceFeed
+from feed.TickerInfo import TickerInfo
 
 
 class App:
