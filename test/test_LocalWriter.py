@@ -23,6 +23,25 @@ class TestLocalWriter(TestCase):
         if os.path.exists(TestLocalWriter.data_dir):
             shutil.rmtree(TestLocalWriter.data_dir)
 
+    def test__get_file_name(self):
+        writer = LocalWriter("data1")
+        # "{self.data_dir}/{ticker}/{date}_{ticker}_{interval}.csv"
+
+        file_name = writer.get_file_name("ticker1", "interval1", datetime.fromisoformat("2022-05-09 11:13"))
+        self.assertEqual(file_name, "data1/ticker1/2022-05-09_ticker1_interval1.csv")
+
+        file_name = writer.get_file_name("ticker1", "1m", datetime.fromisoformat("2022-05-09 11:13"))
+        self.assertEqual(file_name, "data1/ticker1/2022-05-09_ticker1_1m.csv")
+
+        file_name = writer.get_file_name("ticker1", "1h", datetime.fromisoformat("2022-05-09 11:13"))
+        self.assertEqual(file_name, "data1/ticker1/2022-05-09_ticker1_1h.csv")
+
+        file_name = writer.get_file_name("ticker1", "1d", datetime.fromisoformat("2022-05-09 11:13"))
+        self.assertEqual(file_name, "data1/ticker1/2022_ticker1_1d.csv")
+
+        file_name = writer.get_file_name("ticker1", "1M", datetime.fromisoformat("2022-05-09 11:13"))
+        self.assertEqual(file_name, "data1/ticker1/2022_ticker1_1M.csv")
+
     def test__double_write_should_write_once(self):
         writer = LocalWriter("data1")
         close_dt = datetime.fromisoformat("2022-05-06 22:29")
@@ -32,9 +51,30 @@ class TestLocalWriter(TestCase):
              close_dt, 6, 7, 8, 9, 10]
         ], columns=BaseFeed.candle_columns)
         writer.on_candles("ticker1", "interval1", candles)
+        writer.on_candles("ticker1", "interval1", candles)
 
         self.assertEqual(writer.last_time_dict, {"ticker1": {"interval1": close_dt}})
         self.assertEqual(writer.get_last_data_time("ticker1", "interval1"), close_dt)
+
+        written = pd.read_csv(writer.get_file_name("ticker1", "interval1", close_dt))
+        self.assertEqual(len(written), 1)
+
+    def test__double_write_day_should_write_once(self):
+        writer = LocalWriter("data1")
+        close_dt = datetime.fromisoformat("2022-05-06 22:29")
+        candles = pd.DataFrame(data=[
+            # 6th of May
+            [datetime.fromisoformat("2022-05-06 21:19"), 1, 2, 3, 4, 5,
+             close_dt, 6, 7, 8, 9, 10]
+        ], columns=BaseFeed.candle_columns)
+        writer.on_candles("ticker1", "1d", candles)
+        writer.on_candles("ticker1", "1d", candles)
+
+        self.assertEqual(writer.last_time_dict, {"ticker1": {"1d": close_dt}})
+        self.assertEqual(writer.get_last_data_time("ticker1", "1d"), close_dt)
+
+        written = pd.read_csv(writer.get_file_name("ticker1", "1d", close_dt))
+        self.assertEqual(len(written), 1)
 
     def test__get_last_data_time_empty_data(self):
         writer = LocalWriter(TestLocalWriter.data_dir)
@@ -63,7 +103,7 @@ class TestLocalWriter(TestCase):
         ], columns=BaseFeed.candle_columns)
 
         writer.on_candles("ticker1", "interval1", df_interval1)
-        writer.on_candles("ticker1", "interval1", df_interval1)
+        writer.on_candles("ticker1", "interval1", df_interval2)
 
         self.assertEqual(writer.get_last_data_time("ticker1", "interval1"),
                          datetime.fromisoformat("2022-05-07 21:31"))

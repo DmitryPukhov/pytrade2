@@ -1,3 +1,5 @@
+import glob
+from datetime import datetime
 from typing import List
 from feed.BaseFeed import BaseFeed
 from feed.TickerInfo import TickerInfo
@@ -12,9 +14,8 @@ class LocalFeed(BaseFeed):
         super().__init__(tickers=tickers)
         self.data_dir = data_dir
 
-    def read(self):
+    def read(self, start_time: datetime):
         """
         Read data from local folder to pandas
         """
-        pass
-        # todo: implement reading from local folder
+        glob.glob()

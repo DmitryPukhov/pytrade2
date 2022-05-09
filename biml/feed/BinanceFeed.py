@@ -2,8 +2,12 @@ import logging
 import time
 from datetime import timedelta
 from typing import List
+
 import pandas as pd
 from binance.spot import Spot as Client
+from requests.exceptions import SSLError
+from urllib3.exceptions import RequestError
+
 from feed.BaseFeed import BaseFeed
 from feed.TickerInfo import TickerInfo
 
@@ -23,7 +27,11 @@ class BinanceFeed(BaseFeed):
         Read data periodically
         """
         while True:
-            self.read()
+            try:
+                self.read()
+            except (RequestError, SSLError) as e:
+                logging.error(e)
+
             logging.info(f"Sleeping for {self.read_interval}")
             time.sleep(self.read_interval.total_seconds())
 

@@ -1,3 +1,5 @@
 binance-connector~=1.11
 pandas~=1.2.1
 PyYAML~=5.3.1
+requests~=2.27.1
+urllib3~=1.25.8

@@ -26,7 +26,7 @@ class App:
         # Create spot client
         key, url = self.config["biml.connector.key"], self.config["biml.connector.url"]
         logging.info(f"Init binance client, url: {url}")
-        self.spot_client: Client = Client(key=key, base_url=url)
+        self.spot_client: Client = Client(key=key, base_url=url, timeout=10)
 
         # Init binance feed
         tickers = list(App.read_candle_config(self.config))
