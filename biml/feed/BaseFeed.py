@@ -16,7 +16,8 @@ class BaseFeed:
         self.tickers = tickers
 
         logging.info(
-            f"Feed initialized. candle_columns: {BaseFeed.candle_columns},\n")
+            f"Feed initialized. candle_columns: {BaseFeed.candle_columns}\n, tickers: {self.tickers}")
+
         self.consumers = []
 
     def read(self):
