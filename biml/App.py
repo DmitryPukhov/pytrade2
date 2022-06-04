@@ -29,8 +29,8 @@ class App:
         self.spot_client: Client = Client(key=key, base_url=url, timeout=10)
 
         # Init binance feed
-        tickers = list(App.read_candle_config(self.config))
-        self.feed = BinanceFeed(spot_client=self.spot_client, tickers=tickers)
+        self.tickers = list(App.read_candle_config(self.config))
+        self.feed = BinanceFeed(spot_client=self.spot_client, tickers=self.tickers)
         logging.info("App initialized")
 
     @staticmethod
@@ -42,7 +42,7 @@ class App:
         for ticker in tickers:
             # biml.feed.BTCUSDT.candle.intervals: 1m,15m
             intervals = conf[f"biml.feed.{ticker}.candle.intervals"].split(",")
-            limits = [int(limit) for limit in conf[f"biml.feed.{ticker}.candle.limits"].split(",")]
+            limits = [int(limit) for limit in str(conf[f"biml.feed.{ticker}.candle.limits"]).split(",")]
             yield TickerInfo(ticker, intervals, limits)
 
     @staticmethod

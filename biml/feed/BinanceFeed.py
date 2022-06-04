@@ -35,11 +35,6 @@ class BinanceFeed(BaseFeed):
             logging.info(f"Sleeping for {self.read_interval}")
             time.sleep(self.read_interval.total_seconds())
 
-    def preprocess(self, df: pd.DataFrame) -> pd.DataFrame:
-        df["open_time"] = pd.to_datetime(df["open_time"], unit='ms')
-        df["close_time"] = pd.to_datetime(df["close_time"], unit='ms')
-        return df
-
     def read(self):
         """
         Read data from binance to pandas
@@ -80,3 +75,8 @@ class BinanceFeed(BaseFeed):
                 # Produce on_candles event
                 for consumer in [c for c in self.consumers if hasattr(c, 'on_candles')]:
                     consumer.on_candles(ticker=ticker.ticker, interval=interval, candles=new_candles)
+    @staticmethod
+    def preprocess(df: pd.DataFrame) -> pd.DataFrame:
+        df["open_time"] = pd.to_datetime(df["open_time"], unit='ms')
+        df["close_time"] = pd.to_datetime(df["close_time"], unit='ms')
+        return df
