@@ -5,7 +5,6 @@ import pandas as pd
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
-
 from features.Features import Features
 from features.TargetFeatures import TargetFeatures
 
@@ -29,7 +28,6 @@ class FutureLowHigh:
         # features and target should have the same indices
         target = target[target.index.isin(features.index)]
         features = features[features.index.isin(target.index)]
-
         return features, target
 
     def learn(self, data_items: Dict):
@@ -41,9 +39,14 @@ class FutureLowHigh:
         # but for the sake of logic let's concatenate the dict vals
         data = reduce(lambda df1, df2: df1.append(df2), data_items.values()).sort_index()
 
-        # Train-test data
+        # Feature engineering. todo: balance the data
         X, y = self.prepare(data)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
+
+        # ax = sns.countplot(y_train["signal"])
+        # ax.bar_label(ax.containers[0])
+        # ax.set_title("Signal distribution unbaloanced")
+        # plt.show()
 
         # Fit the model
         model = self.model.fit(X_train, y_train)
