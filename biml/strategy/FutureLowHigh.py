@@ -2,11 +2,12 @@ from functools import reduce
 from typing import Dict
 
 import pandas as pd
+import seaborn as sns
+from matplotlib import pyplot as plt
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
-from features.Features import Features
-from features.TargetFeatures import TargetFeatures
+from features.FeatureEngineering import FeatureEngineering
 
 
 class FutureLowHigh:
@@ -16,19 +17,6 @@ class FutureLowHigh:
     """
     def __init__(self):
         self.model = DecisionTreeClassifier(criterion="entropy", max_depth=3)
-
-    def prepare(self, data: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
-        """
-        Features and target of
-        :param data: candles data
-        :return: (features, target)
-        """
-        features = Features().features_of(candles=data, period=1, freq="min", n=60).dropna()
-        target = TargetFeatures().target_of(df=data, periods=5, freq="min", loss=0, trailing=0, ratio=4).dropna()
-        # features and target should have the same indices
-        target = target[target.index.isin(features.index)]
-        features = features[features.index.isin(target.index)]
-        return features, target
 
     def learn(self, data_items: Dict):
         """
@@ -40,12 +28,14 @@ class FutureLowHigh:
         data = reduce(lambda df1, df2: df1.append(df2), data_items.values()).sort_index()
 
         # Feature engineering. todo: balance the data
-        X, y = self.prepare(data)
+        fe = FeatureEngineering()
+        X, y = fe.features_and_targets_balanced(data)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
+        print(f"Train set size: {len(X_train)}, test set size: {len(X_test)}")
 
         # ax = sns.countplot(y_train["signal"])
         # ax.bar_label(ax.containers[0])
-        # ax.set_title("Signal distribution unbaloanced")
+        # ax.set_title("Signal distribution balanced")
         # plt.show()
 
         # Fit the model
@@ -53,4 +43,4 @@ class FutureLowHigh:
 
         # Evaluate
         y_pred = model.predict(X_test)
-        print("Accuracy:", metrics.accuracy_score(y_test, y_pred))
+        print("Accuracy:", metrics.balanced_accuracy_score(y_test, y_pred))

@@ -36,7 +36,7 @@ class TargetFeatures:
         sell_loss_is_small = (sell_loss <= loss)
         is_sell = (sell_ratio >= ratio) & sell_loss_is_small
         df["signal"] = np.where(is_sell, -1, df["signal"])
-        return df["signal"]
+        return df[["signal"]]
 
     def future_low_high(self, df: pd.DataFrame, periods: int, freq: str) -> pd.DataFrame:
         """

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from features.TargetFeatures import TargetFeatures
+from features.Targets import TargetFeatures
 
 
 class TestTargetFeatures(TestCase):
