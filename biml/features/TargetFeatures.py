@@ -7,6 +7,12 @@ class TargetFeatures:
     Target features engineering
     """
 
+    def target_of(self, df: pd.DataFrame, periods: int, freq: str, loss: int, trailing: int,
+                  ratio: int) -> pd.DataFrame:
+        futlohi = df.join(self.future_low_high(df, periods, freq))
+        signal = self.signal(futlohi, loss, trailing, ratio)
+        return signal
+
     def signal(self, df: pd.DataFrame, loss: int, trailing: int, ratio: int) -> pd.DataFrame:
         """
         Add target feature: signal to buy, sell or off market
@@ -30,7 +36,7 @@ class TargetFeatures:
         sell_loss_is_small = (sell_loss <= loss)
         is_sell = (sell_ratio >= ratio) & sell_loss_is_small
         df["signal"] = np.where(is_sell, -1, df["signal"])
-        return df
+        return df["signal"]
 
     def future_low_high(self, df: pd.DataFrame, periods: int, freq: str) -> pd.DataFrame:
         """

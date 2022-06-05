@@ -4,11 +4,11 @@ import numpy as np
 
 class Features:
 
-    def features_of(self, candles: pd.DataFrame, period: int, freq: str, n: int):
+    def features_of(self, candles: pd.DataFrame, period: int, freq: str, n: int)->pd.DataFrame:
         """
         Feature engineering
         """
-        return self.low_high_past(self.time_features(candles), period, freq, n)
+        return self.time_features(candles).join(self.low_high_past(candles, period, freq, n))
 
     def low_high_past(self, candles: pd.DataFrame, period: int, freq: str, n: int) -> pd.DataFrame:
         """
@@ -38,4 +38,4 @@ class Features:
         df2["hour"] = df['close_time'].dt.hour
         df2["minute"] = df['close_time'].dt.minute
         df2["sec"] = df['close_time'].dt.second
-        return df2    
+        return df2
