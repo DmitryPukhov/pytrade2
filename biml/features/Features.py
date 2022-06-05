@@ -4,7 +4,7 @@ import numpy as np
 
 class Features:
 
-    def features_of(self, candles: pd.DataFrame, period: int, freq: str, n: int)->pd.DataFrame:
+    def features_of(self, candles: pd.DataFrame, period: int, freq: str, n: int) -> pd.DataFrame:
         """
         Feature engineering
         """
@@ -16,13 +16,14 @@ class Features:
         """
         windowspec = f"{period} {freq}"
         rolling = candles.rolling(windowspec, min_periods=0).agg(
-            {'high': 'max', 'low': 'min'}, closed='right')
-        # Add previous intervals lows/highs
+            {'open': lambda x: list(x)[0], 'high': 'max', 'low': 'min', 'close': lambda x: list(x)[-1], },
+            closed='right')
         df2 = pd.DataFrame(index=candles.index)
         for shift in range(1, n + 1):
-            df2[[f"-{shift}*{period}{freq}_high", f"-{shift}*{period}{freq}_low"]] = \
-                rolling.shift(shift - 1, freq)[['high', 'low']] \
-                    .reindex(df2.index, method='nearest', tolerance=windowspec)
+            src_cols = ['open', 'high', 'low', 'close']
+            target_cols = [f"-{shift}*{period}{freq}_{src_col}" for src_col in src_cols]
+            df2[target_cols] = rolling.shift(shift - 1, freq)[src_cols] \
+                .reindex(df2.index, method='nearest', tolerance=windowspec)
         return df2.sort_index()
 
     def time_features(self, df: pd.DataFrame) -> pd.DataFrame:

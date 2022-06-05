@@ -2,6 +2,8 @@ import logging.config
 import os
 import sys
 from typing import List
+
+import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
@@ -15,6 +17,11 @@ class App:
     """
 
     def __init__(self):
+        # For pandas printing to log
+        pd.set_option('display.max_colwidth', None)
+        pd.set_option('display.max_columns', None)
+        pd.set_option("expand_frame_repr", False)
+
         # Load config, set up logging
         self.config = self._load_config()
 

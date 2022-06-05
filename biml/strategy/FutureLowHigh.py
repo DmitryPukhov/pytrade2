@@ -1,3 +1,4 @@
+import logging
 from functools import reduce
 from typing import Dict
 
@@ -31,7 +32,9 @@ class FutureLowHigh:
         fe = FeatureEngineering()
         X, y = fe.features_and_targets_balanced(data)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
-        print(f"Train set size: {len(X_train)}, test set size: {len(X_test)}")
+        logging.info(f"Train set size: {len(X_train)}, test set size: {len(X_test)}")
+        logging.info(f"Train X: \n{X_train.head(10)}")
+        logging.info(f"Train y: \n{y_train.head(10)}")
 
         # ax = sns.countplot(y_train["signal"])
         # ax.bar_label(ax.containers[0])
@@ -43,4 +46,4 @@ class FutureLowHigh:
 
         # Evaluate
         y_pred = model.predict(X_test)
-        print("Accuracy:", metrics.balanced_accuracy_score(y_test, y_pred))
+        logging.info(f"Accuracy:{metrics.balanced_accuracy_score(y_test, y_pred)}")
