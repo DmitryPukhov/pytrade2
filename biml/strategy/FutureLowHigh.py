@@ -2,6 +2,7 @@ import logging
 from functools import reduce
 from typing import Dict
 
+import pandas as pd
 from keras import Input
 from keras.layers import Dense
 from keras.layers.core.dropout import Dropout
@@ -22,6 +23,13 @@ class FutureLowHigh:
 
     def __init__(self):
         self.model = None
+        self.window_size = 15
+
+    def on_candles(ticker: str, interval: str, candles: pd.DataFrame):
+        """
+        Received new candles from feed
+        """
+        logging.info("Got new candles")
 
     def create_model(self):
         model = Sequential()
@@ -52,14 +60,13 @@ class FutureLowHigh:
 
         # Feature engineering.
         fe = FeatureEngineering()
-        X, y = fe.features_and_targets_balanced(data)
+        X, y = fe.features_and_targets_balanced(data, self.window_size)
         logging.info(f"Learn set size: {len(X)}")
 
         # ax = sns.countplot(y_train)
         # ax.bar_label(ax.containers[0])
         # ax.set_title("Signal distribution balanced")
         # plt.show()
-
 
         # Fit the model
         self.X_size, self.y_size = len(X.columns), len(y.columns)

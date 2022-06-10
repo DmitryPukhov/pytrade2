@@ -9,6 +9,7 @@ from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
 from feed.BinanceFeed import BinanceFeed
 from feed.TickerInfo import TickerInfo
+from strategy.FutureLowHigh import FutureLowHigh
 
 
 class App:
@@ -38,6 +39,10 @@ class App:
         # Init binance feed
         self.tickers = list(App.read_candle_config(self.config))
         self.feed = BinanceFeed(spot_client=self.spot_client, tickers=self.tickers)
+
+        # Strategy
+        self.strategy = FutureLowHigh()
+        self.feed.consumers
         logging.info("App initialized")
 
     @staticmethod

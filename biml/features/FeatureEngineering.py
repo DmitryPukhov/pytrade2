@@ -8,11 +8,11 @@ from features.Targets import TargetFeatures
 
 class FeatureEngineering:
 
-    def features_and_targets_balanced(self, data: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+    def features_and_targets_balanced(self, data: pd.DataFrame, window_size: int) -> (pd.DataFrame, pd.DataFrame):
         """
         Get features, targets, balanced by buy/sell singal
         """
-        return self.balanced(*self.features_and_targets(data))
+        return self.balanced(*self.features_and_targets(data, window_size))
 
     def balanced(self, X: pd.DataFrame, y: pd.DataFrame):
         """
@@ -25,13 +25,13 @@ class FeatureEngineering:
         X_bal = X[X.index.isin(y_bal.index)].sort_index()
         return X_bal, y_bal
 
-    def features_and_targets(self, data: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+    def features_and_targets(self, data: pd.DataFrame, window_size: int) -> (pd.DataFrame, pd.DataFrame):
         """
         Features and target of
         :param data: candles data
         :return: (features, target)
         """
-        features = Features().features_of(candles=data, period=1, freq="min", n=15).dropna()
+        features = Features().features_of(candles=data, period=1, freq="min", n=window_size).diff().dropna()
         target = TargetFeatures().target_of(df=data, periods=1, freq="min", loss=0, trailing=0, ratio=4).dropna()
         # features and target should have the same indices
         target = target[target.index.isin(features.index)]
