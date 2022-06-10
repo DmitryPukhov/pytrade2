@@ -21,15 +21,19 @@ class TestTargetFeatures(TestCase):
                  'fut_high': 12},
             ]).set_index('close_time')
         withsignal = TargetFeatures().signal(candles, loss=2, trailing=1, ratio=4)
-        self.assertEqual([0, 1, -1], withsignal['signal'].values.tolist())
+        # self.assertEqual([0, 1, -1], withsignal['signal'].values.tolist())
+        self.assertEqual([0, 1, 0], withsignal['signal_buy'].values.tolist())
+        self.assertEqual([0, 0, 1], withsignal['signal_sell'].values.tolist())
+        self.assertEqual([1, 0, 0], withsignal['signal_off_market'].values.tolist())
 
     def test_target_features__window_should_include_current(self):
         # quotes columns: ['close_time', 'ticker', 'low', 'high', 'last', 'last_change']
-        candles = pd.DataFrame([{'close_time': datetime.fromisoformat('2021-12-08 07:00:00'), 'low': 1,
-                                 'high': 10},
-                                {'close_time': datetime.fromisoformat('2021-12-08 07:01:01'), 'low': 4,
-                                 'high': 6}
-                                ]).set_index('close_time')
+        candles = pd.DataFrame(
+            [{'close_time': datetime.fromisoformat('2021-12-08 07:00:00'), 'open': 3, 'low': 1, 'close': 2,
+              'high': 10},
+             {'close_time': datetime.fromisoformat('2021-12-08 07:01:01'), 'open': 3, 'low': 4, 'close': 2,
+              'high': 6}
+             ]).set_index('close_time')
 
         withminmax = TargetFeatures().future_low_high(candles, 1, 'min')
         self.assertEqual([1, 4], withminmax['fut_low'].values.tolist())

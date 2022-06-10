@@ -2,12 +2,13 @@ import logging
 from functools import reduce
 from typing import Dict
 
-import pandas as pd
-import seaborn as sns
-from matplotlib import pyplot as plt
-from sklearn import metrics
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
+from keras import Input
+from keras.layers import Dense
+from keras.layers.core.dropout import Dropout
+from keras.models import Sequential
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import cross_val_score, TimeSeriesSplit
+
 from features.FeatureEngineering import FeatureEngineering
 
 
@@ -16,8 +17,27 @@ class FutureLowHigh:
     Predict low/high value in the nearest future period.
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
     """
+
     def __init__(self):
-        self.model = DecisionTreeClassifier(criterion="entropy", max_depth=3)
+        self.model = None
+
+    def create_model(self):
+        model = Sequential()
+        model.add(Input(shape=(self.X_size,)))
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(1024, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(128, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(self.y_size, activation='softmax'))
+        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        #model.summary()
+        return model
 
     def learn(self, data_items: Dict):
         """
@@ -31,19 +51,18 @@ class FutureLowHigh:
         # Feature engineering. todo: balance the data
         fe = FeatureEngineering()
         X, y = fe.features_and_targets_balanced(data)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, shuffle=False)
-        logging.info(f"Train set size: {len(X_train)}, test set size: {len(X_test)}")
-        logging.info(f"Train X: \n{X_train.head(10)}")
-        logging.info(f"Train y: \n{y_train.head(10)}")
+        logging.info(f"Learn set size: {len(X)}")
 
-        # ax = sns.countplot(y_train["signal"])
+        # ax = sns.countplot(y_train)
         # ax.bar_label(ax.containers[0])
         # ax.set_title("Signal distribution balanced")
         # plt.show()
 
         # Fit the model
-        model = self.model.fit(X_train, y_train)
+        self.X_size = len(X.columns)
+        self.y_size = len(y.columns)
 
-        # Evaluate
-        y_pred = model.predict(X_test)
-        logging.info(f"Accuracy:{metrics.balanced_accuracy_score(y_test, y_pred)}")
+        estimator = KerasClassifier(build_fn=self.create_model, epochs=2, batch_size=50, verbose=0)
+        tscv = TimeSeriesSplit(n_splits=2)
+        cv=cross_val_score(estimator, X=X, y=y, cv=tscv, error_score="raise")
+        print(cv)
