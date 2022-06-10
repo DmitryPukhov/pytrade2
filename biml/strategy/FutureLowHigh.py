@@ -63,7 +63,7 @@ class FutureLowHigh:
 
         # Fit the model
         self.X_size, self.y_size = len(X.columns), len(y.columns)
-        estimator = KerasClassifier(build_fn=self.create_model, epochs=20, batch_size=50, verbose=1)
+        estimator = KerasClassifier(build_fn=self.create_model, epochs=100, batch_size=100, verbose=1)
         pipe = Pipeline([("scaler", StandardScaler()), ('model', estimator)])
         tscv = TimeSeriesSplit(n_splits=20)
         cv = cross_val_score(pipe, X=X, y=y, cv=tscv, error_score="raise")
