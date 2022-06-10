@@ -24,7 +24,7 @@ class Features:
             target_cols = [f"-{shift}*{period}{freq}_{src_col}" for src_col in src_cols]
             df2[target_cols] = rolling.shift(shift - 1, freq)[src_cols] \
                 .reindex(df2.index, method='nearest', tolerance=windowspec)
-        return df2.sort_index()
+        return df2.diff().sort_index()
 
     def time_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -33,10 +33,11 @@ class Features:
         :return: dataframe with time features
         """
         df2 = pd.DataFrame(index=df.index)
-        df2["dayofweek"] = df['close_time'].dt.dayofweek
-        df2["month"] = df['close_time'].dt.month
-        df2["year"] = df['close_time'].dt.year
-        df2["hour"] = df['close_time'].dt.hour
-        df2["minute"] = df['close_time'].dt.minute
-        df2["sec"] = df['close_time'].dt.second
+        df2['time_diff']=df['close_time'].astype(np.int64)
+        # df2["dayofweek"] = df['close_time'].dt.dayofweek
+        # df2["month"] = df['close_time'].dt.month
+        # df2["year"] = df['close_time'].dt.year
+        # df2["hour"] = df['close_time'].dt.hour
+        # df2["minute"] = df['close_time'].dt.minute
+        # df2["sec"] = df['close_time'].dt.second
         return df2

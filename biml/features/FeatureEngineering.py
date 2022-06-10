@@ -22,9 +22,6 @@ class FeatureEngineering:
         mincount = min([y["signal_buy"].sum(), y["signal_sell"].sum(), y["signal_off_market"].sum()])
         y_bal = reduce(lambda df1, df2: df1.append(df2).sort_index(),
                        [y[y[signal] == 1].sample(n=mincount) for signal in signals])
-        # mincount = pd.value_counts(y["signal"]).values.min()
-        # y_bal = reduce(lambda df1, df2: df1.append(df2).sort_index(),
-        #                [y[y["signal"] == signal].sample(n=mincount) for signal in [-1, 0, 1]])
         X_bal = X[X.index.isin(y_bal.index)].sort_index()
         return X_bal, y_bal
 
