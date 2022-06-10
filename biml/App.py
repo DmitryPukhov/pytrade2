@@ -42,7 +42,7 @@ class App:
 
         # Strategy
         self.strategy = FutureLowHigh()
-        self.feed.consumers
+        self.feed.consumers.append(self.strategy)
         logging.info("App initialized")
 
     @staticmethod

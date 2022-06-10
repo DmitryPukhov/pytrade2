@@ -24,12 +24,14 @@ class FutureLowHigh:
     def __init__(self):
         self.model = None
         self.window_size = 15
+        self.candles = pd.DataFrame()
 
-    def on_candles(ticker: str, interval: str, candles: pd.DataFrame):
+    def on_candles(self,ticker: str, interval: str, new_candles: pd.DataFrame):
         """
         Received new candles from feed
         """
         logging.info("Got new candles")
+        print(new_candles.head())
 
     def create_model(self):
         model = Sequential()
@@ -71,7 +73,7 @@ class FutureLowHigh:
         # Fit the model
         self.X_size, self.y_size = len(X.columns), len(y.columns)
         estimator = KerasClassifier(build_fn=self.create_model, epochs=100, batch_size=100, verbose=1)
-        pipe = Pipeline([("scaler", StandardScaler()), ('model', estimator)])
+        self.pipe = Pipeline([("scaler", StandardScaler()), ('model', estimator)])
         tscv = TimeSeriesSplit(n_splits=20)
-        cv = cross_val_score(pipe, X=X, y=y, cv=tscv, error_score="raise")
+        cv = cross_val_score(self.pipe, X=X, y=y, cv=tscv, error_score="raise")
         print(cv)
