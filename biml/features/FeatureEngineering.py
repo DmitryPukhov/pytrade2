@@ -28,10 +28,10 @@ class FeatureEngineering:
         """
         Make X, y balanced by buy/sell/offmarket signal count
         """
-        vc = y["signal"].value_counts()
+        vc = y.value_counts()
         mincount = min(vc.values)
         y_bal = reduce(lambda df1, df2: df1.append(df2).sort_index(),
-                       [y[y["signal"] == signal].sample(n=mincount) for signal in vc.index.values])
+                       [y[y[col]==1].sample(n=mincount) for col in y.columns])
         X_bal = X[X.index.isin(y_bal.index)].sort_index()
         return X_bal, y_bal
 
