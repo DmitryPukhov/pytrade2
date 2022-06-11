@@ -1,6 +1,7 @@
 import logging.config
 import os
 import sys
+from datetime import datetime
 from typing import List
 
 import pandas as pd
@@ -8,6 +9,7 @@ import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
 from feed.BinanceFeed import BinanceFeed
+from feed.LocalFeed import LocalFeed
 from feed.TickerInfo import TickerInfo
 from strategy.FutureLowHigh import FutureLowHigh
 
@@ -39,6 +41,8 @@ class App:
         # Init binance feed
         self.tickers = list(App.read_candle_config(self.config))
         self.feed = BinanceFeed(spot_client=self.spot_client, tickers=self.tickers)
+        # self.data_dir = self.config["biml.data.dir"]
+        # self.feed = LocalFeed(self.data_dir, self.tickers)
 
         # Strategy
         self.strategy = FutureLowHigh()
@@ -89,6 +93,9 @@ class App:
 
         # Read feed from binance
         self.feed.run()
+
+        # ticker = self.tickers[-1]
+        # self.feed.emulate_feed(ticker.ticker, ticker.candle_intervals[-1], datetime.min, datetime.max)
 
         logging.info("The end")
 

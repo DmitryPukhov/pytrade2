@@ -1,6 +1,7 @@
 import glob
 import logging
 from datetime import datetime
+from functools import reduce
 from pathlib import Path
 from typing import List, Dict
 
@@ -19,24 +20,40 @@ class LocalFeed(BaseFeed):
         super().__init__(tickers=tickers)
         self.data_dir = data_dir
 
+    def emulate_feed(self, ticker: str, interval: str, start_time: datetime, end_time: datetime):
+        df = self.read_ticker_interval(ticker, interval, start_time, end_time)
+        # todo: find better iteration way
+
+        for i in df.index:
+            for consumer in [c for c in self.consumers if hasattr(c, 'on_candles')]:
+                # Imitate that new candle has come
+                new_candles = df[df.index == i]
+                consumer.on_candles(ticker=ticker, interval=interval, new_candles=new_candles)
+
+    def read_ticker_interval(self, ticker: str, interval: str, start_time: datetime,
+                             end_time: datetime) -> pd.DataFrame:
+        """
+        Read single ticker for interval like BTCUSDT M1 from start_time to end_time
+        """
+        pattern = f"{self.data_dir}/{ticker}/*_{ticker}_{interval}.csv"
+        logging.info(f"Reading files, ticker: {ticker}, interval: {interval}, search pattern: {pattern}")
+        files = [file for file in glob.glob(pattern) if LocalFeed.is_between(file, start_time, end_time)]
+        df = pd.DataFrame()
+        for file in files:
+            new_df = pd.read_csv(file, parse_dates=["close_time"]).set_index("close_time", drop=False)
+            df = df.append(new_df)
+        return df
+
     def read_intervals(self, start_time: datetime, end_time: datetime) -> Dict:
         """
         Read data from local folder to pandas
         :param start_time: inclusive start time
         :param end_time: exclusive end time
         """
-        data = {}
-        for ticker_info in self.tickers:
-            for interval in ticker_info.candle_intervals:
-                pattern = f"{self.data_dir}/{ticker_info.ticker}/*_{ticker_info.ticker}_{interval}.csv"
-                logging.info(f"Reading files, ticker: {ticker_info}, interval: {interval}, search pattern: {pattern}")
-                files = [file for file in glob.glob(pattern) if LocalFeed.is_between(file, start_time, end_time)]
-                df = pd.DataFrame()
-                for file in files:
-                    new_df = pd.read_csv(file, parse_dates=["close_time"]).set_index("close_time", drop=False)
-                    df = df.append(new_df)
-                data[(ticker_info.ticker, interval)] = df
-        return data
+        return dict(
+            [((ti.ticker, i),  # Key - ticker, interval
+              self.read_ticker_interval(ti.ticker, i, start_time, end_time))  # Value - pandas df
+             for ti in self.tickers for i in ti.candle_intervals])
 
     @staticmethod
     def is_between(file: str, start_time: datetime, end_time: datetime) -> bool:

@@ -24,14 +24,19 @@ class FutureLowHigh:
     def __init__(self):
         self.model = None
         self.window_size = 15
+        self.predict_sindow_size = 1
         self.candles = pd.DataFrame()
 
     def on_candles(self,ticker: str, interval: str, new_candles: pd.DataFrame):
         """
         Received new candles from feed
         """
-        logging.info("Got new candles")
-        print(new_candles.head())
+        # Append new candles to current candles
+        # This strategy is a single ticker and interval and only these candles can come
+        self.candles = self.candles.append(new_candles).tail(self.window_size + self.predict_sindow_size)
+        if len(self.candles) < self.window_size + self.predict_sindow_size:
+            return
+        # todo: fit the model
 
     def create_model(self):
         model = Sequential()
@@ -62,7 +67,7 @@ class FutureLowHigh:
 
         # Feature engineering.
         fe = FeatureEngineering()
-        X, y = fe.features_and_targets_balanced(data, self.window_size)
+        X, y = fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
         logging.info(f"Learn set size: {len(X)}")
 
         # ax = sns.countplot(y_train)
