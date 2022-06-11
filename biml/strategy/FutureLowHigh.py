@@ -7,10 +7,12 @@ from keras import Input
 from keras.layers import Dense
 from keras.layers.core.dropout import Dropout
 from keras.models import Sequential
+from keras.utils.np_utils import to_categorical
 from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder
 
 from features.FeatureEngineering import FeatureEngineering
 
@@ -26,8 +28,10 @@ class FutureLowHigh:
         self.window_size = 15
         self.predict_sindow_size = 1
         self.candles = pd.DataFrame()
+        self.fe = FeatureEngineering()
+        self.pipe = None
 
-    def on_candles(self,ticker: str, interval: str, new_candles: pd.DataFrame):
+    def on_candles(self, ticker: str, interval: str, new_candles: pd.DataFrame):
         """
         Received new candles from feed
         """
@@ -36,11 +40,20 @@ class FutureLowHigh:
         self.candles = self.candles.append(new_candles).tail(self.window_size + self.predict_sindow_size)
         if len(self.candles) < self.window_size + self.predict_sindow_size:
             return
-        # todo: fit the model
+        self.candles = self.candles.tail(self.window_size + self.predict_sindow_size)
 
-    def create_model(self):
+        train_X, train_y = self.fe.features_and_targets(self.candles, self.window_size,
+                                                        self.predict_sindow_size)
+        self.pipe = self.create_pipe(train_X, train_y) if not self.pipe else self.pipe
+        history = self.pipe.fit(train_X, train_y)
+
+        X = self.fe.features(self.candles, self.window_size).tail(self.window_size)
+        # todo: convert to predicted value
+        y = self.pipe.predict(X.tail(self.window_size))
+
+    def create_model(self, X_size, y_size):
         model = Sequential()
-        model.add(Input(shape=(self.X_size,)))
+        model.add(Input(shape=(X_size,)))
         model.add(Dense(512, activation='relu'))
         model.add(Dropout(0.2))
         model.add(Dense(1024, activation='relu'))
@@ -51,7 +64,7 @@ class FutureLowHigh:
         model.add(Dropout(0.2))
         model.add(Dense(64, activation='relu'))
         model.add(Dropout(0.2))
-        model.add(Dense(self.y_size, activation='softmax'))
+        model.add(Dense(y_size, activation='softmax'))
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
         # model.summary()
         return model
@@ -66,19 +79,18 @@ class FutureLowHigh:
         data = reduce(lambda df1, df2: df1.append(df2), data_items.values()).sort_index()
 
         # Feature engineering.
-        fe = FeatureEngineering()
-        X, y = fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
+        X, y = self.fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
         logging.info(f"Learn set size: {len(X)}")
 
-        # ax = sns.countplot(y_train)
-        # ax.bar_label(ax.containers[0])
-        # ax.set_title("Signal distribution balanced")
-        # plt.show()
-
-        # Fit the model
-        self.X_size, self.y_size = len(X.columns), len(y.columns)
-        estimator = KerasClassifier(build_fn=self.create_model, epochs=100, batch_size=100, verbose=1)
-        self.pipe = Pipeline([("scaler", StandardScaler()), ('model', estimator)])
+        self.pipe = self.create_pipe(X, y) if not self.pipe else self.pipe
         tscv = TimeSeriesSplit(n_splits=20)
         cv = cross_val_score(self.pipe, X=X, y=y, cv=tscv, error_score="raise")
         print(cv)
+
+    def create_pipe(self, X, y):
+        # Fit the model
+        estimator = KerasClassifier(build_fn=self.create_model, X_size=len(X.columns), y_size=len(y.columns),
+                                    epochs=100, batch_size=100, verbose=1)
+        column_transformer = self.fe.column_transformer(X, y)
+
+        return Pipeline([("column_transformer", column_transformer), ('model', estimator)])

@@ -40,9 +40,9 @@ class App:
 
         # Init binance feed
         self.tickers = list(App.read_candle_config(self.config))
-        self.feed = BinanceFeed(spot_client=self.spot_client, tickers=self.tickers)
-        # self.data_dir = self.config["biml.data.dir"]
-        # self.feed = LocalFeed(self.data_dir, self.tickers)
+        #self.feed = BinanceFeed(spot_client=self.spot_client, tickers=self.tickers)
+        self.data_dir = self.config["biml.data.dir"]
+        self.feed = LocalFeed(self.data_dir, self.tickers)
 
         # Strategy
         self.strategy = FutureLowHigh()

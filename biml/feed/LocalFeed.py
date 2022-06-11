@@ -20,10 +20,13 @@ class LocalFeed(BaseFeed):
         super().__init__(tickers=tickers)
         self.data_dir = data_dir
 
+    def run(self):
+        # Emulate feed for the last ticker
+        self.emulate_feed(self.tickers[-1].ticker, self.tickers[-1].candle_intervals[-1], datetime.min, datetime.max)
+
     def emulate_feed(self, ticker: str, interval: str, start_time: datetime, end_time: datetime):
         df = self.read_ticker_interval(ticker, interval, start_time, end_time)
         # todo: find better iteration way
-
         for i in df.index:
             for consumer in [c for c in self.consumers if hasattr(c, 'on_candles')]:
                 # Imitate that new candle has come
