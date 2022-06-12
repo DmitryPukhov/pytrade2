@@ -19,7 +19,7 @@ class TargetFeatures:
         :param df: pandas dataframe with candles and future low/high features.
         """
         # Default signal = off market
-        df["signal"] = "off"
+        df["signal"] = 0
 
         # Set buy signal
         buy_profit = (df["fut_high"] - df["close"]) - trailing
@@ -28,7 +28,7 @@ class TargetFeatures:
         buy_loss_is_small = (buy_loss <= loss)
         is_buy = (buy_ratio >= ratio) & buy_loss_is_small
         # df_signal[is_buy]["signal"] = 1
-        df["signal"] = np.where(is_buy, "buy", df["signal"])
+        df["signal"] = np.where(is_buy, 1, df["signal"])
 
         # Set sell signal
         sell_profit = (df["close"] - df["fut_low"]) - trailing
@@ -36,7 +36,7 @@ class TargetFeatures:
         sell_ratio = sell_profit / sell_loss
         sell_loss_is_small = (sell_loss <= loss)
         is_sell = (sell_ratio >= ratio) & sell_loss_is_small
-        df["signal"] = np.where(is_sell, "sell", df["signal"])
+        df["signal"] = np.where(is_sell, -1, df["signal"])
         return pd.get_dummies(df[["signal"]].astype('category'))
 
     def future_low_high(self, df: pd.DataFrame, periods: int, freq: str) -> pd.DataFrame:

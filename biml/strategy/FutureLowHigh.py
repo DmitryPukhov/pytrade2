@@ -7,12 +7,9 @@ from keras import Input
 from keras.layers import Dense
 from keras.layers.core.dropout import Dropout
 from keras.models import Sequential
-from keras.utils.np_utils import to_categorical
 from keras.wrappers.scikit_learn import KerasClassifier
-from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, OneHotEncoder
 
 from features.FeatureEngineering import FeatureEngineering
 
@@ -37,19 +34,28 @@ class FutureLowHigh:
         """
         # Append new candles to current candles
         # This strategy is a single ticker and interval and only these candles can come
+        new_candles["signal"] = 0
         self.candles = self.candles.append(new_candles).tail(self.window_size + self.predict_sindow_size)
-        if len(self.candles) < self.window_size + self.predict_sindow_size:
+        if len(self.candles) < (self.window_size + self.predict_sindow_size):
             return
-        self.candles = self.candles.tail(self.window_size + self.predict_sindow_size)
+        self.learn_on_last()
 
-        train_X, train_y = self.fe.features_and_targets(self.candles, self.window_size,
-                                                        self.predict_sindow_size)
-        self.pipe = self.create_pipe(train_X, train_y) if not self.pipe else self.pipe
-        history = self.pipe.fit(train_X, train_y)
+    def learn_on_last(self):
+        """
+        Fit the model on last data window with new candle
+        """
+        # Fit
+        train_X, train_y = self.fe.features_and_targets(self.candles, self.window_size, self.predict_sindow_size)
+        self.pipe = self.create_pipe(train_X, train_y, 1, 1) if not self.pipe else self.pipe
+        self.pipe.fit(train_X, train_y)
 
-        X = self.fe.features(self.candles, self.window_size).tail(self.window_size)
-        # todo: convert to predicted value
-        y = self.pipe.predict(X.tail(self.window_size))
+        # Predict
+        X_last = self.fe.features(self.candles, self.window_size).tail(1)
+        y_pred = self.pipe.predict(X_last)
+
+        signal = int(train_y.columns[y_pred[0]].lstrip("signal_"))
+        self.candles.loc[self.candles.index[-1], "signal"] = signal
+        return signal
 
     def create_model(self, X_size, y_size):
         model = Sequential()
@@ -82,15 +88,15 @@ class FutureLowHigh:
         X, y = self.fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
         logging.info(f"Learn set size: {len(X)}")
 
-        self.pipe = self.create_pipe(X, y) if not self.pipe else self.pipe
+        self.pipe = self.create_pipe(X, y, 100, 100, 1) if not self.pipe else self.pipe
         tscv = TimeSeriesSplit(n_splits=20)
         cv = cross_val_score(self.pipe, X=X, y=y, cv=tscv, error_score="raise")
         print(cv)
 
-    def create_pipe(self, X, y):
+    def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> Pipeline:
         # Fit the model
         estimator = KerasClassifier(build_fn=self.create_model, X_size=len(X.columns), y_size=len(y.columns),
-                                    epochs=100, batch_size=100, verbose=1)
+                                    epochs=epochs, batch_size=batch_size, verbose=1)
         column_transformer = self.fe.column_transformer(X, y)
 
         return Pipeline([("column_transformer", column_transformer), ('model', estimator)])
