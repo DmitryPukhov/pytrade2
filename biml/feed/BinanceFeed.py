@@ -4,7 +4,7 @@ from datetime import timedelta
 from typing import List
 
 import pandas as pd
-from urllib3.exceptions import RequestError
+from urllib3.exceptions import RequestError, ReadTimeoutError
 from binance.spot import Spot as Client
 
 from requests.exceptions import HTTPError, SSLError
@@ -30,7 +30,7 @@ class BinanceFeed(BaseFeed):
         while True:
             try:
                 self.read()
-            except (RequestError, SSLError, HTTPError) as e:
+            except (RequestError, SSLError, HTTPError, ReadTimeoutError) as e:
                 logging.error(e)
 
             logging.info(f"Sleeping for {self.read_interval}")
