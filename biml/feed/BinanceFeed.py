@@ -67,6 +67,7 @@ class BinanceFeed(BaseFeed):
                 #                                               limit=limit)
                 # Save last candle time millis for this ticker and interval
                 new_candles = pd.DataFrame(data=new_binance_candles, columns=self.candle_columns)
+
                 ticker.candle_last_times[interval] = pd.to_datetime(
                     max(start_time_millis, new_candles["close_time"].max()) if start_time_millis else new_candles[
                         'close_time'].max(), unit='ms')
@@ -79,4 +80,7 @@ class BinanceFeed(BaseFeed):
     def preprocess(df: pd.DataFrame) -> pd.DataFrame:
         df["open_time"] = pd.to_datetime(df["open_time"], unit='ms')
         df["close_time"] = pd.to_datetime(df["close_time"], unit='ms')
+        df.set_index("close_time", drop=False, inplace=True)
+        # Convert strings to float prices
+        df[["open", "high", "low", "close"]] = df[["open", "high", "low", "close"]].astype(float)
         return df
