@@ -70,7 +70,15 @@ class FutureLowHigh(StrategyBase):
         # Fit
         train_X, train_y = self.fe.features_and_targets(self.candles, self.window_size, self.predict_sindow_size)
         self.pipe = self.create_pipe(train_X, train_y, 1, 1) if not self.pipe else self.pipe
-        self.pipe.fit(train_X, train_y)
+
+        try:
+            self.pipe.fit(train_X, train_y)
+        except ValueError as err:
+            logging.error(err)
+            print(train_X.tail())
+            print(train_y.tail())
+
+
 
         # Predict
         X_last = self.fe.features(self.candles, self.window_size).tail(1)
