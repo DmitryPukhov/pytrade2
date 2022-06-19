@@ -1,7 +1,7 @@
 import logging
 from functools import reduce
 from typing import Dict
-
+from binance.spot import Spot as Client
 import pandas as pd
 from keras import Input
 from keras.layers import Dense
@@ -10,17 +10,21 @@ from keras.models import Sequential
 from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
-
 from features.FeatureEngineering import FeatureEngineering
+from strategy.StrategyBase import StrategyBase
 
 
-class FutureLowHigh:
+class FutureLowHigh(StrategyBase):
     """
     Predict low/high value in the nearest future period.
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
     """
 
-    def __init__(self):
+    def __init__(self, client: Client, ticker: str):
+        super().__init__(client)
+        self.ticker = ticker
+        self.order_quantity = 0.001
+        self.stop_loss_ratio = 0.02
         self.model = None
         self.window_size = 15
         self.predict_sindow_size = 1
@@ -32,13 +36,24 @@ class FutureLowHigh:
         """
         Received new candles from feed
         """
+        if ticker != self.ticker:
+            return
         # Append new candles to current candles
         # This strategy is a single ticker and interval and only these candles can come
         new_candles["signal"] = 0
         self.candles = self.candles.append(new_candles).tail(self.window_size + self.predict_sindow_size)
         if len(self.candles) < (self.window_size + self.predict_sindow_size):
             return
+        # Fit on last
         self.learn_on_last()
+
+        # Get last predicted signal
+        signal = {-1: "SELL", 0: None, 1: "BUY"}[self.candles.signal[-1]]
+        if signal:
+            # Buy or sell
+            close_price = self.candles.close[-1]
+            self.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
+                              stop_loss_ratio=self.stop_loss_ratio, )
 
     def learn_on_last(self):
         """

@@ -8,6 +8,7 @@ import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
+
 from feed.BinanceFeed import BinanceFeed
 from feed.LocalFeed import LocalFeed
 from feed.TickerInfo import TickerInfo
@@ -34,18 +35,19 @@ class App:
         logging.info(f"Set log level to {loglevel}")
 
         # Create spot client
-        key, url = self.config["biml.connector.key"], self.config["biml.connector.url"]
+        key, secret, url = self.config["biml.connector.key"], self.config["biml.connector.secred"], self.config[
+            "biml.connector.url"]
         logging.info(f"Init binance client, url: {url}")
-        self.spot_client: Client = Client(key=key, base_url=url, timeout=10)
+        self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
 
         # Init binance feed
         self.tickers = list(App.read_candle_config(self.config))
-        #self.feed = BinanceFeed(spot_client=self.spot_client, tickers=self.tickers)
-        self.data_dir = self.config["biml.data.dir"]
-        self.feed = LocalFeed(self.data_dir, self.tickers)
+        self.feed = BinanceFeed(spot_client=self.client, tickers=self.tickers)
+        #self.data_dir = self.config["biml.data.dir"]
+        #self.feed = LocalFeed(self.data_dir, self.tickers)
 
         # Strategy
-        self.strategy = FutureLowHigh()
+        self.strategy = FutureLowHigh(client=self.client, ticker=self.tickers[-1].ticker)
         self.feed.consumers.append(self.strategy)
         logging.info("App initialized")
 
