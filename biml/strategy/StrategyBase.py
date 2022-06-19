@@ -16,9 +16,9 @@ class StrategyBase:
         logging.debug("Checking opened orders")
         trades = self.client.my_trades(symbol)
         logging.info(trades)
-        buys = len([trade for trade in trades if trade["isBuyer"]])
-        sells = len([trade for trade in trades if not trade["isBuyer"]])
-        return buys == sells
+        # Sum of quantities for buy and sell trades should be 0. Otherwize we have unclosed trades.
+        opened_quantity = sum([float(trade["qty"]) * (1 if trade["isBuyer"] else -1) for trade in trades])
+        return opened_quantity == 0
 
     def create_order(self, symbol: str, side: str, price: float, quantity: float, stop_loss_ratio: float,
                      ticker_size: int = 2):
@@ -33,8 +33,8 @@ class StrategyBase:
         elif side == "SELL":
             stop_loss_price = price * (1 + stop_loss_ratio)
         stop_loss_price = round(stop_loss_price, ticker_size)
-        logging.info(
-            f"Creating {side} order and trailing stop loss order, symbol={symbol}, price={price}, stop_loss_price={stop_loss_price}, trailing_delta={trailing_delta}")
+        logging.info(f"Creating {side} order and trailing stop loss order, symbol={symbol}, price={price},"
+                     f" stop_loss_price={stop_loss_price}, trailing_delta={trailing_delta}")
 
         # Main order
         res = self.client.new_order_test(
