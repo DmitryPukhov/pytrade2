@@ -1,13 +1,16 @@
+import glob
 import logging
+from datetime import datetime
 from functools import reduce
+from pathlib import Path
 from typing import Dict
 from binance.spot import Spot as Client
 import pandas as pd
 from keras import Input
 from keras.layers import Dense
 from keras.layers.core.dropout import Dropout
-from keras.models import Sequential
-from keras.wrappers.scikit_learn import KerasClassifier
+from keras.models import Sequential, Model
+from scikeras.wrappers import KerasClassifier
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from features.FeatureEngineering import FeatureEngineering
@@ -20,8 +23,9 @@ class FutureLowHigh(StrategyBase):
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
     """
 
-    def __init__(self, client: Client, ticker: str):
+    def __init__(self, client: Client, ticker: str, model_dir: str):
         super().__init__(client)
+        self.model_dir = str(Path(model_dir, self.__class__.__name__))
         self.ticker = ticker
         self.order_quantity = 0.001
         self.stop_loss_ratio = 0.02
@@ -76,8 +80,11 @@ class FutureLowHigh(StrategyBase):
         X_last = self.fe.features(self.candles, self.window_size).tail(1)
         y_pred = self.pipe.predict(X_last)
 
-        signal = int(train_y.columns[y_pred[0]].lstrip("signal_"))
+        signal = int(train_y.columns[y_pred.argmax(axis=1)][0].lstrip("signal_"))
         self.candles.loc[self.candles.index[-1], "signal"] = signal
+
+        # Save model
+        self.save_model()
         return signal
 
     def create_model(self, X_size, y_size):
@@ -95,6 +102,9 @@ class FutureLowHigh(StrategyBase):
         model.add(Dropout(0.2))
         model.add(Dense(y_size, activation='softmax'))
         model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+
+        # Load weights
+        self.load_last_model(model)
         # model.summary()
         return model
 
@@ -111,15 +121,39 @@ class FutureLowHigh(StrategyBase):
         X, y = self.fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
         logging.info(f"Learn set size: {len(X)}")
 
-        self.pipe = self.create_pipe(X, y, 100,100) if not self.pipe else self.pipe
+        self.pipe = self.create_pipe(X, y,epochs= 100, batch_size=100) if not self.pipe else self.pipe
+        #self.pipe = self.create_pipe(X, y,epochs= 1, batch_size=1) if not self.pipe else self.pipe
+        #tscv = TimeSeriesSplit(n_splits=2)
         tscv = TimeSeriesSplit(n_splits=20)
         cv = cross_val_score(self.pipe, X=X, y=y, cv=tscv, error_score="raise")
         print(cv)
+        # Save weights
+        self.save_model()
+
+    def load_last_model(self, model: Model):
+        saved_models = glob.glob(str(Path(self.model_dir, "*.index")))
+        if saved_models:
+            last_model_path = str(sorted(saved_models)[-1]).rstrip(".index")
+            logging.debug(f"Load model from {last_model_path}")
+            model.load_weights(last_model_path)
+        else:
+            logging.info(f"No saved models in {self.model_dir}")
+
+    def save_model(self):
+        # Save the model
+        model: Model = self.pipe.named_steps["model"].model
+
+        model_path = str(Path(self.model_dir, datetime.now().isoformat()))
+        logging.debug(f"Save model to {model_path}")
+        model.save_weights(model_path)
 
     def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> Pipeline:
         # Fit the model
-        estimator = KerasClassifier(build_fn=self.create_model, X_size=len(X.columns), y_size=len(y.columns),
+        estimator = KerasClassifier(model=self.create_model(X_size=len(X.columns), y_size=len(y.columns)),
                                     epochs=epochs, batch_size=batch_size, verbose=1)
+
+        # estimator = KerasClassifier(build_fn=self.create_model, X_size=len(X.columns), y_size=len(y.columns),
+        #                             epochs=epochs, batch_size=batch_size, verbose=1)
         column_transformer = self.fe.column_transformer(X, y)
 
         return Pipeline([("column_transformer", column_transformer), ('model', estimator)])

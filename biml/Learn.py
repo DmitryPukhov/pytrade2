@@ -14,6 +14,7 @@ class Learn(App):
     def __init__(self):
         super().__init__()
         self.data_dir = self.config["biml.data.dir"]
+        self.model_dir = self.config["biml.model.dir"]
 
     def learn(self):
         logging.info(f"Learn, data dir: {self.data_dir}")
@@ -21,7 +22,7 @@ class Learn(App):
         history_feed = LocalFeed(self.data_dir, self.tickers)
         data = history_feed.read_intervals(None, None)
 
-        strategy = FutureLowHigh(None, self.tickers[-1].ticker)
+        strategy = FutureLowHigh(client=None, ticker=self.tickers[-1].ticker, model_dir=self.model_dir)
         strategy.learn(data)
 
 

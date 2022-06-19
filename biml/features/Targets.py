@@ -37,7 +37,7 @@ class TargetFeatures:
         sell_loss_is_small = (sell_loss <= loss)
         is_sell = (sell_ratio >= ratio) & sell_loss_is_small
         df["signal"] = np.where(is_sell, -1, df["signal"])
-        return pd.get_dummies(df[["signal"]].astype(pd.CategoricalDtype(categories=["signal_-1","signal_0","signal_1"])))
+        return pd.get_dummies(df[["signal"]].astype(pd.CategoricalDtype(categories=[-1,0,1])))
 
     def future_low_high(self, df: pd.DataFrame, periods: int, freq: str) -> pd.DataFrame:
         """

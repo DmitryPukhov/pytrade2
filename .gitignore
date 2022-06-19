@@ -2,6 +2,7 @@
 /biml/cfg/app.yaml
 /test/_trial_temp
 /biml/data
+/biml/model
 
 # Idea
 .idea
