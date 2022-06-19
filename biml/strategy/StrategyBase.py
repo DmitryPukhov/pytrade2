@@ -8,6 +8,18 @@ class StrategyBase:
         # Binance spot client
         self.client: Client = client
 
+    def is_out_of_market(self, symbol: str):
+        """
+        Assert if we are out of trade for this symbol: total buy and sell counts should be equal
+        Raise exception if not
+        """
+        logging.debug("Checking opened orders")
+        trades = self.client.my_trades(symbol)
+        logging.info(trades)
+        buys = len([trade for trade in trades if trade["isBuyer"]])
+        sells = len([trade for trade in trades if not trade["isBuyer"]])
+        return buys == sells
+
     def create_order(self, symbol: str, side: str, price: float, quantity: float, stop_loss_ratio: float,
                      ticker_size: int = 2):
         """

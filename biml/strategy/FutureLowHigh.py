@@ -32,6 +32,10 @@ class FutureLowHigh(StrategyBase):
         self.fe = FeatureEngineering()
         self.pipe = None
 
+        # Raise exception if we are in trade for this ticker
+        if not self.is_out_of_market(ticker):
+            raise AssertionError(f"Fatal: cannot trade. Opened positions detected for {ticker}.")
+
     def on_candles(self, ticker: str, interval: str, new_candles: pd.DataFrame):
         """
         Received new candles from feed
@@ -49,11 +53,15 @@ class FutureLowHigh(StrategyBase):
 
         # Get last predicted signal
         signal = {-1: "SELL", 0: None, 1: "BUY"}[self.candles.signal[-1]]
+        logging.debug(f"Last signal: {signal}")
         if signal:
-            # Buy or sell
-            close_price = self.candles.close[-1]
-            self.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
-                              stop_loss_ratio=self.stop_loss_ratio, )
+            if self.is_out_of_market(self.ticker):
+                # Buy or sell
+                close_price = self.candles.close[-1]
+                self.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
+                                  stop_loss_ratio=self.stop_loss_ratio, )
+            else:
+                logging.info(f"Do not create an order because we already are in trade for {self.ticker}")
 
     def learn_on_last(self):
         """
