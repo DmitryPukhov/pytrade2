@@ -21,7 +21,7 @@ class Learn(App):
         history_feed = LocalFeed(self.data_dir, self.tickers)
         data = history_feed.read_intervals(None, None)
 
-        strategy = FutureLowHigh()
+        strategy = FutureLowHigh(None, self.tickers[-1].ticker)
         strategy.learn(data)
 
 

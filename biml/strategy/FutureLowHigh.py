@@ -33,7 +33,7 @@ class FutureLowHigh(StrategyBase):
         self.pipe = None
 
         # Raise exception if we are in trade for this ticker
-        if not self.is_out_of_market(ticker):
+        if self.client and not self.is_out_of_market(ticker):
             raise AssertionError(f"Fatal: cannot trade. Opened positions detected for {ticker}.")
 
     def on_candles(self, ticker: str, interval: str, new_candles: pd.DataFrame):
@@ -111,7 +111,7 @@ class FutureLowHigh(StrategyBase):
         X, y = self.fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
         logging.info(f"Learn set size: {len(X)}")
 
-        self.pipe = self.create_pipe(X, y, 100, 100, 1) if not self.pipe else self.pipe
+        self.pipe = self.create_pipe(X, y, 100,100) if not self.pipe else self.pipe
         tscv = TimeSeriesSplit(n_splits=20)
         cv = cross_val_score(self.pipe, X=X, y=y, cv=tscv, error_score="raise")
         print(cv)
