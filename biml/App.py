@@ -100,6 +100,84 @@ class App:
         # self.feed.emulate_feed(ticker.ticker, ticker.candle_intervals[-1], datetime.min, datetime.max)
 
         logging.info("The end")
+    #
+    # def order(self, side: str, price: float):
+    #     quantity = 0.001
+    #     symbol = "BTCUSDT"
+    #     stop_loss = .02
+    #     trailing_delta = int(100 * stop_loss*100)  # trailing delta in points
+    #
+    #     if side == "BUY":
+    #         stop_loss_price = price * (1 - stop_loss)
+    #     elif side == "SELL":
+    #         stop_loss_price = price * (1 + stop_loss)
+    #     logging.info(f"Creating {side} order, symbol={symbol}, price={price}, stop_loss_price={stop_loss_price}, trailing_delta={trailing_delta}")
+    #
+    #     # Main order
+    #     res = self.client.new_order_test(
+    #         symbol=symbol,
+    #         side=side,
+    #         type="LIMIT",
+    #         price=price,
+    #         quantity=quantity,
+    #         timeInForce="GTC")
+    #     print(res)
+    #     # Trailing stop loss order
+    #     res = self.client.new_order_test(
+    #         symbol=symbol,
+    #         side=side,
+    #         type='STOP_LOSS_LIMIT',
+    #         quantity=quantity,
+    #         price=stop_loss_price,
+    #         stopPrice=price,
+    #         trailingDelta=trailing_delta,
+    #         timeInForce="GTC")
+    #     print(res)
+    #
+    # def test(self):
+    #     side = "BUY"
+    #     quantity = 0.001
+    #     symbol = "BTCUSDT"
+    #     price = 21900
+    #     trailing_delta = 100 * 2  # 2%
+    #     self.order("BUY", 21900)
+    #     # Buy
+    #     # res = self.client.new_order(
+    #     #     symbol="BTCUSDT",
+    #     #     side="BUY",
+    #     #     type='MARKET',
+    #     #     quantity=0.001)
+    #     # res = self.client.new_order_test(
+    #     #     symbol=symbol,
+    #     #     side=side,
+    #     #     type='STOP_LOSS_LIMIT',
+    #     #     quantity=quantity,
+    #     #     price=price,
+    #     #     stopPrice=price,
+    #     #     trailingDelta=trailing_delta,
+    #     #     timeInForce="GTC")
+    #     #print(res)
+    #     # print(res)
+    #     # res = self.client.new_oco_order(
+    #     #     symbol='BTCUSDT',
+    #     #     side='SELL',
+    #     #     quantity=0.001,
+    #     #     price=22000,
+    #     #
+    #     #     stopPrice=21800,
+    #     #     stopLimitPrice=21800,
+    #     #     stopLimitTimeInForce='GTC')
+    #     # print(self.client.exchange_info("BTCUSDT"))
+    #     # print(self.client.my_trades(symbol='BTCUSDT'))
+    #     # info = self.client.asset_detail(1)
+    #     # self.client.account()
+    #     # print(self.client.account())
+    #     # print(self.client.account_status())
+    #     # print(self.client.account_snapshot())
+    #     # print(self.client.get_orders(symbol='BTCUSDT'))
+    #     # print(self.client.cancel_order(symbol='BTCUSDT', orderId =1957295))
+    #     # self.client.cancel_oco_order(symbol='BTCUSDT', orderId='1957295', clientOrderId = 'cFRgG8FNWl0a08vyHDAjv7')
+    #     # self.client.cancel_oco_order(symbol='BTCUSDT', orderId= 1957295)
 
 
 if __name__ == "__main__":
