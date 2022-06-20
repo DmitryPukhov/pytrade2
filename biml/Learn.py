@@ -20,7 +20,9 @@ class Learn(App):
         logging.info(f"Learn, data dir: {self.data_dir}")
         # Run saved csv data from local folder
         history_feed = LocalFeed(self.data_dir, self.tickers)
-        data = history_feed.read_intervals(None, None)
+
+        start_time = datetime.datetime.now()-datetime.timedelta(days=7)
+        data = history_feed.read_intervals(start_time, None)
 
         strategy = FutureLowHigh(client=None, ticker=self.tickers[-1].ticker, model_dir=self.model_dir)
         strategy.learn(data)

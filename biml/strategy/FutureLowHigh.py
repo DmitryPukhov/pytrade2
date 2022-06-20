@@ -121,10 +121,10 @@ class FutureLowHigh(StrategyBase):
         X, y = self.fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
         logging.info(f"Learn set size: {len(X)}")
 
-        self.pipe = self.create_pipe(X, y,epochs= 100, batch_size=100) if not self.pipe else self.pipe
-        #self.pipe = self.create_pipe(X, y,epochs= 1, batch_size=1) if not self.pipe else self.pipe
-        #tscv = TimeSeriesSplit(n_splits=2)
-        tscv = TimeSeriesSplit(n_splits=20)
+        #self.pipe = self.create_pipe(X, y,epochs= 100, batch_size=100) if not self.pipe else self.pipe
+        #tscv = TimeSeriesSplit(n_splits=20)
+        self.pipe = self.create_pipe(X, y,epochs= 50, batch_size=100) if not self.pipe else self.pipe
+        tscv = TimeSeriesSplit(n_splits=7)
         cv = cross_val_score(self.pipe, X=X, y=y, cv=tscv, error_score="raise")
         print(cv)
         # Save weights
@@ -133,7 +133,7 @@ class FutureLowHigh(StrategyBase):
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_dir, "*.index")))
         if saved_models:
-            last_model_path = str(sorted(saved_models)[-1]).rstrip(".index")
+            last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
             logging.debug(f"Load model from {last_model_path}")
             model.load_weights(last_model_path)
         else:
