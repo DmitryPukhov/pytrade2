@@ -31,6 +31,7 @@ class FutureLowHigh(StrategyBase):
         self.stop_loss_ratio = 0.02
         self.model = None
         self.window_size = 15
+        self.candles_size=self.window_size*100
         self.predict_sindow_size = 1
         self.candles = pd.DataFrame()
         self.fe = FeatureEngineering()
@@ -49,7 +50,7 @@ class FutureLowHigh(StrategyBase):
         # Append new candles to current candles
         # This strategy is a single ticker and interval and only these candles can come
         new_candles["signal"] = 0
-        self.candles = self.candles.append(new_candles).tail(self.window_size + self.predict_sindow_size)
+        self.candles = self.candles.append(new_candles).tail(self.candles_size + self.predict_sindow_size)
         if len(self.candles) < (self.window_size + self.predict_sindow_size):
             return
         # Fit on last

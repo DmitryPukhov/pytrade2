@@ -1,16 +1,12 @@
 import logging.config
 import os
 import sys
-from datetime import datetime
 from typing import List
-
 import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
-
 from feed.BinanceFeed import BinanceFeed
-from feed.LocalFeed import LocalFeed
 from feed.TickerInfo import TickerInfo
 from strategy.FutureLowHigh import FutureLowHigh
 
@@ -42,15 +38,7 @@ class App:
 
         # Init binance feed
         self.tickers = list(App.read_candle_config(self.config))
-        # self.feed = BinanceFeed(spot_client=self.client, tickers=self.tickers)
-        # #self.data_dir = self.config["biml.data.dir"]
-        # #self.model_dir = self.config["biml.model.dir"]
-        # # self.feed = LocalFeed(self.data_dir, self.tickers)
-        #
-        # # Strategy
-        # self.strategy = FutureLowHigh(client=self.client, ticker=self.tickers[-1].ticker,
-        #                               model_dir=self.config["biml.model.dir"])
-        # self.feed.consumers.append(self.strategy)
+        self.feed, self.strategy = None, None
         logging.info("App initialized")
 
     @staticmethod
@@ -95,8 +83,8 @@ class App:
         """
         logging.info("Starting the app")
         self.feed = BinanceFeed(spot_client=self.client, tickers=self.tickers)
-        #self.data_dir = self.config["biml.data.dir"]
-        #self.model_dir = self.config["biml.model.dir"]
+        # self.data_dir = self.config["biml.data.dir"]
+        # self.model_dir = self.config["biml.model.dir"]
         # self.feed = LocalFeed(self.data_dir, self.tickers)
 
         # Strategy
