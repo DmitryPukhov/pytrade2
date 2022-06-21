@@ -1,7 +1,7 @@
 biml.connector.key: 'please copy app-defaults.yaml to app.yaml and update biml.connector.key there to your binance key'
 biml.connector.url: 'https://testnet.binance.vision'
-biml.data.dir: './data'
-biml.model.dir: './model'
+biml.data.dir: './../data'
+biml.model.dir: './../model'
 log.level: "INFO"
 biml.tickers: "BTCUSDT"
 biml.feed.BTCUSDT.candle.intervals: 1m,15m,1h,1d

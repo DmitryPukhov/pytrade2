@@ -1,5 +1,6 @@
 import logging
 from App import App
+from feed.BinanceFeed import BinanceFeed
 from feed.LocalWriter import LocalWriter
 
 
@@ -14,6 +15,8 @@ class Downloader(App):
 
     def run(self):
         logging.info(f"Run downloader, data dir: {self.data_dir}")
+        self.feed = BinanceFeed(spot_client=self.client, tickers=self.tickers)
+
         # Run binance feed with local writer consumer
         self.feed.consumers.append(LocalWriter(self.data_dir))
         self.feed.run()

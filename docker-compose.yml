@@ -6,6 +6,17 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./biml/data:/biml/data
+      - ./data:/data
     command: python ./Downloader.py
+    restart: on-failure
+
+  trade:
+    container_name: biml-trade-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/data
+      - ./model:/model
+    command: python ./App.py
     restart: on-failure

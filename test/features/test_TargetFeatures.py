@@ -22,9 +22,9 @@ class TestTargetFeatures(TestCase):
             ]).set_index('close_time')
         withsignal = TargetFeatures().signal(candles, loss=2, trailing=1, ratio=4)
         # self.assertEqual([0, 1, -1], withsignal['signal'].values.tolist())
-        self.assertEqual([0, 1, 0], withsignal['signal_buy'].values.tolist())
-        self.assertEqual([0, 0, 1], withsignal['signal_sell'].values.tolist())
-        self.assertEqual([1, 0, 0], withsignal['signal_off_market'].values.tolist())
+        self.assertEqual([0, 1, 0], withsignal['signal_1'].values.tolist())
+        self.assertEqual([0, 0, 1], withsignal['signal_-1'].values.tolist())
+        self.assertEqual([1, 0, 0], withsignal['signal_0'].values.tolist())
 
     def test_target_features__window_should_include_current(self):
         # quotes columns: ['close_time', 'ticker', 'low', 'high', 'last', 'last_change']

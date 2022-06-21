@@ -31,7 +31,7 @@ class App:
         logging.info(f"Set log level to {loglevel}")
 
         # Create spot client
-        key, secret, url = self.config["biml.connector.key"], self.config["biml.connector.secred"], self.config[
+        key, secret, url = self.config["biml.connector.key"], self.config["biml.connector.secret"], self.config[
             "biml.connector.url"]
         logging.info(f"Init binance client, url: {url}")
         self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)

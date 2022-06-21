@@ -17,11 +17,11 @@ class LocalWriter:
         self.last_time_dict: Dict[str, Dict[str, datetime]] = {}
         logging.info(f"Initialized. data_dir={self.data_dir}")
 
-    def on_candles(self, ticker: str, interval: str, candles: pd.DataFrame):
+    def on_candles(self, ticker: str, interval: str, new_candles: pd.DataFrame):
         """
         New candles have come, write them to local data folder. Files split by date.
         """
-        logging.debug(f"Got {len(candles)}candles for {ticker}, {interval}")
+        logging.debug(f"Got {len(new_candles)}candles for {ticker}, {interval}")
         logging.debug(f"last_time_dict: {self.last_time_dict}")
 
         # Get last candle time
@@ -30,21 +30,21 @@ class LocalWriter:
         elif interval not in self.last_time_dict[ticker]:
             self.last_time_dict[ticker][interval] = self.get_last_data_time(ticker, interval)
         # Skip already received candles
-        candles = candles[candles["open_time"] > self.last_time_dict[ticker][interval]]
-        logging.debug(f"Selected {len(candles)} candles after last processed time {self.last_time_dict[ticker][interval]}")
+        new_candles = new_candles[new_candles["open_time"] > self.last_time_dict[ticker][interval]]
+        logging.debug(f"Selected {len(new_candles)} candles after last processed time {self.last_time_dict[ticker][interval]}")
 
         # If candles are for diferent days, write each day to it's file
-        dates = candles["close_time"].dt.date.unique()
+        dates = new_candles["close_time"].dt.date.unique()
         for date in dates:
             file_path = self.get_file_name(ticker, interval, date)
             logging.debug(f"Writing candles for ticker {ticker}, interval {interval}, date {date} to {file_path}")
             Path(file_path).parent.mkdir(parents=True, exist_ok=True)
-            candles2write = candles[candles["close_time"].dt.date == date]
+            candles2write = new_candles[new_candles["close_time"].dt.date == date]
             # Write
             candles2write.to_csv(file_path, header=not Path(file_path).exists(), mode='a', index=False)
         # Remember last candle time to skip already received
         self.last_time_dict[ticker][interval] = max(self.last_time_dict[ticker][interval],
-                                                    candles["close_time"].max())
+                                                    new_candles["close_time"].max())
         logging.debug(f"Processed candles. New last times: {self.last_time_dict}")
 
     def get_file_name(self, ticker, interval: str, time: datetime):
