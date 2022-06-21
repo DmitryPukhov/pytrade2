@@ -50,6 +50,7 @@ class BinanceFeed(BaseFeed):
                 if ticker.candle_last_times[interval] and \
                         (binance_time - ticker.candle_last_times[interval]) + timedelta(seconds=10) \
                         < pd.to_timedelta(interval):
+                    logging.debug(f"Interval {interval} not elapsed since {ticker.candle_last_times[interval]} for ticker {ticker.ticker}")
                     # Time not elapsed for this interval, i.e. 15 minutes should pass from last time for M15
                     continue
 
