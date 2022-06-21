@@ -4,6 +4,7 @@ from datetime import timedelta
 from typing import List
 
 import pandas as pd
+from pandas import Timedelta
 from urllib3.exceptions import RequestError, ReadTimeoutError
 from binance.spot import Spot as Client
 
@@ -46,8 +47,9 @@ class BinanceFeed(BaseFeed):
         logging.debug(f"Got binance server time {binance_time}")
         for ticker in self.tickers:
             for interval in ticker.candle_intervals:
-                if ticker.candle_last_times[interval] \
-                        and (binance_time - ticker.candle_last_times[interval]) < pd.to_timedelta(interval):
+                if ticker.candle_last_times[interval] and \
+                        (binance_time - ticker.candle_last_times[interval]) + timedelta(seconds=10) \
+                        < pd.to_timedelta(interval):
                     # Time not elapsed for this interval, i.e. 15 minutes should pass from last time for M15
                     continue
 
@@ -77,6 +79,7 @@ class BinanceFeed(BaseFeed):
                 # Produce on_candles event
                 for consumer in [c for c in self.consumers if hasattr(c, 'on_candles')]:
                     consumer.on_candles(ticker=ticker.ticker, interval=interval, new_candles=new_candles)
+
     @staticmethod
     def preprocess(df: pd.DataFrame) -> pd.DataFrame:
         df["open_time"] = pd.to_datetime(df["open_time"], unit='ms')
