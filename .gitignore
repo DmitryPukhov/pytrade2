@@ -1,10 +1,10 @@
 # Config files
 /biml/cfg/app.yaml
 /test/_trial_temp
-/biml/data
 /data
-/biml/model
 /model
+/data-dev
+/model-dev
 
 # Idea
 .idea
