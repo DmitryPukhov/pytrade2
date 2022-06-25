@@ -39,9 +39,9 @@ class FutureLowHigh(StrategyBase):
         self.fe = FeatureEngineering()
         self.pipe = None
 
+        self.close_opened_positions(ticker)
         # Raise exception if we are in trade for this ticker
-        if self.client and not self.is_out_of_market(ticker):
-            raise AssertionError(f"Fatal: cannot trade. Opened positions detected for {ticker}.")
+        self.assert_out_of_market(ticker)
 
     def on_candles(self, ticker: str, interval: str, new_candles: pd.DataFrame):
         """
@@ -62,13 +62,14 @@ class FutureLowHigh(StrategyBase):
         signal = {-1: "SELL", 0: None, 1: "BUY"}[self.candles.signal[-1]]
         logging.debug(f"Last signal: {signal}")
         if signal:
-            if self.is_out_of_market(self.ticker):
+            opened_quantity = self.opened_positions(self.ticker)
+            if opened_quantity == 0:
                 # Buy or sell
                 close_price = self.candles.close[-1]
                 self.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
                                   stop_loss_ratio=self.stop_loss_ratio, )
             else:
-                logging.info(f"Do not create an order because we already are in trade for {self.ticker}")
+                logging.info(f"Do not create an order because we already have {opened_quantity} {self.ticker}")
 
     def learn_on_last(self):
         """
@@ -162,8 +163,8 @@ class FutureLowHigh(StrategyBase):
         ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
 
         logging.debug(f"Save X to {Xpath},y to {ypath}")
-        X_last.to_csv(Xpath, mode='a')
-        y_last.to_csv(ypath, mode='a')
+        X_last.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
+        y_last.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
 
     def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> Pipeline:
         # Fit the model

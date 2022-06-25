@@ -8,7 +8,8 @@ class Features:
         """
         Feature engineering
         """
-        return self.time_features(candles).join(self.low_high_past(candles, period, freq, n))
+        return candles[["open","high","low","close"]].join([self.time_features(candles), self.low_high_past(candles, period, freq, n)])
+        #return self.time_features(candles).join(self.low_high_past(candles, period, freq, n))
 
     def low_high_past(self, candles: pd.DataFrame, period: int, freq: str, window_size: int) -> pd.DataFrame:
         """
