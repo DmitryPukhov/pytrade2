@@ -33,7 +33,7 @@ class Features:
         :return: dataframe with time features
         """
         df2 = pd.DataFrame(index=df.index)
-        df2['close_time'] = df['close_time'].astype(np.int64)
+        df2['close_time_abs'] = df['close_time'].astype(np.int64)
         # df2["dayofweek"] = df['close_time'].dt.dayofweek
         # df2["month"] = df['close_time'].dt.month
         # df2["year"] = df['close_time'].dt.year
