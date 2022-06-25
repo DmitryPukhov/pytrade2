@@ -25,13 +25,15 @@ class FutureLowHigh(StrategyBase):
 
     def __init__(self, client: Client, ticker: str, model_dir: str):
         super().__init__(client)
-        self.model_dir = str(Path(model_dir, self.__class__.__name__))
+        self.model_weights_dir = str(Path(model_dir, self.__class__.__name__, "weights"))
+        self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
+        Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.ticker = ticker
         self.order_quantity = 0.001
         self.stop_loss_ratio = 0.02
         self.model = None
         self.window_size = 15
-        self.candles_size=self.window_size*100
+        self.candles_size = self.window_size * 100
         self.predict_sindow_size = 1
         self.candles = pd.DataFrame()
         self.fe = FeatureEngineering()
@@ -86,6 +88,8 @@ class FutureLowHigh(StrategyBase):
 
         # Save model
         self.save_model()
+        self.save_lastXy(X_last, self.candles["signal"].tail(1))
+
         return signal
 
     def create_model(self, X_size, y_size):
@@ -122,9 +126,9 @@ class FutureLowHigh(StrategyBase):
         X, y = self.fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
         logging.info(f"Learn set size: {len(X)}")
 
-        #self.pipe = self.create_pipe(X, y,epochs= 100, batch_size=100) if not self.pipe else self.pipe
-        #tscv = TimeSeriesSplit(n_splits=20)
-        self.pipe = self.create_pipe(X, y,epochs= 50, batch_size=100) if not self.pipe else self.pipe
+        # self.pipe = self.create_pipe(X, y,epochs= 100, batch_size=100) if not self.pipe else self.pipe
+        # tscv = TimeSeriesSplit(n_splits=20)
+        self.pipe = self.create_pipe(X, y, epochs=50, batch_size=100) if not self.pipe else self.pipe
         tscv = TimeSeriesSplit(n_splits=7)
         cv = cross_val_score(self.pipe, X=X, y=y, cv=tscv, error_score="raise")
         print(cv)
@@ -132,21 +136,34 @@ class FutureLowHigh(StrategyBase):
         self.save_model()
 
     def load_last_model(self, model: Model):
-        saved_models = glob.glob(str(Path(self.model_dir, "*.index")))
+        saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
         if saved_models:
             last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
             logging.debug(f"Load model from {last_model_path}")
             model.load_weights(last_model_path)
         else:
-            logging.info(f"No saved models in {self.model_dir}")
+            logging.info(f"No saved models in {self.model_weights_dir}")
 
     def save_model(self):
         # Save the model
         model: Model = self.pipe.named_steps["model"].model
 
-        model_path = str(Path(self.model_dir, datetime.now().isoformat()))
+        model_path = str(Path(self.model_weights_dir, datetime.now().isoformat()))
         logging.debug(f"Save model to {model_path}")
         model.save_weights(model_path)
+
+    def save_lastXy(self, X_last: pd.DataFrame, y_last: pd.DataFrame):
+        """
+        Write model X,y data to csv for analysis
+        """
+        time = X_last.index[-1]
+        file_name_prefix = f"{pd.to_datetime(time).date()}_{self.ticker}_"
+        Xpath = str(Path(self.model_Xy_dir, file_name_prefix + "X.csv"))
+        ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
+
+        logging.debug(f"Save X to {Xpath},y to {ypath}")
+        X_last.to_csv(Xpath, mode='a')
+        y_last.to_csv(ypath, mode='a')
 
     def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> Pipeline:
         # Fit the model

@@ -83,9 +83,6 @@ class App:
         """
         logging.info("Starting the app")
         self.feed = BinanceFeed(spot_client=self.client, tickers=self.tickers)
-        # self.data_dir = self.config["biml.data.dir"]
-        # self.model_dir = self.config["biml.model.dir"]
-        # self.feed = LocalFeed(self.data_dir, self.tickers)
 
         # Strategy
         self.strategy = FutureLowHigh(client=self.client, ticker=self.tickers[-1].ticker,
