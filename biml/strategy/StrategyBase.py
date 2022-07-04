@@ -67,7 +67,7 @@ class StrategyBase:
                      f" stop_loss_price={stop_loss_price}, trailing_delta={trailing_delta}")
 
         # Main order
-        res = self.client.new_order_test(
+        res = self.client.new_order(
             symbol=symbol,
             side=side,
             type="LIMIT",
@@ -77,7 +77,7 @@ class StrategyBase:
         logging.info(res)
 
         # Trailing stop loss order
-        res = self.client.new_order_test(
+        res = self.client.new_order(
             symbol=symbol,
             side=side,
             type='STOP_LOSS_LIMIT',

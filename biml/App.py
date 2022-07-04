@@ -73,6 +73,14 @@ class App:
                 f"Config {cfg_path} not found. Please copy cfg/app-defaults.yaml to {cfg_path} "
                 f"and update connection info there.")
 
+        # Dev debugging config if needed
+        dev_cfg_path="cfg/app-dev.yaml"
+        if os.path.exists(dev_cfg_path):
+            with open(dev_cfg_path) as app:
+                config.update(yaml.safe_load(app))
+        else:
+            print(f"{dev_cfg_path} not found, maybe it is not developer's run")
+
         # Enviroment variabless
         config.update(os.environ)
         return config

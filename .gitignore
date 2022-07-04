@@ -1,5 +1,6 @@
 # Config files
 /biml/cfg/app.yaml
+/biml/cfg/app-dev.yaml
 /test/_trial_temp
 /data
 /model
