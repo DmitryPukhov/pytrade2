@@ -79,7 +79,7 @@ class StrategyBase:
         # Trailing stop loss order
         res = self.client.new_order(
             symbol=symbol,
-            side=side,
+            side="BUY" if side == "SELL" else "SELL",
             type='STOP_LOSS_LIMIT',
             quantity=quantity,
             price=stop_loss_price,
