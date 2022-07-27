@@ -76,7 +76,7 @@ class FutureLowHigh(StrategyBase):
         Fit the model on last data window with new candle
         """
         # Fit
-        train_X, train_y = self.fe.features_and_targets(self.candles, self.window_size, self.predict_sindow_size)
+        train_X, train_y = self.fe.features_and_targets_balanced(self.candles, self.window_size, self.predict_sindow_size)
         self.pipe = self.create_pipe(train_X, train_y, 1, 1) if not self.pipe else self.pipe
         self.pipe.fit(train_X, train_y)
 
