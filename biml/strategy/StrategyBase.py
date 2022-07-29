@@ -44,7 +44,7 @@ class StrategyBase:
         trades = self.client.my_trades(symbol)
         # Sum of quantities for buy and sell trades should be 0. Otherwize we have unclosed trades.
         opened_quantity = sum([float(trade["qty"]) * (1 if trade["isBuyer"] else -1) for trade in trades])
-        if opened_quantity < self.order_quantity: opened_quantity = 0
+        if abs(opened_quantity) < self.order_quantity: opened_quantity = 0
         logging.info(f"We have {opened_quantity} {symbol} in portfolio")
 
         orders = self.client.get_open_orders(symbol)
