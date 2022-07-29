@@ -9,6 +9,7 @@ class StrategyBase:
     def __init__(self, client: Client):
         # Binance spot client
         self.client: Client = client
+        self.order_quantity = 0.001
 
     def close_opened_positions(self, ticker: str):
         if not self.client:
@@ -21,8 +22,8 @@ class StrategyBase:
             # if we sold (-1) we should buy and vice versa
             side = "BUY" if opened_quantity < 0 else "SELL"
             logging.info(f"Creating {-opened_quantity} order to close existing positions")
-            res=self.client.new_order(symbol=ticker, side="BUY" if opened_quantity < 0 else "SELL", type="MARKET",
-                                  quantity=abs(opened_quantity))
+            res = self.client.new_order(symbol=ticker, side="BUY" if opened_quantity < 0 else "SELL", type="MARKET",
+                                        quantity=abs(opened_quantity))
             logging.info(res)
 
     def assert_out_of_market(self, ticker: str):
@@ -43,6 +44,7 @@ class StrategyBase:
         trades = self.client.my_trades(symbol)
         # Sum of quantities for buy and sell trades should be 0. Otherwize we have unclosed trades.
         opened_quantity = sum([float(trade["qty"]) * (1 if trade["isBuyer"] else -1) for trade in trades])
+        if opened_quantity < self.order_quantity: opened_quantity = 0
         logging.info(f"We have {opened_quantity} {symbol} in portfolio")
 
         orders = self.client.get_open_orders(symbol)

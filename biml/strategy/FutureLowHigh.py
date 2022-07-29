@@ -29,7 +29,6 @@ class FutureLowHigh(StrategyBase):
         self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
         Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.ticker = ticker
-        self.order_quantity = 0.001
         self.stop_loss_ratio = 0.02
         self.model = None
         self.window_size = 15
