@@ -62,14 +62,14 @@ class FutureLowHigh(StrategyBase):
         logging.debug(f"Last signal: {signal}")
         if signal:
             opened_quantity, opened_orders = self.opened_positions(self.ticker)
-            if opened_quantity == 0 and opened_orders == 0:
+            if not opened_quantity and not opened_orders:
                 # Buy or sell
                 close_price = self.candles.close[-1]
                 self.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
                                   stop_loss_ratio=self.stop_loss_ratio, )
             else:
                 logging.info(
-                    f"Do not create {signal} order for {self.ticker} because we already have {opened_orders} orders and {opened_quantity} quantity")
+                    f"Do not create {signal} order for {self.ticker} because we already have {len(opened_orders)} orders and {opened_quantity} quantity")
 
     def learn_on_last(self):
         """
