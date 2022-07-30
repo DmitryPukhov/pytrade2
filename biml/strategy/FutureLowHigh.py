@@ -61,21 +61,23 @@ class FutureLowHigh(StrategyBase):
         signal = {-1: "SELL", 0: None, 1: "BUY"}[self.candles.signal[-1]]
         logging.debug(f"Last signal: {signal}")
         if signal:
-            opened_quantity,opened_orders = self.opened_positions(self.ticker)
-            if opened_quantity == 0:
+            opened_quantity, opened_orders = self.opened_positions(self.ticker)
+            if opened_quantity == 0 and opened_orders == 0:
                 # Buy or sell
                 close_price = self.candles.close[-1]
                 self.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
                                   stop_loss_ratio=self.stop_loss_ratio, )
             else:
-                logging.info(f"Do not create an order because we already have {opened_quantity} {self.ticker}: {opened_orders}")
+                logging.info(
+                    f"Do not create {signal} order for {self.ticker} because we already have {opened_orders} orders and {opened_quantity} quantity")
 
     def learn_on_last(self):
         """
         Fit the model on last data window with new candle
         """
         # Fit
-        train_X, train_y = self.fe.features_and_targets_balanced(self.candles, self.window_size, self.predict_sindow_size)
+        train_X, train_y = self.fe.features_and_targets_balanced(self.candles, self.window_size,
+                                                                 self.predict_sindow_size)
         self.pipe = self.create_pipe(train_X, train_y, 1, 1) if not self.pipe else self.pipe
         self.pipe.fit(train_X, train_y)
 
