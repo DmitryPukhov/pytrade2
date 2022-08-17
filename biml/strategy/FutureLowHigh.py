@@ -59,7 +59,6 @@ class FutureLowHigh(StrategyBase):
 
         # Get last predicted signal
         signal = {-1: "SELL", 0: None, 1: "BUY"}[self.candles.signal[-1]]
-        signal="SELL"
         logging.debug(f"Last signal: {signal}")
         if signal:
             opened_quantity, opened_orders = self.opened_positions(self.ticker)
