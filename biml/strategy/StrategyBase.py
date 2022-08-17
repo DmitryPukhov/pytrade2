@@ -41,17 +41,14 @@ class StrategyBase:
         Quantity of symbol we have in portfolio
         """
         logging.debug("Checking opened orders")
-        trades = self.client.my_trades(symbol)
-        # Sum of quantities for buy and sell trades should be 0. Otherwize we have unclosed trades.
-        opened_quantity_raw = sum([float(trade["qty"]) * (1 if trade["isBuyer"] else -1) for trade in trades])
-        # Adjust opened quantity precision
-        opened_quantity = (abs(opened_quantity_raw) // self.order_quantity) * self.order_quantity
-        if opened_quantity_raw < 0:
-            opened_quantity *= -1
 
-        logging.info(f"We have {opened_quantity} {symbol} in portfolio")
-
-        orders = self.client.get_open_orders(symbol)
+        orders, opened_quantity = self.client.get_open_orders(symbol), 0
+        if orders:
+            # Currently opened orders is trailing stop loss against main order
+            last_order = orders[-1]
+            opened_quantity = float(last_order["origQty"])
+            # stoploss is buy => main order was sell
+            if last_order["side"] == "BUY": opened_quantity *= -1.0
         # [{'symbol': 'BTCUSDT', 'orderId': 6104154, 'orderListId': -1, 'clientOrderId': 'Rwcdh0uW8Ocux22TXmpFmD', 'price': '21910.94000000', 'origQty': '0.00100000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'STOP_LOSS_LIMIT', 'side': 'SELL', 'stopPrice': '21481.31000000', 'trailingDelta': 200, 'icebergQty': '0.00000000', 'time': 1656149854953, 'updateTime': 1656159716195, 'isWorking': True, 'origQuoteOrderQty': '0.00000000'}]
         logging.info(f"We have {opened_quantity} {symbol} in portfolio and {len(orders)} opened orders for {symbol}")
         return opened_quantity, orders
@@ -66,9 +63,12 @@ class StrategyBase:
         stop_loss_price = price
         if side == "BUY":
             stop_loss_price = price * (1 - stop_loss_ratio)
+            trigger_price = price * (1 - stop_loss_ratio / 2)
         elif side == "SELL":
             stop_loss_price = price * (1 + stop_loss_ratio)
-        stop_loss_price = round(stop_loss_price, ticker_size)
+            trigger_price = price * (1 + stop_loss_ratio / 2)
+        stop_loss_price, trigger_price = round(stop_loss_price, ticker_size), round(trigger_price, ticker_size)
+
         logging.info(f"Creating {side} order and trailing stop loss order, symbol={symbol}, price={price},"
                      f" stop_loss_price={stop_loss_price}, trailing_delta={trailing_delta}")
 
@@ -81,15 +81,17 @@ class StrategyBase:
             quantity=quantity,
             timeInForce="GTC")
         logging.info(res)
+        filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
 
         # Trailing stop loss order
+
         res = self.client.new_order(
             symbol=symbol,
             side="BUY" if side == "SELL" else "SELL",
             type='STOP_LOSS_LIMIT',
             quantity=quantity,
             price=stop_loss_price,
-            stopPrice=price,
+            stopPrice=trigger_price,
             trailingDelta=trailing_delta,
             timeInForce="GTC")
         logging.info(res)

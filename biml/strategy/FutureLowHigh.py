@@ -29,7 +29,7 @@ class FutureLowHigh(StrategyBase):
         self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
         Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.ticker = ticker
-        self.stop_loss_ratio = 0.02
+        self.stop_loss_ratio = 0.05
         self.model = None
         self.window_size = 15
         self.candles_size = self.window_size * 100
@@ -59,6 +59,7 @@ class FutureLowHigh(StrategyBase):
 
         # Get last predicted signal
         signal = {-1: "SELL", 0: None, 1: "BUY"}[self.candles.signal[-1]]
+        signal="SELL"
         logging.debug(f"Last signal: {signal}")
         if signal:
             opened_quantity, opened_orders = self.opened_positions(self.ticker)

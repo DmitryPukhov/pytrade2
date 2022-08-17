@@ -1,6 +1,7 @@
 /data-dev
 /model-dev
-
+/analysis
+/test
 # Idea
 .idea
 *.iml
