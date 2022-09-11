@@ -76,7 +76,7 @@ class BinanceFeed(BaseFeed):
                     max(start_time_millis, new_candles["close_time"].max()) if start_time_millis else new_candles[
                         'close_time'].max(), unit='ms')
                 # Convert raw data to candles df
-                new_candles = self.preprocess(new_candles)
+                new_candles = self.preprocess(new_candles).sort_index()
                 # Produce on_candles event
                 for consumer in [c for c in self.consumers if hasattr(c, 'on_candles')]:
                     consumer.on_candles(ticker=ticker.ticker, interval=interval, new_candles=new_candles)

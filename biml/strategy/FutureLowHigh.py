@@ -10,10 +10,13 @@ from keras import Input
 from keras.layers import Dense
 from keras.layers.core.dropout import Dropout
 from keras.models import Sequential, Model
-from scikeras.wrappers import KerasClassifier
-from sklearn.model_selection import cross_val_score, TimeSeriesSplit
+from scikeras.wrappers import KerasClassifier, KerasRegressor
+from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
+from sklearn.model_selection import cross_val_score, TimeSeriesSplit, KFold
 from sklearn.pipeline import Pipeline
-from features.FeatureEngineering import FeatureEngineering
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
+from features.Features import Features
 from strategy.StrategyBase import StrategyBase
 
 
@@ -35,8 +38,7 @@ class FutureLowHigh(StrategyBase):
         self.candles_size = self.window_size * 100
         self.predict_sindow_size = 1
         self.candles = pd.DataFrame()
-        self.fe = FeatureEngineering()
-        self.pipe = None
+        self.model = None
 
         self.close_opened_positions(ticker)
         # Raise exception if we are in trade for this ticker
@@ -46,7 +48,7 @@ class FutureLowHigh(StrategyBase):
         """
         Received new candles from feed
         """
-        if ticker != self.ticker:
+        if ticker != self.ticker or interval != "1m":
             return
         # Append new candles to current candles
         # This strategy is a single ticker and interval and only these candles can come
@@ -76,23 +78,26 @@ class FutureLowHigh(StrategyBase):
         Fit the model on last data window with new candle
         """
         # Fit
-        train_X, train_y = self.fe.features_and_targets_balanced(self.candles, self.window_size,
-                                                                 self.predict_sindow_size)
-        self.pipe = self.create_pipe(train_X, train_y, 1, 1) if not self.pipe else self.pipe
-        self.pipe.fit(train_X, train_y)
+        train_X, train_y = Features.features_and_targets(self.candles, self.window_size,
+                                                         self.predict_sindow_size)
+        self.model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
+        self.model.fit(train_X, train_y)
 
         # Predict
-        X_last = self.fe.features(self.candles, self.window_size).tail(1)
-        y_pred = self.pipe.predict(X_last)
+        X_last = Features.features_of(self.candles, self.window_size).tail(1)
+        y_pred = self.model.predict(X_last)
 
-        signal = int(train_y.columns[y_pred.argmax(axis=1)][0].lstrip("signal_"))
-        self.candles.loc[self.candles.index[-1], "signal"] = signal
+        y_low = y_pred[0][0]
+        self.candles.loc[self.candles.index[-1], "fut_low"] = self.candles.loc[self.candles.index[-1], "close"] + y_low
+        y_high = y_pred[0][1]
+        self.candles.loc[self.candles.index[-1], "fut_high"] = self.candles.loc[
+                                                                   self.candles.index[-1], "close"] + y_high
 
         # Save model
         self.save_model()
         self.save_lastXy(X_last, self.candles["signal"].tail(1))
 
-        return signal
+        return y_low, y_high
 
     def create_model(self, X_size, y_size):
         model = Sequential()
@@ -108,7 +113,7 @@ class FutureLowHigh(StrategyBase):
         model.add(Dense(64, activation='relu'))
         model.add(Dropout(0.2))
         model.add(Dense(y_size, activation='softmax'))
-        model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['mean_squared_error'])
 
         # Load weights
         self.load_last_model(model)
@@ -125,14 +130,16 @@ class FutureLowHigh(StrategyBase):
         data = reduce(lambda df1, df2: df1.append(df2), data_items.values()).sort_index()
 
         # Feature engineering.
-        X, y = self.fe.features_and_targets_balanced(data, self.window_size, self.predict_sindow_size)
+
+        X, y = Features.features_and_targets(data, self.window_size, self.predict_sindow_size)
+
         logging.info(f"Learn set size: {len(X)}")
 
         # self.pipe = self.create_pipe(X, y,epochs= 100, batch_size=100) if not self.pipe else self.pipe
         # tscv = TimeSeriesSplit(n_splits=20)
-        self.pipe = self.create_pipe(X, y, epochs=50, batch_size=100) if not self.pipe else self.pipe
+        self.model = self.create_pipe(X, y, epochs=50, batch_size=100) if not self.model else self.model
         tscv = TimeSeriesSplit(n_splits=7)
-        cv = cross_val_score(self.pipe, X=X, y=y, cv=tscv, error_score="raise")
+        cv = cross_val_score(self.model, X=X, y=y, cv=tscv, error_score="explained_variance")
         print(cv)
         # Save weights
         self.save_model()
@@ -148,7 +155,7 @@ class FutureLowHigh(StrategyBase):
 
     def save_model(self):
         # Save the model
-        model: Model = self.pipe.named_steps["model"].model
+        model: Model = self.model.regressor.named_steps["model"].model
 
         model_path = str(Path(self.model_weights_dir, datetime.now().isoformat()))
         logging.debug(f"Save model to {model_path}")
@@ -167,13 +174,18 @@ class FutureLowHigh(StrategyBase):
         X_last.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
         y_last.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
 
-    def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> Pipeline:
+    def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
         # Fit the model
-        estimator = KerasClassifier(model=self.create_model(X_size=len(X.columns), y_size=len(y.columns)),
-                                    epochs=epochs, batch_size=batch_size, verbose=1)
+        regressor = KerasRegressor(model=self.create_model(X_size=len(X.columns), y_size=len(y.columns)),
+                                   epochs=epochs, batch_size=batch_size, verbose=1)
+        column_transformer = ColumnTransformer(
+            [
+                ('xscaler', MinMaxScaler(), X.columns)
+                # ('yscaler', StandardScaler(), y.columns)
+                # ('cat_encoder', OneHotEncoder(handle_unknown="ignore"), y.columns)
+            ]
+        )
 
-        # estimator = KerasClassifier(build_fn=self.create_model, X_size=len(X.columns), y_size=len(y.columns),
-        #                             epochs=epochs, batch_size=batch_size, verbose=1)
-        column_transformer = self.fe.column_transformer(X, y)
-
-        return Pipeline([("column_transformer", column_transformer), ('model', estimator)])
+        pipe = Pipeline([("column_transformer", column_transformer), ('model', regressor)])
+        wrapped = TransformedTargetRegressor(regressor=pipe, transformer=MinMaxScaler())
+        return wrapped

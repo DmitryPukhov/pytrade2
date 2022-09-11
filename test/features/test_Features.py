@@ -1,5 +1,7 @@
 from datetime import datetime
 from unittest import TestCase
+
+import numpy as np
 import pandas as pd
 
 from features.Features import Features
@@ -7,7 +9,24 @@ from features.Features import Features
 
 class TestFeatures(TestCase):
 
-    def test_features__(self):
+    def test_low_high_transformed(self):
+        # prepare the data
+        candles = pd.DataFrame([
+            # 7:00-7:05
+            {'close_time': datetime.fromisoformat('2021-12-08 07:00:01'), 'ticker': 'asset1', 'open': 2, 'low': 1,
+             'high': 11, 'close': 5},
+            {'close_time': datetime.fromisoformat('2021-12-08 07:00:10'), 'ticker': 'asset1', 'open': 6, 'low': 4,
+             'high': 8, 'close': 7}
+        ]).set_index('close_time')
+
+        # Call
+        features = Features.low_high_diff(candles)
+        np.testing.assert_equal([np.nan, 1.0], features['open'].values.tolist())
+        np.testing.assert_equal([np.nan, -1.0], features['low'].values.tolist())
+        np.testing.assert_equal([np.nan, 3.0], features['high'].values.tolist())
+        np.testing.assert_equal([np.nan, 2.0], features['close'].values.tolist())
+
+    def test_low_high_past__(self):
         candles = pd.DataFrame([
             # 7:00-7:05
             {'close_time': datetime.fromisoformat('2021-12-08 07:00:01'), 'ticker': 'asset1', 'open': 2, 'low': 1,
@@ -26,7 +45,7 @@ class TestFeatures(TestCase):
         ]).set_index('close_time')
 
         # Call
-        features = Features().low_high_past(candles, 1, 'min', 3)
+        features = Features().low_high_past(candles, 3)
 
         # Assert
         # Aggregated -1 minute min/max
