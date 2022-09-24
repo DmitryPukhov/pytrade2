@@ -32,7 +32,7 @@ class FutureLowHigh(StrategyBase):
             self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.ticker = ticker
-        self.stop_loss_ratio = 0.03
+        self.min_stop_loss_ratio = 0.03
         self.model = None
         self.window_size = 15
         self.candles_size = self.window_size * 100
@@ -70,6 +70,7 @@ class FutureLowHigh(StrategyBase):
             if not opened_quantity and not opened_orders:
                 # Buy or sell
                 self.broker.create_order(symbol=self.ticker,
+                                         order_type=signal,
                                          quantity=self.order_quantity,
                                          price=price,
                                          stop_loss=stop_loss,
@@ -101,14 +102,21 @@ class FutureLowHigh(StrategyBase):
             f" delta_high:{delta_high}, delta_low: {delta_low}, "
             f"ratio: {max(ratio, 1 / ratio)}, min ratio for signal:{self.profit_loss_ratio}")
         if ratio >= self.profit_loss_ratio:
+            # Buy signal
             signal, price, stop_loss, take_profit = 1, close, fut_low, fut_high
+            # Adjust stop loss if predicted is too small
+            stop_loss = min(stop_loss, price * (1 - self.min_stop_loss_ratio))
         elif ratio <= 1 / self.profit_loss_ratio:
+            # Sell signal
             signal, price, stop_loss, take_profit = -1, close, fut_high, fut_low
+            # Adjust stop loss if predicted is too small
+            stop_loss = max(stop_loss, price*(1+self.min_stop_loss_ratio))
 
         self.logger.debug(
             f"Calculated signal: {signal}, price:{price}, stop_loss: {stop_loss}, take_profit: {take_profit}.")
 
         return signal, price, stop_loss, take_profit
+
 
     def learn_on_last(self):
         """
@@ -123,18 +131,18 @@ class FutureLowHigh(StrategyBase):
         # Predict
         X_last = Features.features_of(self.candles, self.window_size).tail(1)
         y_pred = self.model.predict(X_last)
-
-        y_low = y_pred[0][0]
-        self.candles.loc[self.candles.index[-1], "fut_low"] = self.candles.loc[self.candles.index[-1], "close"] + y_low
-        y_high = y_pred[0][1]
-        self.candles.loc[self.candles.index[-1], "fut_high"] = self.candles.loc[
-                                                                   self.candles.index[-1], "close"] + y_high
+        Features.set_predicted_fields(self.candles, y_pred)
+        #
+        # y_low = y_pred[0][0]
+        # self.candles.loc[self.candles.index[-1], "fut_low"] = self.candles.loc[self.candles.index[-1], "close"] + y_low
+        # y_high = y_pred[0][1]
+        # self.candles.loc[self.candles.index[-1], "fut_high"] = self.candles.loc[
+        #                                                            self.candles.index[-1], "close"] + y_high
 
         # Save model
         self.save_model()
-        self.save_lastXy(X_last, self.candles["signal"].tail(1))
+        self.save_lastXy(X_last, self.candles[["fut_low", "fut_high"]].tail(1))
 
-        return y_low, y_high
 
     def create_model(self, X_size, y_size):
         model = Sequential()
@@ -156,6 +164,7 @@ class FutureLowHigh(StrategyBase):
         self.load_last_model(model)
         # model.summary()
         return model
+
 
     def learn(self, data_items: Dict):
         """
@@ -181,6 +190,7 @@ class FutureLowHigh(StrategyBase):
         # Save weights
         self.save_model()
 
+
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
         if saved_models:
@@ -189,6 +199,7 @@ class FutureLowHigh(StrategyBase):
             model.load_weights(last_model_path)
         else:
             logging.info(f"No saved models in {self.model_weights_dir}")
+
 
     def save_model(self):
         # Save the model

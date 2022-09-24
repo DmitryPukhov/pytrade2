@@ -21,8 +21,8 @@ class Features:
     #                    [y[y[col]==1].sample(n=mincount) for col in y.columns])
     #     X_bal = X[X.index.isin(y_bal.index)].sort_index()
     #     return X_bal, y_bal
-    period=1
-    freq="min"
+    period = 1
+    freq = "min"
 
     @staticmethod
     def features_and_targets(candles: pd.DataFrame, window_size: int, predict_window_size: int) -> (
@@ -38,7 +38,7 @@ class Features:
 
         # Prepare features and targets columns
         features = Features.features_of(candles, window_size).dropna()
-        targets = Features.targets_of(features, predict_window_size).dropna()
+        targets = Features.targets_of(candles, predict_window_size).dropna()
 
         # Some features and targets has na and not matched, drop them
         targets = targets[targets.index.isin(features.index)]
@@ -60,9 +60,28 @@ class Features:
         # df2 = df.reset_index(level='ticker', drop=True)
         df2: pd.DataFrame = features[['low', 'high']].sort_index(
             ascending=False).rolling(windowspec, min_periods=0).agg(
-            {'low': 'min','high': 'max'}, closed='right')
+            {'low': 'min', 'high': 'max'}, closed='right')
         df2.rename({'high': 'fut_high', 'low': 'fut_low'}, inplace=True, axis=1)
-        return df2.sort_index()
+        df2 = features[['close']].join(df2)
+        df2['fut_delta_low'] = df2['fut_low'] - df2['close']
+        df2['fut_low_high_size'] = df2['fut_high'] - df2['fut_low']
+        # df2.rename({'high': 'fut_high', 'low': 'fut_low'}, inplace=True, axis=1)
+        return df2[['fut_delta_low', 'fut_low_high_size']].sort_index()
+
+    @staticmethod
+    def set_predicted_fields( candles, y_pred):
+        """
+        Update last candle with predicted values
+        :param candles: candles dataframe
+        :param y_pred: ndarray (1,2) with 1 preducted row and 2 columns: future low - cur close and future candle size
+        :return:
+        """
+        y_delta_low = y_pred[0][0]
+        y_high_low_size = y_pred[0][1]
+        candles.loc[candles.index[-1], "fut_low"] = candles.loc[candles.index[-1], "close"] + y_delta_low
+        candles.loc[candles.index[-1], "fut_high"] = candles.loc[
+                                                         candles.index[
+                                                             -1], "close"] + y_delta_low + y_high_low_size
 
     @staticmethod
     def features_of(candles: pd.DataFrame, window_size: int) -> pd.DataFrame:
