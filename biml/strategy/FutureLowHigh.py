@@ -139,7 +139,7 @@ class FutureLowHigh(StrategyBase):
         # tscv = TimeSeriesSplit(n_splits=20)
         self.model = self.create_pipe(X, y, epochs=50, batch_size=100) if not self.model else self.model
         tscv = TimeSeriesSplit(n_splits=7)
-        cv = cross_val_score(self.model, X=X, y=y, cv=tscv, error_score="explained_variance")
+        cv = cross_val_score(self.model, X=X, y=y, cv=tscv, error_score="raise")
         print(cv)
         # Save weights
         self.save_model()
