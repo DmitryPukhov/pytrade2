@@ -4,17 +4,16 @@ from datetime import datetime
 from functools import reduce
 from pathlib import Path
 from typing import Dict
-from binance.spot import Spot as Client
 import pandas as pd
 from keras import Input
 from keras.layers import Dense
 from keras.layers.core.dropout import Dropout
 from keras.models import Sequential, Model
-from scikeras.wrappers import KerasClassifier, KerasRegressor
+from scikeras.wrappers import KerasRegressor
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
-from sklearn.model_selection import cross_val_score, TimeSeriesSplit, KFold
+from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler
 
 from features.Features import Features
 from strategy.StrategyBase import StrategyBase
@@ -28,9 +27,10 @@ class FutureLowHigh(StrategyBase):
 
     def __init__(self, broker, ticker: str, model_dir: str):
         super().__init__(broker)
-        self.model_weights_dir = str(Path(model_dir, self.__class__.__name__, "weights"))
-        self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
-        Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
+        if model_dir:
+            self.model_weights_dir = str(Path(model_dir, self.__class__.__name__, "weights"))
+            self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
+            Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.ticker = ticker
         self.stop_loss_ratio = 0.03
         self.model = None
@@ -39,10 +39,12 @@ class FutureLowHigh(StrategyBase):
         self.predict_sindow_size = 1
         self.candles = pd.DataFrame()
         self.model = None
+        self.profit_loss_ratio = 4
 
-        self.broker.close_opened_positions(ticker)
-        # Raise exception if we are in trade for this ticker
-        self.assert_out_of_market(ticker)
+        if self.broker:
+            self.broker.close_opened_positions(ticker)
+            # Raise exception if we are in trade for this ticker
+            self.assert_out_of_market(ticker)
 
     def on_candles(self, ticker: str, interval: str, new_candles: pd.DataFrame):
         """
@@ -60,18 +62,36 @@ class FutureLowHigh(StrategyBase):
         self.learn_on_last()
 
         # Get last predicted signal
-        signal = {-1: "SELL", 0: None, 1: "BUY"}[self.candles.signal[-1]]
-        logging.debug(f"Last signal: {signal}")
+        signal, stop_loss, take_profit = self.last_signal(self.candles)
         if signal:
             opened_quantity, opened_orders = self.broker.opened_positions(self.ticker)
             if not opened_quantity and not opened_orders:
                 # Buy or sell
                 close_price = self.candles.close[-1]
-                self.broker.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
-                                  stop_loss_ratio=self.stop_loss_ratio, )
+                self.broker.create_order(symbol=self.ticker, side=signal, price=close_price,
+                                         quantity=self.order_quantity,
+                                         stop_loss_ratio=self.stop_loss_ratio, )
             else:
                 logging.info(
-                    f"Do not create {signal} order for {self.ticker} because we already have {len(opened_orders)} orders and {opened_quantity} quantity")
+                    f"Do not create {signal} order for {self.ticker} because we already have {len(opened_orders)}"
+                    f" orders and {opened_quantity} quantity")
+
+    def last_signal(self, df: pd.DataFrame) -> (int, int, int):
+        """
+        Return buy or sell or no signal using predicted prices
+        :param df: candles dataframe
+        :return: 1 for buy, -1 sell, 0 no signal
+        """
+        if df.empty:
+            return 0, None, None
+        close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
+        delta_high, delta_low = fut_high - close, close - fut_low
+
+        if delta_high / delta_low >= self.profit_loss_ratio:
+            return 1, fut_low, fut_high
+        elif delta_low / delta_high >= self.profit_loss_ratio:
+            return -1, fut_high, fut_low
+        return 0, None, None
 
     def learn_on_last(self):
         """

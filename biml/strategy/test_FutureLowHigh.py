@@ -1,0 +1,90 @@
+from datetime import datetime
+from unittest import TestCase
+
+import pandas as pd
+
+from strategy.FutureLowHigh import FutureLowHigh
+
+
+class TestFutureLowHigh(TestCase):
+
+    def test_last_signal_none(self):
+        signal, stop_loss, take_profit = FutureLowHigh(None,"","").last_signal(
+            pd.DataFrame([{"close": 100, "fut_low": 90, "fut_high": 139}]))
+        self.assertEqual(0, signal, "expected 0 signal for profit/loss ratio < 4")
+        self.assertEqual(None, stop_loss)
+        self.assertEqual(None, take_profit)
+
+        signal, stop_loss, take_profit = FutureLowHigh(None,"","").last_signal(
+            pd.DataFrame([{"close": 100, "fut_low": 61, "fut_high": 110}]))
+        self.assertEqual(0, signal, "expected 0 signal for profit/loss ratio < 4")
+        self.assertEqual(None, stop_loss)
+        self.assertEqual(None, take_profit)
+
+    def test_last_signal_sell(self):
+        candles = pd.DataFrame([
+            # Last candle - sell signal
+            {'close_time': datetime.fromisoformat('2021-12-08 07:00:02'),
+             "close": 100,
+             "fut_low": 60,
+             "fut_high": 110},
+            # Prev candle - 0 signal
+            {'close_time': datetime.fromisoformat('2021-12-08 07:00:01'),
+             "close": 100,
+             "fut_low": 100,
+             "fut_high": 100},
+        ]) \
+            .set_index("close_time")
+        candles.sort_index(inplace=True)
+
+        signal, stop_loss, take_profit = FutureLowHigh(None,"","").last_signal(candles)
+        self.assertEqual(-1, signal, "expected -1 signal for profit/loss ratio == 4")
+        self.assertEqual(110, stop_loss)
+        self.assertEqual(60, take_profit)
+
+    def test_single_candle_last_signal_buy(self):
+        signal, stop_loss, take_profit = FutureLowHigh(None,"","").last_signal(
+            pd.DataFrame([{"close": 100, "fut_low": 90, "fut_high": 140}]))
+        self.assertEqual(1, signal, "expected 1 signal for profit/loss ratio == 4")
+        self.assertEqual(90, stop_loss)
+        self.assertEqual(140, take_profit)
+
+        signal, stop_loss, take_profit = FutureLowHigh(None,"","").last_signal(
+            pd.DataFrame([{"close": 100, "fut_low": 90, "fut_high": 141}]))
+        self.assertEqual(1, signal, "expected 1 signal for profit/loss ratio >= 4")
+        self.assertEqual(90, stop_loss)
+        self.assertEqual(141, take_profit)
+
+    def test_last_signal_buy(self):
+        candles = pd.DataFrame([
+            # Last candle - buy signal
+            {'close_time': datetime.fromisoformat('2021-12-08 07:00:02'),
+             "close": 100,
+             "fut_low": 60,
+             "fut_high": 110},
+            # Prev candle - 0 signal
+            {'close_time': datetime.fromisoformat('2021-12-08 07:00:01'),
+             "close": 100,
+             "fut_low": 100,
+             "fut_high": 100},
+        ]) \
+            .set_index("close_time")
+        candles.sort_index(inplace=True)
+
+        signal, stop_loss, take_profit = FutureLowHigh(None,"","").last_signal(candles)
+        self.assertEqual(-1, signal, "expected -1 signal for profit/loss ratio == 4")
+        self.assertEqual(110, stop_loss)
+        self.assertEqual(60, take_profit)
+
+    def test_single_candle_last_signal_sell(self):
+        signal, stop_loss, take_profit = FutureLowHigh(None,"","").last_signal(
+            pd.DataFrame([{"close": 100, "fut_low": 60, "fut_high": 110}]))
+        self.assertEqual(-1, signal, "expected -1 signal for profit/loss ratio == 4")
+        self.assertEqual(110, stop_loss)
+        self.assertEqual(60, take_profit)
+
+        signal, stop_loss, take_profit = FutureLowHigh(None, "", "").last_signal(
+            pd.DataFrame([{"close": 100, "fut_low": 59, "fut_high": 110}]))
+        self.assertEqual(-1, signal, "expected -1 signal for profit/loss ratio >= 4")
+        self.assertEqual(110, stop_loss)
+        self.assertEqual(59, take_profit)

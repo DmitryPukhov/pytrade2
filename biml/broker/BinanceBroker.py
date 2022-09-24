@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from typing import List, Dict
 from binance.spot import Spot as Client
 
@@ -11,26 +12,16 @@ class BinanceBroker:
     def __init__(self, client: Client):
         self.client = client
 
-    def create_order(self, symbol: str, side: str, price: float, quantity: float, stop_loss_ratio: float,
-                     ticker_size: int = 2):
+    def create_order(self, symbol: str, type: int, quantity: float, price: float, stop_loss: float, take_profit: float):
         """
-        Buy or sell order with trailing stop loss
+        Buy or sell with take profit and stop loss
+        Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
-        trailing_delta = int(100 * stop_loss_ratio * 100)  # trailing delta in points
-
-        stop_loss_price = price
-        if side == "BUY":
-            stop_loss_price = price * (1 - stop_loss_ratio)
-            trigger_price = price * (1 - stop_loss_ratio / 2)
-        elif side == "SELL":
-            stop_loss_price = price * (1 + stop_loss_ratio)
-            trigger_price = price * (1 + stop_loss_ratio / 2)
-        stop_loss_price, trigger_price = round(stop_loss_price, ticker_size), round(trigger_price, ticker_size)
-
-        logging.info(f"Creating {side} order and trailing stop loss order, symbol={symbol}, price={price},"
-                     f" stop_loss_price={stop_loss_price}, trailing_delta={trailing_delta}")
+        side = {1: "BUY", -1: "SELL"}.setdefault(0)[type]
+        close_side = side * -1
 
         # Main order
+        logging.info(f"Creating {symbol} {side} order, price: {price}, quantity: {quantity}")
         res = self.client.new_order(
             symbol=symbol,
             side=side,
@@ -38,21 +29,64 @@ class BinanceBroker:
             price=price,
             quantity=quantity,
             timeInForce="GTC")
-        logging.info(res)
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
 
-        # Trailing stop loss order
-
-        res = self.client.new_order(
+        # Stop loss and take profit
+        logging.info(f"Creating stop loss and take profit order, stop loss: {stop_loss}, take profit: {take_profit}")
+        # Take profit and stop loss order
+        res = self.client.new_oco_order(
             symbol=symbol,
-            side="BUY" if side == "SELL" else "SELL",
-            type='STOP_LOSS_LIMIT',
+            side=close_side,
             quantity=quantity,
-            price=stop_loss_price,
-            stopPrice=trigger_price,
-            trailingDelta=trailing_delta,
-            timeInForce="GTC")
-        logging.info(res)
+            price=take_profit,
+            stopPrice=stop_loss,
+            stopLimitPrice=stop_loss
+        )
+        filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
+    #
+    #
+    # def create_order_old(self, symbol: str, side: str, price: float, quantity: float, stop_loss_ratio: float,
+    #                      ticker_size: int = 2):
+    #     """
+    #     Buy or sell order with trailing stop loss
+    #     """
+    #     trailing_delta = int(100 * stop_loss_ratio * 100)  # trailing delta in points
+    #
+    #     stop_loss_price = price
+    #     if side == "BUY":
+    #         stop_loss_price = price * (1 - stop_loss_ratio)
+    #         trigger_price = price * (1 - stop_loss_ratio / 2)
+    #     elif side == "SELL":
+    #         stop_loss_price = price * (1 + stop_loss_ratio)
+    #         trigger_price = price * (1 + stop_loss_ratio / 2)
+    #     stop_loss_price, trigger_price = round(stop_loss_price, ticker_size), round(trigger_price, ticker_size)
+    #
+    #     logging.info(f"Creating {side} order and trailing stop loss order, symbol={symbol}, price={price},"
+    #                  f" stop_loss_price={stop_loss_price}, trailing_delta={trailing_delta}")
+    #
+    #     # Main order
+    #     res = self.client.new_order(
+    #         symbol=symbol,
+    #         side=side,
+    #         type="LIMIT",
+    #         price=price,
+    #         quantity=quantity,
+    #         timeInForce="GTC")
+    #     logging.info(res)
+    #     filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
+    #
+    #     # Trailing stop loss order
+    #
+    #     res = self.client.new_order(
+    #         symbol=symbol,
+    #         side="BUY" if side == "SELL" else "SELL",
+    #         type='STOP_LOSS_LIMIT',
+    #         quantity=quantity,
+    #         price=stop_loss_price,
+    #         stopPrice=trigger_price,
+    #         trailingDelta=trailing_delta,
+    #         timeInForce="GTC")
+    #     logging.info(res)
 
     def close_opened_positions(self, ticker: str):
         if not self.client:
