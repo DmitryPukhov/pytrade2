@@ -6,6 +6,8 @@ import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
+
+from broker.BinanceBroker import BinanceBroker
 from feed.BinanceFeed import BinanceFeed
 from feed.TickerInfo import TickerInfo
 from strategy.FutureLowHigh import FutureLowHigh
@@ -38,7 +40,7 @@ class App:
 
         # Init binance feed
         self.tickers = list(App.read_candle_config(self.config))
-        self.feed, self.strategy = None, None
+        self.feed, self.broker, self.strategy = None, None, None
         logging.info("App initialized")
 
     @staticmethod
@@ -91,9 +93,10 @@ class App:
         """
         logging.info("Starting the app")
         self.feed = BinanceFeed(spot_client=self.client, tickers=self.tickers)
+        self.broker = BinanceBroker(client = self.client)
 
         # Strategy
-        self.strategy = FutureLowHigh(client=self.client, ticker=self.tickers[-1].ticker,
+        self.strategy = FutureLowHigh(broker = self.broker, ticker=self.tickers[-1].ticker,
                                       model_dir=self.config["biml.model.dir"])
         self.feed.consumers.append(self.strategy)
         # Read feed from binance

@@ -26,8 +26,8 @@ class FutureLowHigh(StrategyBase):
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
     """
 
-    def __init__(self, client: Client, ticker: str, model_dir: str):
-        super().__init__(client)
+    def __init__(self, broker, ticker: str, model_dir: str):
+        super().__init__(broker)
         self.model_weights_dir = str(Path(model_dir, self.__class__.__name__, "weights"))
         self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
         Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
@@ -40,7 +40,7 @@ class FutureLowHigh(StrategyBase):
         self.candles = pd.DataFrame()
         self.model = None
 
-        self.close_opened_positions(ticker)
+        self.broker.close_opened_positions(ticker)
         # Raise exception if we are in trade for this ticker
         self.assert_out_of_market(ticker)
 
@@ -63,11 +63,11 @@ class FutureLowHigh(StrategyBase):
         signal = {-1: "SELL", 0: None, 1: "BUY"}[self.candles.signal[-1]]
         logging.debug(f"Last signal: {signal}")
         if signal:
-            opened_quantity, opened_orders = self.opened_positions(self.ticker)
+            opened_quantity, opened_orders = self.broker.opened_positions(self.ticker)
             if not opened_quantity and not opened_orders:
                 # Buy or sell
                 close_price = self.candles.close[-1]
-                self.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
+                self.broker.create_order(symbol=self.ticker, side=signal, price=close_price, quantity=self.order_quantity,
                                   stop_loss_ratio=self.stop_loss_ratio, )
             else:
                 logging.info(
