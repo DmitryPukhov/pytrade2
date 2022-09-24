@@ -18,11 +18,11 @@ class BinanceBroker:
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
         side = {1: "BUY", -1: "SELL"}.setdefault(0)[type]
-        close_side = side * -1
 
-        # Main order
-        logging.info(f"Creating {symbol} {side} order, price: {price}, quantity: {quantity}")
-        res = self.client.new_order(
+        logging.info(f"Creating {symbol} {side} order, price: {price}, stop loss: {stop_loss}, take profit: {take_profit}, quantity: {quantity}")
+
+        # Main buy or sell order
+        res = self.client.new_order_test(
             symbol=symbol,
             side=side,
             type="LIMIT",
@@ -32,8 +32,7 @@ class BinanceBroker:
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
 
         # Stop loss and take profit
-        logging.info(f"Creating stop loss and take profit order, stop loss: {stop_loss}, take profit: {take_profit}")
-        # Take profit and stop loss order
+        close_side = side * -1
         res = self.client.new_oco_order(
             symbol=symbol,
             side=close_side,

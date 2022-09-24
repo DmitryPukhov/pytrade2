@@ -40,6 +40,7 @@ class FutureLowHigh(StrategyBase):
         self.candles = pd.DataFrame()
         self.model = None
         self.profit_loss_ratio = 4
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         if self.broker:
             self.broker.close_opened_positions(ticker)
@@ -50,6 +51,7 @@ class FutureLowHigh(StrategyBase):
         """
         Received new candles from feed
         """
+
         if ticker != self.ticker or interval != "1m":
             return
         # Append new candles to current candles
@@ -62,36 +64,51 @@ class FutureLowHigh(StrategyBase):
         self.learn_on_last()
 
         # Get last predicted signal
-        signal, stop_loss, take_profit = self.last_signal(self.candles)
+        signal, price, stop_loss, take_profit = self.last_signal(self.candles)
         if signal:
             opened_quantity, opened_orders = self.broker.opened_positions(self.ticker)
             if not opened_quantity and not opened_orders:
                 # Buy or sell
-                close_price = self.candles.close[-1]
-                self.broker.create_order(symbol=self.ticker, side=signal, price=close_price,
+                self.broker.create_order(symbol=self.ticker,
                                          quantity=self.order_quantity,
-                                         stop_loss_ratio=self.stop_loss_ratio, )
+                                         price=price,
+                                         stop_loss=stop_loss,
+                                         take_profit=take_profit)
             else:
                 logging.info(
                     f"Do not create {signal} order for {self.ticker} because we already have {len(opened_orders)}"
                     f" orders and {opened_quantity} quantity")
 
-    def last_signal(self, df: pd.DataFrame) -> (int, int, int):
+    def last_signal(self, df: pd.DataFrame) -> (int, int, int, int):
         """
         Return buy or sell or no signal using predicted prices
         :param df: candles dataframe
         :return: 1 for buy, -1 sell, 0 no signal
         """
-        if df.empty:
-            return 0, None, None
-        close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
-        delta_high, delta_low = fut_high - close, close - fut_low
+        signal, price, stop_loss, take_profit = 0, None, None, None
 
-        if delta_high / delta_low >= self.profit_loss_ratio:
-            return 1, fut_low, fut_high
-        elif delta_low / delta_high >= self.profit_loss_ratio:
-            return -1, fut_high, fut_low
-        return 0, None, None
+        if df.empty:
+            self.logger.debug("Candles are empty")
+            return signal, price, stop_loss, take_profit
+        close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
+        delta_high, delta_low = (fut_high - close), (close - fut_low)
+        ratio = delta_high / delta_low
+
+        # delta_high, delta_low = fut_high - close, close - fut_low
+
+        logging.debug(
+            f"Calculating signal. close: {close}, fut_high:{fut_high}, fut_low:{fut_low},"
+            f" delta_high:{delta_high}, delta_low: {delta_low}, "
+            f"ratio: {max(ratio, 1 / ratio)}, min ratio for signal:{self.profit_loss_ratio}")
+        if ratio >= self.profit_loss_ratio:
+            signal, price, stop_loss, take_profit = 1, close, fut_low, fut_high
+        elif ratio <= 1 / self.profit_loss_ratio:
+            signal, price, stop_loss, take_profit = -1, close, fut_high, fut_low
+
+        self.logger.debug(
+            f"Calculated signal: {signal}, price:{price}, stop_loss: {stop_loss}, take_profit: {take_profit}.")
+
+        return signal, price, stop_loss, take_profit
 
     def learn_on_last(self):
         """
