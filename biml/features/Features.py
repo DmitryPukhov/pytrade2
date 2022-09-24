@@ -61,9 +61,7 @@ class Features:
         df2: pd.DataFrame = features[['low', 'high']].sort_index(
             ascending=False).rolling(windowspec, min_periods=0).agg(
             {'low': 'min','high': 'max'}, closed='right')
-        df2.rename({'high': 'fut_high', 'low': 'fut_low'}, inplace=True)
-        #df2[['fut_low', 'fut_high']] = df2[['low', 'high']]
-        #df2.drop(['high', 'low'], axis=1, inplace=True)
+        df2.rename({'high': 'fut_high', 'low': 'fut_low'}, inplace=True, axis=1)
         return df2.sort_index()
 
     @staticmethod

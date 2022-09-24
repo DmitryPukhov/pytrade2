@@ -35,7 +35,7 @@ class TestTargetFeatures(TestCase):
               'high': 6}
              ]).set_index('close_time')
 
-        withminmax = Features().targets_of(candles, 1, 'min')
+        withminmax = Features().targets_of(candles, 1)
         self.assertEqual([1, 4], withminmax['fut_low'].values.tolist())
         self.assertEqual([10, 6], withminmax['fut_high'].values.tolist())
 
@@ -47,7 +47,7 @@ class TestTargetFeatures(TestCase):
                                  'high': 10}
                                 ]).set_index('close_time')
 
-        withminmax = Features().targets_of(candles, 1, 'min')
+        withminmax = Features().targets_of(candles, 1)
         self.assertEqual(withminmax['fut_low'].values.tolist(), [1, 1])
         self.assertEqual(withminmax['fut_high'].values.tolist(), [10, 10])
 
@@ -65,7 +65,7 @@ class TestTargetFeatures(TestCase):
             {'close_time': datetime.fromisoformat('2021-11-26 17:06:00'), 'low': 3, 'high': 7}
         ]).set_index('close_time')
 
-        withminmax = Features().targets_of(candles, 1, 'min')
+        withminmax = Features().targets_of(candles, 1)
 
         self.assertEqual([1, 1, 2, 2, 4, 3, 4, 3], withminmax['fut_low'].values.tolist())
         self.assertEqual([10, 10, 8, 8, 6, 7, 6, 7], withminmax['fut_high'].values.tolist())
