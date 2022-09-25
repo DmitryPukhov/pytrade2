@@ -40,7 +40,7 @@ class PredictLowHighStrategy(StrategyBase):
         self.model = None
 
         # Minimum stop loss ratio = (price-stop_loss)/price
-        self.min_stop_loss_ratio = 0.01
+        self.min_stop_loss_ratio = 0.001
         # Minimum profit/loss
         self.profit_loss_ratio = 4
 
