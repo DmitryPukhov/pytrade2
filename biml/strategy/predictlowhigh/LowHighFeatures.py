@@ -69,7 +69,7 @@ class LowHighFeatures:
         return df2[['fut_delta_low', 'fut_low_high_size']].sort_index()
 
     @staticmethod
-    def set_predicted_fields( candles, y_pred):
+    def set_predicted_fields(candles, y_pred):
         """
         Update last candle with predicted values
         :param candles: candles dataframe
@@ -78,10 +78,11 @@ class LowHighFeatures:
         """
         y_delta_low = y_pred[0][0]
         y_high_low_size = y_pred[0][1]
+        candles.loc[candles.index[-1], "fut_delta_low"] = y_delta_low
+        candles.loc[candles.index[-1], "fut_candle_size"] = y_high_low_size
         candles.loc[candles.index[-1], "fut_low"] = candles.loc[candles.index[-1], "close"] + y_delta_low
         candles.loc[candles.index[-1], "fut_high"] = candles.loc[
-                                                         candles.index[
-                                                             -1], "close"] + y_delta_low + y_high_low_size
+                                                         candles.index[-1], "close"] + y_delta_low + y_high_low_size
 
     @staticmethod
     def features_of(candles: pd.DataFrame, window_size: int) -> pd.DataFrame:

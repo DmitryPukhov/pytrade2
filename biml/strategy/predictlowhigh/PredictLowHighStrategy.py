@@ -97,7 +97,7 @@ class PredictLowHighStrategy(StrategyBase):
             return signal, price, stop_loss, take_profit
         close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
         delta_high, delta_low = (fut_high - close), (close - fut_low)
-        ratio = delta_high / delta_low
+        ratio = abs(delta_high / delta_low)
 
         # delta_high, delta_low = fut_high - close, close - fut_low
 
@@ -118,16 +118,16 @@ class PredictLowHighStrategy(StrategyBase):
 
         if signal:
             self.logger.debug(
-            f"Calculated signal: {signal}, price:str(price), "
-            f"stop_loss: {stop_loss} ({stop_loss - price}),"
-            f"stop_loss adjusted: {stop_loss} ({stop_loss_adj - price})  for min ratio {self.min_stop_loss_ratio},"
-            f"take_profit: {take_profit} ({take_profit - price}).")
+                f"Calculated signal: {signal}, price:str(price), "
+                f"stop_loss: {stop_loss} ({stop_loss - price}),"
+                f"stop_loss adjusted: {stop_loss} ({stop_loss_adj - price})  for min ratio {self.min_stop_loss_ratio},"
+                f"take_profit: {take_profit} ({take_profit - price}).")
 
         if signal and abs(take_profit - price) < abs(price - stop_loss_adj) * self.profit_loss_ratio:
             self.logger.debug(
                 f"Expected profit {abs(take_profit - price)} is too small "
-                f"for adjusted loss {abs(price - stop_loss_adj)} and profit loss ratio {self.profit_loss_ratio},"
-                f" set signal to 0")
+                f"for loss {abs(price - stop_loss)}, adjusted loss {abs(price - stop_loss_adj)}"
+                f" and profit loss ratio {self.profit_loss_ratio}. set signal to 0")
             signal, price, stop_loss_adj, take_profit = 0, None, None, None
 
         self.logger.debug(
@@ -141,7 +141,7 @@ class PredictLowHighStrategy(StrategyBase):
         """
         # Fit
         train_X, train_y = LowHighFeatures.features_and_targets(self.candles, self.window_size,
-                                                         self.predict_sindow_size)
+                                                                self.predict_sindow_size)
         self.model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
         self.model.fit(train_X, train_y)
 
@@ -149,6 +149,7 @@ class PredictLowHighStrategy(StrategyBase):
         X_last = LowHighFeatures.features_of(self.candles, self.window_size).tail(1)
         y_pred = self.model.predict(X_last)
         LowHighFeatures.set_predicted_fields(self.candles, y_pred)
+        self.logger.debug(f"Predicted fut_low-close: {y_pred[0][0]}, fut_high-fut_low:{y_pred[0][1]}")
         #
         # y_low = y_pred[0][0]
         # self.candles.loc[self.candles.index[-1], "fut_low"] = self.candles.loc[self.candles.index[-1], "close"] + y_low
@@ -158,7 +159,7 @@ class PredictLowHighStrategy(StrategyBase):
 
         # Save model
         self.save_model()
-        self.save_lastXy(X_last, self.candles[["fut_low", "fut_high"]].tail(1))
+        self.save_lastXy(X_last, y_pred, self.candles.tail(1))
 
     def create_model(self, X_size, y_size):
         model = Sequential()
@@ -222,7 +223,7 @@ class PredictLowHighStrategy(StrategyBase):
         logging.debug(f"Save model to {model_path}")
         model.save_weights(model_path)
 
-    def save_lastXy(self, X_last: pd.DataFrame, y_last: pd.DataFrame):
+    def save_lastXy(self, X_last: pd.DataFrame, y_pred_last, candles: pd.DataFrame):
         """
         Write model X,y data to csv for analysis
         """
@@ -230,10 +231,19 @@ class PredictLowHighStrategy(StrategyBase):
         file_name_prefix = f"{pd.to_datetime(time).date()}_{self.ticker}_"
         Xpath = str(Path(self.model_Xy_dir, file_name_prefix + "X.csv"))
         ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
+        candlespath = str(Path(self.model_Xy_dir, file_name_prefix + "candles.csv"))
+        logging.debug(f"Save X to {Xpath},y to {ypath}, candles to {candlespath}")
 
-        logging.debug(f"Save X to {Xpath},y to {ypath}")
+        # Save X
         X_last.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
-        y_last.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
+        # Create y_pred from ndarray and save
+        y_pred_last_df = pd.DataFrame(index=X_last.index, data=y_pred_last,
+                                      columns=["fut_delta_low", "fut_candle_size"])
+        y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
+        # Save candles with predicted data
+        #candles = candles.join(y_pred_last_df)
+        candles.to_csv(candlespath, header=not Path(candlespath).exists(), mode='a')
+
 
     def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
         # Fit the model
