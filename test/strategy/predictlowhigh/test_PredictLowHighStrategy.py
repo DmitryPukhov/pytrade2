@@ -22,7 +22,7 @@ class TestPredictLowHighStrategy(TestCase):
         self.assertEqual(None, stop_loss)
         self.assertEqual(None, take_profit)
 
-    def test_last_signal_sell(self):
+    def test_multi_candles_last_signal_sell(self):
         candles = pd.DataFrame([
             # Last candle - sell signal
             {'close_time': datetime.fromisoformat('2021-12-08 07:00:02'),
@@ -44,7 +44,7 @@ class TestPredictLowHighStrategy(TestCase):
         self.assertEqual(110, stop_loss)
         self.assertEqual(60, take_profit)
 
-    def test_single_candle_last_signal_buy(self):
+    def test_last_signal_buy(self):
         signal, price, stop_loss, take_profit = PredictLowHighStrategy(None,"","").last_signal(
             pd.DataFrame([{"close": 100, "fut_low": 90, "fut_high": 140}]))
         self.assertEqual(1, signal, "expected 1 signal for profit/loss ratio == 4")
@@ -59,7 +59,7 @@ class TestPredictLowHighStrategy(TestCase):
         self.assertEqual(90, stop_loss)
         self.assertEqual(141, take_profit)
 
-    def test_last_signal_buy(self):
+    def test_multi_candles_last_signal_buy(self):
         candles = pd.DataFrame([
             # Last candle - buy signal
             {'close_time': datetime.fromisoformat('2021-12-08 07:00:02'),
@@ -81,7 +81,7 @@ class TestPredictLowHighStrategy(TestCase):
         self.assertEqual(110, stop_loss)
         self.assertEqual(60, take_profit)
 
-    def test_single_candle_last_signal_sell(self):
+    def test_last_signal_sell(self):
         signal, price, stop_loss, take_profit = PredictLowHighStrategy(None,"","").last_signal(
             pd.DataFrame([{"close": 100, "fut_low": 60, "fut_high": 110}]))
         self.assertEqual(-1, signal, "expected -1 signal for profit/loss ratio == 4")
