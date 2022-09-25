@@ -15,11 +15,11 @@ from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 
-from features.Features import Features
+from strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
 from strategy.StrategyBase import StrategyBase
 
 
-class FutureLowHigh(StrategyBase):
+class PredictLowHighStrategy(StrategyBase):
     """
     Predict low/high value in the nearest future period.
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
@@ -116,8 +116,9 @@ class FutureLowHigh(StrategyBase):
             # Adjust stop loss if predicted is too small
             stop_loss_adj = max(stop_loss, price * (1 + self.min_stop_loss_ratio))
 
-        self.logger.debug(
-            f"Calculated signal: {signal}, price:{price}, "
+        if signal:
+            self.logger.debug(
+            f"Calculated signal: {signal}, price:str(price), "
             f"stop_loss: {stop_loss} ({stop_loss - price}),"
             f"stop_loss adjusted: {stop_loss} ({stop_loss_adj - price})  for min ratio {self.min_stop_loss_ratio},"
             f"take_profit: {take_profit} ({take_profit - price}).")
@@ -139,15 +140,15 @@ class FutureLowHigh(StrategyBase):
         Fit the model on last data window with new candle
         """
         # Fit
-        train_X, train_y = Features.features_and_targets(self.candles, self.window_size,
+        train_X, train_y = LowHighFeatures.features_and_targets(self.candles, self.window_size,
                                                          self.predict_sindow_size)
         self.model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
         self.model.fit(train_X, train_y)
 
         # Predict
-        X_last = Features.features_of(self.candles, self.window_size).tail(1)
+        X_last = LowHighFeatures.features_of(self.candles, self.window_size).tail(1)
         y_pred = self.model.predict(X_last)
-        Features.set_predicted_fields(self.candles, y_pred)
+        LowHighFeatures.set_predicted_fields(self.candles, y_pred)
         #
         # y_low = y_pred[0][0]
         # self.candles.loc[self.candles.index[-1], "fut_low"] = self.candles.loc[self.candles.index[-1], "close"] + y_low
@@ -191,7 +192,7 @@ class FutureLowHigh(StrategyBase):
 
         # Feature engineering.
 
-        X, y = Features.features_and_targets(data, self.window_size, self.predict_sindow_size)
+        X, y = LowHighFeatures.features_and_targets(data, self.window_size, self.predict_sindow_size)
 
         logging.info(f"Learn set size: {len(X)}")
 

@@ -2,8 +2,7 @@ import datetime
 import logging
 from App import App
 from feed.LocalFeed import LocalFeed
-from feed.LocalWriter import LocalWriter
-from strategy.FutureLowHigh import FutureLowHigh
+from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
 
 
 class Learn(App):
@@ -24,7 +23,7 @@ class Learn(App):
         start_time = datetime.datetime.now()-datetime.timedelta(days=7)
         data = history_feed.read_intervals(start_time, None)
 
-        strategy = FutureLowHigh(client=None, ticker=self.tickers[-1].ticker, model_dir=self.model_dir)
+        strategy = PredictLowHighStrategy(broker=None, ticker=self.tickers[-1].ticker, model_dir=self.model_dir)
         strategy.learn(data)
 
 

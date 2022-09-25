@@ -10,7 +10,7 @@ from binance.spot import Spot as Client
 from broker.BinanceBroker import BinanceBroker
 from feed.BinanceFeed import BinanceFeed
 from feed.TickerInfo import TickerInfo
-from strategy.FutureLowHigh import FutureLowHigh
+from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
 
 
 class App:
@@ -96,7 +96,7 @@ class App:
         self.broker = BinanceBroker(client = self.client)
 
         # Strategy
-        self.strategy = FutureLowHigh(broker = self.broker, ticker=self.tickers[-1].ticker,
+        self.strategy = PredictLowHighStrategy(broker = self.broker, ticker=self.tickers[-1].ticker,
                                       model_dir=self.config["biml.model.dir"])
         self.feed.consumers.append(self.strategy)
         # Read feed from binance
