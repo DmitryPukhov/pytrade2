@@ -15,8 +15,8 @@ from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from biml.strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
-from biml.strategy.StrategyBase import StrategyBase
+from strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
+from strategy.StrategyBase import StrategyBase
 
 
 class PredictLowHighStrategy(StrategyBase):
@@ -40,7 +40,7 @@ class PredictLowHighStrategy(StrategyBase):
         self.model = None
 
         # Minimum stop loss ratio = (price-stop_loss)/price
-        self.min_stop_loss_ratio = 0.001
+        self.min_stop_loss_ratio = 0.005
         # Minimum profit/loss
         self.profit_loss_ratio = 4
 

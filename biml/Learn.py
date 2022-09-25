@@ -1,8 +1,8 @@
 import datetime
 import logging
-from biml.App import App
-from biml.feed.LocalFeed import LocalFeed
-from biml.strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
+from App import App
+from feed.LocalFeed import LocalFeed
+from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
 
 
 class Learn(App):

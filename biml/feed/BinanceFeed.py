@@ -9,9 +9,8 @@ from urllib3.exceptions import RequestError, ReadTimeoutError
 from binance.spot import Spot as Client
 
 from requests.exceptions import HTTPError, SSLError
-
-from biml.feed.BaseFeed import BaseFeed
-from biml.feed.TickerInfo import TickerInfo
+from feed.BaseFeed import BaseFeed
+from feed.TickerInfo import TickerInfo
 
 
 class BinanceFeed(BaseFeed):
