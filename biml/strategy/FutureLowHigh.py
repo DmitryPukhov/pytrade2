@@ -32,14 +32,18 @@ class FutureLowHigh(StrategyBase):
             self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.ticker = ticker
-        self.min_stop_loss_ratio = 0.03
         self.model = None
         self.window_size = 15
         self.candles_size = self.window_size * 100
         self.predict_sindow_size = 1
         self.candles = pd.DataFrame()
         self.model = None
+
+        # Minimum stop loss ratio = (price-stop_loss)/price
+        self.min_stop_loss_ratio = 0.01
+        # Minimum profit/loss
         self.profit_loss_ratio = 4
+
         self.logger = logging.getLogger(self.__class__.__name__)
 
         if self.broker:
@@ -86,7 +90,7 @@ class FutureLowHigh(StrategyBase):
         :param df: candles dataframe
         :return: 1 for buy, -1 sell, 0 no signal
         """
-        signal, price, stop_loss, take_profit = 0, None, None, None
+        signal, price, stop_loss, stop_loss_adj, take_profit = 0, None, None, None, None
 
         if df.empty:
             self.logger.debug("Candles are empty")
@@ -100,22 +104,35 @@ class FutureLowHigh(StrategyBase):
         logging.debug(
             f"Calculating signal. close: {close}, fut_high:{fut_high}, fut_low:{fut_low},"
             f" delta_high:{delta_high}, delta_low: {delta_low}, "
-            f"ratio: {max(ratio, 1 / ratio)}, min ratio for signal:{self.profit_loss_ratio}")
+            f"ratio: {max(ratio, 1 / ratio)}, profit_loss_ratio:{self.profit_loss_ratio}")
         if ratio >= self.profit_loss_ratio:
             # Buy signal
             signal, price, stop_loss, take_profit = 1, close, fut_low, fut_high
             # Adjust stop loss if predicted is too small
-            stop_loss = min(stop_loss, price * (1 - self.min_stop_loss_ratio))
+            stop_loss_adj = min(stop_loss, price * (1 - self.min_stop_loss_ratio))
         elif ratio <= 1 / self.profit_loss_ratio:
             # Sell signal
             signal, price, stop_loss, take_profit = -1, close, fut_high, fut_low
             # Adjust stop loss if predicted is too small
-            stop_loss = max(stop_loss, price * (1 + self.min_stop_loss_ratio))
+            stop_loss_adj = max(stop_loss, price * (1 + self.min_stop_loss_ratio))
 
         self.logger.debug(
-            f"Calculated signal: {signal}, price:{price}, stop_loss: {stop_loss}, take_profit: {take_profit}.")
+            f"Calculated signal: {signal}, price:{price}, "
+            f"stop_loss: {stop_loss} ({stop_loss - price}),"
+            f"stop_loss adjusted: {stop_loss} ({stop_loss_adj - price})  for min ratio {self.min_stop_loss_ratio},"
+            f"take_profit: {take_profit} ({take_profit - price}).")
 
-        return signal, price, stop_loss, take_profit
+        if signal and abs(take_profit - price) < abs(price - stop_loss_adj) * self.profit_loss_ratio:
+            self.logger.debug(
+                f"Expected profit {abs(take_profit - price)} is too small "
+                f"for adjusted loss {abs(price - stop_loss_adj)} and profit loss ratio {self.profit_loss_ratio},"
+                f" set signal to 0")
+            signal, price, stop_loss_adj, take_profit = 0, None, None, None
+
+        self.logger.debug(
+            f"Calculated adjusted signal: {signal}, price:{price}, stop_loss: {stop_loss_adj}, take_profit: {take_profit}.")
+
+        return signal, price, stop_loss_adj, take_profit
 
     def learn_on_last(self):
         """
