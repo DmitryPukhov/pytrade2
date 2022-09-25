@@ -110,13 +110,12 @@ class FutureLowHigh(StrategyBase):
             # Sell signal
             signal, price, stop_loss, take_profit = -1, close, fut_high, fut_low
             # Adjust stop loss if predicted is too small
-            stop_loss = max(stop_loss, price*(1+self.min_stop_loss_ratio))
+            stop_loss = max(stop_loss, price * (1 + self.min_stop_loss_ratio))
 
         self.logger.debug(
             f"Calculated signal: {signal}, price:{price}, stop_loss: {stop_loss}, take_profit: {take_profit}.")
 
         return signal, price, stop_loss, take_profit
-
 
     def learn_on_last(self):
         """
@@ -143,7 +142,6 @@ class FutureLowHigh(StrategyBase):
         self.save_model()
         self.save_lastXy(X_last, self.candles[["fut_low", "fut_high"]].tail(1))
 
-
     def create_model(self, X_size, y_size):
         model = Sequential()
         model.add(Input(shape=(X_size,)))
@@ -164,7 +162,6 @@ class FutureLowHigh(StrategyBase):
         self.load_last_model(model)
         # model.summary()
         return model
-
 
     def learn(self, data_items: Dict):
         """
@@ -190,7 +187,6 @@ class FutureLowHigh(StrategyBase):
         # Save weights
         self.save_model()
 
-
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
         if saved_models:
@@ -199,7 +195,6 @@ class FutureLowHigh(StrategyBase):
             model.load_weights(last_model_path)
         else:
             logging.info(f"No saved models in {self.model_weights_dir}")
-
 
     def save_model(self):
         # Save the model
