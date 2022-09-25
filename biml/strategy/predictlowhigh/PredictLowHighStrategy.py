@@ -13,7 +13,7 @@ from scikeras.wrappers import KerasRegressor
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
 from strategy.StrategyBase import StrategyBase
@@ -241,12 +241,12 @@ class PredictLowHighStrategy(StrategyBase):
                                    epochs=epochs, batch_size=batch_size, verbose=1)
         column_transformer = ColumnTransformer(
             [
-                ('xscaler', MinMaxScaler(), X.columns)
+                ('xscaler', StandardScaler(), X.columns)
                 # ('yscaler', StandardScaler(), y.columns)
                 # ('cat_encoder', OneHotEncoder(handle_unknown="ignore"), y.columns)
             ]
         )
 
         pipe = Pipeline([("column_transformer", column_transformer), ('model', regressor)])
-        wrapped = TransformedTargetRegressor(regressor=pipe, transformer=MinMaxScaler())
+        wrapped = TransformedTargetRegressor(regressor=pipe, transformer=StandardScaler())
         return wrapped
