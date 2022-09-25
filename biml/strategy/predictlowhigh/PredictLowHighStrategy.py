@@ -15,8 +15,8 @@ from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
-from strategy.StrategyBase import StrategyBase
+from biml.strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
+from biml.strategy.StrategyBase import StrategyBase
 
 
 class PredictLowHighStrategy(StrategyBase):

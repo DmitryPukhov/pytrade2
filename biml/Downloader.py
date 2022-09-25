@@ -1,7 +1,7 @@
 import logging
-from App import App
-from feed.BinanceFeed import BinanceFeed
-from feed.LocalWriter import LocalWriter
+from biml.App import App
+from biml.feed.BinanceFeed import BinanceFeed
+from biml.feed.LocalWriter import LocalWriter
 
 
 class Downloader(App):

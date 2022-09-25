@@ -7,8 +7,8 @@ from typing import List, Dict
 
 import pandas as pd
 
-from feed.BaseFeed import BaseFeed
-from feed.TickerInfo import TickerInfo
+from biml.feed.BaseFeed import BaseFeed
+from biml.feed.TickerInfo import TickerInfo
 
 
 class LocalFeed(BaseFeed):

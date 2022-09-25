@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest import TestCase
 
-from feed.LocalFeed import LocalFeed
+from biml.feed.LocalFeed import LocalFeed
 
 
 class TestLocalFeed(TestCase):

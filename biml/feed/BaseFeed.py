@@ -4,7 +4,7 @@ from typing import List
 import pandas
 import pandas as pd
 
-from feed.TickerInfo import TickerInfo
+from biml.feed.TickerInfo import TickerInfo
 
 
 class BaseFeed:

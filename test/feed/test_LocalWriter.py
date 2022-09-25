@@ -5,8 +5,8 @@ from unittest import TestCase
 import shutil
 import pandas as pd
 
-from feed.BaseFeed import BaseFeed
-from feed.LocalWriter import LocalWriter
+from biml.feed.BaseFeed import BaseFeed
+from biml.feed.LocalWriter import LocalWriter
 
 
 class TestLocalWriter(TestCase):

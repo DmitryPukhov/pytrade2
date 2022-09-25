@@ -4,7 +4,7 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-from strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
+from biml.strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
 
 
 class TestLowHighFeatures(TestCase):

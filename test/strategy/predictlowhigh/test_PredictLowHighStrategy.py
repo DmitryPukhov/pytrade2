@@ -2,8 +2,7 @@ from datetime import datetime
 from unittest import TestCase
 
 import pandas as pd
-
-from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
+from biml.strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
 
 
 class TestPredictLowHighStrategy(TestCase):

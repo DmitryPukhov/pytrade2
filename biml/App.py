@@ -7,10 +7,10 @@ import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
 
-from broker.BinanceBroker import BinanceBroker
-from feed.BinanceFeed import BinanceFeed
-from feed.TickerInfo import TickerInfo
-from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
+from biml.broker.BinanceBroker import BinanceBroker
+from biml.feed.BinanceFeed import BinanceFeed
+from biml.feed.TickerInfo import TickerInfo
+from biml.strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
 
 
 class App:

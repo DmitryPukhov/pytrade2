@@ -1,5 +1,5 @@
 from unittest import TestCase
-from App import App
+from biml.App import App
 
 
 class TestApp(TestCase):
