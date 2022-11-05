@@ -5,7 +5,7 @@ from feed.TickerInfo import TickerInfo
 
 class AppTools:
     @staticmethod
-    def read_candle_config(conf) -> List[TickerInfo]:
+    def read_candles_tickers(conf) -> List[TickerInfo]:
         """
         Read ticker infos from config
         """

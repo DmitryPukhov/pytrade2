@@ -3,18 +3,14 @@ import logging.config
 import os
 import sys
 from typing import List
+
 import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
-
 from AppTools import AppTools
 from broker.BinanceBroker import BinanceBroker
 from feed.TickerInfo import TickerInfo
-from feed.BinanceCandlesFeed import BinanceCandlesFeed
-
-
-# from strategy.predictlowhighcandles.PredictLowHighCandlesStrategy import PredictLowHighCandlesStrategy
 
 
 class App:
@@ -30,7 +26,7 @@ class App:
 
         # Load config, set up logging
         self.config = self._load_config()
-        self.tickers: List[TickerInfo] = AppTools.read_candle_config(self.config)
+        self.tickers: List[TickerInfo] = AppTools.read_candles_tickers(self.config)
 
         # Init logging
         loglevel = self.config["log.level"]
@@ -83,7 +79,7 @@ class App:
         """
         Application entry point
         """
-        #self.feed = BinanceCandlesFeed(spot_client=self.client, tickers = self.tickers)
+        # self.feed = BinanceCandlesFeed(spot_client=self.client, tickers = self.tickers)
         self.broker = BinanceBroker(client=self.client)
 
         # Create strategy class
@@ -91,16 +87,9 @@ class App:
         strategy_class_name = strategy_file.split(".")[-1]
         logging.info(f"Running the app with strategy from {strategy_file} import {strategy_class_name}")
         module = importlib.import_module(strategy_file, strategy_class_name)
-        strategy = getattr(module, strategy_class_name)(broker=self.broker, config = self.config)
+        strategy = getattr(module, strategy_class_name)(broker=self.broker, config=self.config)
+        # Run
         strategy.run(self.client)
-
-        # # Run the strategy
-        # self.feed.consumers.append(self.strategy)
-        # # Read feed from binance
-        # self.feed.run()
-
-        # ticker = self.tickers[-1]
-        # self.feed.emulate_feed(ticker.ticker, ticker.candle_intervals[-1], datetime.min, datetime.max)
 
         logging.info("The end")
 

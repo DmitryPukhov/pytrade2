@@ -1,5 +1,7 @@
+import collections
 import glob
 import logging
+from collections import defaultdict
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
@@ -32,7 +34,7 @@ class PredictLowHighCandlesStrategy(StrategyBase):
     def __init__(self, broker, config: Dict):
         super().__init__(broker)
         self.config = config
-        self.tickers = AppTools.read_candle_config(self.config)
+        self.tickers = AppTools.read_candles_tickers(self.config)
         self.ticker: str = self.tickers[-1].ticker
         self.model_dir = self.config["biml.model.dir"]
 

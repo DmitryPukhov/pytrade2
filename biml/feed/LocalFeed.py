@@ -17,6 +17,7 @@ class LocalFeed(BaseFeed):
     """
 
     def __init__(self, data_dir: str, tickers: List[TickerInfo]):
+
         super().__init__(tickers=tickers)
         self.data_dir = data_dir
 

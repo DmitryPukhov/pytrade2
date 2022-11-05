@@ -1,10 +1,10 @@
 from unittest import TestCase
-from App import App
+from AppTools import AppTools
 
 
 class TestApp(TestCase):
 
-    def test__read_candle_config(self):
+    def test__read_candle_tickers(self):
         # Input
         conf = {"biml.tickers": "ticker1,ticker2",
                 "biml.feed.ticker1.candle.intervals": "interval1,interval2",
@@ -13,7 +13,7 @@ class TestApp(TestCase):
                 "biml.feed.ticker2.candle.limits": "3,4"
                 }
         # Call
-        tickers = list(App.read_candle_config(conf))
+        tickers = list(AppTools.read_candles_tickers(conf))
 
         # Asserts
         self.assertEqual([t.ticker for t in tickers], ["ticker1", "ticker2"])

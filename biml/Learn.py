@@ -1,8 +1,9 @@
 import datetime
 import logging
 from App import App
+from AppTools import AppTools
 from feed.LocalFeed import LocalFeed
-from strategy.predictlowhighcandles.PredictLowHighStrategy import PredictLowHighStrategy
+from strategy.predictlowhighcandles.PredictLowHighCandlesStrategy import PredictLowHighCandlesStrategy
 
 
 class Learn(App):
@@ -18,12 +19,13 @@ class Learn(App):
     def learn(self):
         logging.info(f"Learn, data dir: {self.data_dir}")
         # Run saved csv data from local folder
-        history_feed = LocalFeed(self.data_dir, self.tickers)
+        tickers = AppTools.read_candles_tickers(self.config)
+        history_feed = LocalFeed(self.data_dir, tickers)
 
         start_time = datetime.datetime.now()-datetime.timedelta(days=7)
         data = history_feed.read_intervals(start_time, None)
 
-        strategy = PredictLowHighStrategy(broker=None, ticker=self.tickers[-1].ticker, model_dir=self.model_dir)
+        strategy = PredictLowHighCandlesStrategy(broker=None, config=self.config)
         strategy.learn(data)
 
 

@@ -17,7 +17,9 @@ class BinanceCandlesFeed(BaseFeed):
     """
 
     def __init__(self, spot_client: Client, tickers: List[TickerInfo]):
-        super().__init__(tickers, spot_client)
+        super().__init__(tickers)
+        self.spot_client: Client = spot_client
+
         self.read_interval = timedelta(minutes=1)
 
     def run(self):

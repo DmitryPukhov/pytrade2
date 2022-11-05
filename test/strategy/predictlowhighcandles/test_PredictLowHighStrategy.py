@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime
 from unittest import TestCase
 
@@ -9,9 +10,12 @@ class TestPredictLowHighStrategy(TestCase):
 
     @staticmethod
     def new_strategy():
-        strategy = PredictLowHighCandlesStrategy(None,"","")
+        conf = defaultdict(str, {"biml.tickers": "BTCUSDT",
+                                 "biml.feed.BTCUSDT.candle.intervals": "1m,15m,1h,1d",
+                                 "biml.feed.BTCUSDT.candle.limits": "1440,96,24,30"})
+        strategy = PredictLowHighCandlesStrategy(broker=None, config=conf)
         strategy.profit_loss_ratio = 4
-        strategy.min_stop_loss_ratio=0.01
+        strategy.min_stop_loss_ratio = 0.01
         return strategy
 
     def test_last_signal_none(self):
