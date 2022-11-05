@@ -2,25 +2,22 @@ import logging
 import time
 from datetime import timedelta
 from typing import List
-
 import pandas as pd
-from pandas import Timedelta
-from urllib3.exceptions import RequestError, ReadTimeoutError
 from binance.spot import Spot as Client
-
 from requests.exceptions import HTTPError, SSLError
+from urllib3.exceptions import RequestError, ReadTimeoutError
+
 from feed.BaseFeed import BaseFeed
 from feed.TickerInfo import TickerInfo
 
 
-class BinanceFeed(BaseFeed):
+class BinanceCandlesFeed(BaseFeed):
     """
     Binance price data feed. Read data from binance, provide pandas dataframes with that data
     """
 
     def __init__(self, spot_client: Client, tickers: List[TickerInfo]):
-        super().__init__(tickers)
-        self.spot_client: Client = spot_client
+        super().__init__(tickers, spot_client)
         self.read_interval = timedelta(minutes=1)
 
     def run(self):

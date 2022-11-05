@@ -9,7 +9,7 @@ from binance.spot import Spot as Client
 
 from broker.BinanceBroker import BinanceBroker
 from feed.TickerInfo import TickerInfo
-from feed.BinanceFeed import BinanceFeed
+from feed.BinanceCandlesFeed import BinanceCandlesFeed
 
 from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
 
@@ -93,7 +93,7 @@ class App:
         Application entry point
         """
         logging.info("Starting the app")
-        self.feed = BinanceFeed(spot_client=self.client, tickers=self.tickers)
+        self.feed = BinanceCandlesFeed(spot_client=self.client, tickers=self.tickers)
         self.broker = BinanceBroker(client = self.client)
 
         # Strategy
