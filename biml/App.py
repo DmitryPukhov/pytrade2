@@ -1,3 +1,4 @@
+import importlib
 import logging.config
 import os
 import sys
@@ -7,11 +8,13 @@ import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
 
+from AppTools import AppTools
 from broker.BinanceBroker import BinanceBroker
 from feed.TickerInfo import TickerInfo
 from feed.BinanceCandlesFeed import BinanceCandlesFeed
 
-from strategy.predictlowhighcandles.PredictLowHighCandlesStrategy import PredictLowHighCandlesStrategy
+
+# from strategy.predictlowhighcandles.PredictLowHighCandlesStrategy import PredictLowHighCandlesStrategy
 
 
 class App:
@@ -27,6 +30,7 @@ class App:
 
         # Load config, set up logging
         self.config = self._load_config()
+        self.tickers: List[TickerInfo] = AppTools.read_candle_config(self.config)
 
         # Init logging
         loglevel = self.config["log.level"]
@@ -40,21 +44,8 @@ class App:
         self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
 
         # Init binance feed
-        self.tickers = list(App.read_candle_config(self.config))
         self.feed, self.broker, self.strategy = None, None, None
         logging.info("App initialized")
-
-    @staticmethod
-    def read_candle_config(conf) -> List[TickerInfo]:
-        """
-        Read ticker infos from config
-        """
-        tickers = conf["biml.tickers"].split(',')
-        for ticker in tickers:
-            # biml.feed.BTCUSDT.candle.intervals: 1m,15m
-            intervals = conf[f"biml.feed.{ticker}.candle.intervals"].split(",")
-            limits = [int(limit) for limit in str(conf[f"biml.feed.{ticker}.candle.limits"]).split(",")]
-            yield TickerInfo(ticker, intervals, limits)
 
     @staticmethod
     def _load_config():
@@ -77,7 +68,7 @@ class App:
                 f"and update connection info there.")
 
         # Dev debugging config if needed
-        dev_cfg_path="cfg/app-dev.yaml"
+        dev_cfg_path = "cfg/app-dev.yaml"
         if os.path.exists(dev_cfg_path):
             with open(dev_cfg_path) as app:
                 config.update(yaml.safe_load(app))
@@ -92,16 +83,21 @@ class App:
         """
         Application entry point
         """
-        logging.info("Starting the app")
-        self.feed = BinanceCandlesFeed(spot_client=self.client, tickers=self.tickers)
-        self.broker = BinanceBroker(client = self.client)
+        #self.feed = BinanceCandlesFeed(spot_client=self.client, tickers = self.tickers)
+        self.broker = BinanceBroker(client=self.client)
 
-        # Strategy
-        self.strategy = PredictLowHighCandlesStrategy(broker = self.broker, ticker=self.tickers[-1].ticker,
-                                                      model_dir=self.config["biml.model.dir"])
-        self.feed.consumers.append(self.strategy)
-        # Read feed from binance
-        self.feed.run()
+        # Create strategy class
+        strategy_file = f"strategy." + self.config["biml.strategy"]
+        strategy_class_name = strategy_file.split(".")[-1]
+        logging.info(f"Running the app with strategy from {strategy_file} import {strategy_class_name}")
+        module = importlib.import_module(strategy_file, strategy_class_name)
+        strategy = getattr(module, strategy_class_name)(broker=self.broker, config = self.config)
+        strategy.run(self.client)
+
+        # # Run the strategy
+        # self.feed.consumers.append(self.strategy)
+        # # Read feed from binance
+        # self.feed.run()
 
         # ticker = self.tickers[-1]
         # self.feed.emulate_feed(ticker.ticker, ticker.candle_intervals[-1], datetime.min, datetime.max)

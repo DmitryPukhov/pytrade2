@@ -1,3 +1,4 @@
+biml.strategy: predictlowhighcandles.PredictLowHighCandlesStrategy
 biml.connector.key: 'please copy app-defaults.yaml to app.yaml and update biml.connector.key there to your binance key'
 biml.connector.url: 'https://testnet.binance.vision'
 biml.data.dir: './../data'

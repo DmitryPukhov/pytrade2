@@ -1,5 +1,6 @@
 import logging
 from App import App
+from AppTools import AppTools
 from feed.BinanceCandlesFeed import BinanceCandlesFeed
 from feed.LocalWriter import LocalWriter
 
@@ -12,6 +13,7 @@ class Downloader(App):
     def __init__(self):
         super().__init__()
         self.data_dir = self.config["biml.data.dir"]
+        self.tickers = AppTools.read_candle_config(self.config)
 
     def run(self):
         logging.info(f"Run downloader, data dir: {self.data_dir}")

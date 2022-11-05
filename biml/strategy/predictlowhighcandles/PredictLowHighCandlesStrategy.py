@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 import pandas as pd
 from keras import Input
 from keras.layers import Dense
@@ -15,6 +15,9 @@ from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
+from AppTools import AppTools
+from feed.BinanceCandlesFeed import BinanceCandlesFeed
+from feed.TickerInfo import TickerInfo
 from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 from strategy.StrategyBase import StrategyBase
 
@@ -25,13 +28,18 @@ class PredictLowHighCandlesStrategy(StrategyBase):
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
     """
 
-    def __init__(self, broker, ticker: str, model_dir: str):
+    # def __init__(self, broker, ticker: str, model_dir: str):
+    def __init__(self, broker, config: Dict):
         super().__init__(broker)
-        if model_dir:
-            self.model_weights_dir = str(Path(model_dir, self.__class__.__name__, "weights"))
-            self.model_Xy_dir = str(Path(model_dir, self.__class__.__name__, "Xy"))
+        self.config = config
+        self.tickers = AppTools.read_candle_config(self.config)
+        self.ticker: str = self.tickers[-1].ticker
+        self.model_dir = self.config["biml.model.dir"]
+
+        if self.model_dir:
+            self.model_weights_dir = str(Path(self.model_dir, self.__class__.__name__, "weights"))
+            self.model_Xy_dir = str(Path(self.model_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
-        self.ticker = ticker
         self.model = None
         self.window_size = 15
         self.candles_size = self.window_size * 100
@@ -47,9 +55,17 @@ class PredictLowHighCandlesStrategy(StrategyBase):
         self.logger = logging.getLogger(self.__class__.__name__)
 
         if self.broker:
-            self.broker.close_opened_positions(ticker)
+            self.broker.close_opened_positions(self.ticker)
             # Raise exception if we are in trade for this ticker
-            self.assert_out_of_market(ticker)
+            self.assert_out_of_market(self.ticker)
+
+    def run(self, client):
+        """
+        Attach to the feed and listen
+        """
+        feed = BinanceCandlesFeed(spot_client=client, tickers=self.tickers)
+        feed.consumers.append(self)
+        feed.run()
 
     def on_candles(self, ticker: str, interval: str, new_candles: pd.DataFrame):
         """
@@ -241,9 +257,8 @@ class PredictLowHighCandlesStrategy(StrategyBase):
                                       columns=["fut_delta_low", "fut_candle_size"])
         y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
         # Save candles with predicted data
-        #candles = candles.join(y_pred_last_df)
+        # candles = candles.join(y_pred_last_df)
         candles.to_csv(candlespath, header=not Path(candlespath).exists(), mode='a')
-
 
     def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
         # Fit the model

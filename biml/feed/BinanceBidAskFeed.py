@@ -11,7 +11,7 @@ from feed.BaseFeed import BaseFeed
 from feed.TickerInfo import TickerInfo
 
 
-class BinanceCandlesFeed(BaseFeed):
+class BinanceBidAskFeed(BaseFeed):
     """
     Binance price data feed. Read data from binance, provide pandas dataframes with that data
     """
