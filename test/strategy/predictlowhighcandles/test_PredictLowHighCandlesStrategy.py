@@ -6,7 +6,7 @@ import pandas as pd
 from strategy.predictlowhighcandles.PredictLowHighCandlesStrategy import PredictLowHighCandlesStrategy
 
 
-class TestPredictLowHighStrategy(TestCase):
+class TestPredictLowHighCandlesStrategy(TestCase):
 
     @staticmethod
     def new_strategy():
