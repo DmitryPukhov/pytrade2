@@ -1,16 +1,7 @@
 import datetime
-import logging
-import time
-from datetime import timedelta
 from typing import List, Dict
-import pandas as pd
-from binance.spot import Spot as Client
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
-from requests.exceptions import HTTPError, SSLError
-from urllib3.exceptions import RequestError, ReadTimeoutError
-
 from feed.BaseFeed import BaseFeed
-from feed.TickerInfo import TickerInfo
 
 
 class BinanceWebsocketFeed(BaseFeed):
@@ -34,6 +25,8 @@ class BinanceWebsocketFeed(BaseFeed):
         client.join()
 
     def ticker_callback(self, msg):
+        if "result" in msg and not msg["result"]:
+            return
         for consumer in [c for c in self.consumers if hasattr(c, 'on_bid_ask')]:
             consumer.on_bid_ask(self.raw2model(msg))
 

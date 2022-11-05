@@ -2,15 +2,13 @@ import importlib
 import logging.config
 import os
 import sys
-from typing import List
-
 import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
+
 from AppTools import AppTools
 from broker.BinanceBroker import BinanceBroker
-from feed.TickerInfo import TickerInfo
 
 
 class App:
@@ -26,7 +24,7 @@ class App:
 
         # Load config, set up logging
         self.config = self._load_config()
-        self.tickers: List[TickerInfo] = AppTools.read_candles_tickers(self.config)
+        # self.tickers: List[TickerInfo] = AppTools.read_candles_tickers(self.config)
 
         # Init logging
         loglevel = self.config["log.level"]
@@ -81,6 +79,7 @@ class App:
         """
         # self.feed = BinanceCandlesFeed(spot_client=self.client, tickers = self.tickers)
         self.broker = BinanceBroker(client=self.client)
+        AppTools.close_opened_posisions(self.broker, self.config["biml.tickers"])
 
         # Create strategy class
         strategy_file = f"strategy." + self.config["biml.strategy"]

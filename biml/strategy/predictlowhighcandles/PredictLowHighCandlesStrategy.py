@@ -1,11 +1,9 @@
-import collections
 import glob
 import logging
-from collections import defaultdict
 from datetime import datetime
 from functools import reduce
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 import pandas as pd
 from keras import Input
 from keras.layers import Dense
@@ -15,13 +13,11 @@ from scikeras.wrappers import KerasRegressor
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
-
+from sklearn.preprocessing import StandardScaler
 from AppTools import AppTools
 from feed.BinanceCandlesFeed import BinanceCandlesFeed
-from feed.TickerInfo import TickerInfo
-from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 from strategy.StrategyBase import StrategyBase
+from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 
 
 class PredictLowHighCandlesStrategy(StrategyBase):
@@ -55,11 +51,6 @@ class PredictLowHighCandlesStrategy(StrategyBase):
         self.profit_loss_ratio = 4
 
         self.logger = logging.getLogger(self.__class__.__name__)
-
-        if self.broker:
-            self.broker.close_opened_positions(self.ticker)
-            # Raise exception if we are in trade for this ticker
-            self.assert_out_of_market(self.ticker)
 
     def run(self, client):
         """
@@ -149,7 +140,8 @@ class PredictLowHighCandlesStrategy(StrategyBase):
             signal, price, stop_loss_adj, take_profit = 0, None, None, None
 
         self.logger.debug(
-            f"Calculated adjusted signal: {signal}, price:{price}, stop_loss: {stop_loss_adj}, take_profit: {take_profit}.")
+            f"Calculated adjusted signal: {signal}, price:{price}, stop_loss: {stop_loss_adj}, "
+            f"take_profit: {take_profit}.")
 
         return signal, price, stop_loss_adj, take_profit
 
@@ -168,12 +160,6 @@ class PredictLowHighCandlesStrategy(StrategyBase):
         y_pred = self.model.predict(X_last)
         LowHighCandlesFeatures.set_predicted_fields(self.candles, y_pred)
         self.logger.debug(f"Predicted fut_low-close: {y_pred[0][0]}, fut_high-fut_low:{y_pred[0][1]}")
-        #
-        # y_low = y_pred[0][0]
-        # self.candles.loc[self.candles.index[-1], "fut_low"] = self.candles.loc[self.candles.index[-1], "close"] + y_low
-        # y_high = y_pred[0][1]
-        # self.candles.loc[self.candles.index[-1], "fut_high"] = self.candles.loc[
-        #                                                            self.candles.index[-1], "close"] + y_high
 
         # Save model
         self.save_model()
