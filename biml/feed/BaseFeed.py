@@ -18,12 +18,7 @@ class BaseFeed:
                       "number_of_trades", " taker_buy_base_asset_volume", "taker_buy_quote_asset_volume",
                       "ignore"]
 
-    def __init__(self, tickers: List[TickerInfo]):
-        self.tickers = tickers
-
-        logging.info(
-            f"Feed initialized. candle_columns: {BaseFeed.candle_columns}\n, tickers: {self.tickers}")
-
+    def __init__(self):
         self.consumers = []
 
     def read(self):
