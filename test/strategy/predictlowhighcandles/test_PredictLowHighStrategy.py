@@ -2,14 +2,14 @@ from datetime import datetime
 from unittest import TestCase
 
 import pandas as pd
-from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
+from strategy.predictlowhighcandles.PredictLowHighCandlesStrategy import PredictLowHighCandlesStrategy
 
 
 class TestPredictLowHighStrategy(TestCase):
 
     @staticmethod
     def new_strategy():
-        strategy = PredictLowHighStrategy(None,"","")
+        strategy = PredictLowHighCandlesStrategy(None,"","")
         strategy.profit_loss_ratio = 4
         strategy.min_stop_loss_ratio=0.01
         return strategy

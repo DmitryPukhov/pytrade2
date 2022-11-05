@@ -4,7 +4,7 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-from strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
+from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 
 
 class TestLowHighTargetFeatures(TestCase):
@@ -34,7 +34,7 @@ class TestLowHighTargetFeatures(TestCase):
              {'close_time': datetime.fromisoformat('2021-12-08 07:01:01'), 'close': 3, 'low': 4, 'high': 6}
              ]).set_index('close_time')
 
-        withminmax = LowHighFeatures().targets_of(candles, 1)
+        withminmax = LowHighCandlesFeatures().targets_of(candles, 1)
         self.assertEqual([-2, 1], withminmax['fut_delta_low'].values.tolist())
         self.assertEqual([9, 2], withminmax['fut_low_high_size'].values.tolist())
 
@@ -46,7 +46,7 @@ class TestLowHighTargetFeatures(TestCase):
                                  'close': 4, 'low': 1, 'high': 10}
                                 ]).set_index('close_time')
 
-        y = LowHighFeatures().targets_of(candles, 1)
+        y = LowHighCandlesFeatures().targets_of(candles, 1)
         self.assertEqual(y['fut_delta_low'].values.tolist(), [-2, -3])
         self.assertEqual(y['fut_low_high_size'].values.tolist(), [9, 9])
 
@@ -64,7 +64,7 @@ class TestLowHighTargetFeatures(TestCase):
             {'close_time': datetime.fromisoformat('2021-11-26 17:06:00'), 'close': 5, 'low': 3, 'high': 7}
         ]).set_index('close_time')
 
-        y = LowHighFeatures().targets_of(candles, 1)
+        y = LowHighCandlesFeatures().targets_of(candles, 1)
 
         self.assertEqual([-4, -5, -5, -6, -1, -2, -1, -2], y['fut_delta_low'].values.tolist())
 
@@ -83,7 +83,7 @@ class TestLowHighTargetFeatures(TestCase):
             {'close': 2}
         ])
         y_pred = np.array([[-1,2]])
-        LowHighFeatures.set_predicted_fields(candles,y_pred)
+        LowHighCandlesFeatures.set_predicted_fields(candles, y_pred)
 
         self.assertEqual(candles.loc[candles.index[-1], "fut_low"], 1)
         self.assertEqual(candles.loc[candles.index[-1], "fut_high"], 3)

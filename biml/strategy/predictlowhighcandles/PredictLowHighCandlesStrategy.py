@@ -15,13 +15,13 @@ from sklearn.model_selection import cross_val_score, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
-from strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
+from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 from strategy.StrategyBase import StrategyBase
 
 
-class PredictLowHighStrategy(StrategyBase):
+class PredictLowHighCandlesStrategy(StrategyBase):
     """
-    Predict low/high value in the nearest future period.
+    Candles based. Predict low/high value in the nearest future period.
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
     """
 
@@ -140,15 +140,15 @@ class PredictLowHighStrategy(StrategyBase):
         Fit the model on last data window with new candle
         """
         # Fit
-        train_X, train_y = LowHighFeatures.features_and_targets(self.candles, self.window_size,
-                                                                self.predict_sindow_size)
+        train_X, train_y = LowHighCandlesFeatures.features_and_targets(self.candles, self.window_size,
+                                                                       self.predict_sindow_size)
         self.model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
         self.model.fit(train_X, train_y)
 
         # Predict
-        X_last = LowHighFeatures.features_of(self.candles, self.window_size).tail(1)
+        X_last = LowHighCandlesFeatures.features_of(self.candles, self.window_size).tail(1)
         y_pred = self.model.predict(X_last)
-        LowHighFeatures.set_predicted_fields(self.candles, y_pred)
+        LowHighCandlesFeatures.set_predicted_fields(self.candles, y_pred)
         self.logger.debug(f"Predicted fut_low-close: {y_pred[0][0]}, fut_high-fut_low:{y_pred[0][1]}")
         #
         # y_low = y_pred[0][0]
@@ -193,7 +193,7 @@ class PredictLowHighStrategy(StrategyBase):
 
         # Feature engineering.
 
-        X, y = LowHighFeatures.features_and_targets(data, self.window_size, self.predict_sindow_size)
+        X, y = LowHighCandlesFeatures.features_and_targets(data, self.window_size, self.predict_sindow_size)
 
         logging.info(f"Learn set size: {len(X)}")
 

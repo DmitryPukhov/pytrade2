@@ -2,7 +2,7 @@ import datetime
 import logging
 from App import App
 from feed.LocalFeed import LocalFeed
-from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
+from strategy.predictlowhighcandles.PredictLowHighStrategy import PredictLowHighStrategy
 
 
 class Learn(App):

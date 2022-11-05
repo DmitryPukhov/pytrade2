@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 
-class LowHighFeatures:
+class LowHighCandlesFeatures:
     # @staticmethod
     # def features_and_targets_balanced(candles, period, window_size, predict_window_size):
     #     features, targets = Features.features_and_targets(candles, period, window_size, predict_window_size, "min")
@@ -37,8 +37,8 @@ class LowHighFeatures:
         """
 
         # Prepare features and targets columns
-        features = LowHighFeatures.features_of(candles, window_size).dropna()
-        targets = LowHighFeatures.targets_of(candles, predict_window_size).dropna()
+        features = LowHighCandlesFeatures.features_of(candles, window_size).dropna()
+        targets = LowHighCandlesFeatures.targets_of(candles, predict_window_size).dropna()
 
         # Some features and targets has na and not matched, drop them
         targets = targets[targets.index.isin(features.index)]
@@ -56,7 +56,7 @@ class LowHighFeatures:
         """
         # Trick to implement forward rolling window for timeseries with unequal intervals:
         # reverse, apply rolling, then reverse back
-        windowspec = f'{window_size} {LowHighFeatures.freq}'
+        windowspec = f'{window_size} {LowHighCandlesFeatures.freq}'
         # df2 = df.reset_index(level='ticker', drop=True)
         df2: pd.DataFrame = features[['low', 'high']].sort_index(
             ascending=False).rolling(windowspec, min_periods=0).agg(
@@ -89,9 +89,9 @@ class LowHighFeatures:
         """
         Feature engineering
         """
-        transformed = LowHighFeatures.low_high_diff(candles)
-        windowed = LowHighFeatures.low_high_past(transformed, window_size)
-        withtime = LowHighFeatures.time_features(windowed)
+        transformed = LowHighCandlesFeatures.low_high_diff(candles)
+        windowed = LowHighCandlesFeatures.low_high_past(transformed, window_size)
+        withtime = LowHighCandlesFeatures.time_features(windowed)
         return withtime
 
     @staticmethod
@@ -114,15 +114,15 @@ class LowHighFeatures:
         if not candles.index.is_monotonic:
             print("here")
 
-        windowspec = f"{LowHighFeatures.period} {LowHighFeatures.freq}"
+        windowspec = f"{LowHighCandlesFeatures.period} {LowHighCandlesFeatures.freq}"
         rolling = candles.rolling(windowspec, min_periods=0).agg(
             {'open': lambda x: list(x)[0], 'high': 'max', 'low': 'min', 'close': lambda x: list(x)[-1], },
             closed='right')
         src_cols = ['open', 'high', 'low', 'close']
         df2 = candles[src_cols].copy()
         for shift in range(1, window_size + 1):
-            target_cols = [f"-{shift}*{LowHighFeatures.period}{LowHighFeatures.freq}_{src_col}" for src_col in src_cols]
-            df2[target_cols] = rolling.shift(shift - 1, LowHighFeatures.freq)[src_cols] \
+            target_cols = [f"-{shift}*{LowHighCandlesFeatures.period}{LowHighCandlesFeatures.freq}_{src_col}" for src_col in src_cols]
+            df2[target_cols] = rolling.shift(shift - 1, LowHighCandlesFeatures.freq)[src_cols] \
                 .reindex(df2.index, method='nearest', tolerance=windowspec)
         return df2.sort_index()
 

@@ -4,7 +4,7 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-from strategy.predictlowhigh.LowHighFeatures import LowHighFeatures
+from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 
 
 class TestLowHighFeatures(TestCase):
@@ -20,7 +20,7 @@ class TestLowHighFeatures(TestCase):
         ]).set_index('close_time')
 
         # Call
-        features = LowHighFeatures().low_high_diff(candles)
+        features = LowHighCandlesFeatures().low_high_diff(candles)
         np.testing.assert_equal([np.nan, 1.0], features['open'].values.tolist())
         np.testing.assert_equal([np.nan, -1.0], features['low'].values.tolist())
         np.testing.assert_equal([np.nan, 3.0], features['high'].values.tolist())
@@ -45,7 +45,7 @@ class TestLowHighFeatures(TestCase):
         ]).set_index('close_time')
 
         # Call
-        features = LowHighFeatures.low_high_past(candles, 3)
+        features = LowHighCandlesFeatures.low_high_past(candles, 3)
 
         # Assert
         # Aggregated -1 minute min/max

@@ -11,7 +11,7 @@ from broker.BinanceBroker import BinanceBroker
 from feed.TickerInfo import TickerInfo
 from feed.BinanceCandlesFeed import BinanceCandlesFeed
 
-from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
+from strategy.predictlowhighcandles.PredictLowHighCandlesStrategy import PredictLowHighCandlesStrategy
 
 
 class App:
@@ -97,8 +97,8 @@ class App:
         self.broker = BinanceBroker(client = self.client)
 
         # Strategy
-        self.strategy = PredictLowHighStrategy(broker = self.broker, ticker=self.tickers[-1].ticker,
-                                      model_dir=self.config["biml.model.dir"])
+        self.strategy = PredictLowHighCandlesStrategy(broker = self.broker, ticker=self.tickers[-1].ticker,
+                                                      model_dir=self.config["biml.model.dir"])
         self.feed.consumers.append(self.strategy)
         # Read feed from binance
         self.feed.run()
