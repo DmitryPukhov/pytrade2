@@ -26,7 +26,6 @@ class PredictLowHighCandlesStrategy(StrategyBase):
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
     """
 
-    # def __init__(self, broker, ticker: str, model_dir: str):
     def __init__(self, broker, config: Dict):
         super().__init__(broker)
         self.config = config

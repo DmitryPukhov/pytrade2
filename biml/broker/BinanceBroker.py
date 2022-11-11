@@ -12,18 +12,19 @@ class BinanceBroker:
     def __init__(self, client: Client):
         self.client = client
 
-    def create_order(self, symbol: str, order_type: int, quantity: float, price: float, stop_loss: float, take_profit: float):
+    def create_order(self, symbol: str, order_type: int, quantity: float, price: float, stop_loss: float,
+                     take_profit: float):
         """
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
-        ticker_size=2
-
+        ticker_size = 2
 
         sides = {1: "BUY", -1: "SELL"}
         side = sides[order_type]
 
-        logging.info(f"Creating {symbol} {side} order, price: {price}, stop loss: {stop_loss}, take profit: {take_profit}, quantity: {quantity}")
+        logging.info(
+            f"Creating {symbol} {side} order, price: {price}, stop loss: {stop_loss}, take profit: {take_profit}, quantity: {quantity}")
         stop_loss = round(stop_loss, ticker_size)
         take_profit = round(take_profit, ticker_size)
 
@@ -46,6 +47,7 @@ class BinanceBroker:
             stopLimitPrice=stop_loss,
             stopLimitTimeInForce="GTC"
         )
+
     #
     #
     # def create_order_old(self, symbol: str, side: str, price: float, quantity: float, stop_loss_ratio: float,
