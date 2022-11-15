@@ -43,6 +43,9 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
         feed.run()
 
     def on_bid_ask(self, bid_ask: dict):
+        """
+        Got new tick event
+        """
         new_df = pd.DataFrame([bid_ask], columns=bid_ask.keys()).set_index("datetime")
         self.bid_ask = pd.concat([self.bid_ask, new_df])
         self.learn_or_skip()
@@ -56,5 +59,5 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
             return
 
         logging.info("Learn")
-        features, targets = PredictLowHighFeatures.features_targets_of(self.bid_ask, 10)
+        features, targets = PredictLowHighFeatures.features_targets_of(self.bid_ask)
         pass

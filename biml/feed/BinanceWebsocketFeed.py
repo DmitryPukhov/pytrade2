@@ -22,11 +22,18 @@ class BinanceWebsocketFeed(BaseFeed):
         # Request the data maybe for multiple assets
         for i, ticker in enumerate(self.tickers):
             client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
+            #client.live_subscribe(stream="btcusdt@depth", id=1, callback=self.level2_callback)
+
         client.join()
+
+    def level2_callback(self, msg):
+        for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
+            consumer.on_level2(self.raw2model(msg))
 
     def ticker_callback(self, msg):
         if "result" in msg and not msg["result"]:
             return
+
         for consumer in [c for c in self.consumers if hasattr(c, 'on_bid_ask')]:
             consumer.on_bid_ask(self.raw2model(msg))
 
