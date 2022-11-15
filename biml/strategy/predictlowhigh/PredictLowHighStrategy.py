@@ -56,5 +56,5 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
             return
 
         logging.info("Learn")
-        features, targets = PredictLowHighFeatures.features_of(self.bid_ask, 10)
+        features, targets = PredictLowHighFeatures.features_targets_of(self.bid_ask, 10)
         pass

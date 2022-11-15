@@ -8,11 +8,10 @@ class PredictLowHighFeatures:
     """
 
     @staticmethod
-    def features_of(bid_ask: pd.DataFrame, size):
+    def features_targets_of(bid_ask: pd.DataFrame):
 
         agg = bid_ask.resample("10s") \
             .agg({"bid": "min", "ask": "max", "bid_qty": "sum", "ask_qty": "sum"}) \
-            .replace(0, np.NaN) \
-            .fillna(method="backfill")
+            .ffill()
 
-        return agg.tail(size), None
+        return agg, None
