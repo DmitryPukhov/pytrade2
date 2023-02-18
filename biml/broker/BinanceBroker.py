@@ -1,118 +1,80 @@
 import logging
-from collections import defaultdict
-from typing import List, Dict
+from typing import List, Dict, Optional
 from binance.spot import Spot as Client
+from broker.PairOrdersBroker import PairOrdersBroker
 
 
-class BinanceBroker:
+class BinanceBroker(PairOrdersBroker):
     """
     Orders management: buy, sell etc
     """
 
     def __init__(self, client: Client):
-        self.client = client
+        super().__init__()
+        self._log = logging.getLogger(self.__class__.__name__)
+        self.client: Client = client
+        self.order_sides = {1: "BUY", -1: "SELL"}
 
-    def create_order(self, symbol: str, order_type: int, quantity: float, price: float, stop_loss: float,
-                     take_profit: float):
+        self._log.info(f"Current opened trade: {self.cur_trade}")
+        self._log.info("Completed init broker")
+
+    def create_order(self, symbol: str, order_type: int, quantity: float, price: Optional[float], stop_loss: Optional[float]) -> float:
         """
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
+        return 0
+        if not order_type:
+            return
         ticker_size = 2
 
-        sides = {1: "BUY", -1: "SELL"}
-        side = sides[order_type]
+        side = self.order_sides[order_type]
 
-        logging.info(
-            f"Creating {symbol} {side} order, price: {price}, stop loss: {stop_loss}, take profit: {take_profit}, quantity: {quantity}")
+        self._log.info(
+            f"Create {symbol} {side} order, price: {price}, stop loss: {stop_loss}, quantity: {quantity}")
         stop_loss = round(stop_loss, ticker_size)
-        take_profit = round(take_profit, ticker_size)
 
-        # Main buy or sell order
+        # Main buy or sell order with stop loss
+        res = self.client.new_order(
+            symbol=symbol,
+            side=side,
+            type="MARKET",
+            stop_loss=stop_loss,
+            quantity=quantity)
+        filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
+        if not filled_price:
+            raise Exception("New order filled_price is empty")
+
+        # Take profit
         res = self.client.new_order(
             symbol=symbol,
             side=side,
             type="MARKET",
             quantity=quantity)
-        filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
+        self._log.debug(f"Take profit order response: {res}")
 
-        # Stop loss and take profit
-        close_side = sides[order_type * -1]
-        res = self.client.new_oco_order(
-            symbol=symbol,
-            side=close_side,
-            quantity=quantity,
-            price=take_profit,
-            stopPrice=stop_loss,
-            stopLimitPrice=stop_loss,
-            stopLimitTimeInForce="GTC"
-        )
-
-    #
-    #
-    # def create_order_old(self, symbol: str, side: str, price: float, quantity: float, stop_loss_ratio: float,
-    #                      ticker_size: int = 2):
-    #     """
-    #     Buy or sell order with trailing stop loss
-    #     """
-    #     trailing_delta = int(100 * stop_loss_ratio * 100)  # trailing delta in points
-    #
-    #     stop_loss_price = price
-    #     if side == "BUY":
-    #         stop_loss_price = price * (1 - stop_loss_ratio)
-    #         trigger_price = price * (1 - stop_loss_ratio / 2)
-    #     elif side == "SELL":
-    #         stop_loss_price = price * (1 + stop_loss_ratio)
-    #         trigger_price = price * (1 + stop_loss_ratio / 2)
-    #     stop_loss_price, trigger_price = round(stop_loss_price, ticker_size), round(trigger_price, ticker_size)
-    #
-    #     logging.info(f"Creating {side} order and trailing stop loss order, symbol={symbol}, price={price},"
-    #                  f" stop_loss_price={stop_loss_price}, trailing_delta={trailing_delta}")
-    #
-    #     # Main order
-    #     res = self.client.new_order(
-    #         symbol=symbol,
-    #         side=side,
-    #         type="LIMIT",
-    #         price=price,
-    #         quantity=quantity,
-    #         timeInForce="GTC")
-    #     logging.info(res)
-    #     filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
-    #
-    #     # Trailing stop loss order
-    #
-    #     res = self.client.new_order(
-    #         symbol=symbol,
-    #         side="BUY" if side == "SELL" else "SELL",
-    #         type='STOP_LOSS_LIMIT',
-    #         quantity=quantity,
-    #         price=stop_loss_price,
-    #         stopPrice=trigger_price,
-    #         trailingDelta=trailing_delta,
-    #         timeInForce="GTC")
-    #     logging.info(res)
+        return filled_price
 
     def close_opened_positions(self, ticker: str):
         if not self.client:
             return
-        opened_quantity, opened_orders = self.opened_positions(ticker)
+        opened_quantity, opened_orders = self.get_opened_positions(ticker)
         if opened_orders:
-            logging.info("Cancelling opened orders")
+            self._log.info("Cancelling opened orders")
             self.client.cancel_open_orders(ticker)
         if opened_quantity:
             # if we sold (-1) we should buy and vice versa
             side = "BUY" if opened_quantity < 0 else "SELL"
-            logging.info(f"Creating {-opened_quantity} {side} order to close existing positions")
+            self._log.info(f"Creating {-opened_quantity} {side} order to close existing positions")
             res = self.client.new_order(symbol=ticker, side=side, type="MARKET",
                                         quantity=abs(opened_quantity))
-            logging.info(res)
+            self._log.info(res)
 
-    def opened_positions(self, symbol: str) -> (float, List[Dict]):
+    def get_opened_positions(self, symbol: str) -> (float, List[Dict]):
         """
         Quantity of symbol we have in portfolio
         """
-        logging.debug("Checking opened orders")
+        self._log.debug("Checking opened orders")
 
         orders, opened_quantity = self.client.get_open_orders(symbol), 0
         if orders:
@@ -122,5 +84,5 @@ class BinanceBroker:
             # stoploss is buy => main order was sell
             if last_order["side"] == "BUY": opened_quantity *= -1.0
         # [{'symbol': 'BTCUSDT', 'orderId': 6104154, 'orderListId': -1, 'clientOrderId': 'Rwcdh0uW8Ocux22TXmpFmD', 'price': '21910.94000000', 'origQty': '0.00100000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'STOP_LOSS_LIMIT', 'side': 'SELL', 'stopPrice': '21481.31000000', 'trailingDelta': 200, 'icebergQty': '0.00000000', 'time': 1656149854953, 'updateTime': 1656159716195, 'isWorking': True, 'origQuoteOrderQty': '0.00000000'}]
-        logging.info(f"We have {opened_quantity} {symbol} in portfolio and {len(orders)} opened orders for {symbol}")
+        self._log.info(f"We have {opened_quantity} {symbol} in portfolio and {len(orders)} opened orders for {symbol}")
         return opened_quantity, orders

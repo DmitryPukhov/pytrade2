@@ -17,6 +17,7 @@ class App:
     """
 
     def __init__(self):
+        self._log = logging.getLogger(self.__class__.__name__)
         # For pandas printing to log
         pd.set_option('display.max_colwidth', None)
         pd.set_option('display.max_columns', None)
@@ -29,17 +30,17 @@ class App:
         # Init logging
         loglevel = self.config["log.level"]
         config_logging(logging, loglevel)  # self._init_logger(self.config['log.dir'])
-        logging.info(f"Set log level to {loglevel}")
+        self._log.info(f"Set log level to {loglevel}")
 
         # Create spot client
         key, secret, url = self.config["biml.connector.key"], self.config["biml.connector.secret"], self.config[
             "biml.connector.url"]
-        logging.info(f"Init binance client, url: {url}")
+        self._log.info(f"Init binance client, url: {url}")
         self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
 
         # Init binance feed
         self.feed, self.broker, self.strategy = None, None, None
-        logging.info("App initialized")
+        self._log.info("App initialized")
 
     @staticmethod
     def _load_config():
@@ -84,13 +85,13 @@ class App:
         # Create strategy class
         strategy_file = f"strategy." + self.config["biml.strategy"]
         strategy_class_name = strategy_file.split(".")[-1]
-        logging.info(f"Running the app with strategy from {strategy_file} import {strategy_class_name}")
+        self._log.info(f"Running the app with strategy from {strategy_file} import {strategy_class_name}")
         module = importlib.import_module(strategy_file, strategy_class_name)
         strategy = getattr(module, strategy_class_name)(broker=self.broker, config=self.config)
         # Run
         strategy.run(self.client)
 
-        logging.info("The end")
+        self._log.info("The end")
 
 
 if __name__ == "__main__":

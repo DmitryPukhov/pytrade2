@@ -17,8 +17,9 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
     """
 
     def __init__(self, broker, config: Dict):
-        StrategyBase.__init__(self, broker)
+        StrategyBase.__init__(self, broker, config)
         PeriodicalLearnStrategy.__init__(self, config)
+        self._log = logging.getLogger(self.__class__.__name__)
 
         self.config = config
         self.tickers = self.config["biml.tickers"].split(",")
@@ -30,8 +31,9 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
             self.model_Xy_dir = str(Path(self.model_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.bid_ask = pd.DataFrame(columns=BinanceBidAskFeed.bid_ask_columns).set_index("datetime")
+        self._logger = logging.getLogger(self.__class__.__name__)
+        self.ticker = pd.DataFrame(columns=BinanceBidAskFeed.bid_ask_columns).set_index("datetime")
+        self.level2 = None
         self.buffer = []
 
     def run(self, client):
@@ -42,22 +44,27 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
         feed.consumers.append(self)
         feed.run()
 
-    def on_bid_ask(self, bid_ask: dict):
+    def on_level2(self, level2: list[dict]):
         """
-        Got new tick event
+        Got new order book items event
         """
-        new_df = pd.DataFrame([bid_ask], columns=bid_ask.keys()).set_index("datetime")
+        new_df = pd.DataFrame([level2], columns=level2.keys()).set_index("datetime")
+        self.level2 = pd.concat([self.bid_ask, new_df]) if self.level2 else new_df
+        self.learn_or_skip()
+
+    def on_ticker(self, ticker: dict):
+        new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime")
         self.bid_ask = pd.concat([self.bid_ask, new_df])
         self.learn_or_skip()
 
     def learn(self):
-        logging.info("Learning")
+        self._log.info("Learning")
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
 
         if interval < self.min_history_interval:
             print(f"Not enough data to learn. Required {self.min_history_interval} but exists {interval}")
             return
 
-        logging.info("Learn")
+        self._log.info("Learn")
         features, targets = PredictLowHighFeatures.features_targets_of(self.bid_ask)
         pass

@@ -39,7 +39,7 @@ class LocalFeed(BaseFeed):
         Read single ticker for interval like BTCUSDT M1 from start_time to end_time
         """
         pattern = f"{self.data_dir}/{ticker}/*_{ticker}_{interval}.csv"
-        logging.info(f"Reading files, ticker: {ticker}, interval: {interval}, search pattern: {pattern}")
+        self._log.info(f"Reading files, ticker: {ticker}, interval: {interval}, search pattern: {pattern}")
         files = [file for file in glob.glob(pattern) if LocalFeed.is_between(file, start_time, end_time)]
         df = pd.DataFrame()
         for file in files:

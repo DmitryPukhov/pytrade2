@@ -21,23 +21,27 @@ class BinanceWebsocketFeed(BaseFeed):
         client.start()
         # Request the data maybe for multiple assets
         for i, ticker in enumerate(self.tickers):
+            # todo: find a way to get stock last price
             client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
             #client.live_subscribe(stream="btcusdt@depth", id=1, callback=self.level2_callback)
-
         client.join()
 
     def level2_callback(self, msg):
         for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
-            consumer.on_level2(self.raw2model(msg))
+            consumer.on_level2(self.rawbidask2model(msg))
 
     def ticker_callback(self, msg):
         if "result" in msg and not msg["result"]:
             return
 
-        for consumer in [c for c in self.consumers if hasattr(c, 'on_bid_ask')]:
-            consumer.on_bid_ask(self.raw2model(msg))
+        for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
+            consumer.on_ticker(self.rawticker2model(msg))
 
-    def raw2model(self, msg: Dict):
+    def rawticker2model(self, msg: Dict):
+        # todo: convert price+vol ticker to model
+        return msg
+
+    def rawbidask2model(self, msg: Dict):
         """
         Convert raw binance data to model
         """

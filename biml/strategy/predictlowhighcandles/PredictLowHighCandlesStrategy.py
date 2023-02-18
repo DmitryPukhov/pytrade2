@@ -16,22 +16,21 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from AppTools import AppTools
 from feed.BinanceCandlesFeed import BinanceCandlesFeed
+from strategy.PersistableModelStrategy import PersistableModelStrategy
 from strategy.StrategyBase import StrategyBase
 from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 
 
-class PredictLowHighCandlesStrategy(StrategyBase):
+class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
     """
     Candles based. Predict low/high value in the nearest future period.
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio
     """
 
     def __init__(self, broker, config: Dict):
-        super().__init__(broker)
-        self.config = config
-        self.tickers = AppTools.read_candles_tickers(self.config)
-        self.ticker: str = self.tickers[-1].ticker
-        self.model_dir = self.config["biml.model.dir"]
+        super().__init__(broker, config)
+        self._log = logging.getLogger(self.__class__.__name__)
+        self.model_dir = config["biml.model.dir"]
 
         if self.model_dir:
             self.model_weights_dir = str(Path(self.model_dir, self.__class__.__name__, "weights"))
@@ -48,8 +47,6 @@ class PredictLowHighCandlesStrategy(StrategyBase):
         self.min_stop_loss_ratio = 0.005
         # Minimum profit/loss
         self.profit_loss_ratio = 4
-
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     def run(self, client):
         """
@@ -76,40 +73,77 @@ class PredictLowHighCandlesStrategy(StrategyBase):
         self.learn_on_last()
 
         # Get last predicted signal
-        signal, price, stop_loss, take_profit = self.last_signal(self.candles)
-        if signal:
-            opened_quantity, opened_orders = self.broker.opened_positions(self.ticker)
-            if not opened_quantity and not opened_orders:
-                # Buy or sell
-                self.broker.create_order(symbol=self.ticker,
-                                         order_type=signal,
-                                         quantity=self.order_quantity,
-                                         price=price,
-                                         stop_loss=stop_loss,
-                                         take_profit=take_profit)
-            else:
-                logging.info(
-                    f"Do not create {signal} order for {self.ticker} because we already have {len(opened_orders)}"
-                    f" orders and {opened_quantity} quantity")
+        # signal, price, stop_loss = self.last_signal(self.candles)
+        # if signal:
+        #     opened_quantity, opened_orders = self.broker.get_opened_positions(self.ticker)
+        #     if not opened_quantity and not opened_orders:
+        #         # Buy or sell
+        #         self.broker.create_order(symbol=self.ticker,
+        #                                  order_type=signal,
+        #                                  quantity=self.order_quantity,
+        #                                  price=price,
+        #                                  stop_loss=stop_loss)
+        #     else:
+        #         self._log.info(
+        #             f"Do not create {signal} order for {self.ticker} because we already have {len(opened_orders)}"
+        #             f" orders and {opened_quantity} quantity")
 
-    def last_signal(self, df: pd.DataFrame) -> (int, int, int, int):
+        # Open/close trade
+        self.order()
+
+    def order(self):
+        """ Get current signal and open/close or continue """
+
+        (signal, price, stop_loss) = self.open_signal(self.candles) if not self.broker.cur_trade \
+            else (self.close_signal(), None, None)
+        if signal:
+            # Open or close order
+            self.broker.create_order(self.ticker, signal, self.order_quantity, price, stop_loss)
+
+    def close_signal(self, df: pd.DataFrame) -> int:
+        """ Buy or sell or no signal to close current opened order"""
+        self._log.debug(f"Calculating close signal for trade {self.broker.cur_trade}")
+        if not self.broker.cur_trade:
+            # No opened trade, nothing to close
+            return 0
+
+        # Calculate variables of current state
+        close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
+        signal, cur_trade_signal = 0, 0
+        predicted_loss, cur_trade_stop_loss = 0, abs(
+            self.broker.cur_trade.open_price - self.broker.cur_trade.stop_loss_price)
+        if self.broker.cur_trade.side == self.broker.order_sides.get(1):
+            # Calc variables for opened buy order
+            predicted_loss, cur_trade_signal = close - fut_low, 1
+        elif self.broker.cur_trade.side == self.broker.order_sides.get(-1):
+            # Calc vars for opened sell order
+            predicted_loss, cur_trade_signal = fut_high - close, -1
+
+        # If predicted loss is too much, signal to close opened order
+        signal = -cur_trade_signal if predicted_loss > cur_trade_stop_loss else 0
+        self._log.debug(
+            f"Calculated close signal: {signal}, fut_high: {fut_high}, fut_low: {fut_low}, close price: {close}, current trade: {self.broker.cur_trade}")
+        return signal
+
+    def open_signal(self, df: pd.DataFrame) -> (int, int, int):
         """
         Return buy or sell or no signal using predicted prices
         :param df: candles dataframe
         :return: 1 for buy, -1 sell, 0 no signal
         """
+        self._log.debug("Calculate open signal")
         signal, price, stop_loss, stop_loss_adj, take_profit = 0, None, None, None, None
 
         if df.empty:
-            self.logger.debug("Candles are empty")
-            return signal, price, stop_loss, take_profit
+            self._log.debug("Candles are empty")
+            return signal, price, stop_loss
         close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
         delta_high, delta_low = (fut_high - close), (close - fut_low)
         ratio = abs(delta_high / delta_low)
 
         # delta_high, delta_low = fut_high - close, close - fut_low
 
-        logging.debug(
+        self._log.debug(
             f"Calculating signal. close: {close}, fut_high:{fut_high}, fut_low:{fut_low},"
             f" delta_high:{delta_high}, delta_low: {delta_low}, "
             f"ratio: {max(ratio, 1 / ratio)}, profit_loss_ratio:{self.profit_loss_ratio}")
@@ -125,24 +159,24 @@ class PredictLowHighCandlesStrategy(StrategyBase):
             stop_loss_adj = max(stop_loss, price * (1 + self.min_stop_loss_ratio))
 
         if signal:
-            self.logger.debug(
+            self._log.debug(
                 f"Calculated signal: {signal}, price:str(price), "
                 f"stop_loss: {stop_loss} ({stop_loss - price}),"
                 f"stop_loss adjusted: {stop_loss} ({stop_loss_adj - price})  for min ratio {self.min_stop_loss_ratio},"
                 f"take_profit: {take_profit} ({take_profit - price}).")
 
         if signal and abs(take_profit - price) < abs(price - stop_loss_adj) * self.profit_loss_ratio:
-            self.logger.debug(
+            self._log.debug(
                 f"Expected profit {abs(take_profit - price)} is too small "
                 f"for loss {abs(price - stop_loss)}, adjusted loss {abs(price - stop_loss_adj)}"
                 f" and profit loss ratio {self.profit_loss_ratio}. set signal to 0")
-            signal, price, stop_loss_adj, take_profit = 0, None, None, None
+            signal, price, stop_loss_adj = 0, None, None
 
-        self.logger.debug(
+        self._log.debug(
             f"Calculated adjusted signal: {signal}, price:{price}, stop_loss: {stop_loss_adj}, "
             f"take_profit: {take_profit}.")
 
-        return signal, price, stop_loss_adj, take_profit
+        return signal, price, stop_loss_adj
 
     def learn_on_last(self):
         """
@@ -158,7 +192,7 @@ class PredictLowHighCandlesStrategy(StrategyBase):
         X_last = LowHighCandlesFeatures.features_of(self.candles, self.window_size).tail(1)
         y_pred = self.model.predict(X_last)
         LowHighCandlesFeatures.set_predicted_fields(self.candles, y_pred)
-        self.logger.debug(f"Predicted fut_low-close: {y_pred[0][0]}, fut_high-fut_low:{y_pred[0][1]}")
+        self._log.debug(f"Predicted fut_low-close: {y_pred[0][0]}, fut_high-fut_low:{y_pred[0][1]}")
 
         # Save model
         self.save_model()
@@ -198,7 +232,7 @@ class PredictLowHighCandlesStrategy(StrategyBase):
 
         X, y = LowHighCandlesFeatures.features_and_targets(data, self.window_size, self.predict_sindow_size)
 
-        logging.info(f"Learn set size: {len(X)}")
+        self._log.info(f"Learn set size: {len(X)}")
 
         # self.pipe = self.create_pipe(X, y,epochs= 100, batch_size=100) if not self.pipe else self.pipe
         # tscv = TimeSeriesSplit(n_splits=20)
@@ -209,23 +243,6 @@ class PredictLowHighCandlesStrategy(StrategyBase):
         # Save weights
         self.save_model()
 
-    def load_last_model(self, model: Model):
-        saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
-        if saved_models:
-            last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
-            logging.debug(f"Load model from {last_model_path}")
-            model.load_weights(last_model_path)
-        else:
-            logging.info(f"No saved models in {self.model_weights_dir}")
-
-    def save_model(self):
-        # Save the model
-        model: Model = self.model.regressor.named_steps["model"].model
-
-        model_path = str(Path(self.model_weights_dir, datetime.now().isoformat()))
-        logging.debug(f"Save model to {model_path}")
-        model.save_weights(model_path)
-
     def save_lastXy(self, X_last: pd.DataFrame, y_pred_last, candles: pd.DataFrame):
         """
         Write model X,y data to csv for analysis
@@ -235,7 +252,7 @@ class PredictLowHighCandlesStrategy(StrategyBase):
         Xpath = str(Path(self.model_Xy_dir, file_name_prefix + "X.csv"))
         ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
         candlespath = str(Path(self.model_Xy_dir, file_name_prefix + "candles.csv"))
-        logging.debug(f"Save X to {Xpath},y to {ypath}, candles to {candlespath}")
+        self._log.debug(f"Save X to {Xpath},y to {ypath}, candles to {candlespath}")
 
         # Save X
         X_last.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')

@@ -12,11 +12,12 @@ class Downloader(App):
 
     def __init__(self):
         super().__init__()
+        self._log = logging.getLogger(self.__class__.__name__)
         self.data_dir = self.config["biml.data.dir"]
         self.tickers = AppTools.read_candles_tickers(self.config)
 
     def run(self):
-        logging.info(f"Run downloader, data dir: {self.data_dir}")
+        self._log.info(f"Run downloader, data dir: {self.data_dir}")
         self.feed = BinanceCandlesFeed(spot_client=self.client, tickers=self.tickers)
 
         # Run binance feed with local writer consumer

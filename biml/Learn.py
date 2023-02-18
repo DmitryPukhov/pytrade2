@@ -13,11 +13,12 @@ class Learn(App):
 
     def __init__(self):
         super().__init__()
+        self._log = logging.getLogger(self.__class__.__name__)
         self.data_dir = self.config["biml.data.dir"]
         self.model_dir = self.config["biml.model.dir"]
 
     def learn(self):
-        logging.info(f"Learn, data dir: {self.data_dir}")
+        self._log.info(f"Learn, data dir: {self.data_dir}")
         # Run saved csv data from local folder
         tickers = AppTools.read_candles_tickers(self.config)
         history_feed = LocalFeed(self.data_dir, tickers)

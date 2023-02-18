@@ -32,7 +32,7 @@ class AppTools:
         Raise exception if we have opened positions for the symbol
         """
         if broker:
-            opened_quantity, opened_orders = broker.opened_positions(ticker)
+            opened_quantity, opened_orders = broker.get_opened_positions(ticker)
             if opened_quantity or opened_orders:
                 raise AssertionError(
                     f"Fatal: cannot trade. We have opened positions: {opened_quantity} {ticker} "
