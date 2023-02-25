@@ -60,7 +60,7 @@ class PairOrdersBroker:
         Start new trade with new order
         """
         assert (not self.cur_trade)
-        # Create order on stock exchange
+        # Create order at stock exchange
         filled_price = self.create_order(symbol=symbol, order_type=side, quantity=quantity, price=price,
                                          stop_loss=stop_loss)
         # Insert trade info into db
