@@ -82,9 +82,8 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
 
         (signal, price, stop_loss) = self.open_signal(self.candles) if not self.broker.cur_trade \
             else (self.close_signal(), None, None)
-        if signal:
-            # Open or close order
-            self.broker.create_order(self.ticker, signal, self.order_quantity, price, stop_loss)
+        # Open or close or skip order
+        self.process_signal(signal, price, stop_loss)
 
     def close_signal(self, df: pd.DataFrame) -> int:
         """ Buy or sell or no signal to close current opened order"""

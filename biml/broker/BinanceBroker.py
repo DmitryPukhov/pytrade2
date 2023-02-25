@@ -1,6 +1,8 @@
 import logging
 from typing import List, Dict, Optional
+
 from binance.spot import Spot as Client
+
 from broker.PairOrdersBroker import PairOrdersBroker
 
 
@@ -21,14 +23,14 @@ class BinanceBroker(PairOrdersBroker):
     def create_order(self, symbol: str, order_type: int,
                      quantity: float,
                      price: Optional[float],
-                     stop_loss: Optional[float]) -> float:
+                     stop_loss: Optional[float]) -> Optional[float]:
         """
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
 
         if not order_type:
-            return
+            return None
         ticker_size = 2
 
         side = self.order_sides[order_type]
@@ -105,9 +107,7 @@ if __name__ == "__main__":
         print(f"Init binance client, url: {url}")
         return Client(key=key, secret=secret, base_url=url, timeout=10)
     client= create_test_client()
-    info=client.exchange_info("BTCUSDT")
     detail=client.my_trades("BTCUSDT")
-
     orders=client.get_orders("BTCUSDT")
     trades=client.my_trades("BTCUSDT")
     print(orders)

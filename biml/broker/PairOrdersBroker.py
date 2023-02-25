@@ -60,7 +60,7 @@ class PairOrdersBroker:
         self.cur_trade, closed_trade = None, self.cur_trade
         return closed_trade
 
-    def new_trade(self, symbol: str, side: int, quantity: float, price: float, stop_loss: float, take_profit: float):
+    def new_trade(self, symbol: str, side: int, quantity: float, price: float, stop_loss: float):
         """
         Start new trade with new order
         """
@@ -69,26 +69,16 @@ class PairOrdersBroker:
         filled_price = self.create_order(symbol=symbol, order_type=side, quantity=quantity, price=price,
                                          stop_loss=stop_loss)
         # Insert trade info into db
-        trade = Trade(ticker=symbol, side=side, open_time=datetime.datetime(), open_price=filled_price,
-                      quantity=quantity)
+        trade = Trade(ticker=symbol, side=side, open_time=datetime.now(), open_price=filled_price,
+                      stop_loss_price=stop_loss, quantity=quantity)
         self._log.debug(f"Insert new trade into stat db: {trade}")
-        self.db_session.execute(insert(trade))
+        self.db_session.add(trade)
         self.db_session.flush()
         self.cur_trade = trade
-
-    # def close_trade(self, symbol: str):
-    #     assert self.cur_trade
-    #     filled_price = self.create_order(symbol=symbol, order_type=side, quantity=quantity, price=price,
-    #                                      stop_loss=stop_loss)
-    #     # Inserting new trade into db
-    #     trade = Trade(ticker=symbol, side=side, open_time=datetime.datetime(), open_price=filled_price,
-    #                   quantity=quantity)
-    #     self._log.debug(f"Insert new trade into stat db: {trade}")
-    #     self.db_session.execute(insert(trade))
-    #     self.db_session.flush()
 
     def create_order(self, symbol: str, order_type: int, quantity: float, price: Optional[float],
                      stop_loss: Optional[float]) -> float:
         pass
-    def close_opened_positions(self, symbol: str):
+
+    def close_opened_positions(self, ticker: str):
         pass
