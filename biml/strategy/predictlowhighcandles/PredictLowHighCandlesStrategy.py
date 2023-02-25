@@ -44,10 +44,11 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         self.model = None
 
         # Minimum stop loss ratio = (price-stop_loss)/price
-        self.min_stop_loss_ratio = 0.005
+        #self.min_stop_loss_ratio = 0.005
+        self.min_stop_loss_ratio = 0.001
         # Minimum profit/loss
         # For test only
-        self.profit_loss_ratio = 2
+        self.profit_loss_ratio = 1.5
 
     def run(self, client):
         """
@@ -72,22 +73,6 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
             return
         # Fit on last
         self.learn_on_last()
-
-        # Get last predicted signal
-        # signal, price, stop_loss = self.last_signal(self.candles)
-        # if signal:
-        #     opened_quantity, opened_orders = self.broker.get_opened_positions(self.ticker)
-        #     if not opened_quantity and not opened_orders:
-        #         # Buy or sell
-        #         self.broker.create_order(symbol=self.ticker,
-        #                                  order_type=signal,
-        #                                  quantity=self.order_quantity,
-        #                                  price=price,
-        #                                  stop_loss=stop_loss)
-        #     else:
-        #         self._log.info(
-        #             f"Do not create {signal} order for {self.ticker} because we already have {len(opened_orders)}"
-        #             f" orders and {opened_quantity} quantity")
 
         # Open/close trade
         self.order()
@@ -132,17 +117,13 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         :param df: candles dataframe
         :return: 1 for buy, -1 sell, 0 no signal
         """
-        self._log.debug("Calculate open signal")
         signal, price, stop_loss, stop_loss_adj, take_profit = 0, None, None, None, None
-
         if df.empty:
             self._log.debug("Candles are empty")
             return signal, price, stop_loss
         close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
         delta_high, delta_low = (fut_high - close), (close - fut_low)
         ratio = abs(delta_high / delta_low)
-
-        # delta_high, delta_low = fut_high - close, close - fut_low
 
         self._log.debug(
             f"Calculating signal. close: {close}, fut_high:{fut_high}, fut_low:{fut_low},"
@@ -161,7 +142,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
 
         if signal:
             self._log.debug(
-                f"Calculated signal: {signal}, price:str(price), "
+                f"Calculated signal: {signal}, price:{price}, "
                 f"stop_loss: {stop_loss} ({stop_loss - price}),"
                 f"stop_loss adjusted: {stop_loss} ({stop_loss_adj - price})  for min ratio {self.min_stop_loss_ratio},"
                 f"take_profit: {take_profit} ({take_profit - price}).")

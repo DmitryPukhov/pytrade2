@@ -49,7 +49,7 @@ class BinanceBroker(PairOrdersBroker):
         if price and stop_loss:
             other_side = self.order_sides[-order_type]
             stop_loss = round(stop_loss, ticker_size)
-            stop_loss_limit_price=stop_loss-(price-stop_loss)
+            stop_loss_limit_price=round(stop_loss-(price-stop_loss), ticker_size)
             self._log.info(f"Creating stop loss order, stop_loss={stop_loss}, stop_loss_limit_price={stop_loss_limit_price}")
             res = self.client.new_order(
                 symbol=symbol,
@@ -95,28 +95,21 @@ class BinanceBroker(PairOrdersBroker):
 
 
 if __name__ == "__main__":
-    # todo: remove this
-    from App import App
-    config=App._load_config()
-    key, secret, url = config["biml.connector.key"], config["biml.connector.secret"], config[
-        "biml.connector.url"]
-    print(f"Init binance client, url: {url}")
-    client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
+
+    def create_test_client():
+        # todo: remove this
+        from App import App
+        config=App._load_config()
+        key, secret, url = config["biml.connector.key"], config["biml.connector.secret"], config[
+            "biml.connector.url"]
+        print(f"Init binance client, url: {url}")
+        return Client(key=key, secret=secret, base_url=url, timeout=10)
+    client= create_test_client()
+    info=client.exchange_info("BTCUSDT")
+    detail=client.my_trades("BTCUSDT")
+
     orders=client.get_orders("BTCUSDT")
     trades=client.my_trades("BTCUSDT")
     print(orders)
-    #broker=BinanceBroker(client=client)
-    #broker.create_order(symbol="BTCUSDT",order_type=1, quantity=0.001, price=22900, stop_loss=21900)
-    # res = client.new_order_test(
-    #     symbol="BTCUSDT",
-    #     side="sell",
-    #     type="STOP_LOSS",
-    #     price=22000.0,
-    #     stopPrice=
-    #     trailingDelta=200,
-    #     timeInForce="GTC",
-    #     #trailing_delta=200, # 200 bips=2%
-    #     quantity=0.001)
-    #print(res)
 
     print("Done")
