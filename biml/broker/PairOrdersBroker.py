@@ -45,9 +45,14 @@ class PairOrdersBroker:
         """
         self._log.info(f"Close trade for {symbol}")
         assert self.cur_trade
+        # Cancel stop loss order for current trade
+        self.close_opened_positions(symbol)
+
+        # Place closing order for current trade
         side = self.order_sides[-self.cur_trade.side]
         close_price = self.create_order(symbol=symbol, order_type=side, quantity=self.cur_trade.quantity, price=None,
                                         stop_loss=None)
+
         # Update stat db
         self.cur_trade.close_time = datetime.now()
         self.cur_trade.close_price = close_price
@@ -84,4 +89,6 @@ class PairOrdersBroker:
 
     def create_order(self, symbol: str, order_type: int, quantity: float, price: Optional[float],
                      stop_loss: Optional[float]) -> float:
+        pass
+    def close_opened_positions(self, symbol: str):
         pass

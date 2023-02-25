@@ -32,7 +32,7 @@ class BinanceBroker(PairOrdersBroker):
         ticker_size = 2
 
         side = self.order_sides[order_type]
-        self._log.info(f"Create {symbol}  {side} order, price: {price}  quantity: {quantity}, stop loss: {stop_loss}")
+        self._log.info(f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity}, stop loss: {stop_loss}")
         # Main buy or sell order with stop loss
         # This works
         res = self.client.new_order(
@@ -57,7 +57,7 @@ class BinanceBroker(PairOrdersBroker):
                 type="STOP_LOSS_LIMIT",
                 stopPrice=stop_loss, # When stopPrice is reached, place limit order with price.
                 price=stop_loss_limit_price, # Order executed with this price or better (ideally stopPrice)
-                trailing_delta=200, # 200 bips=2%
+                trailingDelta=200, # 200 bips=2%
                 timeInForce="GTC",
                 quantity=quantity)
             self._log.debug(f"Stop loss order response: {res}")
@@ -83,8 +83,6 @@ class BinanceBroker(PairOrdersBroker):
         """
         Quantity of symbol we have in portfolio
         """
-        self._log.debug("Checking opened orders")
-
         orders, opened_quantity = self.client.get_open_orders(symbol), 0
         if orders:
             # Currently opened orders is trailing stop loss against main order
@@ -92,7 +90,6 @@ class BinanceBroker(PairOrdersBroker):
             opened_quantity = float(last_order["origQty"])
             # stoploss is buy => main order was sell
             if last_order["side"] == "BUY": opened_quantity *= -1.0
-        # [{'symbol': 'BTCUSDT', 'orderId': 6104154, 'orderListId': -1, 'clientOrderId': 'Rwcdh0uW8Ocux22TXmpFmD', 'price': '21910.94000000', 'origQty': '0.00100000', 'executedQty': '0.00000000', 'cummulativeQuoteQty': '0.00000000', 'status': 'NEW', 'timeInForce': 'GTC', 'type': 'STOP_LOSS_LIMIT', 'side': 'SELL', 'stopPrice': '21481.31000000', 'trailingDelta': 200, 'icebergQty': '0.00000000', 'time': 1656149854953, 'updateTime': 1656159716195, 'isWorking': True, 'origQuoteOrderQty': '0.00000000'}]
         self._log.info(f"We have {opened_quantity} {symbol} in portfolio and {len(orders)} opened orders for {symbol}")
         return opened_quantity, orders
 

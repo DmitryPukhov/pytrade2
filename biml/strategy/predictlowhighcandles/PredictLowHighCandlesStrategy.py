@@ -46,7 +46,8 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         # Minimum stop loss ratio = (price-stop_loss)/price
         self.min_stop_loss_ratio = 0.005
         # Minimum profit/loss
-        self.profit_loss_ratio = 4
+        # For test only
+        self.profit_loss_ratio = 2
 
     def run(self, client):
         """
