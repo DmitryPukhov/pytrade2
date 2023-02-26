@@ -11,17 +11,35 @@ class StrategyBase:
         self.tickers = AppTools.read_candles_tickers(config)
         self.ticker: str = self.tickers[-1].ticker
 
-    def process_signal(self, signal: int, price: float, stop_loss: float):
-        """ Create new trade or close current """
-        if not signal:
-            return
-        # Update broker from exchange
+    def process_new_data(self):
         self.broker.clear_cur_trade_if_closed()
 
         if not self.broker.cur_trade:
+            self._log.debug("No current trade found. Can calculate open signal.")
+            # Get open signal because current trade does not exist, process
+            (signal, price, stop_loss) = self.open_signal(self.candles)
             # Open new trade
-            self.broker.create_trade(symbol=self.ticker, order_type=signal, quantity=self.order_quantity, price=price,
-                                  stop_loss=stop_loss)
-        elif signal == -self.broker.cur_trade:
-            # Close opened trade
-            self.broker.end_cur_trade(symbol=self.ticker)
+            if signal:
+                self.broker.create_trade(symbol=self.ticker,
+                                         order_type=signal,
+                                         quantity=self.order_quantity,
+                                         price=price,
+                                         stop_loss=stop_loss)
+        else:
+            # Get close signal for current trade
+            self._log.debug(f"Current {self.broker.cur_trade.side} trade found. Can calculate close signal.")
+            # If we already are in markete, get close signal
+            signal = self.close_signal(self.candles)
+            if self.broker.cur_trade.side == self.broker.order_side_names.get(-signal, None):
+                # Signal is opposite to current trade, so close current trade
+                self.broker.end_cur_trade(symbol=self.ticker)
+            else:
+                # Close signal != -signal
+                self._log.debug(f"Close signal: {signal} "
+                                f"is not opposite to current trade: {self.broker.cur_trade.side}. Nothing to do.")
+
+    def open_signal(self, candles):
+        pass
+
+    def close_signal(self, candles):
+        pass

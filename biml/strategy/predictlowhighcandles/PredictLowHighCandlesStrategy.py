@@ -44,7 +44,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         self.model = None
 
         # Minimum stop loss ratio = (price-stop_loss)/price
-        #self.min_stop_loss_ratio = 0.005
+        # self.min_stop_loss_ratio = 0.005
         self.min_stop_loss_ratio = 0.001
         # Minimum profit/loss
         # For test only
@@ -76,13 +76,6 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
 
         # Open/close trade
         self.process_new_data()
-
-    def process_new_data(self):
-        """ Get current signal and open/close or continue """
-        (signal, price, stop_loss) = self.open_signal(self.candles) if not self.broker.cur_trade \
-            else (self.close_signal(self.candles), None, None)
-        # Open or close or skip order
-        self.process_signal(signal, price, stop_loss)
 
     def close_signal(self, df: pd.DataFrame) -> int:
 

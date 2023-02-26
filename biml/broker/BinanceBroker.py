@@ -86,7 +86,7 @@ class BinanceBroker:
 
         self.cur_trade = Trade(ticker=symbol, side=side,
                       open_time=datetime.now(), open_price=filled_price, open_order_id=order_id,
-                      stop_loss_price=stop_loss, close_order_id=stop_loss_order_id,
+                      stop_loss_price=stop_loss, stop_loss_order_id=stop_loss_order_id,
                       quantity=quantity, )
         return self.cur_trade
 
@@ -162,15 +162,16 @@ class BinanceBroker:
         if not self.cur_trade:
             return
         # Get single closing trade or None
-        close_trade = (self.client.my_trades(symbol=self.cur_trade.ticker, orderId=self.cur_trade.close_order_id)
+        close_trade = (self.client.my_trades(symbol=self.cur_trade.ticker, orderId=self.cur_trade.stop_loss_order_id)
                        or [None])[-1]
         if close_trade:
             self._log.debug(f"Current trade found closed by stop loss or take profit. "
-                            f"close_order_id: {self.cur_trade.close_order_id}")
+                            f"stop_loss_order_id: {self.cur_trade.stop_loss_order_id}")
             # Update db
+            self.cur_trade.close_order_id=self.cur_trade.stop_loss_order_id
             self.cur_trade.close_price = close_trade["price"]
             self.cur_trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
-            self.db_session.flush(self.cur_trade)
+            self.db_session.flush([self.cur_trade])
 
             self.cur_trade = None
 

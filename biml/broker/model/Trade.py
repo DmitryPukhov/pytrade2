@@ -22,6 +22,7 @@ class Trade(Base):
     open_price: Mapped[float]
     open_order_id: Mapped[str]
     stop_loss_price: Mapped[float]
+    stop_loss_order_id: Mapped[str] = Column(String, default=None)
     trailing_delta: Mapped[float] = Column(Float, default=None)
     quantity: Mapped[int]
     close_time: Mapped[DateTime] = Column(DateTime, default=None)
