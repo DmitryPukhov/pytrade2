@@ -89,7 +89,7 @@ class BinanceBroker:
                       stop_loss_price=stop_loss, stop_loss_order_id=stop_loss_order_id,
                       quantity=quantity)
         self.db_session.add(self.cur_trade)
-        self.db_session.flush()
+        self.db_session.commit()
         return self.cur_trade
 
     def close_opened_positions(self, ticker: str):
@@ -154,7 +154,7 @@ class BinanceBroker:
         self.cur_trade.close_time = datetime.now()
         self.cur_trade.close_price = filled_price
 
-        self.db_session.flush()
+        self.db_session.commit()
         self.cur_trade, closed_trade = None, self.cur_trade
         return closed_trade
 
@@ -173,35 +173,5 @@ class BinanceBroker:
             self.cur_trade.close_order_id=self.cur_trade.stop_loss_order_id
             self.cur_trade.close_price = close_trade["price"]
             self.cur_trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
-            self.db_session.flush([self.cur_trade])
-
+            self.db_session.commit()
             self.cur_trade = None
-
-
-if __name__ == "__main__":
-    def create_test_client():
-        # todo: remove this
-        from App import App
-        config = App._load_config()
-        key, secret, url = config["biml.connector.key"], config["biml.connector.secret"], config[
-            "biml.connector.url"]
-        print(f"Init binance client, url: {url}")
-        return Client(key=key, secret=secret, base_url=url, timeout=10)
-
-
-    client = create_test_client()
-    orders = client.get_orders("BTCUSDT")
-    order = client.get_order(symbol="BTCUSDT", orderId=orders[-1]["orderId"])
-    # broker = BinanceBroker(client = client)
-    # broker.cur_trade = Trade(ticker="BTCUSDT", close_order_id=)
-    # broker.update_cur_trade()
-
-    # detail=client.my_trades("BTCUSDT")
-    # orders = client.get_orders("BTCUSDT")
-
-    trades = client.my_trades("BTCUSDT", orderId="123")
-    trades = client.my_trades("BTCUSDT")
-    (client.my_trades("BTCUSDT", orderId="123") or [None])[-1]
-    # print(orders)
-
-    print("Done")
