@@ -84,11 +84,11 @@ class BinanceBroker:
             stop_loss_order_id = res["orderId"]
             self._log.debug(f"Stop loss order response: {res}")
 
-        trade = Trade(ticker=symbol, side=side,
+        self.cur_trade = Trade(ticker=symbol, side=side,
                       open_time=datetime.now(), open_price=filled_price, open_order_id=order_id,
                       stop_loss_price=stop_loss, close_order_id=stop_loss_order_id,
                       quantity=quantity, )
-        return trade
+        return self.cur_trade
 
     def close_opened_positions(self, ticker: str):
         if not self.client:
