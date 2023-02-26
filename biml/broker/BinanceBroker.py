@@ -85,7 +85,7 @@ class BinanceBroker:
             self._log.debug(f"Stop loss order response: {res}")
 
         self.cur_trade = Trade(ticker=symbol, side=side,
-                      open_time=datetime.now(), open_price=filled_price, open_order_id=order_id,
+                      open_time=datetime.utcnow(), open_price=filled_price, open_order_id=order_id,
                       stop_loss_price=stop_loss, stop_loss_order_id=stop_loss_order_id,
                       quantity=quantity)
         self.db_session.add(self.cur_trade)
