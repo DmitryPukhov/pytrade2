@@ -107,7 +107,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         # If predicted loss is too much, signal to close opened order
         signal = -cur_trade_signal if predicted_loss > cur_trade_stop_loss else 0
         self._log.debug(
-            f"Calculated close signal: close price: {close}, {signal}, fut_high: {fut_high}, fut_low: {fut_low},  current trade: {self.broker.cur_trade}")
+            f"Calculated close signal: {signal}, close price: {close}, fut_high: {fut_high}, fut_low: {fut_low},  current trade: {self.broker.cur_trade}")
         return signal
 
     def open_signal(self, df: pd.DataFrame) -> (int, int, int):
