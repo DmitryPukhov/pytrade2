@@ -75,17 +75,17 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         self.learn_on_last()
 
         # Open/close trade
-        self.order()
+        self.process_new_data()
 
-    def order(self):
+    def process_new_data(self):
         """ Get current signal and open/close or continue """
-
         (signal, price, stop_loss) = self.open_signal(self.candles) if not self.broker.cur_trade \
             else (self.close_signal(self.candles), None, None)
         # Open or close or skip order
         self.process_signal(signal, price, stop_loss)
 
     def close_signal(self, df: pd.DataFrame) -> int:
+
         """ Buy or sell or no signal to close current opened order"""
         self._log.debug(f"Calculating close signal for trade {self.broker.cur_trade}")
         if not self.broker.cur_trade:
@@ -97,17 +97,17 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         signal, cur_trade_signal = 0, 0
         predicted_loss, cur_trade_stop_loss = 0, abs(
             self.broker.cur_trade.open_price - self.broker.cur_trade.stop_loss_price)
-        if self.broker.cur_trade.side == self.broker.order_sides.get(1):
+        if self.broker.cur_trade.side == self.broker.order_side_names.get(1):
             # Calc variables for opened buy order
             predicted_loss, cur_trade_signal = close - fut_low, 1
-        elif self.broker.cur_trade.side == self.broker.order_sides.get(-1):
+        elif self.broker.cur_trade.side == self.broker.order_side_names.get(-1):
             # Calc vars for opened sell order
             predicted_loss, cur_trade_signal = fut_high - close, -1
 
         # If predicted loss is too much, signal to close opened order
         signal = -cur_trade_signal if predicted_loss > cur_trade_stop_loss else 0
         self._log.debug(
-            f"Calculated close signal: {signal}, fut_high: {fut_high}, fut_low: {fut_low}, close price: {close}, current trade: {self.broker.cur_trade}")
+            f"Calculated close signal: close price: {close}, {signal}, fut_high: {fut_high}, fut_low: {fut_low},  current trade: {self.broker.cur_trade}")
         return signal
 
     def open_signal(self, df: pd.DataFrame) -> (int, int, int):
