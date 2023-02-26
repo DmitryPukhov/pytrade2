@@ -20,7 +20,7 @@ class StrategyBase:
 
         if not self.broker.cur_trade:
             # Open new trade
-            self.broker.new_trade(symbol=self.ticker, side=signal, quantity=self.order_quantity, price=price,
+            self.broker.create_trade(symbol=self.ticker, side=signal, quantity=self.order_quantity, price=price,
                                   stop_loss=stop_loss)
         elif signal == -self.broker.cur_trade:
             # Close opened trade

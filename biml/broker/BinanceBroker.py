@@ -162,8 +162,8 @@ class BinanceBroker:
         if not self.cur_trade:
             return
         # Get single closing trade or None
-        close_trade = \
-        (self.client.my_trades(symbol=self.cur_trade.ticker, orderId=self.cur_trade.close_order_id) or [None])[-1]
+        close_trade = (self.client.my_trades(symbol=self.cur_trade.ticker, orderId=self.cur_trade.close_order_id)
+                       or [None])[-1]
         if close_trade:
             self._log.debug(f"Current trade found closed by stop loss or take profit. "
                             f"close_order_id: {self.cur_trade.close_order_id}")
