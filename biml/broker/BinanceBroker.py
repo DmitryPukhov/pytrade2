@@ -86,7 +86,7 @@ class BinanceBroker:
 
         trade = Trade(ticker=symbol, side=side,
                       open_time=datetime.now(), open_price=filled_price, open_order_id=order_id,
-                      stop_loss_price=stop_loss, stop_loss_order_id=stop_loss_order_id,
+                      stop_loss_price=stop_loss, close_order_id=stop_loss_order_id,
                       quantity=quantity, )
         return trade
 
