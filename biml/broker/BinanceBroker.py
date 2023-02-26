@@ -39,7 +39,7 @@ class BinanceBroker:
     def create_trade(self, symbol: str, order_type: int,
                      quantity: float,
                      price: Optional[float],
-                     stop_loss: Optional[float]) -> Optional[float]:
+                     stop_loss: Optional[float]) -> Optional[Trade]:
         """
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
@@ -87,7 +87,9 @@ class BinanceBroker:
         self.cur_trade = Trade(ticker=symbol, side=side,
                       open_time=datetime.now(), open_price=filled_price, open_order_id=order_id,
                       stop_loss_price=stop_loss, stop_loss_order_id=stop_loss_order_id,
-                      quantity=quantity, )
+                      quantity=quantity)
+        self.db_session.add(self.cur_trade)
+        self.db_session.flush()
         return self.cur_trade
 
     def close_opened_positions(self, ticker: str):
