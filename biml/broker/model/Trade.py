@@ -28,5 +28,12 @@ class Trade(Base):
     close_order_id: Mapped[str] = Column(String, default=None)
 
     def __str__(self):
-        return f"{self.ticker} {self.side}, open: {self.open_price} at {self.open_time}, " \
-               f"closed: {self.close_price} at {self.close_time}"
+        details = f"{self.ticker} {self.side}, open: {self.open_price} at {self.open_time}"
+        if self.close_time:
+            close_details = f", closed: {self.close_price} at {self.close_time}"
+            if self.close_order_id == self.stop_loss_order_id:
+                close_details += " by stop loss"
+            else:
+                close_details += " by robot"
+            details += close_details
+        return details
