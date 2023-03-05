@@ -1,5 +1,3 @@
-import datetime as datetime
-import sqlalchemy
 from sqlalchemy import DateTime, Column, Float, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -28,3 +26,7 @@ class Trade(Base):
     close_time: Mapped[DateTime] = Column(DateTime, default=None)
     close_price: Mapped[float] = Column(Float, default=None)
     close_order_id: Mapped[str] = Column(String, default=None)
+
+    def __str__(self):
+        return f"{self.ticker} {self.side}, open: {self.open_price} at {self.open_time}, " \
+               f"closed: {self.close_price} at {self.close_time}"

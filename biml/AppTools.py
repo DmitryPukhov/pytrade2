@@ -19,14 +19,6 @@ class AppTools:
         return tickers
 
     @staticmethod
-    def close_opened_posisions(broker, tickers):
-        if broker:
-            for ticker in tickers.strip().split("\\s*,\\s*"):
-                broker.close_opened_positions(ticker)
-                # Raise exception if we are in trade for this ticker
-                AppTools.assert_out_of_market(broker, ticker)
-
-    @staticmethod
     def assert_out_of_market(broker, ticker: str):
         """
         Raise exception if we have opened positions for the symbol

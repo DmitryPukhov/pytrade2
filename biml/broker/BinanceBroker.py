@@ -1,9 +1,11 @@
 import logging
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import Optional
+
 from binance.spot import Spot as Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from broker.model.Trade import Trade
 
 
@@ -16,15 +18,14 @@ class BinanceBroker:
         self._log = logging.getLogger(self.__class__.__name__)
         self.client: Client = client
         self.order_side_names = {1: "BUY", -1: "SELL"}
+        self.order_side_codes = dict(map(reversed, self.order_side_names.items()))
 
         # Database
         self.__init_db__()
         self.cur_trade = self.read_last_opened_trade()
 
-        self._log.info("Last trades:")
-        self._log.info(self.db_session.query(Trade).order_by(Trade.open_time.desc()).limit(10).all())
-
-        self._log.info(f"Current opened trade: {self.cur_trade}")
+        if self.cur_trade:
+            self._log.info(f"Current last opened trade: {self.cur_trade}")
         self._log.info("Completed init broker")
 
     def __init_db__(self):
@@ -36,10 +37,10 @@ class BinanceBroker:
         self.db_session = sessionmaker(engine)()
         self.cur_trade = self.read_last_opened_trade()
 
-    def create_trade(self, symbol: str, order_type: int,
-                     quantity: float,
-                     price: Optional[float],
-                     stop_loss: Optional[float]) -> Optional[Trade]:
+    def create_cur_trade(self, symbol: str, order_type: int,
+                         quantity: float,
+                         price: Optional[float],
+                         stop_loss: Optional[float]) -> Optional[Trade]:
         """
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
@@ -85,41 +86,29 @@ class BinanceBroker:
             self._log.debug(f"Stop loss order response: {res}")
 
         self.cur_trade = Trade(ticker=symbol, side=side,
-                      open_time=datetime.utcnow(), open_price=filled_price, open_order_id=order_id,
-                      stop_loss_price=stop_loss, stop_loss_order_id=stop_loss_order_id,
-                      quantity=quantity)
+                               open_time=datetime.utcnow(), open_price=filled_price, open_order_id=order_id,
+                               stop_loss_price=stop_loss, stop_loss_order_id=stop_loss_order_id,
+                               quantity=quantity)
         self.db_session.add(self.cur_trade)
         self.db_session.commit()
+        self._log.info(f"Created new trade: {self.cur_trade}")
         return self.cur_trade
 
-    def close_opened_positions(self, ticker: str):
-        if not self.client:
-            return
-        opened_quantity, opened_orders = self.get_opened_positions(ticker)
-        if opened_orders:
-            self._log.info("Cancelling opened orders")
-            self.client.cancel_open_orders(symbol=ticker)
-        if opened_quantity:
-            # if we sold (-1) we should buy and vice versa
-            side = "BUY" if opened_quantity < 0 else "SELL"
-            self._log.info(f"Creating {-opened_quantity} {side} order to close existing positions")
-            res = self.client.new_order(symbol=ticker, side=side, type="MARKET",
-                                        quantity=abs(opened_quantity))
-            self._log.info(res)
+    def close_opened_trades(self):
+        self._log.info("Closing all opened trades if exist")
+        # Query opened trades
+        trades = self.db_session \
+            .query(Trade) \
+            .where(Trade.close_time.is_(None)) \
+            .order_by(Trade.open_time.desc())
+        # Close opened trades
+        for trade in trades:
+            self.end_trade(trade)
 
-    def get_opened_positions(self, symbol: str) -> (float, List[Dict]):
-        """
-        Quantity of symbol we have in portfolio
-        """
-        orders, opened_quantity = self.client.get_open_orders(symbol), 0
-        if orders:
-            # Currently opened orders is trailing stop loss against main order
-            last_order = orders[-1]
-            opened_quantity = float(last_order["origQty"])
-            # stoploss is buy => main order was sell
-            if last_order["side"] == "BUY": opened_quantity *= -1.0
-        self._log.info(f"We have {opened_quantity} {symbol} in portfolio and {len(orders)} opened orders for {symbol}")
-        return opened_quantity, orders
+        # If current trade was already closed,
+        if self.cur_trade and self.cur_trade.close_time:
+            self._log.info(f"Current trade was closed: {self.cur_trade}")
+            self.cur_trade = None
 
     def read_last_opened_trade(self) -> Trade:
         """ Returns current opened trade, stored in db or none """
@@ -128,50 +117,62 @@ class BinanceBroker:
             .where(Trade.close_time.is_(None)) \
             .order_by(Trade.open_time.desc()).first()
 
-    def end_cur_trade(self, symbol: str) -> Trade:
+    def end_cur_trade(self):
+        closed_cur_trade, self.cur_trade = self.end_trade(self.cur_trade), None
+        return closed_cur_trade
+
+    def end_trade(self, trade: Trade) -> Trade:
         """
         If current opened trade exists,  close it, error otherwise
         """
-        self._log.info(f"Close trade for {symbol}")
-        assert self.cur_trade
+        assert trade
+        self._log.info(f"Closing trade: {trade}")
 
-        # Cancel stop loss order for current trade
-        self.close_opened_positions(symbol)
+        # Check if it's already closed by stop loss
+        self.update_trade_if_closed_by_stop_loss(trade)
 
-        side = self.order_side_names[-self.cur_trade.side]
-        # Place closing order for current trade
-        res = self.client.new_order(
-            symbol=symbol,
-            side=side,
-            type="MARKET",
-            quantity=self.cur_trade.quantity
-        )
-        filled_price = float(res["fills"][0]["price"] if res["fills"] else None)
-        order_id = res["orderId"]
+        if trade.close_time:
+            # If already closed, do nothing
+            self._log.info(f"Trade {trade} is already closed")
+        else:
+            # Close stop loss opened orders
+            if self.client.get_open_orders(trade.ticker):
+                self.client.cancel_open_orders(trade.ticker)
 
-        # Update stat db
-        self.cur_trade.close_order_id = order_id
-        self.cur_trade.close_time = datetime.now()
-        self.cur_trade.close_price = filled_price
+            # Create closing order
+            close_side = self.order_side_names[-self.order_side_codes[trade.side]]
+            # Place closing order for current trade
+            res = self.client.new_order(
+                symbol=trade.ticker,
+                side=close_side,
+                type="MARKET",
+                quantity=trade.quantity
+            )
 
-        self.db_session.commit()
-        self.cur_trade, closed_trade = None, self.cur_trade
-        return closed_trade
+            # Update the trade with closure info
+            filled_price = float(res["fills"][0]["price"] if res["fills"] else None)
+            order_id = res["orderId"]
 
-    def clear_cur_trade_if_closed(self):
-        """ If cur trade closed by stop loss, update db and set cur trade variable to none """
+            trade.close_order_id = order_id
+            trade.close_time = datetime.now()
+            trade.close_price = filled_price
 
-        if not self.cur_trade:
-            return
+            self.db_session.commit()
+        return trade
+
+    def update_trade_if_closed_by_stop_loss(self, trade: Trade) -> Trade:
+        """ If given trade closed by stop loss, update db and set cur trade variable to none """
+
+        if not trade or trade.close_time:
+            return trade
         # Get single closing trade or None
-        close_trade = (self.client.my_trades(symbol=self.cur_trade.ticker, orderId=self.cur_trade.stop_loss_order_id)
+        close_trade = (self.client.my_trades(symbol=trade.ticker, orderId=trade.stop_loss_order_id)
                        or [None])[-1]
         if close_trade:
-            self._log.debug(f"Current trade found closed by stop loss or take profit. "
-                            f"stop_loss_order_id: {self.cur_trade.stop_loss_order_id}")
+            self._log.debug(f"Current trade found closed by stop loss or take profit: {trade}")
             # Update db
-            self.cur_trade.close_order_id=self.cur_trade.stop_loss_order_id
-            self.cur_trade.close_price = close_trade["price"]
-            self.cur_trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
+            trade.close_order_id = trade.stop_loss_order_id
+            trade.close_price = close_trade["price"]
+            trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
             self.db_session.commit()
-            self.cur_trade = None
+        return trade
