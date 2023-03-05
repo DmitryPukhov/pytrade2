@@ -12,6 +12,7 @@ class LocalWriter:
     """
 
     def __init__(self, data_dir: str):
+        self._log = logging.getLogger(self.__class__.__name__)
         self.data_dir = data_dir
         # {ticker:{interval: last existing date}}
         self.last_time_dict: Dict[str, Dict[str, datetime]] = {}

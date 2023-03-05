@@ -19,7 +19,7 @@ class StrategyBase:
         if not self.broker.cur_trade:
             self._log.debug("No current trade found. Can calculate open signal.")
             # Get open signal because current trade does not exist, process
-            (close_signal, price, stop_loss) = self.open_signal(self.candles)
+            (close_signal, price, stop_loss) = self.open_signal()
             # Open new trade
             if close_signal:
                 self.broker.create_cur_trade(symbol=self.ticker,
@@ -31,7 +31,7 @@ class StrategyBase:
             # Get close signal for current trade
             self._log.debug(f"Current {self.broker.cur_trade.side} trade found. Can calculate close signal.")
             # If we already are in markete, get close signal
-            close_signal = self.close_signal(self.candles)
+            close_signal = self.close_signal()
             if self.broker.cur_trade.side == self.broker.order_side_names.get(-close_signal, None):
                 # Signal is opposite to current trade, so close current trade
                 self.broker.end_cur_trade(symbol=self.ticker)

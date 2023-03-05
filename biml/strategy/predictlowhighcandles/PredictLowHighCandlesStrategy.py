@@ -77,7 +77,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         # Open/close trade
         self.process_new_data()
 
-    def close_signal(self, df: pd.DataFrame) -> int:
+    def close_signal(self) -> int:
 
         """ Buy or sell or no signal to close current opened order"""
         self._log.debug(f"Calculating close signal for trade {self.broker.cur_trade}")
@@ -86,7 +86,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
             return 0
 
         # Calculate variables of current state
-        close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
+        close, fut_high, fut_low = self.candles["close"].iloc[-1], self.candles["fut_high"].iloc[-1], self.candles["fut_low"].iloc[-1]
         signal, cur_trade_signal = 0, 0
         predicted_loss, cur_trade_stop_loss = 0, abs(
             self.broker.cur_trade.open_price - self.broker.cur_trade.stop_loss_price)
@@ -103,17 +103,17 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
             f"Calculated close signal: {signal}, close price: {close}, fut_high: {fut_high}, fut_low: {fut_low},  current trade: {self.broker.cur_trade}")
         return signal
 
-    def open_signal(self, df: pd.DataFrame) -> (int, int, int):
+    def open_signal(self) -> (int, int, int):
         """
         Return buy or sell or no signal using predicted prices
         :param df: candles dataframe
         :return: 1 for buy, -1 sell, 0 no signal
         """
         signal, price, stop_loss, stop_loss_adj, take_profit = 0, None, None, None, None
-        if df.empty:
+        if self.candles.empty:
             self._log.debug("Candles are empty")
             return signal, price, stop_loss
-        close, fut_high, fut_low = df["close"].iloc[-1], df["fut_high"].iloc[-1], df["fut_low"].iloc[-1]
+        close, fut_high, fut_low = self.candles["close"].iloc[-1], self.candles["fut_high"].iloc[-1], self.candles["fut_low"].iloc[-1]
         delta_high, delta_low = (fut_high - close), (close - fut_low)
         ratio = abs(delta_high / delta_low)
 

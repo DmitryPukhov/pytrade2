@@ -25,7 +25,7 @@ class TestPredictLowHighFeatures(TestCase):
              "bid": 5, "bid_qty": 6, "ask": 7, "ask_qty": 8},
             {"datetime": datetime.fromisoformat("2021-12-08 07:01:01"), "symbol": "asset1",
              "bid": 9, "bid_qty": 10, "ask": 11, "ask_qty": 12}
-        ]).set_index("datetime")
+        ]).set_index("datetime", drop=False)
 
         # Call
         actual, _ = PredictLowHighFeatures.features_targets_of(df)
