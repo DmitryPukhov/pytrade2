@@ -26,6 +26,6 @@ class PredictLowHighFeatures:
     def targets_of(bid_ask: pd.DataFrame, predict_window="10s"):
 
         agg = bid_ask.resample(predict_window) \
-            .agg({"bid": "max", "ask": "min", "bid_vol": "sum", "ask_vol": "sum"}) \
+            .agg({"bid": "max", "ask": "min", "bid_qty": "sum", "ask_qty": "sum"}) \
             .ffill()
         return agg

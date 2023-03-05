@@ -1,5 +1,7 @@
 import datetime
 from typing import List, Dict
+
+import pandas as pd
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
 from feed.BaseFeed import BaseFeed
 
@@ -37,9 +39,12 @@ class BinanceWebsocketFeed(BaseFeed):
         for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
             consumer.on_ticker(self.rawticker2model(msg))
 
-    def rawticker2model(self, msg: Dict):
-        # todo: convert price+vol ticker to model
-        return msg
+    def rawticker2model(self, msg: Dict)->Dict:
+        return {"datetime": datetime.datetime.utcnow(),
+                "symbol": msg["s"],
+                "bid": msg["b"], "bid_vol": msg["B"],
+                "ask": msg["a"], "ask_vol": msg["A"],
+                }
 
     def rawbidask2model(self, msg: Dict):
         """

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Dict, Deque
+from typing import Dict, Deque, List
 from feed.BinanceBidAskFeed import BinanceBidAskFeed
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 from strategy.PeriodicalLearnStrategy import PeriodicalLearnStrategy
@@ -33,8 +33,10 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
 
         self._logger = logging.getLogger(self.__class__.__name__)
         self.ticker = pd.DataFrame(columns=BinanceBidAskFeed.bid_ask_columns).set_index("datetime")
-        self.level2 = None
         self.buffer = []
+
+        self.bid_ask: pd.DataFrame = None
+        self.level2: pd.DataFrame = None
 
     def run(self, client):
         """
@@ -44,17 +46,17 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
         feed.consumers.append(self)
         feed.run()
 
-    def on_level2(self, level2: list[dict]):
+    def on_level2(self, level2: List[Dict]):
         """
         Got new order book items event
         """
         new_df = pd.DataFrame([level2], columns=level2.keys()).set_index("datetime")
-        self.level2 = pd.concat([self.bid_ask, new_df]) if self.level2 else new_df
+        self.level2 = pd.concat([self.level2, new_df]) if self.level2 is not None else new_df
         self.learn_or_skip()
 
     def on_ticker(self, ticker: dict):
         new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime")
-        self.bid_ask = pd.concat([self.bid_ask, new_df])
+        self.bid_ask = self.bid_ask if self.bid_ask is not None else new_df
         self.learn_or_skip()
 
     def learn(self):
