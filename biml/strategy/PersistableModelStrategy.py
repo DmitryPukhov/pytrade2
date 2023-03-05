@@ -22,6 +22,6 @@ class PersistableModelStrategy:
         # Save the model
         model: Model = self.model.regressor.named_steps["model"].model
 
-        model_path = str(Path(self.model_weights_dir, datetime.now().isoformat()))
+        model_path = str(Path(self.model_weights_dir, datetime.utcnow().isoformat()))
         self._log.debug(f"Save model to {model_path}")
         model.save_weights(model_path)

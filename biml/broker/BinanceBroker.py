@@ -154,7 +154,7 @@ class BinanceBroker:
             order_id = res["orderId"]
 
             trade.close_order_id = order_id
-            trade.close_time = datetime.now()
+            trade.close_time = datetime.utcnow()
             trade.close_price = filled_price
 
             self.db_session.commit()

@@ -10,7 +10,7 @@ class PeriodicalLearnStrategy:
         self.last_learn_time: datetime = datetime.min
 
     def learn_or_skip(self):
-        time1 = datetime.now()
+        time1 = datetime.utcnow()
         if time1 - self.last_learn_time >= self.learn_interval:
             self._log.info(f"{self.learn_interval} elapsed from last learn time{self.last_learn_time}")
             Thread(target=self.learn).start()

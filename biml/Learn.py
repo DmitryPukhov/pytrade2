@@ -23,7 +23,7 @@ class Learn(App):
         tickers = AppTools.read_candles_tickers(self.config)
         history_feed = LocalFeed(self.data_dir, tickers)
 
-        start_time = datetime.datetime.now()-datetime.timedelta(days=7)
+        start_time = datetime.datetime.utcnow()-datetime.timedelta(days=7)
         data = history_feed.read_intervals(start_time, None)
 
         strategy = PredictLowHighCandlesStrategy(broker=None, config=self.config)

@@ -47,9 +47,9 @@ class BinanceWebsocketFeed(BaseFeed):
         """
         out = []
         if msg["b"]:
-            out.append({"datetime": datetime.datetime.now(), "symbol": msg["s"], "bid": msg["b"], "bid_vol": msg["B"]})
+            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": msg["b"], "bid_vol": msg["B"]})
         if msg["a"]:
-            out.append({"datetime": datetime.datetime.now(), "symbol": msg["s"], "ask": msg["a"], "ask_vol": msg["A"]})
+            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "ask": msg["a"], "ask_vol": msg["A"]})
         return out
-        # return {"datetime": datetime.datetime.now(), "symbol": msg["s"], "bid": msg["b"], "bid_qty": msg["B"],
+        # return {"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": msg["b"], "bid_qty": msg["B"],
         #         "ask": msg["a"], "ask_qty": msg["A"]}
