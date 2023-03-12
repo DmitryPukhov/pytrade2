@@ -22,8 +22,8 @@ class Level2Features:
         # Pivot buckets to feature columns: bucket_1, bucket_2 etc. with summary bucket's volume as value.
         maxbucket = buckets // 2 - 1
         minbucket = -buckets // 2
-        askfeatures = self.pivot_buckets(level2, 'ask_qty', 0, maxbucket)
-        bidfeatures = self.pivot_buckets(level2, 'bid_qty', minbucket, -1)
+        askfeatures = self.pivot_buckets(level2, 'ask_vol', 0, maxbucket)
+        bidfeatures = self.pivot_buckets(level2, 'bid_vol', minbucket, -1)
 
         # Ask + bid buckets
         level2features = bidfeatures.merge(askfeatures, on='datetime')
@@ -37,16 +37,17 @@ class Level2Features:
         """
         # Calc middle price between ask and bid
         level2 = level2.set_index("datetime")
-        askmin = level2[level2['ask_qty'].notna()].groupby('datetime')['ask'].min().reset_index().set_index(
+        askmin = level2[level2['ask_vol'].notna()].groupby('datetime')['ask'].min().reset_index().set_index(
             "datetime")
         level2['price_min'] = askmin['ask']
-        bidmax = level2[level2['bid_qty'].notna()].groupby('datetime')['bid'].max().reset_index().set_index(
+        bidmax = level2[level2['bid_vol'].notna()].groupby('datetime')['bid'].max().reset_index().set_index(
             "datetime")
         level2['price_max'] = bidmax['bid']
         level2['price_middle'] = (askmin['ask'] + bidmax['bid']) / 2
 
         # Assign a bucket number to each level2 item
         # scalar level2 size and bucket size
+        level2['price'] = np.where(level2['bid'].notna(), level2['bid'], level2['ask'])
         if not l2size:
             l2size = level2.groupby('datetime')['price'].agg(np.ptp).reset_index()['price'].median()
         # 10 ask steps + 10 bid steps

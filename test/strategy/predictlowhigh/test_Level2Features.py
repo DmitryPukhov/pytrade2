@@ -9,14 +9,15 @@ class TestLevel2Features(TestCase):
         # datetime, price, ask_vol, bid_vol
         # Each bucket has one item
         # todo: set index as in feed
-        asks = [{'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'price': i, 'ask_vol': 1,
+        asks = [{'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'ask': i, 'ask_vol': 1,
                  'bid_vol': None} for i in range(10, 20)]
         bids = [
-            {'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'price': i, 'ask_vol': None,
+            {'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'bid': i, 'ask_vol': None,
              'bid_vol': 1} for i in range(0, 10)]
         data = pd.DataFrame(asks+bids)
         # Call
         features = Level2Features().level2_buckets(data).values.tolist()
+
 
         # Assert all features should be 1.0
         self.assertEqual([[1.0] * 20], features)
@@ -25,10 +26,10 @@ class TestLevel2Features(TestCase):
         # datetime, price, ask_vol, bid_vol
         # Not all level buckets are present
         data = pd.DataFrame([
-            {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'price': 0.9, 'ask_vol': 1, 'bid_vol': None},
-            {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'price': 0.9, 'ask_vol': 1, 'bid_vol': None},
-            {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'price': -0.9, 'ask_vol': None, 'bid_vol': 1},
-            {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'price': -0.9, 'ask_vol': None, 'bid_vol': 1}
+            {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
+            {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1}
         ])
 
         features = Level2Features().level2_buckets(data, l2size=20, buckets=20)
