@@ -35,8 +35,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
         self.ticker = pd.DataFrame(columns=BinanceBidAskFeed.bid_ask_columns).set_index("datetime")
         self.buffer = []
 
-        self.bid_ask: pd.DataFrame = None
-        self.level2: pd.DataFrame = None
+        self.bid_ask: pd.DataFrame = pd.DataFrame()
+        self.level2: pd.DataFrame = pd.DataFrame()
 
     def run(self, client):
         """
@@ -50,13 +50,15 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
         """
         Got new order book items event
         """
-        new_df = pd.DataFrame([level2], columns=level2.keys()).set_index("datetime")
-        self.level2 = pd.concat([self.level2, new_df]) if self.level2 is not None else new_df
+        new_df = pd.DataFrame([level2], columns=level2.keys()).set_index("datetime", drop=False)
+        self.level2 = self.level2.append(new_df)
+        #self.level2 = pd.concat([self.level2, new_df]) if self.level2 is not None else new_df
         self.learn_or_skip()
 
     def on_ticker(self, ticker: dict):
-        new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime")
-        self.bid_ask = self.bid_ask if self.bid_ask is not None else new_df
+        new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime", drop=False)
+        self.bid_ask = self.bid_ask.append(new_df)
+        #self.bid_ask = self.bid_ask if self.bid_ask is not None else new_df
         self.learn_or_skip()
 
     def learn(self):
@@ -67,6 +69,5 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy):
             print(f"Not enough data to learn. Required {self.min_history_interval} but exists {interval}")
             return
 
-        self._log.info("Learn")
         features, targets = PredictLowHighFeatures.features_targets_of(self.bid_ask)
-        pass
+

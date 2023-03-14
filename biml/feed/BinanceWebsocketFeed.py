@@ -42,9 +42,10 @@ class BinanceWebsocketFeed(BaseFeed):
     def rawticker2model(self, msg: Dict)->Dict:
         return {"datetime": datetime.datetime.utcnow(),
                 "symbol": msg["s"],
-                "bid": msg["b"], "bid_vol": msg["B"],
-                "ask": msg["a"], "ask_vol": msg["A"],
+                "bid": float(msg["b"]), "bid_vol": float(msg["B"]),
+                "ask": float(msg["a"]), "ask_vol": float(msg["A"]),
                 }
+
 
     def rawbidask2model(self, msg: Dict):
         """
@@ -52,9 +53,9 @@ class BinanceWebsocketFeed(BaseFeed):
         """
         out = []
         if msg["b"]:
-            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": msg["b"], "bid_vol": msg["B"]})
+            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": float(msg["b"]), "bid_vol": float(msg["B"])})
         if msg["a"]:
-            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "ask": msg["a"], "ask_vol": msg["A"]})
+            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "ask": float(msg["a"]), "ask_vol": float(msg["A"])})
         return out
         # return {"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": msg["b"], "bid_qty": msg["B"],
         #         "ask": msg["a"], "ask_qty": msg["A"]}
