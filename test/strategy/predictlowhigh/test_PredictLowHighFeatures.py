@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from unittest import TestCase
 
+from feed.BaseFeed import BaseFeed
+from strategy.StrategyBase import StrategyBase
 from strategy.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
 
 
@@ -32,8 +34,8 @@ class TestPredictLowHighFeatures(TestCase):
         # Future values should be predicted only if future window completed
         self.assertListEqual(actual["bid_fut"].dropna().values.tolist(), [3.0, 11.0, 12.0, 13.0])
 
-    def test_features_of(self):
-        df = pd.DataFrame([
+    def test_features_of__bid_ask(self):
+        bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2021-12-08 07:00:01"), "symbol": "asset1",
              "bid": 1, "bid_vol": 2, "ask": 3, "ask_vol": 4},
             {"datetime": datetime.fromisoformat("2021-12-08 07:00:02"), "symbol": "asset1",
@@ -43,10 +45,10 @@ class TestPredictLowHighFeatures(TestCase):
         ]).set_index("datetime", drop=False)
 
         # Call
-        actual, _ = PredictLowHighFeatures.features_targets_of(df)
+        actual, _ = PredictLowHighFeatures.features_targets_of(bid_ask, bid_ask)
 
-        self.assertListEqual([1, 5, 9], actual["bid"].values.tolist())
-        self.assertListEqual([2, 6, 10], actual["bid_vol"].values.tolist())
-        self.assertListEqual([3, 7, 11], actual["ask"].values.tolist())
-        self.assertListEqual([4, 8, 12], actual["ask_vol"].values.tolist())
+        self.assertListEqual([1, 5, 9], actual["bid"].dropna().values.tolist())
+        self.assertListEqual([2, 6, 10], actual["bid_vol"].dropna().values.tolist())
+        self.assertListEqual([3, 7, 11], actual["ask"].dropna().values.tolist())
+        self.assertListEqual([4, 8, 12], actual["ask_vol"].dropna().values.tolist())
         pass

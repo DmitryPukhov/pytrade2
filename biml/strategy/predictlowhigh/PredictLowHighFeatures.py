@@ -10,9 +10,9 @@ class PredictLowHighFeatures:
     """
 
     @staticmethod
-    def features_targets_of(bid_ask: pd.DataFrame):
-        # Features is aggregated order book
-        features = Level2Features().level2_buckets(bid_ask)
+    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame):
+
+        features = Level2Features().level2_buckets(level2)
         features[bid_ask.columns] = bid_ask
 
         targets = PredictLowHighFeatures.targets_of(bid_ask)
