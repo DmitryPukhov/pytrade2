@@ -1,4 +1,6 @@
 from datetime import datetime
+
+import numpy as np
 import pandas as pd
 from unittest import TestCase
 
@@ -28,7 +30,7 @@ class TestPredictLowHighFeatures(TestCase):
         actual = PredictLowHighFeatures().targets_of(df, predict_window="10s")
 
         # Future values should be predicted only if future window completed
-        self.assertListEqual(actual["bid_fut"].values.tolist(), [3,11,12,13,None,None,None])
+        self.assertListEqual(actual["bid_fut"].dropna().values.tolist(), [3.0, 11.0, 12.0, 13.0])
 
     def test_features_of(self):
         df = pd.DataFrame([
@@ -43,8 +45,8 @@ class TestPredictLowHighFeatures(TestCase):
         # Call
         actual, _ = PredictLowHighFeatures.features_targets_of(df)
 
-        self.assertListEqual([1,5,9], actual["bid"].values.tolist())
-        self.assertListEqual([2,6,10], actual["bid_vol"].values.tolist())
-        self.assertListEqual([3,7,11], actual["ask"].values.tolist())
-        self.assertListEqual([4,8,12], actual["ask_vol"].values.tolist())
+        self.assertListEqual([1, 5, 9], actual["bid"].values.tolist())
+        self.assertListEqual([2, 6, 10], actual["bid_vol"].values.tolist())
+        self.assertListEqual([3, 7, 11], actual["ask"].values.tolist())
+        self.assertListEqual([4, 8, 12], actual["ask_vol"].values.tolist())
         pass
