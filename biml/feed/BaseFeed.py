@@ -5,7 +5,6 @@ import pandas
 import pandas as pd
 from binance.spot import Spot as Client
 
-
 from feed.TickerInfo import TickerInfo
 
 
@@ -17,7 +16,7 @@ class BaseFeed:
     candle_columns = ["open_time", "open", "high", "low", "close", "vol", "close_time", "quote_asset_volume",
                       "number_of_trades", " taker_buy_base_asset_volume", "taker_buy_quote_asset_volume",
                       "ignore"]
-    bid_ask_columns = ["datetime","symbol","bid","bid_vol","ask","ask_vol"]
+    bid_ask_columns = ["datetime", "symbol", "bid", "bid_vol", "ask", "ask_vol"]
 
     def __init__(self):
         self.consumers = []
@@ -27,4 +26,3 @@ class BaseFeed:
         Read data to pandas
         """
         pass
-

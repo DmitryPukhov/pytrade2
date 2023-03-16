@@ -11,12 +11,17 @@ class PredictLowHighFeatures:
 
     @staticmethod
     def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame):
+        features = PredictLowHighFeatures.features_of(bid_ask, level2)
+        targets = PredictLowHighFeatures.targets_of(bid_ask).dropna()
+        return features, targets
 
+    @staticmethod
+    def features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame):
         features = Level2Features().level2_buckets(level2)
         features[bid_ask.columns] = bid_ask
-
-        targets = PredictLowHighFeatures.targets_of(bid_ask)
-        return features, targets
+        # todo: convert
+        features.drop(["symbol", "datetime"], axis=1, inplace=True)
+        return features
 
     @staticmethod
     def targets_of(bid_ask: pd.DataFrame, predict_window="10s") -> pd.DataFrame:
@@ -32,4 +37,4 @@ class PredictLowHighFeatures:
 
         predicted_columns = list(filter(lambda col: col.endswith('_fut'), merged.columns))
         merged.loc[merged.index > prediction_bound,predicted_columns] = [np.nan]*len(predicted_columns)
-        return merged
+        return merged[["bid_fut", "ask_fut"]]

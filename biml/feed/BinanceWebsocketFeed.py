@@ -25,12 +25,14 @@ class BinanceWebsocketFeed(BaseFeed):
         for i, ticker in enumerate(self.tickers):
             # todo: find a way to get stock last price
             client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
-            #client.live_subscribe(stream="btcusdt@depth", id=1, callback=self.level2_callback)
+            client.live_subscribe(stream="btcusdt@depth", id=1, callback=self.level2_callback)
         client.join()
 
     def level2_callback(self, msg):
+        if "result" in msg and not msg["result"]:
+            return
         for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
-            consumer.on_level2(self.rawbidask2model(msg))
+            consumer.on_level2(self.rawlevel2model(msg))
 
     def ticker_callback(self, msg):
         if "result" in msg and not msg["result"]:
@@ -39,13 +41,19 @@ class BinanceWebsocketFeed(BaseFeed):
         for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
             consumer.on_ticker(self.rawticker2model(msg))
 
-    def rawticker2model(self, msg: Dict)->Dict:
+    def rawticker2model(self, msg: Dict) -> Dict:
         return {"datetime": datetime.datetime.utcnow(),
                 "symbol": msg["s"],
                 "bid": float(msg["b"]), "bid_vol": float(msg["B"]),
                 "ask": float(msg["a"]), "ask_vol": float(msg["A"]),
                 }
 
+    def rawlevel2model(self, msg: Dict):
+        out = [{"datetime": pd.to_datetime(msg["E"], unit='ms'), "symbol": msg["s"],
+                "bid": float(price), "bid_vol": float(vol)} for price, vol in msg['b']] + \
+              [{"datetime": pd.to_datetime(msg["E"], unit='ms'), "symbol": msg["s"],
+                "ask": float(price), "ask_vol": float(vol)} for price, vol in msg['a']]
+        return out
 
     def rawbidask2model(self, msg: Dict):
         """
@@ -53,9 +61,11 @@ class BinanceWebsocketFeed(BaseFeed):
         """
         out = []
         if msg["b"]:
-            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": float(msg["b"]), "bid_vol": float(msg["B"])})
+            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": float(msg["b"]),
+                        "bid_vol": float(msg["B"])})
         if msg["a"]:
-            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "ask": float(msg["a"]), "ask_vol": float(msg["A"])})
+            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "ask": float(msg["a"]),
+                        "ask_vol": float(msg["A"])})
         return out
         # return {"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": msg["b"], "bid_qty": msg["B"],
         #         "ask": msg["a"], "ask_qty": msg["A"]}
