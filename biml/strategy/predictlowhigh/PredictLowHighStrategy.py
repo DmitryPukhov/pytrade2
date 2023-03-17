@@ -42,8 +42,9 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         self.bid_ask: pd.DataFrame = pd.DataFrame()
         self.level2: pd.DataFrame = pd.DataFrame()
-        self.status = None
-        self.model=None
+        self.is_learning = False
+        self.is_processing = False
+        self.model = None
 
     def run(self, client):
         """
@@ -71,31 +72,50 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.process_new_data()
 
     def process_new_data(self):
-        if not self.status and not self.bid_ask.empty and not self.level2.empty and self. model:
-            self.status = "processing"
+        if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
+            self.is_processing = True
             y = self.predict_low_high()
-            self.status = None
+            self.is_processing = False
 
     def predict_low_high(self):
         X = PredictLowHighFeatures.features_of(self.bid_ask, self.level2)
-        y = self.model.predict(X)
+        y = self.model.predict(X) if not X.empty else pd.DataFrame.empty
         return y
 
+    def can_learn(self) -> bool:
+        """ Check preconditions for leraning"""
+
+        # Check learn conditions
+        if self.is_learning:
+            #self._log.info("Cannot learn: previous learn is still in progress")
+            return False
+        if self.bid_ask.empty or self.level2.empty:
+            # self._log.info(
+            #     f"Cannot learn. bid_ask empty: {self.bid_ask.empty}, level2 empty: {self.level2.empty}")
+            return False
+        interval = self.bid_ask.index.max() - self.bid_ask.index.min()
+        if interval < self.min_history_interval:
+            # self._log.info(
+            #     f"Cannot learn, need {self.min_history_interval} of data. Existing data contains only {interval} "
+            #     f"from {self.bid_ask.index.min()} to {self.bid_ask.index.max()}")
+            return False
+        return True
+
     def learn(self):
-        if not self.bid_ask.empty and not self.level2.empty:
-            self._log.info("Learning")
-            interval = self.bid_ask.index.max() - self.bid_ask.index.min()
-
-            if interval < self.min_history_interval:
-                self._log.info(f"Not enough data to learn. Required {self.min_history_interval} but exists {interval}")
-                return
-
+        if self.is_learning:
+            return
+        self._log.info("Learning")
+        self.is_learning = True
+        try:
             train_X, train_y = PredictLowHighFeatures.features_targets_of(self.bid_ask, self.level2)
             model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
-            model.fit(train_X, train_y)
-            self.model = model
-        else:
-            self._log.info(f"No data to learn on, bid_ask empty: {self.bid_ask.empty}, level2 empty: {self.level2.empty}")
+            if not train_X.empty:
+                model.fit(train_X, train_y)
+                self.model = model
+            else:
+                self._log.info("Train data is empty, no learn")
+        finally:
+            self.is_learning = False
 
     def create_model(self, X_size, y_size):
         model = Sequential()
