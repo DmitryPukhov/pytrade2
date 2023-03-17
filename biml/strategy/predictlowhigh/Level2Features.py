@@ -26,7 +26,7 @@ class Level2Features:
         bidfeatures = self.pivot_buckets(level2, 'bid_vol', minbucket, -1)
 
         # Ask + bid buckets
-        level2features = bidfeatures.merge(askfeatures, on='datetime')
+        level2features = bidfeatures.merge(askfeatures, on='datetime').fillna(0)
         return level2features
 
     def assign_bucket(self, level2: pd.DataFrame, l2size: int = 0, buckets: int = 20) -> pd.DataFrame:

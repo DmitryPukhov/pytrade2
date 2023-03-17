@@ -87,13 +87,15 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
             interval = self.bid_ask.index.max() - self.bid_ask.index.min()
 
             if interval < self.min_history_interval:
-                print(f"Not enough data to learn. Required {self.min_history_interval} but exists {interval}")
+                self._log.info(f"Not enough data to learn. Required {self.min_history_interval} but exists {interval}")
                 return
 
             train_X, train_y = PredictLowHighFeatures.features_targets_of(self.bid_ask, self.level2)
             model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
             model.fit(train_X, train_y)
             self.model = model
+        else:
+            self._log.info(f"No data to learn on, bid_ask empty: {self.bid_ask.empty}, level2 empty: {self.level2.empty}")
 
     def create_model(self, X_size, y_size):
         model = Sequential()
