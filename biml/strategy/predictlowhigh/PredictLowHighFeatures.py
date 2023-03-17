@@ -11,15 +11,18 @@ class PredictLowHighFeatures:
 
     @staticmethod
     def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame):
+        # todo: merge them to have the same datetime index
         features = PredictLowHighFeatures.features_of(bid_ask, level2)
         targets = PredictLowHighFeatures.targets_of(bid_ask).dropna()
+        merged = pd.merge_asof(features, targets, left_index=True, right_index=True, direction="forward")
+        features = merged[features.columns]
+        targets = merged[targets.columns]
         return features, targets
 
     @staticmethod
     def features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame):
-        features = Level2Features().level2_buckets(level2)
-        features[bid_ask.columns] = bid_ask
-        # todo: convert
+        l2_features = Level2Features().level2_buckets(level2)
+        features = pd.merge_asof(bid_ask, l2_features, left_index=True, right_index=True, direction="backward")
         features.drop(["symbol", "datetime"], axis=1, inplace=True)
         return features
 
@@ -36,5 +39,5 @@ class PredictLowHighFeatures:
         prediction_bound = bid_ask.index.max() - pd.to_timedelta(predict_window)
 
         predicted_columns = list(filter(lambda col: col.endswith('_fut'), merged.columns))
-        merged.loc[merged.index > prediction_bound,predicted_columns] = [np.nan]*len(predicted_columns)
+        merged.loc[merged.index > prediction_bound, predicted_columns] = [np.nan] * len(predicted_columns)
         return merged[["bid_fut", "ask_fut"]]

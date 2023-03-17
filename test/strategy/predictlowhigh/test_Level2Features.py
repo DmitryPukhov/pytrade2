@@ -5,6 +5,7 @@ from strategy.predictlowhigh.Level2Features import Level2Features
 
 
 class TestLevel2Features(TestCase):
+
     def test_level2_features__equal_buckets(self):
         # datetime, price, ask_vol, bid_vol
         # Each bucket has one item
