@@ -10,11 +10,11 @@ class PredictLowHighFeatures:
     """
 
     @staticmethod
-    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame):
+    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
         # todo: merge them to have the same datetime index
         features = PredictLowHighFeatures.features_of(bid_ask, level2)
         targets = PredictLowHighFeatures.targets_of(bid_ask).dropna()
-        merged = pd.merge_asof(features, targets, left_index=True, right_index=True, direction="forward")\
+        merged = pd.merge_asof(features, targets, left_index=True, right_index=True, direction="forward") \
             .dropna()
         features = merged[features.columns]
         targets = merged[targets.columns]

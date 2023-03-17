@@ -84,7 +84,6 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
     def can_learn(self) -> bool:
         """ Check preconditions for leraning"""
-
         # Check learn conditions
         if self.is_learning:
             #self._log.info("Cannot learn: previous learn is still in progress")
@@ -109,13 +108,13 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         try:
             train_X, train_y = PredictLowHighFeatures.features_targets_of(self.bid_ask, self.level2)
             model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
+            self._log.info(f"Train data len: {train_X.shape[0]}")
             if not train_X.empty:
                 model.fit(train_X, train_y)
                 self.model = model
-            else:
-                self._log.info("Train data is empty, no learn")
         finally:
             self.is_learning = False
+            self._log.info("Learning completed")
 
     def create_model(self, X_size, y_size):
         model = Sequential()
