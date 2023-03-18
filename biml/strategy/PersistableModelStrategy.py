@@ -2,12 +2,16 @@ import glob
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Dict
+
 from keras.models import Model
 
 
 class PersistableModelStrategy:
-    def __init__(self):
+    def __init__(self, config: Dict):
         self._log = logging.getLogger(self.__class__.__name__)
+        models_dir = config["biml.model.dir"]
+        self.model_weights_dir = str(Path(models_dir, self.__class__.__name__, "weights"))
 
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))

@@ -106,7 +106,6 @@ class TestPredictLowHighFeatures(TestCase):
             {"datetime": datetime.fromisoformat("2021-12-08 07:01:01"), "symbol": "asset1",
              "bid": 5, "bid_vol": 6},
 
-
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:03"), "symbol": "asset1",
              "ask": 11, "ask_vol": 12},
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:03"), "symbol": "asset1",
@@ -141,6 +140,5 @@ class TestPredictLowHighFeatures(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-18 09:20:02'), 'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
             {'datetime': datetime.fromisoformat('2023-03-18 09:20:02'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
         ])
-        actual=PredictLowHighFeatures.features_of(bid_ask, level2)
+        actual = PredictLowHighFeatures.features_of(bid_ask, level2)
         self.assertTrue(actual.empty)
-
