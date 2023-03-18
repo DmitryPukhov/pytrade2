@@ -79,6 +79,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
     def predict_low_high(self):
         X = PredictLowHighFeatures.features_of(self.bid_ask, self.level2)
+        # todo: fix input contains NaN error
+        # todo: predict only on last value
         y = self.model.predict(X) if not X.empty else pd.DataFrame.empty
         return y
 

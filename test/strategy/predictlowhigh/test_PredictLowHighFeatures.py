@@ -11,7 +11,7 @@ from strategy.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeature
 
 class TestPredictLowHighFeatures(TestCase):
 
-    def test_features_targets_of__bidask_level2__equal_index(self):
+    def test_features_targets_of__features_and_targets_should_have_same_index(self):
         bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",
              "bid": 1, "bid_vol": 2, "ask": 3, "ask_vol": 4},
@@ -27,10 +27,12 @@ class TestPredictLowHighFeatures(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:03'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
         ])
         # Call
-        actual_features, actual_targets=PredictLowHighFeatures.features_targets_of(bid_ask, level2)
+        actual_features, actual_targets = PredictLowHighFeatures.features_targets_of(bid_ask, level2)
         self.assertListEqual(actual_features.index.values.tolist(), actual_targets.index.values.tolist())
 
-    def test_features_of__contains_bidask_and_level2(self):
+    def test_features_of__merge_bidask_level2(self):
+        """ Bidask should be enriched with latest level2 before bidask"""
+
         bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",
              "bid": 1, "bid_vol": 2, "ask": 3, "ask_vol": 4},
@@ -83,7 +85,7 @@ class TestPredictLowHighFeatures(TestCase):
         # Future values should be predicted only if future window completed
         self.assertListEqual(actual["bid_fut"].dropna().values.tolist(), [3.0, 11.0, 12.0, 13.0])
 
-    def test_features_of__bid_ask(self):
+    def test_features_of__bid_ask_columns_should_come_from_bidask(self):
         bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2021-12-08 07:00:01"), "symbol": "asset1",
              "bid": 1, "bid_vol": 2, "ask": 3, "ask_vol": 4},
@@ -92,7 +94,25 @@ class TestPredictLowHighFeatures(TestCase):
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:03"), "symbol": "asset1",
              "bid": 9, "bid_vol": 10, "ask": 11, "ask_vol": 12},
         ]).set_index("datetime", drop=False)
-        level2 = bid_ask # Just simple level2 with bid/ask/vol columns, values does not matter
+
+        level2 = pd.DataFrame([
+            {"datetime": datetime.fromisoformat("2021-12-08 07:00:01"), "symbol": "asset1",
+             "ask": 3, "ask_vol": 4},
+            {"datetime": datetime.fromisoformat("2021-12-08 07:00:01"), "symbol": "asset1",
+             "bid": 1, "bid_vol": 2},
+
+            {"datetime": datetime.fromisoformat("2021-12-08 07:01:01"), "symbol": "asset1",
+             "ask": 7, "ask_vol": 8},
+            {"datetime": datetime.fromisoformat("2021-12-08 07:01:01"), "symbol": "asset1",
+             "bid": 5, "bid_vol": 6},
+
+
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:03"), "symbol": "asset1",
+             "ask": 11, "ask_vol": 12},
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:03"), "symbol": "asset1",
+             "bid": 9, "bid_vol": 10}
+        ])
+
         # Call
         actual = PredictLowHighFeatures.features_of(bid_ask, level2)
 
@@ -100,4 +120,27 @@ class TestPredictLowHighFeatures(TestCase):
         self.assertListEqual([2, 6, 10], actual["bid_vol"].dropna().values.tolist())
         self.assertListEqual([3, 7, 11], actual["ask"].dropna().values.tolist())
         self.assertListEqual([4, 8, 12], actual["ask_vol"].dropna().values.tolist())
-        pass
+
+    def test_features_of__empty_features_of_empty_level2_or_bidask(self):
+        bid_ask = pd.DataFrame([
+            {"datetime": datetime.fromisoformat("2023-03-18 09:20:01"), "symbol": "asset1",
+             "bid": 1, "bid_vol": 2, "ask": 3, "ask_vol": 4}
+        ]).set_index("datetime", drop=False)
+        level2 = bid_ask
+        # Empty level2 => empty features
+        self.assertTrue(PredictLowHighFeatures.features_of(bid_ask, pd.DataFrame()).empty)
+        # Empty bidask => empty features
+        self.assertTrue(PredictLowHighFeatures.features_of(pd.DataFrame(), level2).empty)
+
+    def test_features_of__should_be_empty_if_bidask_hasnot_prev_level2(self):
+        bid_ask = pd.DataFrame([
+            {"datetime": datetime.fromisoformat("2023-03-18 09:20:01"), "symbol": "asset1",
+             "bid": 1, "bid_vol": 2, "ask": 3, "ask_vol": 4}
+        ]).set_index("datetime", drop=False)
+        level2 = pd.DataFrame([
+            {'datetime': datetime.fromisoformat('2023-03-18 09:20:02'), 'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            {'datetime': datetime.fromisoformat('2023-03-18 09:20:02'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
+        ])
+        actual=PredictLowHighFeatures.features_of(bid_ask, level2)
+        self.assertTrue(actual.empty)
+

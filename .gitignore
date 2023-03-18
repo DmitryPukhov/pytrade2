@@ -6,6 +6,7 @@
 /model
 /data-dev
 /model-dev
+/out
 
 # Idea
 .idea
