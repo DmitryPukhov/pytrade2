@@ -11,6 +11,32 @@ from strategy.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeature
 
 class TestPredictLowHighFeatures(TestCase):
 
+    def test_last_data_of(self):
+        bid_ask = pd.DataFrame([
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",
+             "bid": 1, "bid_vol": 2, "ask": 3, "ask_vol": 4},
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:02"), "symbol": "asset1",
+             "bid": 5, "bid_vol": 6, "ask": 7, "ask_vol": 8},
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:03"), "symbol": "asset1",
+             "bid": 9, "bid_vol": 10, "ask": 11, "ask_vol": 12},
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:15"), "symbol": "asset1",
+             "bid": 13, "bid_vol": 14, "ask": 15, "ask_vol": 16}
+        ]).set_index("datetime", drop=False)
+        level2 = pd.DataFrame([
+            {'datetime': datetime.fromisoformat('2023-03-17 15:56:03'), 'ask': 0.9, 'ask_vol': 1},
+            {'datetime': datetime.fromisoformat('2023-03-17 15:56:03'), 'bid': -0.9, 'bid_vol': 1},
+
+            {'datetime': datetime.fromisoformat('2023-03-17 15:56:16'), 'ask': 0.9, 'ask_vol': 1},
+            {'datetime': datetime.fromisoformat('2023-03-17 15:56:16'), 'bid': -0.9, 'bid_vol': 1}
+        ]).set_index("datetime", drop=False)
+        # Call
+        actual_bid_ask, actual_level2 = PredictLowHighFeatures.last_data_of(bid_ask, level2)
+        # Assert
+        self.assertListEqual(actual_bid_ask.index.to_pydatetime().tolist(),
+                             [datetime.fromisoformat("2023-03-17 15:56:15")])
+        self.assertListEqual(actual_level2.index.to_pydatetime().tolist(),
+                             [datetime.fromisoformat("2023-03-17 15:56:03"), datetime.fromisoformat("2023-03-17 15:56:03")])
+
     def test_features_targets_of__features_and_targets_should_have_same_index(self):
         bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",

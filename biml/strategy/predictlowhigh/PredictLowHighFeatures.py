@@ -10,6 +10,17 @@ class PredictLowHighFeatures:
     """
 
     @staticmethod
+    def last_data_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+        """ @:return (last bid ask value, last level2 values just before last bid ask)"""
+        last_bid_ask = bid_ask.tail(1)
+        last_level2 = level2[level2.index <= last_bid_ask.index.max()]
+        return last_bid_ask, last_level2
+
+    @staticmethod
+    def last_features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> pd.DataFrame:
+        return PredictLowHighFeatures.features_of(*(PredictLowHighFeatures.last_data_of(bid_ask, level2)))
+
+    @staticmethod
     def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
         # todo: merge them to have the same datetime index
         features = PredictLowHighFeatures.features_of(bid_ask, level2)

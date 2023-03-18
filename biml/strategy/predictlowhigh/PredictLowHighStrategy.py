@@ -8,7 +8,6 @@ from scikeras.wrappers import KerasRegressor
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-
 from feed.BaseFeed import BaseFeed
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 from strategy.PeriodicalLearnStrategy import PeriodicalLearnStrategy
@@ -71,17 +70,15 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
             y = self.predict_low_high()
             self.is_processing = False
 
-    def predict_low_high(self):
-        X = PredictLowHighFeatures.features_of(self.bid_ask, self.level2)
-        # todo: fix input contains NaN error
-        # todo: predict only on last value
-        y = self.model.predict(X) if not X.empty else pd.DataFrame.empty
+    def predict_low_high(self) -> []:
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
+        y = self.model.predict(X) if not X.empty else []
         return y
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
         # Check learn conditions
-        if self.is_learning or  self.bid_ask.empty or self.level2.empty:
+        if self.is_learning or self.bid_ask.empty or self.level2.empty:
             return False
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
