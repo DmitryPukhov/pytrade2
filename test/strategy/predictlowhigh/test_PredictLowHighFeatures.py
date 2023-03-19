@@ -53,7 +53,7 @@ class TestPredictLowHighFeatures(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:03'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
         ])
         # Call
-        actual_features, actual_targets = PredictLowHighFeatures.features_targets_of(bid_ask, level2)
+        actual_features, actual_targets = PredictLowHighFeatures.features_targets_of(bid_ask, level2, "10s")
         self.assertListEqual(actual_features.index.values.tolist(), actual_targets.index.values.tolist())
 
     def test_features_of__merge_bidask_level2(self):

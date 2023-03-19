@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import datetime as dt
 from strategy.predictlowhigh.Level2Features import Level2Features
 
 
@@ -8,6 +7,16 @@ class PredictLowHighFeatures:
     """
     Feature engineering for PredictLowHighStrategy
     """
+    default_predict_window = "10s"
+
+    @staticmethod
+    def last_eval_data_of(bid_ask: pd.DataFrame, level2: pd.DataFrame,
+                          predict_window: str = default_predict_window) -> (pd.DataFrame, pd.DataFrame):
+        """
+        The last data before prediction window for prediction evaluation
+        @:return (last bid ask value before prediction window, last correspondent level2 values)
+        """
+
 
     @staticmethod
     def last_data_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
@@ -21,10 +30,10 @@ class PredictLowHighFeatures:
         return PredictLowHighFeatures.features_of(*(PredictLowHighFeatures.last_data_of(bid_ask, level2)))
 
     @staticmethod
-    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
-        # todo: merge them to have the same datetime index
+    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, predict_window=default_predict_window) \
+            -> (pd.DataFrame, pd.DataFrame):
         features = PredictLowHighFeatures.features_of(bid_ask, level2)
-        targets = PredictLowHighFeatures.targets_of(bid_ask)
+        targets = PredictLowHighFeatures.targets_of(bid_ask, predict_window)
         merged = pd.merge_asof(features, targets, left_index=True, right_index=True, direction="forward") \
             .dropna()
         features = merged[features.columns]
@@ -41,7 +50,7 @@ class PredictLowHighFeatures:
         return features.dropna()
 
     @staticmethod
-    def targets_of(bid_ask: pd.DataFrame, predict_window="10s") -> pd.DataFrame:
+    def targets_of(bid_ask: pd.DataFrame, predict_window: str = default_predict_window) -> pd.DataFrame:
         future: pd.DataFrame = bid_ask.rolling(predict_window) \
             .agg({"bid": "max", "ask": "min", "bid_vol": "sum", "ask_vol": "sum"}) \
             .rename(columns={'bid': 'bid_fut', 'ask': 'ask_fut', 'bid_vol': 'bid_vol_fut', 'ask_vol': 'ask_vol_fut'}) \
