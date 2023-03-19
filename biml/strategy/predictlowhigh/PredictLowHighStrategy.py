@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
@@ -68,12 +69,12 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
             self.is_processing = True
             y = self.predict_low_high()
-            self.is_processing = False
+            self.bid_ask[y.columns] = y
 
-    def predict_low_high(self) -> []:
+    def predict_low_high(self) -> pd.DataFrame:
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
-        y = self.model.predict(X) if not X.empty else []
-        return y
+        y = self.model.predict(X) if not X.empty else np.empty()
+        return pd.DataFrame(index=X.index, data={"fut_low": [y[0]], "fut_high": [y[1]]})
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""

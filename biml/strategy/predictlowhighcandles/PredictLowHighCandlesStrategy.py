@@ -29,6 +29,9 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
 
     def __init__(self, broker, config: Dict):
         super().__init__(broker, config)
+        self.tickers = AppTools.read_candles_tickers(config)
+        self.ticker: str = self.tickers[-1].ticker
+
         self._log = logging.getLogger(self.__class__.__name__)
         self.model_dir = config["biml.model.dir"]
 

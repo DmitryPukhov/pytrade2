@@ -8,8 +8,8 @@ class StrategyBase:
         # Binance spot client
         self.order_quantity = 0.001
         self.broker = broker
-        self.tickers = AppTools.read_candles_tickers(config)
-        self.ticker: str = self.tickers[-1].ticker
+        # self.tickers = AppTools.read_candles_tickers(config)
+        # self.ticker: str = self.tickers[-1].ticker
 
     def process_new_data(self):
         self.broker.update_trade_if_closed_by_stop_loss(self.broker.cur_trade)
