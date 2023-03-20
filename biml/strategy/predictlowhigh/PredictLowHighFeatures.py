@@ -10,15 +10,6 @@ class PredictLowHighFeatures:
     default_predict_window = "10s"
 
     @staticmethod
-    def last_eval_data_of(bid_ask: pd.DataFrame, level2: pd.DataFrame,
-                          predict_window: str = default_predict_window) -> (pd.DataFrame, pd.DataFrame):
-        """
-        The last data before prediction window for prediction evaluation
-        @:return (last bid ask value before prediction window, last correspondent level2 values)
-        """
-
-
-    @staticmethod
     def last_data_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
         """ @:return (last bid ask value, last level2 values just before last bid ask)"""
         last_bid_ask = bid_ask.tail(1)

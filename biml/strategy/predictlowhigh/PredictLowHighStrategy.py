@@ -1,10 +1,13 @@
 import logging
+from datetime import datetime
 from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
+from numpy import datetime64
+from pandas._libs.tslibs import np_datetime
 from scikeras.wrappers import KerasRegressor
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.pipeline import Pipeline
@@ -37,6 +40,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         self.bid_ask: pd.DataFrame = pd.DataFrame()
         self.level2: pd.DataFrame = pd.DataFrame()
+        self.fut_low_high: pd.DataFrame = pd.DataFrame()
+        self.last_learn_bidask_time = datetime(1970, 1, 1)
         self.model = None
 
         self.is_learning = False
@@ -69,12 +74,13 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
             self.is_processing = True
             y = self.predict_low_high()
-            self.bid_ask[y.columns] = y
+            self.fut_low_high[y.columns] = y
 
     def predict_low_high(self) -> pd.DataFrame:
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
-        y = self.model.predict(X) if not X.empty else np.empty()
-        return pd.DataFrame(index=X.index, data={"fut_low": [y[0]], "fut_high": [y[1]]})
+        y = self.model.predict(X) if not X.empty else [[np.nan, np.nan]]
+        (low, high) = (y[-1][0], y[-1][1]) if y.shape[0] < 2 else (y[0], y[1])
+        return pd.DataFrame(index=X.index, data={"fut_low": low, "fut_high": high})
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
@@ -93,12 +99,21 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self._log.info("Learning")
         self.is_learning = True
         try:
-            train_X, train_y = PredictLowHighFeatures.features_targets_of(self.bid_ask, self.level2)
+
+            bid_ask_since_last_learn = self.bid_ask[self.bid_ask.index > self.last_learn_bidask_time]
+            train_X, train_y = PredictLowHighFeatures.features_targets_of(
+                bid_ask_since_last_learn, self.level2)
+            self._log.info(
+                f"Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}")
             model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
-            self._log.info(f"Train data len: {train_X.shape[0]}")
             if not train_X.empty:
                 model.fit(train_X, train_y)
                 self.model = model
+                self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
+                # # Clear the data, already used for learning
+                # self.bid_ask = self.bid_ask[self.bid_ask.index > train_X.index.max()]
+                # self.level2 = self.level2[self.level2.index > train_y.index.max()]
+
         finally:
             self.is_learning = False
             self._log.info("Learning completed")

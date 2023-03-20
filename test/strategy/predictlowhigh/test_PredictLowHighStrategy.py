@@ -7,7 +7,7 @@ import pandas as pd
 from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
 
 
-class TestPredictLowHighFeatures(TestCase):
+class TestPredictLowHighStrategy(TestCase):
     class ModelStub:
         """ Model emulation for unit tests"""
 
@@ -18,7 +18,7 @@ class TestPredictLowHighFeatures(TestCase):
     def create_strategy_stub(self):
         conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60, "biml.model.dir": "tmp"}
         strategy = PredictLowHighStrategy(None, config=conf)
-        strategy.model = TestPredictLowHighFeatures.ModelStub()
+        strategy.model = TestPredictLowHighStrategy.ModelStub()
         return strategy
 
     def test_process_new_data__should_set_fut_columns(self):
@@ -38,8 +38,9 @@ class TestPredictLowHighFeatures(TestCase):
         # Call tested method, strategy should process last bidask record
         strategy.process_new_data()
 
-        self.assertTrue(np.array_equal(strategy.bid_ask["fut_low"], np.array([np.nan, 1.0]), equal_nan=True))
-        self.assertTrue(np.array_equal(strategy.bid_ask["fut_high"], np.array([np.nan, 2.0]), equal_nan=True))
+        self.assertListEqual(strategy.fut_low_high.index.to_pydatetime().tolist(), [datetime.fromisoformat("2023-03-17 15:56:02")])
+        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_low"], np.array([ 1.0]), equal_nan=True))
+        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_high"], np.array([ 2.0]), equal_nan=True))
 
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
