@@ -10,8 +10,13 @@ from keras.models import Model
 class PersistableModelStrategy:
     def __init__(self, config: Dict):
         self._log = logging.getLogger(self.__class__.__name__)
-        models_dir = config["biml.model.dir"]
-        self.model_weights_dir = str(Path(models_dir, self.__class__.__name__, "weights"))
+
+        # Directory for model weights and price data
+        self.model_dir = config["biml.model.dir"]
+        if self.model_dir:
+            self.model_weights_dir = str(Path(self.model_dir, self.__class__.__name__, "weights"))
+            self.model_Xy_dir = str(Path(self.model_dir, self.__class__.__name__, "Xy"))
+            Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
 
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))

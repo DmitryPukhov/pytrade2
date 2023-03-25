@@ -33,12 +33,6 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         self.ticker: str = self.tickers[-1].ticker
 
         self._log = logging.getLogger(self.__class__.__name__)
-        self.model_dir = config["biml.model.dir"]
-
-        if self.model_dir:
-            self.model_weights_dir = str(Path(self.model_dir, self.__class__.__name__, "weights"))
-            self.model_Xy_dir = str(Path(self.model_dir, self.__class__.__name__, "Xy"))
-            Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.model = None
         self.window_size = 15
         self.candles_size = self.window_size * 100
