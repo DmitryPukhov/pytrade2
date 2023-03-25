@@ -1,4 +1,5 @@
-from AppTools import AppTools
+import logging
+
 from broker.BinanceBroker import BinanceBroker
 
 
@@ -6,8 +7,11 @@ class StrategyBase:
 
     def __init__(self, broker: BinanceBroker, config):
         # Binance spot client
+        self._log = logging.getLogger(self.__class__.__name__)
         self.order_quantity = 0.001
         self.broker = broker
+        self.model = None
+
         # self.tickers = AppTools.read_candles_tickers(config)
         # self.ticker: str = self.tickers[-1].ticker
 

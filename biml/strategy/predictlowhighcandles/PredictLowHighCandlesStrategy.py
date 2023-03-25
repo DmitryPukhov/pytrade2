@@ -32,13 +32,10 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         self.tickers = AppTools.read_candles_tickers(config)
         self.ticker: str = self.tickers[-1].ticker
 
-        self._log = logging.getLogger(self.__class__.__name__)
-        self.model = None
         self.window_size = 15
         self.candles_size = self.window_size * 100
         self.predict_sindow_size = 1
         self.candles = pd.DataFrame()
-        self.model = None
 
         # Minimum stop loss ratio = (price-stop_loss)/price
         # self.min_stop_loss_ratio = 0.005

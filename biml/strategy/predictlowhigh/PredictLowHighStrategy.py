@@ -6,12 +6,11 @@ import numpy as np
 import pandas as pd
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
-from numpy import datetime64
-from pandas._libs.tslibs import np_datetime
 from scikeras.wrappers import KerasRegressor
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+
 from feed.BaseFeed import BaseFeed
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 from strategy.PeriodicalLearnStrategy import PeriodicalLearnStrategy
@@ -26,14 +25,13 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
     """
 
     def __init__(self, broker, config: Dict):
-        self._log = logging.getLogger(self.__class__.__name__)
+        #self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
         StrategyBase.__init__(self, broker, config)
         PeriodicalLearnStrategy.__init__(self, config)
         PersistableModelStrategy.__init__(self, config)
 
         self.tickers = self.config["biml.tickers"].split(",")
-        self.model_dir = self.config["biml.model.dir"]
         self.min_history_interval = pd.Timedelta("2 seconds")
 
         self.ticker = pd.DataFrame(columns=BaseFeed.bid_ask_columns).set_index("datetime")
@@ -42,7 +40,6 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.level2: pd.DataFrame = pd.DataFrame()
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
         self.last_learn_bidask_time = datetime(1970, 1, 1)
-        self.model = None
 
         self.is_learning = False
         self.is_processing = False
