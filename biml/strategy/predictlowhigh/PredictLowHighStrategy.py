@@ -75,7 +75,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
-        y = self.model.predict(X) if not X.empty else [[np.nan, np.nan]]
+        y = self.model.predict(X, verbose=0) if not X.empty else [[np.nan, np.nan]]
         (low, high) = (y[-1][0], y[-1][1]) if y.shape[0] < 2 else (y[0], y[1])
         y_df = pd.DataFrame(index=X.index, data={"fut_low": low, "fut_high": high})
         return X, y_df
