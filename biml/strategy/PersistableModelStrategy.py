@@ -46,9 +46,9 @@ class PersistableModelStrategy:
         """
         Write X,y, data to csv for analysis
         """
-        self.X_buf.append(X_last)
-        self.y_buf.append(y_pred_last)
-        self.data_buf.append(data_last)
+        self.X_buf = self.X_buf.append(X_last)
+        self.y_buf = self.y_buf.append(y_pred_last)
+        self.data_buf = self.data_buf.append(data_last)
 
         if datetime.utcnow() - self.last_save_time < self.save_interval:
             return
@@ -66,10 +66,10 @@ class PersistableModelStrategy:
             self.X_buf = pd.DataFrame()
         if not self.y_buf.empty:
             ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
-            self._log.debug(f"Saving  last y to {ypath}")
+            self._log.debug(f"Saving last y to {ypath}")
             # y_pred_last_df = pd.DataFrame(index=X_last.index, data=y_pred_last,
             #                               columns=["fut_delta_low", "fut_candle_size"])
-            #y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
+            # y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
             self.y_buf.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
             self.y_buf = pd.DataFrame()
         if not self.data_buf.empty:
