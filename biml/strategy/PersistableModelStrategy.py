@@ -20,7 +20,7 @@ class PersistableModelStrategy:
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.last_save_time = datetime.utcnow()
         # Save data each 10 seconds
-        self.save_interval: timedelta = timedelta(seconds=10)
+        self.save_interval: timedelta = timedelta(seconds=60)
         self.X_buf = pd.DataFrame()
         self.y_buf = pd.DataFrame()
         self.data_buf = pd.DataFrame()
