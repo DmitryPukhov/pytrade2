@@ -80,7 +80,8 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
             return 0
 
         # Calculate variables of current state
-        close, fut_high, fut_low = self.candles["close"].iloc[-1], self.candles["fut_high"].iloc[-1], self.candles["fut_low"].iloc[-1]
+        close, fut_high, fut_low = self.candles["close"].iloc[-1], self.candles["fut_high"].iloc[-1], \
+        self.candles["fut_low"].iloc[-1]
         signal, cur_trade_signal = 0, 0
         predicted_loss, cur_trade_stop_loss = 0, abs(
             self.broker.cur_trade.open_price - self.broker.cur_trade.stop_loss_price)
@@ -101,13 +102,14 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         """
         Return buy or sell or no signal using predicted prices
         :param df: candles dataframe
-        :return: 1 for buy, -1 sell, 0 no signal
+        :return: (<signal:1 for buy, -1 sell, 0 no signal>, <price>, <stop loss adjusted>)
         """
         signal, price, stop_loss, stop_loss_adj, take_profit = 0, None, None, None, None
         if self.candles.empty:
             self._log.debug("Candles are empty")
             return signal, price, stop_loss
-        close, fut_high, fut_low = self.candles["close"].iloc[-1], self.candles["fut_high"].iloc[-1], self.candles["fut_low"].iloc[-1]
+        close, fut_high, fut_low = self.candles["close"].iloc[-1], self.candles["fut_high"].iloc[-1], \
+        self.candles["fut_low"].iloc[-1]
         delta_high, delta_low = (fut_high - close), (close - fut_low)
         ratio = abs(delta_high / delta_low)
 
@@ -210,8 +212,6 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         print(cv)
         # Save weights
         self.save_model()
-
-
 
     def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
         # Fit the model

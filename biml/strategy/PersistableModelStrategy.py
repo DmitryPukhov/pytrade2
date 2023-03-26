@@ -40,21 +40,21 @@ class PersistableModelStrategy:
         """
         Write X,y, data to csv for analysis
         """
-        time = X_last.index[-1] if X_last else data_last.index[-1]
+        time = X_last.index[-1] if X_last is not None else data_last.index[-1]
         file_name_prefix = f"{pd.to_datetime(time).date()}_{self.ticker}_"
 
         # Save
-        if X_last:
+        if X_last is not None:
             Xpath = str(Path(self.model_Xy_dir, file_name_prefix + "X.csv"))
             self._log.debug(f"Saving last X to {Xpath}")
             X_last.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
-        if y_pred_last:
+        if y_pred_last is not None:
             ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
             self._log.debug(f"Saving  last y to {ypath}")
             y_pred_last_df = pd.DataFrame(index=X_last.index, data=y_pred_last,
                                           columns=["fut_delta_low", "fut_candle_size"])
             y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
-        if data_last:
+        if data_last is not None:
             datapath = str(Path(self.model_Xy_dir, file_name_prefix + "data.csv"))
             self._log.debug(f"Saving last data to {datapath}")
             data_last.to_csv(datapath, header=not Path(datapath).exists(), mode='a')
