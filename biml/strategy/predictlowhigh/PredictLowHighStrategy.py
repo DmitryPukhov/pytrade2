@@ -33,7 +33,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.tickers = self.config["biml.tickers"].split(",")
         self.min_history_interval = pd.Timedelta("2 seconds")
 
-        #self.ticker = pd.DataFrame(columns=BaseFeed.bid_ask_columns).set_index("datetime")
+        # self.ticker = pd.DataFrame(columns=BaseFeed.bid_ask_columns).set_index("datetime")
         self.ticker = self.tickers[-1]
 
         self.bid_ask: pd.DataFrame = pd.DataFrame()
@@ -75,6 +75,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                 X, y = self.predict_low_high()
                 self.fut_low_high[y.columns] = y
                 self.save_lastXy(X, y, self.bid_ask.tail(-1))
+            except Exception as e:
+                self._log.error(e)
             finally:
                 self.is_processing = False
 
