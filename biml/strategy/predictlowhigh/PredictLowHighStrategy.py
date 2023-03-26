@@ -33,7 +33,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.tickers = self.config["biml.tickers"].split(",")
         self.min_history_interval = pd.Timedelta("2 seconds")
 
-        self.ticker = pd.DataFrame(columns=BaseFeed.bid_ask_columns).set_index("datetime")
+        #self.ticker = pd.DataFrame(columns=BaseFeed.bid_ask_columns).set_index("datetime")
+        self.ticker = self.tickers[-1]
 
         self.bid_ask: pd.DataFrame = pd.DataFrame()
         self.level2: pd.DataFrame = pd.DataFrame()

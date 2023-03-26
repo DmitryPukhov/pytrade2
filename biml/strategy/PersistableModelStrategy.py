@@ -1,6 +1,6 @@
 import glob
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
 
@@ -18,6 +18,12 @@ class PersistableModelStrategy:
             self.model_weights_dir = str(Path(self.model_dir, self.__class__.__name__, "weights"))
             self.model_Xy_dir = str(Path(self.model_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
+        self.last_save_time = datetime.utcnow()
+        # Save data each 10 seconds
+        self.save_interval: timedelta = timedelta(seconds=10)
+        self.X_buf = pd.DataFrame()
+        self.y_buf = pd.DataFrame()
+        self.data_buf = pd.DataFrame()
 
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
@@ -36,10 +42,18 @@ class PersistableModelStrategy:
         self._log.debug(f"Save model to {model_path}")
         model.save_weights(model_path)
 
-    def save_lastXy(self, X_last: pd.DataFrame, y_pred_last, data_last: pd.DataFrame):
+    def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
         """
         Write X,y, data to csv for analysis
         """
+        if datetime.utcnow() - self.last_save_time < self.save_interval:
+            self.X_buf.append(X_last)
+            self.y_buf.append(y_pred_last)
+            self.data_buf.append(data_last)
+            return
+
+        self.last_save_time = datetime.utcnow()
+
         time = X_last.index[-1] if X_last is not None else data_last.index[-1]
         file_name_prefix = f"{pd.to_datetime(time).date()}_{self.ticker}_"
 
@@ -51,9 +65,10 @@ class PersistableModelStrategy:
         if y_pred_last is not None:
             ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
             self._log.debug(f"Saving  last y to {ypath}")
-            y_pred_last_df = pd.DataFrame(index=X_last.index, data=y_pred_last,
-                                          columns=["fut_delta_low", "fut_candle_size"])
-            y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
+            # y_pred_last_df = pd.DataFrame(index=X_last.index, data=y_pred_last,
+            #                               columns=["fut_delta_low", "fut_candle_size"])
+            #y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
+            y_pred_last.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
         if data_last is not None:
             datapath = str(Path(self.model_Xy_dir, file_name_prefix + "data.csv"))
             self._log.debug(f"Saving last data to {datapath}")
