@@ -19,6 +19,7 @@ class TestPredictLowHighStrategy(TestCase):
         conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60, "biml.model.dir": "tmp"}
         strategy = PredictLowHighStrategy(None, config=conf)
         strategy.model = TestPredictLowHighStrategy.ModelStub()
+        strategy.save_lastXy = lambda a, b, c: print("save_lastXy stub")
         return strategy
 
     def test_process_new_data__should_set_fut_columns(self):
@@ -38,9 +39,10 @@ class TestPredictLowHighStrategy(TestCase):
         # Call tested method, strategy should process last bidask record
         strategy.process_new_data()
 
-        self.assertListEqual(strategy.fut_low_high.index.to_pydatetime().tolist(), [datetime.fromisoformat("2023-03-17 15:56:02")])
-        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_low"], np.array([ 1.0]), equal_nan=True))
-        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_high"], np.array([ 2.0]), equal_nan=True))
+        self.assertListEqual(strategy.fut_low_high.index.to_pydatetime().tolist(),
+                             [datetime.fromisoformat("2023-03-17 15:56:02")])
+        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_low"], np.array([1.0]), equal_nan=True))
+        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_high"], np.array([2.0]), equal_nan=True))
 
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
@@ -57,5 +59,5 @@ class TestPredictLowHighStrategy(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
 
-        y = strategy.predict_low_high()
+        X, y = strategy.predict_low_high()
         self.assertEqual(y.index.to_pydatetime().tolist(), strategy.bid_ask.tail(1).index.to_pydatetime().tolist())

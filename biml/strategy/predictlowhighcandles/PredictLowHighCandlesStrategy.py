@@ -41,7 +41,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         # self.min_stop_loss_ratio = 0.005
         self.min_stop_loss_ratio = 0.001
         # Minimum profit/loss
-        # For test only
+        # For test only. Should be > 4
         self.profit_loss_ratio = 1.5
 
     def run(self, client):
@@ -211,26 +211,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         # Save weights
         self.save_model()
 
-    def save_lastXy(self, X_last: pd.DataFrame, y_pred_last, candles: pd.DataFrame):
-        """
-        Write model X,y data to csv for analysis
-        """
-        time = X_last.index[-1]
-        file_name_prefix = f"{pd.to_datetime(time).date()}_{self.ticker}_"
-        Xpath = str(Path(self.model_Xy_dir, file_name_prefix + "X.csv"))
-        ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
-        candlespath = str(Path(self.model_Xy_dir, file_name_prefix + "candles.csv"))
-        self._log.debug(f"Save X to {Xpath},y to {ypath}, candles to {candlespath}")
 
-        # Save X
-        X_last.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
-        # Create y_pred from ndarray and save
-        y_pred_last_df = pd.DataFrame(index=X_last.index, data=y_pred_last,
-                                      columns=["fut_delta_low", "fut_candle_size"])
-        y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
-        # Save candles with predicted data
-        # candles = candles.join(y_pred_last_df)
-        candles.to_csv(candlespath, header=not Path(candlespath).exists(), mode='a')
 
     def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
         # Fit the model

@@ -25,7 +25,6 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
     """
 
     def __init__(self, broker, config: Dict):
-        #self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
         StrategyBase.__init__(self, broker, config)
         PeriodicalLearnStrategy.__init__(self, config)
@@ -42,7 +41,6 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.last_learn_bidask_time = datetime(1970, 1, 1)
 
         self.is_learning = False
-        self.is_processing = False
 
     def run(self, client):
         """
@@ -58,8 +56,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         """
         new_df = pd.DataFrame(level2, columns=BaseFeed.bid_ask_columns).set_index("datetime", drop=False)
         self.level2 = self.level2.append(new_df)
-        self.learn_or_skip()
-        self.process_new_data()
+        # self.learn_or_skip()
+        # self.process_new_data()
 
     def on_ticker(self, ticker: dict):
         new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime", drop=False)
@@ -68,16 +66,18 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.process_new_data()
 
     def process_new_data(self):
-        if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
-            self.is_processing = True
-            y = self.predict_low_high()
+        if not self.bid_ask.empty and not self.level2.empty and self.model:
+            # Preduct next low/high based on last data
+            X, y = self.predict_low_high()
             self.fut_low_high[y.columns] = y
+            self.save_lastXy(X, y, self.bid_ask.tail(-1))
 
-    def predict_low_high(self) -> pd.DataFrame:
+    def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
         y = self.model.predict(X) if not X.empty else [[np.nan, np.nan]]
         (low, high) = (y[-1][0], y[-1][1]) if y.shape[0] < 2 else (y[0], y[1])
-        return pd.DataFrame(index=X.index, data={"fut_low": low, "fut_high": high})
+        y_df = pd.DataFrame(index=X.index, data={"fut_low": low, "fut_high": high})
+        return X, y_df
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
