@@ -108,6 +108,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                 model.fit(train_X, train_y)
                 self.model = model
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
+                self.save_model()
                 # # Clear the data, already used for learning
                 # self.bid_ask = self.bid_ask[self.bid_ask.index > train_X.index.max()]
                 # self.level2 = self.level2[self.level2.index > train_y.index.max()]
