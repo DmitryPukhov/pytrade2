@@ -74,7 +74,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                 # Preduct next low/high based on last data
                 X, y = self.predict_low_high()
                 self.fut_low_high[y.columns] = y
-                self.save_lastXy(X, y, self.bid_ask.tail(-1))
+                self.save_lastXy(X, y, self.bid_ask.tail(1))
             except Exception as e:
                 self._log.error(e)
             finally:
