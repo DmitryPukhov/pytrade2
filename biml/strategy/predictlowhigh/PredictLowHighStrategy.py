@@ -42,6 +42,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.last_learn_bidask_time = datetime(1970, 1, 1)
 
         self.is_learning = False
+        self.is_processing = False
 
     def run(self, client):
         """
@@ -67,16 +68,25 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.process_new_data()
 
     def process_new_data(self):
-        if not self.bid_ask.empty and not self.level2.empty and self.model:
-            # Preduct next low/high based on last data
-            X, y = self.predict_low_high()
-            self.fut_low_high[y.columns] = y
-            self.save_lastXy(X, y, self.bid_ask.tail(-1))
+        if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
+            try:
+                self.is_processing = True
+                # Preduct next low/high based on last data
+                X, y = self.predict_low_high()
+                self.fut_low_high[y.columns] = y
+                self.save_lastXy(X, y, self.bid_ask.tail(-1))
+            finally:
+                self.is_processing = False
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
-        y = self.model.predict(X, verbose=0) if not X.empty else [[np.nan, np.nan]]
+        try:
+            y = self.model.predict(X, verbose=0) if not X.empty else [[np.nan, np.nan]]
+        except Exception as e:
+            print(e)
+
         (low, high) = (y[-1][0], y[-1][1]) if y.shape[0] < 2 else (y[0], y[1])
+
         y_df = pd.DataFrame(index=X.index, data={"fut_low": low, "fut_high": high})
         return X, y_df
 
