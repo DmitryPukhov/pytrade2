@@ -95,7 +95,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         bid = self.bid_ask.loc[self.bid_ask.index[-1], "bid"]
         ask = self.bid_ask.loc[self.bid_ask.index[-1], "ask"]
         fut_low = self.fut_low_high.loc[self.fut_low_high.index[-1], "fut_low"]
-        fut_high = self.fut_low_high.loc[self.fut_low_high.index[-1], "fut_low"]
+        fut_high = self.fut_low_high.loc[self.fut_low_high.index[-1], "fut_high"]
         if not self.broker.cur_trade:
             # Maybe open a new order
             signal, stop_loss, take_profit = self.get_open_signal(bid, ask, fut_low, fut_high)
