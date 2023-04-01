@@ -44,6 +44,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.is_learning = False
         self.is_processing = False
 
+        self.profit_loss_ratio = 4
+
     def run(self, client):
         """
         Attach to the feed and listen
@@ -79,6 +81,21 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                 self._log.error(e)
             finally:
                 self.is_processing = False
+
+    def get_open_signal(self, bid: float, ask: float, fut_low: float, fut_high: float) -> (int, float, float):
+        """ Calculate buy, sell or nothing signal based on predictions
+        :return (<-1 for sell, 0 for none, 1 for buy>, stop loss, take profit)"""
+        buy_profit = fut_high - ask
+        buy_loss = ask - fut_low
+        sell_profit = bid - fut_low
+        sell_loss = fut_high - bid
+
+        if buy_profit / buy_loss >= self.profit_loss_ratio:
+            return 1, fut_low, fut_high
+        elif sell_profit / sell_loss >= self.profit_loss_ratio:
+            return -1, fut_high, fut_low
+        else:
+            return 0, None, None
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)

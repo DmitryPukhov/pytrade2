@@ -20,6 +20,7 @@ class TestPredictLowHighStrategy(TestCase):
         strategy = PredictLowHighStrategy(None, config=conf)
         strategy.model = TestPredictLowHighStrategy.ModelStub()
         strategy.save_lastXy = lambda a, b, c: print("save_lastXy stub")
+        strategy.profit_loss_ratio = 4
         return strategy
 
     def test_process_new_data__should_set_fut_columns(self):
@@ -61,3 +62,42 @@ class TestPredictLowHighStrategy(TestCase):
 
         X, y = strategy.predict_low_high()
         self.assertEqual(y.index.to_pydatetime().tolist(), strategy.bid_ask.tail(1).index.to_pydatetime().tolist())
+
+    def test_open_signal_buy(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = self.create_strategy_stub()
+
+        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, fut_high=19, fut_low=9)
+        self.assertEqual(actual_signal, 1)
+        self.assertEqual(actual_loss, 9)
+        self.assertEqual(actual_profit, 19)
+
+    def test_open_signal_not_buy_low_ratio(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = self.create_strategy_stub()
+
+        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, fut_high=18.9, fut_low=9)
+
+        self.assertEqual(actual_signal, 0)
+        self.assertIsNone(actual_loss)
+        self.assertIsNone(actual_profit)
+
+    def test_open_signal_sell(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = self.create_strategy_stub()
+
+        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, fut_high=12, fut_low=2)
+
+        self.assertEqual(actual_signal, -1)
+        self.assertEqual(actual_loss, 12)
+        self.assertEqual(actual_profit, 2)
+
+    def test_open_signal_not_sell_low_ratio(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = self.create_strategy_stub()
+
+        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, fut_high=12, fut_low=2.1)
+
+        self.assertEqual(actual_signal, 0)
+        self.assertIsNone(actual_loss)
+        self.assertIsNone(actual_profit)

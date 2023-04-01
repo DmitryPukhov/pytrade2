@@ -43,9 +43,3 @@ class StrategyBase:
                 # Close signal != -signal
                 self._log.debug(f"Close signal: {close_signal} "
                                 f"is not opposite to current trade: {self.broker.cur_trade.side}. Nothing to do.")
-
-    def open_signal(self, candles):
-        pass
-
-    def close_signal(self, candles):
-        pass
