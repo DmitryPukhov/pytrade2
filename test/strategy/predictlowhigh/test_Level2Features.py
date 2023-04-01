@@ -17,8 +17,8 @@ class TestLevel2Features(TestCase):
              'bid_vol': 1} for i in range(0, 10)]
         data = pd.DataFrame(asks+bids)
         # Call
-        features = Level2Features().level2_buckets(data).values.tolist()
-
+        buckets = Level2Features().level2_buckets(data)
+        features = buckets.values.tolist()
 
         # Assert all features should be 1.0
         self.assertEqual([[1.0] * 20], features)
