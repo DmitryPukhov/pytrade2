@@ -79,7 +79,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                 self.fut_low_high[y.columns] = y
 
                 # Open or close or do nothing
-                self.process_new_prediction()
+                open_signal, close_signal = self.process_new_prediction()
 
                 # Save to historical data
                 self.save_lastXy(X, y, self.bid_ask.tail(1))
