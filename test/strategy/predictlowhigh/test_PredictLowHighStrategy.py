@@ -108,8 +108,10 @@ class TestPredictLowHighStrategy(TestCase):
         strategy.fut_low_high = pd.DataFrame([{"fut_low": 9, "fut_high": 19}])
 
         # Process: buy or sell or nothing
-        strategy.process_new_prediction()
+        open_signal, close_signal = strategy.process_new_prediction()
 
+        self.assertEqual(open_signal, 1)
+        self.assertEqual(close_signal, 0)
         self.assertIsNotNone(strategy.broker.cur_trade)
         self.assertEqual(strategy.broker.cur_trade.direction(), 1)
 
@@ -139,7 +141,9 @@ class TestPredictLowHighStrategy(TestCase):
         strategy.fut_low_high = pd.DataFrame([{"fut_low": 2, "fut_high": 12}])
 
         # Process: buy or sell or nothing
-        strategy.process_new_prediction()
+        open_signal, close_signal = strategy.process_new_prediction()
+        self.assertEqual(open_signal, -1)
+        self.assertEqual(close_signal, 0)
 
         self.assertIsNotNone(strategy.broker.cur_trade)
         self.assertEqual(strategy.broker.cur_trade.direction(), -1)
@@ -161,8 +165,10 @@ class TestPredictLowHighStrategy(TestCase):
         strategy.broker.cur_trade = Trade(side="BUY")
 
         # Process: buy or sell or nothing
-        strategy.process_new_prediction()
+        open_signal, close_signal = strategy.process_new_prediction()
 
+        self.assertEqual(open_signal, 0)
+        self.assertEqual(close_signal, -1)
         self.assertIsNone(strategy.broker.cur_trade)
 
     def test_process_new_prediction__should_not_close_buy(self):
@@ -172,8 +178,9 @@ class TestPredictLowHighStrategy(TestCase):
         strategy.broker.cur_trade = Trade(side="BUY")
 
         # Process: buy or sell or nothing
-        strategy.process_new_prediction()
-
+        open_signal, close_signal = strategy.process_new_prediction()
+        self.assertEqual(open_signal, 0)
+        self.assertEqual(close_signal, 0)
         self.assertIsNotNone(strategy.broker.cur_trade)
 
     def test_process_new_prediction__should_close_sell(self):
@@ -183,8 +190,10 @@ class TestPredictLowHighStrategy(TestCase):
         strategy.broker.cur_trade = Trade(side="SELL")
 
         # Process: buy or sell or nothing
-        strategy.process_new_prediction()
+        open_signal, close_signal = strategy.process_new_prediction()
 
+        self.assertEqual(open_signal, 0)
+        self.assertEqual(close_signal, 1)
         self.assertIsNone(strategy.broker.cur_trade)
 
     def test_process_new_prediction__should_not_close_sell(self):
@@ -194,6 +203,8 @@ class TestPredictLowHighStrategy(TestCase):
         strategy.broker.cur_trade = Trade(side="SELL")
 
         # Process: buy or sell or nothing
-        strategy.process_new_prediction()
+        open_signal, close_signal = strategy.process_new_prediction()
+        self.assertEqual(open_signal, 0)
+        self.assertEqual(close_signal, 0)
 
         self.assertIsNotNone(strategy.broker.cur_trade)

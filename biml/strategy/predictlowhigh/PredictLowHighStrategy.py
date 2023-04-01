@@ -89,24 +89,27 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
             finally:
                 self.is_processing = False
 
-    def process_new_prediction(self):
-        """ Try to open or close based on last prediction data """
+    def process_new_prediction(self) -> (int, int):
+        """ Try to open or close based on last prediction data
+        @:return (open_signal, close_signal), where signals can be 0,-1,1 """
 
         bid = self.bid_ask.loc[self.bid_ask.index[-1], "bid"]
         ask = self.bid_ask.loc[self.bid_ask.index[-1], "ask"]
         fut_low = self.fut_low_high.loc[self.fut_low_high.index[-1], "fut_low"]
         fut_high = self.fut_low_high.loc[self.fut_low_high.index[-1], "fut_high"]
+        open_signal, close_signal = 0, 0
         if not self.broker.cur_trade:
             # Maybe open a new order
-            signal, stop_loss, take_profit = self.get_open_signal(bid, ask, fut_low, fut_high)
-            if signal:
-                self.broker.create_cur_trade(symbol=self.ticker, direction=signal, quantity=self.order_quantity,
+            open_signal, stop_loss, take_profit = self.get_open_signal(bid, ask, fut_low, fut_high)
+            if open_signal:
+                self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
                                              price=None, stop_loss=stop_loss)
         else:
             # We do have an opened trade, maybe close the trade
-            signal, _, _ = self.get_close_signal(bid, ask, fut_low, fut_high)
-            if signal and self.broker.cur_trade.direction() == -signal:
+            close_signal, _, _ = self.get_close_signal(bid, ask, fut_low, fut_high)
+            if close_signal and self.broker.cur_trade.direction() == -close_signal:
                 self.broker.end_cur_trade()
+        return open_signal, close_signal
 
     def get_open_signal(self, bid: float, ask: float, fut_low: float, fut_high: float):
         """ Get open signal based on current price and prediction """
