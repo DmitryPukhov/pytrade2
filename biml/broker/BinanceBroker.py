@@ -37,7 +37,7 @@ class BinanceBroker:
         self.db_session = sessionmaker(engine)()
         self.cur_trade = self.read_last_opened_trade()
 
-    def create_cur_trade(self, symbol: str, order_type: int,
+    def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,
                          price: Optional[float],
                          stop_loss: Optional[float]) -> Optional[Trade]:
@@ -46,11 +46,11 @@ class BinanceBroker:
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
 
-        if not order_type:
+        if direction not in {1, -1}:
             return None
-        ticker_size = 2
+        price_precision = 2
 
-        side = self.order_side_names[order_type]
+        side = self.order_side_names[direction]
         self._log.info(
             f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity}, stop loss: {stop_loss}")
         # Main buy or sell order with stop loss
@@ -68,9 +68,9 @@ class BinanceBroker:
 
         # stop loss
         if price and stop_loss:
-            other_side = self.order_side_names[-order_type]
-            stop_loss = round(stop_loss, ticker_size)
-            stop_loss_limit_price = round(stop_loss - (price - stop_loss), ticker_size)
+            other_side = self.order_side_names[-direction]
+            stop_loss = round(stop_loss, price_precision)
+            stop_loss_limit_price = round(stop_loss - (price - stop_loss), price_precision)
             self._log.info(
                 f"Creating stop loss order, stop_loss={stop_loss}, stop_loss_limit_price={stop_loss_limit_price}")
             res = self.client.new_order(

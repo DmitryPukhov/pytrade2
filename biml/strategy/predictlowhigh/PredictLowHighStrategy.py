@@ -45,6 +45,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.is_processing = False
 
         self.profit_loss_ratio = 4
+        self.close_profit_loss_ratio = 2
 
     def run(self, client):
         """
@@ -73,26 +74,59 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
             try:
                 self.is_processing = True
-                # Preduct next low/high based on last data
+                # Predict
                 X, y = self.predict_low_high()
                 self.fut_low_high[y.columns] = y
+
+                # Open or close or do nothing
+                self.process_new_prediction()
+
+                # Save to historical data
                 self.save_lastXy(X, y, self.bid_ask.tail(1))
+
             except Exception as e:
                 self._log.error(e)
             finally:
                 self.is_processing = False
 
-    def get_open_signal(self, bid: float, ask: float, fut_low: float, fut_high: float) -> (int, float, float):
-        """ Calculate buy, sell or nothing signal based on predictions
+    def process_new_prediction(self):
+        """ Try to open or close based on last prediction data """
+
+        bid = self.bid_ask.loc[self.bid_ask.index[-1], "bid"]
+        ask = self.bid_ask.loc[self.bid_ask.index[-1], "ask"]
+        fut_low = self.fut_low_high.loc[self.fut_low_high.index[-1], "fut_low"]
+        fut_high = self.fut_low_high.loc[self.fut_low_high.index[-1], "fut_low"]
+        if not self.broker.cur_trade:
+            # Maybe open a new order
+            signal, stop_loss, take_profit = self.get_open_signal(bid, ask, fut_low, fut_high)
+            if signal:
+                self.broker.create_cur_trade(symbol=self.ticker, direction=signal, quantity=self.order_quantity,
+                                             price=None, stop_loss=stop_loss)
+        else:
+            # We do have an opened trade, maybe close the trade
+            signal = self.get_close_signal(bid, ask, fut_low, fut_high)
+            if signal and self.broker.cur_trade.direction() == -signal:
+                self.broker.end_trade(self.broker.cur_trade)
+
+    def get_open_signal(self, bid: float, ask: float, fut_low: float, fut_high: float):
+        """ Get open signal based on current price and prediction """
+        return self.get_signal(bid, ask, fut_low, fut_high, self.profit_loss_ratio)
+
+    def get_close_signal(self, bid: float, ask: float, fut_low: float, fut_high: float):
+        """ Get close signal based on current price and prediction """
+        return self.get_signal(bid, ask, fut_low, fut_high, self.close_profit_loss_ratio)
+
+    def get_signal(self, bid: float, ask: float, fut_low: float, fut_high: float, ratio: float) -> (int, float, float):
+        """ Calculate buy, sell or nothing signal based on predictions and profit/loss ratio
         :return (<-1 for sell, 0 for none, 1 for buy>, stop loss, take profit)"""
         buy_profit = fut_high - ask
         buy_loss = ask - fut_low
         sell_profit = bid - fut_low
         sell_loss = fut_high - bid
 
-        if buy_profit / buy_loss >= self.profit_loss_ratio:
+        if buy_profit / buy_loss >= ratio:
             return 1, fut_low, fut_high
-        elif sell_profit / sell_loss >= self.profit_loss_ratio:
+        elif sell_profit / sell_loss >= ratio:
             return -1, fut_high, fut_low
         else:
             return 0, None, None

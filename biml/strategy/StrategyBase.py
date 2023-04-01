@@ -27,7 +27,7 @@ class StrategyBase:
             # Open new trade
             if close_signal:
                 self.broker.create_cur_trade(symbol=self.ticker,
-                                             order_type=close_signal,
+                                             direction=close_signal,
                                              quantity=self.order_quantity,
                                              price=price,
                                              stop_loss=stop_loss)

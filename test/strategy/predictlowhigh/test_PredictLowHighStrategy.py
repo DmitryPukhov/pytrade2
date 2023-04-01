@@ -21,6 +21,7 @@ class TestPredictLowHighStrategy(TestCase):
         strategy.model = TestPredictLowHighStrategy.ModelStub()
         strategy.save_lastXy = lambda a, b, c: print("save_lastXy stub")
         strategy.profit_loss_ratio = 4
+        strategy.close_profit_loss_ratio = 2
         return strategy
 
     def test_process_new_data__should_set_fut_columns(self):

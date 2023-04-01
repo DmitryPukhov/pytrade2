@@ -27,6 +27,9 @@ class Trade(Base):
     close_price: Mapped[float] = Column(Float, default=None)
     close_order_id: Mapped[str] = Column(String, default=None)
 
+    order_side_names = {1: "BUY", -1: "SELL"}
+    order_side_codes = dict(map(reversed, order_side_names.items()))
+
     def __str__(self):
         details = f"{self.ticker} {self.side}, open: {self.open_price} at {self.open_time}"
         if self.close_time:
@@ -37,3 +40,6 @@ class Trade(Base):
                 close_details += " by robot"
             details += close_details
         return details
+
+    def direction(self):
+        return Trade.order_side_codes.get(self.side)
