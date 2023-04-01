@@ -5,7 +5,7 @@ class BidAskFeatures:
 
     @staticmethod
     def bid_ask_features_of(bid_ask: pd.DataFrame) -> pd.DataFrame:
-        df = bid_ask[["ask"]]
+        df = bid_ask[[]]
         df["spread"] = bid_ask["ask"] - bid_ask["bid"]
         # Differences instead of absolute values
         diff_cols = ["bid", "bid_vol", "ask", "ask_vol"]
