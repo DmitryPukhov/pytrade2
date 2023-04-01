@@ -11,7 +11,7 @@ class TestPredictLowHighStrategy(TestCase):
     class ModelStub:
         """ Model emulation for unit tests"""
 
-        def predict(self, X):
+        def predict(self, X, verbose):
             # Emulate some prediction
             return np.array([1, 2])
 
