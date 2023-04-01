@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Optional
 from unittest import TestCase
@@ -22,6 +23,7 @@ class TestPredictLowHighStrategy(TestCase):
         """ Broker emulation, don't trade """
 
         def __init__(self):
+            self._log = logging.getLogger(self.__class__.__name__)
             self.cur_trade: Trade = None
 
         def create_cur_trade(self, symbol: str, direction: int,
@@ -33,6 +35,9 @@ class TestPredictLowHighStrategy(TestCase):
                                    open_time=datetime.utcnow(), open_price=price, open_order_id=None,
                                    stop_loss_price=stop_loss, stop_loss_order_id=None,
                                    quantity=quantity)
+
+        def end_cur_trade(self):
+            self.cur_trade = None
 
     class StrategyStub(PredictLowHighStrategy):
         """ Strategy wrapper for tests """
@@ -148,3 +153,47 @@ class TestPredictLowHighStrategy(TestCase):
         self.assertEqual(actual_signal, 0)
         self.assertIsNone(actual_loss)
         self.assertIsNone(actual_profit)
+
+    def test_process_new_prediction__should_close_buy(self):
+        strategy = self.StrategyStub()
+        strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
+        strategy.fut_low_high = pd.DataFrame([{"fut_low": 6, "fut_high": 12}])
+        strategy.broker.cur_trade = Trade(side="BUY")
+
+        # Process: buy or sell or nothing
+        strategy.process_new_prediction()
+
+        self.assertIsNone(strategy.broker.cur_trade)
+
+    def test_process_new_prediction__should_not_close_buy(self):
+        strategy = self.StrategyStub()
+        strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
+        strategy.fut_low_high = pd.DataFrame([{"fut_low": 6.1, "fut_high": 12}])
+        strategy.broker.cur_trade = Trade(side="BUY")
+
+        # Process: buy or sell or nothing
+        strategy.process_new_prediction()
+
+        self.assertIsNotNone(strategy.broker.cur_trade)
+
+    def test_process_new_prediction__should_close_sell(self):
+        strategy = self.StrategyStub()
+        strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
+        strategy.fut_low_high = pd.DataFrame([{"fut_low": 9, "fut_high": 15}])
+        strategy.broker.cur_trade = Trade(side="SELL")
+
+        # Process: buy or sell or nothing
+        strategy.process_new_prediction()
+
+        self.assertIsNone(strategy.broker.cur_trade)
+
+    def test_process_new_prediction__should_not_close_sell(self):
+        strategy = self.StrategyStub()
+        strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
+        strategy.fut_low_high = pd.DataFrame([{"fut_low": 9, "fut_high": 14.9}])
+        strategy.broker.cur_trade = Trade(side="SELL")
+
+        # Process: buy or sell or nothing
+        strategy.process_new_prediction()
+
+        self.assertIsNotNone(strategy.broker.cur_trade)

@@ -104,9 +104,9 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                                              price=None, stop_loss=stop_loss)
         else:
             # We do have an opened trade, maybe close the trade
-            signal = self.get_close_signal(bid, ask, fut_low, fut_high)
+            signal, _, _ = self.get_close_signal(bid, ask, fut_low, fut_high)
             if signal and self.broker.cur_trade.direction() == -signal:
-                self.broker.end_trade(self.broker.cur_trade)
+                self.broker.end_cur_trade()
 
     def get_open_signal(self, bid: float, ask: float, fut_low: float, fut_high: float):
         """ Get open signal based on current price and prediction """
