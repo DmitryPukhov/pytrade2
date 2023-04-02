@@ -16,7 +16,7 @@ class TestPredictLowHighStrategy(TestCase):
         """ Model emulation for unit tests"""
 
         def predict(self, X, verbose):
-            # Emulate some prediction
+            # Emulate some prediction: bid_diff_fut=1, ask_diff_fut=2
             return np.array([1, 2])
 
     class BrokerStub(BinanceBroker):
@@ -53,7 +53,7 @@ class TestPredictLowHighStrategy(TestCase):
         def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
             pass
 
-    def test_process_new_data__should_set_fut_columns(self):
+    def     test_process_new_data__should_set_fut_columns(self):
         strategy = self.StrategyStub()
         # Set bidask and level2, received by strategy from broker
         strategy.bid_ask = pd.DataFrame([
@@ -72,8 +72,8 @@ class TestPredictLowHighStrategy(TestCase):
 
         self.assertListEqual(strategy.fut_low_high.index.to_pydatetime().tolist(),
                              [datetime.fromisoformat("2023-03-17 15:56:02")])
-        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_low"], np.array([1.0]), equal_nan=True))
-        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_high"], np.array([2.0]), equal_nan=True))
+        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_low"], np.array([6.0]), equal_nan=True))
+        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_high"], np.array([7.0]), equal_nan=True))
 
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
