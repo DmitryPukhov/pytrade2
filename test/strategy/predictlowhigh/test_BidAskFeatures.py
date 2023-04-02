@@ -33,4 +33,4 @@ class TestBidAskFeatures(TestCase):
         self.assertEqual([1,2], actual_features["time_hour"].values.tolist())
         self.assertEqual([2,3], actual_features["time_minute"].values.tolist())
         self.assertEqual([5,6], actual_features["time_day_of_week"].values.tolist())
-        self.assertEqual(bid_ask["datetime"].diff().values.tolist(), actual_features["time_diff"].values.tolist())
+        self.assertEqual(bid_ask["datetime"].diff().dropna().values.tolist(), actual_features["time_diff"].dropna().values.tolist())
