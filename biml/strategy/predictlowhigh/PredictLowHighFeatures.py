@@ -50,9 +50,9 @@ class PredictLowHighFeatures:
 
     @staticmethod
     def targets_of(bid_ask: pd.DataFrame, predict_window: str = default_predict_window) -> pd.DataFrame:
-        future: pd.DataFrame = bid_ask.rolling(predict_window) \
-            .agg({"bid": "max", "ask": "min", "bid_vol": "sum", "ask_vol": "sum"}) \
-            .rename(columns={'bid': 'bid_fut', 'ask': 'ask_fut', 'bid_vol': 'bid_vol_fut', 'ask_vol': 'ask_vol_fut'}) \
+        future: pd.DataFrame = bid_ask.rolling(predict_window, closed='left') \
+            .agg({"bid": "min", "ask": "max"}) \
+            .rename(columns={'bid': 'bid_fut', 'ask': 'ask_fut'}) \
             .shift(-1, predict_window)
         merged = pd.merge_asof(bid_ask, future, left_index=True, right_index=True, direction='backward')
         # completed_bound=bid_ask.index.max()-pd.to_timedelta(predict_window)
@@ -62,4 +62,5 @@ class PredictLowHighFeatures:
 
         predicted_columns = list(filter(lambda col: col.endswith('_fut'), merged.columns))
         merged.loc[merged.index > prediction_bound, predicted_columns] = [np.nan] * len(predicted_columns)
-        return merged[["bid_fut", "ask_fut"]].dropna()
+        return merged[["bid_fut", "ask_fut"]].diff().rename(
+            columns={"bid_fut": "bid_diff_fut", "ask_fut": "ask_diff_fut"}).dropna()

@@ -88,6 +88,7 @@ class TestPredictLowHighFeatures(TestCase):
 
     def test_targets_of(self):
         df = pd.DataFrame([
+
             {"datetime": datetime.fromisoformat("2021-12-08 07:00:00"), "symbol": "asset1",
              "bid": 0, "bid_vol": 2, "ask": 200, "ask_vol": 4},
             {"datetime": datetime.fromisoformat("2021-12-08 07:00:01"), "symbol": "asset1",
@@ -104,11 +105,12 @@ class TestPredictLowHighFeatures(TestCase):
             {"datetime": datetime.fromisoformat("2021-12-08 07:00:13"), "symbol": "asset1",
              "bid": 13, "bid_vol": 10, "ask": 213, "ask_vol": 12}
 
-        ]).set_index("datetime")
+        ]).set_index("datetime", drop=False)
         actual = PredictLowHighFeatures().targets_of(df, predict_window="10s")
 
         # Future values should be predicted only if future window completed
-        self.assertListEqual(actual["bid_fut"].dropna().values.tolist(), [3.0, 11.0, 12.0, 13.0])
+        self.assertListEqual(actual["bid_diff_fut"].values.tolist(), [1, 1, 1])
+        self.assertListEqual(actual["ask_diff_fut"].values.tolist(), [1, 8, 1])
 
     def test_features_of__bid_ask_columns(self):
         bid_ask = pd.DataFrame([
