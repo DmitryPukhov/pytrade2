@@ -46,7 +46,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         self.profit_loss_ratio = 4
         self.close_profit_loss_ratio = 2
-        self.predict_window="10s"
+        self.predict_window = "10s"
 
     def run(self, client):
         """
@@ -82,7 +82,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
                 # Open or close or do nothing
                 open_signal, close_signal = self.process_new_prediction()
-                y[["open_signal", "close_signal", "cur_trade"]] = [open_signal, close_signal, cur_trade_direction]
+                y[["predict_window", "open_signal", "close_signal", "cur_trade"]] = \
+                    [self.predict_window, open_signal, close_signal, cur_trade_direction]
 
                 # Save to historical data
                 self.save_lastXy(X, y, self.bid_ask.tail(1))
