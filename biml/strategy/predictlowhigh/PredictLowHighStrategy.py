@@ -46,6 +46,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         self.profit_loss_ratio = 4
         self.close_profit_loss_ratio = 2
+        self.predict_window="10s"
 
     def run(self, client):
         """
@@ -168,7 +169,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
             bid_ask_since_last_learn = self.bid_ask[self.bid_ask.index > self.last_learn_bidask_time]
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
-                bid_ask_since_last_learn, self.level2)
+                bid_ask_since_last_learn, self.level2, self.predict_window)
             self._log.info(
                 f"Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}")
             model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
