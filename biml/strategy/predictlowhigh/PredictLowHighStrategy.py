@@ -31,7 +31,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         PersistableModelStrategy.__init__(self, config)
 
         self.tickers = self.config["biml.tickers"].split(",")
-        self.min_history_interval = pd.Timedelta("2 seconds")
+        self.min_history_interval = pd.Timedelta(config['biml.strategy.learn.interval.sec'])
 
         # self.ticker = pd.DataFrame(columns=BaseFeed.bid_ask_columns).set_index("datetime")
         self.ticker = self.tickers[-1]
@@ -46,7 +46,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         self.profit_loss_ratio = 4
         self.close_profit_loss_ratio = 2
-        self.predict_window = "10s"
+        self.predict_window = config["biml.strategy.predict.window"]
 
     def run(self, client):
         """
@@ -185,7 +185,6 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         finally:
             self.is_learning = False
-            self._log.info("Learning completed")
 
     def create_model(self, X_size, y_size):
         model = Sequential()
