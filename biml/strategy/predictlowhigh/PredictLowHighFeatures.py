@@ -50,13 +50,21 @@ class PredictLowHighFeatures:
 
     @staticmethod
     def targets_of(bid_ask: pd.DataFrame, predict_window: str = default_predict_window) -> pd.DataFrame:
-        rolling_max = bid_ask[["bid", "ask"]].rolling(predict_window, closed='left').max().add_suffix("_max_fut")
-        rolling_min = bid_ask[["bid", "ask"]].rolling(predict_window, closed='left').min().add_suffix("_min_fut")
-        future = pd.concat([rolling_max, rolling_min], axis=1).shift(-1, predict_window)
-        merged = pd.merge_asof(bid_ask, future, left_index=True, right_index=True, direction='backward')
+        # Calculate <bid or ask>_<min or max>_fut
+        rolling_max = bid_ask[["bid", "ask"]][::-1].rolling(predict_window, closed='right').max()[::-1] \
+            .add_suffix("_max_fut")
+        rolling_min = bid_ask[["bid", "ask"]][::-1].rolling(predict_window, closed='right').min()[::-1] \
+            .add_suffix("_min_fut")
+        merged = pd.concat([rolling_min, rolling_max], axis=1)
         prediction_bound = bid_ask.index.max() - pd.to_timedelta(predict_window)
+        merged.loc[merged.index > prediction_bound] = [np.nan] * len(merged.columns)
 
-        fut_cols = list(filter(lambda col: col.endswith('_fut'), merged.columns))
-        merged.loc[merged.index > prediction_bound, fut_cols] = [np.nan] * len(fut_cols)
-        merged = pd.concat([merged, merged[fut_cols].diff().add_suffix("_diff")], axis=1).drop(columns=fut_cols)
-        return merged[[c for c in merged.columns if c.endswith("_diff")]].dropna()
+        # To avoid predictions when min_fut > max_fut, targets are: bid_max_fut, bid_spread_fut, ask_min_fut, ask_spread_fut
+        return pd.DataFrame({
+            # Max future bid, min future ask
+            "bid_max_fut_diff": merged["bid_max_fut"] - bid_ask["bid"],
+            "bid_spread_fut": merged["bid_max_fut"] - merged["bid_min_fut"],
+
+            "ask_min_fut_diff": merged["ask_min_fut"] - bid_ask["ask"],
+            "ask_spread_fut": merged["ask_max_fut"] - merged["ask_min_fut"]}) \
+            .dropna()
