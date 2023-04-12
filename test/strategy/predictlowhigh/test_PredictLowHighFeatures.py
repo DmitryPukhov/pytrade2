@@ -109,8 +109,8 @@ class TestPredictLowHighFeatures(TestCase):
         actual = PredictLowHighFeatures().targets_of(df, predict_window="10s")
 
         # Future values should be predicted only if future window completed
-        self.assertListEqual(actual["bid_diff_fut"].values.tolist(), [1, 1, 1])
-        self.assertListEqual(actual["ask_diff_fut"].values.tolist(), [1, 8, 1])
+        self.assertListEqual(actual["bid_min_fut_diff"].values.tolist(), [1, 1, 1])
+        self.assertListEqual(actual["ask_max_fut_diff"].values.tolist(), [1, 8, 1])
 
     def test_features_of__bid_ask_columns(self):
         bid_ask = pd.DataFrame([

@@ -50,17 +50,24 @@ class PredictLowHighFeatures:
 
     @staticmethod
     def targets_of(bid_ask: pd.DataFrame, predict_window: str = default_predict_window) -> pd.DataFrame:
-        future: pd.DataFrame = bid_ask.rolling(predict_window, closed='left') \
-            .agg({"bid": "min", "ask": "max"}) \
-            .rename(columns={'bid': 'bid_fut', 'ask': 'ask_fut'}) \
-            .shift(-1, predict_window)
+        rolling_max = bid_ask[["bid", "ask"]].rolling(predict_window, closed='left').max().add_suffix("_max_fut")
+        rolling_min = bid_ask[["bid", "ask"]].rolling(predict_window, closed='left').min().add_suffix("_min_fut")
+        future = pd.concat([rolling_max, rolling_min], axis=1).shift(-1, predict_window)
+
+        # future: pd.DataFrame = bid_ask.rolling(predict_window, closed='left') \
+        #     .agg({"bid": "min", "ask": "max"}) \
+        #     .rename(columns={'bid': 'bid_fut', 'ask': 'ask_fut'}) \
+        #     .shift(-1, predict_window)
         merged = pd.merge_asof(bid_ask, future, left_index=True, right_index=True, direction='backward')
         # completed_bound=bid_ask.index.max()-pd.to_timedelta(predict_window)
         # todo: remove tail when prediction window is not completed yet
         # pd.to_timedelta(predict_window)
         prediction_bound = bid_ask.index.max() - pd.to_timedelta(predict_window)
 
-        predicted_columns = list(filter(lambda col: col.endswith('_fut'), merged.columns))
-        merged.loc[merged.index > prediction_bound, predicted_columns] = [np.nan] * len(predicted_columns)
-        return merged[["bid_fut", "ask_fut"]].diff().rename(
-            columns={"bid_fut": "bid_diff_fut", "ask_fut": "ask_diff_fut"}).dropna()
+        fut_cols = list(filter(lambda col: col.endswith('_fut'), merged.columns))
+        merged.loc[merged.index > prediction_bound, fut_cols] = [np.nan] * len(fut_cols)
+        merged = pd.concat([merged,merged[fut_cols].diff().add_suffix("_diff")], axis=1).drop(columns=fut_cols)
+        return merged.dropna()
+
+        # return merged[["bid_fut", "ask_fut"]].diff().rename(
+        #     columns={"bid_fut": "bid_diff_fut", "ask_fut": "ask_diff_fut"}).dropna()

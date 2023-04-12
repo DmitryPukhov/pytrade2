@@ -143,11 +143,13 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
         # todo: model predicts bid_diff_fut, ask_diff_fut
         y = self.model.predict(X, verbose=0) if not X.empty else [[np.nan, np.nan]]
-        (bid_diff_fut, ask_diff_fut) = (y[-1][0], y[-1][1]) if y.shape[0] < 2 else (y[0], y[1])
+        #(bid_min_fut_diff, min_max_fut_diff, ask_min_fut_diff, ask_max_fut_diff) = (y[-1][0], y[-1][1], ) if y.shape[0] < 2 else (y[0], y[1])
+        (bid_min_fut_diff, bid_max_fut_diff, ask_min_fut_diff, ask_max_fut_diff) = y[-1] if y.shape[0] < 2 else y
         y_df = self.bid_ask.loc[X.index][["bid", "ask"]]
-        y_df["fut_low"] = y_df["bid"] + bid_diff_fut
-        y_df["fut_high"] = y_df["bid"] + ask_diff_fut
-        y_df = y_df[["fut_low", "fut_high"]]
+        y_df["bid_min_fut"] = y_df["bid"] + bid_min_fut_diff
+        y_df["bid_max_fut"] = y_df["bid"] + bid_max_fut_diff
+        y_df["ask_min_fut"] = y_df["ask"] + ask_min_fut_diff
+        y_df["ask_max_fut"] = y_df["ask"] + ask_max_fut_diff
         return X, y_df
 
     def can_learn(self) -> bool:

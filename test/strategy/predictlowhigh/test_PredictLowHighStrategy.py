@@ -16,8 +16,8 @@ class TestPredictLowHighStrategy(TestCase):
         """ Model emulation for unit tests"""
 
         def predict(self, X, verbose):
-            # Emulate some prediction: bid_diff_fut=1, ask_diff_fut=2
-            return np.array([1, 2])
+            # Emulate some prediction: bid_min_fut_diff, bit_max_fut_diff, ask_min_fut_diff, ask_max_fut_diff
+            return np.array([1, 2, 3, 4])
 
     class BrokerStub(BinanceBroker):
         """ Broker emulation, don't trade """
@@ -43,7 +43,7 @@ class TestPredictLowHighStrategy(TestCase):
         """ Strategy wrapper for tests """
 
         def __init__(self):
-            conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60, "biml.model.dir": "tmp"}
+            conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60, "biml.model.dir": "tmp", "biml.strategy.predict.window":"10s"}
             super().__init__(None, conf)
             self.profit_loss_ratio = 4
             self.close_profit_loss_ratio = 2
@@ -72,8 +72,8 @@ class TestPredictLowHighStrategy(TestCase):
 
         self.assertListEqual(strategy.fut_low_high.index.to_pydatetime().tolist(),
                              [datetime.fromisoformat("2023-03-17 15:56:02")])
-        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_low"], np.array([6.0]), equal_nan=True))
-        self.assertTrue(np.array_equal(strategy.fut_low_high["fut_high"], np.array([7.0]), equal_nan=True))
+        self.assertTrue(np.array_equal(strategy.fut_low_high["bid_min_fut"], np.array([6.0]), equal_nan=True))
+        self.assertTrue(np.array_equal(strategy.fut_low_high["bid_max_fut"], np.array([7.0]), equal_nan=True))
 
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
