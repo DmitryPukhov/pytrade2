@@ -65,7 +65,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         # self.process_new_data()
 
     def on_ticker(self, ticker: dict):
-        new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime", drop=False)
+        new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime")
         self.bid_ask = self.bid_ask.append(new_df)
         self.learn_or_skip()
         self.process_new_data()
