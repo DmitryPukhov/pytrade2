@@ -43,7 +43,8 @@ class TestPredictLowHighStrategy(TestCase):
         """ Strategy wrapper for tests """
 
         def __init__(self):
-            conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60, "biml.model.dir": "tmp", "biml.strategy.predict.window":"10s"}
+            conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60, "biml.model.dir": "tmp",
+                    "biml.strategy.predict.window": "10s"}
             super().__init__(None, conf)
             self.profit_loss_ratio = 4
             self.close_profit_loss_ratio = 2
@@ -53,7 +54,7 @@ class TestPredictLowHighStrategy(TestCase):
         def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
             pass
 
-    def     test_process_new_data__should_set_fut_columns(self):
+    def test_process_new_data__should_set_fut_columns(self):
         strategy = self.StrategyStub()
         # Set bidask and level2, received by strategy from broker
         strategy.bid_ask = pd.DataFrame([
@@ -97,31 +98,35 @@ class TestPredictLowHighStrategy(TestCase):
         # Strategy with profit/loss ratio = 4
         strategy = self.StrategyStub()
 
-        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, fut_high=19, fut_low=9)
-        self.assertEqual(actual_signal, 1)
-        self.assertEqual(actual_loss, 9)
-        self.assertEqual(actual_profit, 19)
+        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, bid_max_fut=19,
+                                                                             bid_min_fut=9, ask_min_fut=0,
+                                                                             ask_max_fut=0)
+        self.assertEqual(1,actual_signal)
+        self.assertEqual(9,actual_loss)
+        self.assertEqual(19,actual_profit)
 
     def test_process_new_prediction__should_buy(self):
         strategy = self.StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
-        strategy.fut_low_high = pd.DataFrame([{"fut_low": 9, "fut_high": 19}])
+        strategy.fut_low_high = pd.DataFrame(
+            [{"bid_min_fut": 9, "bid_max_fut": 19, "ask_min_fut": 0, "ask_max_fut": 0}])
 
         # Process: buy or sell or nothing
         open_signal, close_signal = strategy.process_new_prediction()
 
-        self.assertEqual(open_signal, 1)
-        self.assertEqual(close_signal, 0)
+        self.assertEqual(1, open_signal)
+        self.assertEqual(0, close_signal)
         self.assertIsNotNone(strategy.broker.cur_trade)
-        self.assertEqual(strategy.broker.cur_trade.direction(), 1)
+        self.assertEqual(1, strategy.broker.cur_trade.direction())
 
     def test_open_signal_not_buy_low_ratio(self):
         # Strategy with profit/loss ratio = 4
         strategy = self.StrategyStub()
 
-        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, fut_low=9, fut_high=18.9)
-
-        self.assertEqual(actual_signal, 0)
+        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, bid_min_fut=9,
+                                                                             bid_max_fut=18.9, ask_min_fut=0,
+                                                                             ask_max_fut=0)
+        self.assertEqual(0, actual_signal)
         self.assertIsNone(actual_loss)
         self.assertIsNone(actual_profit)
 
@@ -129,21 +134,24 @@ class TestPredictLowHighStrategy(TestCase):
         # Strategy with profit/loss ratio = 4
         strategy = self.StrategyStub()
 
-        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, fut_low=2, fut_high=12)
+        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, bid_min_fut=0,
+                                                                             bid_max_fut=0, ask_min_fut=2,
+                                                                             ask_max_fut=12)
 
-        self.assertEqual(actual_signal, -1)
-        self.assertEqual(actual_loss, 12)
-        self.assertEqual(actual_profit, 2)
+        self.assertEqual(-1, actual_signal)
+        self.assertEqual(12, actual_loss)
+        self.assertEqual(2, actual_profit)
 
     def test_process_new_prediction__should_sell(self):
         strategy = self.StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
-        strategy.fut_low_high = pd.DataFrame([{"fut_low": 2, "fut_high": 12}])
+        strategy.fut_low_high = pd.DataFrame(
+            [{"bid_min_fut": 0, "bid_max_fut": 0, "ask_min_fut": 2, "ask_max_fut": 12}])
 
         # Process: buy or sell or nothing
         open_signal, close_signal = strategy.process_new_prediction()
-        self.assertEqual(open_signal, -1)
-        self.assertEqual(close_signal, 0)
+        self.assertEqual(-1, open_signal)
+        self.assertEqual(0, close_signal)
 
         self.assertIsNotNone(strategy.broker.cur_trade)
         self.assertEqual(strategy.broker.cur_trade.direction(), -1)
@@ -152,59 +160,65 @@ class TestPredictLowHighStrategy(TestCase):
         # Strategy with profit/loss ratio = 4
         strategy = self.StrategyStub()
 
-        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, fut_high=12, fut_low=2.1)
+        actual_signal, actual_loss, actual_profit = strategy.get_open_signal(bid=10, ask=11, bid_min_fut=0,
+                                                                             bid_max_fut=0, ask_max_fut=12,
+                                                                             ask_min_fut=2.1)
 
-        self.assertEqual(actual_signal, 0)
+        self.assertEqual(0, actual_signal)
         self.assertIsNone(actual_loss)
         self.assertIsNone(actual_profit)
 
     def test_process_new_prediction__should_close_buy(self):
         strategy = self.StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
-        strategy.fut_low_high = pd.DataFrame([{"fut_low": 6, "fut_high": 12}])
+        strategy.fut_low_high = pd.DataFrame(
+            [{"bid_min_fut": 0, "bid_max_fut": 0, "ask_min_fut": 6, "ask_max_fut": 12}])
         strategy.broker.cur_trade = Trade(side="BUY")
 
         # Process: buy or sell or nothing
         open_signal, close_signal = strategy.process_new_prediction()
 
-        self.assertEqual(open_signal, 0)
-        self.assertEqual(close_signal, -1)
+        self.assertEqual(0, open_signal)
+        self.assertEqual(-1, close_signal)
         self.assertIsNone(strategy.broker.cur_trade)
 
     def test_process_new_prediction__should_not_close_buy(self):
         strategy = self.StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
-        strategy.fut_low_high = pd.DataFrame([{"fut_low": 6.1, "fut_high": 12}])
+        strategy.fut_low_high = pd.DataFrame(
+            [{"bid_min_fut": 0, "bid_max_fut": 0, "ask_min_fut": 6.1, "ask_max_fut": 12}])
         strategy.broker.cur_trade = Trade(side="BUY")
 
         # Process: buy or sell or nothing
         open_signal, close_signal = strategy.process_new_prediction()
-        self.assertEqual(open_signal, 0)
-        self.assertEqual(close_signal, 0)
+        self.assertEqual(0, open_signal)
+        self.assertEqual(0, close_signal)
         self.assertIsNotNone(strategy.broker.cur_trade)
 
     def test_process_new_prediction__should_close_sell(self):
         strategy = self.StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
-        strategy.fut_low_high = pd.DataFrame([{"fut_low": 9, "fut_high": 15}])
+        strategy.fut_low_high = pd.DataFrame(
+            [{"bid_min_fut": 9, "bid_max_fut": 15, "ask_min_fut": 0, "ask_max_fut": 0}])
         strategy.broker.cur_trade = Trade(side="SELL")
 
         # Process: buy or sell or nothing
         open_signal, close_signal = strategy.process_new_prediction()
 
-        self.assertEqual(open_signal, 0)
-        self.assertEqual(close_signal, 1)
+        self.assertEqual(0, open_signal)
+        self.assertEqual(1, close_signal)
         self.assertIsNone(strategy.broker.cur_trade)
 
     def test_process_new_prediction__should_not_close_sell(self):
         strategy = self.StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
-        strategy.fut_low_high = pd.DataFrame([{"fut_low": 9, "fut_high": 14.9}])
+        strategy.fut_low_high = pd.DataFrame(
+            [{"bid_min_fut": 9, "bid_max_fut": 14.9, "ask_min_fut": 0, "ask_max_fut": 0}])
         strategy.broker.cur_trade = Trade(side="SELL")
 
         # Process: buy or sell or nothing
         open_signal, close_signal = strategy.process_new_prediction()
-        self.assertEqual(open_signal, 0)
-        self.assertEqual(close_signal, 0)
+        self.assertEqual(0, open_signal)
+        self.assertEqual(0, close_signal)
 
         self.assertIsNotNone(strategy.broker.cur_trade)
