@@ -43,7 +43,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.is_learning = False
         self.is_processing = False
 
-        self.profit_loss_ratio = 4
+        self.profit_loss_ratio = 2
         self.close_profit_loss_ratio = 2
         self.predict_window = config["biml.strategy.predict.window"]
 
