@@ -45,6 +45,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         self.profit_loss_ratio = 2
         self.close_profit_loss_ratio = 2
+        # Minimum predictged stop loss to allow trade
+        self.min_stop_loss = 10
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
@@ -148,10 +150,10 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         sell_profit = bid - ask_min_fut
         sell_loss = ask_max_fut - bid
 
-        if buy_profit / buy_loss >= self.profit_loss_ratio:
+        if buy_profit / buy_loss >= self.profit_loss_ratio and abs(buy_loss) >= self.min_stop_loss:
             # Buy and possibly fix the loss
             return 1, ask - abs(buy_loss), ask + buy_profit
-        elif sell_profit / sell_loss >= self.profit_loss_ratio:
+        elif sell_profit / sell_loss >= self.profit_loss_ratio and abs(sell_loss) >= self.min_stop_loss:
             # Sell and possibly fix the loss
             return -1, bid + abs(sell_loss), bid - sell_profit
         else:
