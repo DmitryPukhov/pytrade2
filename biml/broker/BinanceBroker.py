@@ -194,4 +194,5 @@ class BinanceBroker:
             trade.close_price = close_trade["price"]
             trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
             self.db_session.commit()
+            self.cur_trade = None
         return trade
