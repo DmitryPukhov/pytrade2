@@ -93,9 +93,9 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                 cur_trade_direction = self.broker.cur_trade.direction() if self.broker.cur_trade else 0
 
                 # Open or close or do nothing
-                open_signal, close_signal = self.process_new_prediction()
-                y[["predict_window", "open_signal", "close_signal", "cur_trade"]] = \
-                    [self.predict_window, open_signal, close_signal, cur_trade_direction]
+                open_signal = self.process_new_prediction()
+                y[["predict_window", "open_signal", "cur_trade"]] = \
+                    [self.predict_window, open_signal, cur_trade_direction]
 
                 # Save to historical data
                 self.save_lastXy(X, y, self.bid_ask.tail(1))
@@ -123,7 +123,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
             open_signal, stop_loss, take_profit = self.get_signal(bid, ask, bid_min_fut, bid_max_fut, ask_min_fut,
                                                                   ask_max_fut)
             if open_signal:
-                open_price = [bid, None, ask][open_signal]
+                open_price = [bid, None, ask][open_signal+1]
                 self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
                                              price=open_price,
                                              stop_loss=stop_loss,
@@ -149,6 +149,10 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         else:
             # No action
             return 0, None, None
+
+    def close_signal(self):
+        """ Don't use close signal in this strategy """
+        return (0, None, None)
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
 
