@@ -110,6 +110,7 @@ class BinanceBroker:
             self._log.info(f"{self.min_trade_interval} is not elapsed since last trade: {self.last_trade_time}")
             return
 
+        self.last_trade_time = datetime.utcnow()
         side = self.order_side_names[direction]
 
         self._log.info(
@@ -163,7 +164,6 @@ class BinanceBroker:
                                    quantity=quantity)
             self.db_session.add(self.cur_trade)
             self.db_session.commit()
-            self.last_trade_time = datetime.utcnow()
             self._log.info(f"Created new trade: {self.cur_trade}")
 
         except Exception as e:
