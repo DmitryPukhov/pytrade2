@@ -32,14 +32,10 @@ class Trade(Base):
     order_side_codes = dict(map(reversed, order_side_names.items()))
 
     def __str__(self):
-        details = f"{self.ticker} {self.side}, at {self.open_time} price: {self.open_price}, " \
+        details = f"{self.ticker} {self.side}, open time: {self.open_time}, open price: {self.open_price}, " \
                   f"sl: {self.stop_loss_price}, tp: {self.take_profit_price}"
         if self.close_time:
-            close_details = f", closed: {self.close_price} at {self.close_time}"
-            if self.close_order_id == self.stop_loss_order_id:
-                close_details += " by stop loss"
-            else:
-                close_details += " by robot"
+            close_details = f", close time: {self.close_time}, close price: {self.close_price}"
             details += close_details
         return details
 
