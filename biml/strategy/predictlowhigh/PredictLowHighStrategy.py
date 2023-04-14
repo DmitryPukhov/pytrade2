@@ -117,13 +117,13 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = self.fut_low_high.loc[self.fut_low_high.index[-1], \
             ["bid_min_fut", "bid_max_fut", "ask_min_fut", "ask_max_fut"]]
-        open_signal=0
+        open_signal = 0
         if not self.broker.cur_trade:
             # Maybe open a new order
             open_signal, stop_loss, take_profit = self.get_signal(bid, ask, bid_min_fut, bid_max_fut, ask_min_fut,
                                                                   ask_max_fut)
             if open_signal:
-                open_price = [bid, None, ask][open_signal+1]
+                open_price = [bid, None, ask][open_signal + 1]
                 self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
                                              price=open_price,
                                              stop_loss=stop_loss,
@@ -141,11 +141,11 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         sell_loss = ask_max_fut - bid
 
         if buy_profit / buy_loss >= self.profit_loss_ratio:
-            # Buy
-            return 1, bid_min_fut, bid_max_fut
+            # Buy and possibly fix the loss
+            return 1, ask - abs(buy_loss), ask + buy_profit
         elif sell_profit / sell_loss >= self.profit_loss_ratio:
-            # Sell
-            return -1, ask_max_fut, ask_min_fut
+            # Sell and possibly fix the loss
+            return -1, bid + abs(sell_loss), bid - sell_profit
         else:
             # No action
             return 0, None, None

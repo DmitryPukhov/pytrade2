@@ -54,7 +54,7 @@ class BinanceBroker:
         stop_loss_limit_price = round(stop_loss_price - (base_price - stop_loss_price), self.price_precision)
         take_profit_price = round(take_profit_price, self.price_precision)
         self._log.info(
-            f"Creating stop loss and take profit order, base_price={base_price}, stop_loss={stop_loss_price},"
+            f"Creating stop loss and take profit for base {self.order_side_names[base_direction]} order, base_price={base_price}, stop_loss={stop_loss_price},"
             f" stop_loss_limit_price={stop_loss_limit_price}, take_profit={take_profit_price}")
         res = self.client.new_oco_order(
             symbol=symbol,
@@ -76,7 +76,8 @@ class BinanceBroker:
         stop_loss_limit_price = round(stop_loss_price - (base_price - stop_loss_price), self.price_precision)
 
         self._log.info(
-            f"Creating stop loss order, base_direction={base_direction}, stop_loss={stop_loss_price}, stop_loss_limit_price={stop_loss_limit_price}")
+            f"Creating stop loss for base {self.order_side_names[base_direction]} order, "
+            f"stop_loss={stop_loss_price}, stop_loss_limit_price={stop_loss_limit_price}")
 
         res = self.client.new_order(
             symbol=symbol,
