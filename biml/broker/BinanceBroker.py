@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
+import pandas as pd
 from binance.spot import Spot as Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -186,15 +187,15 @@ class BinanceBroker:
 
         if not trade or trade.close_time:
             return trade
-        # Get single closing trade or None
-        close_trade = (self.client.my_trades(symbol=trade.ticker, orderId=trade.stop_loss_order_id)
-                       or [None])[-1]
-        if close_trade:
+        last_trades = self.client.my_trades(symbol=trade.ticker, limit=1)
+        last_trade = ([t for t in last_trades if str(t["orderListId"]) == trade.stop_loss_order_id] or [None])[-1]
+
+        if last_trade:
             self._log.debug(f"Current trade found closed by stop loss or take profit: {trade}")
             # Update db
-            trade.close_order_id = trade.stop_loss_order_id
-            trade.close_price = close_trade["price"]
-            trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
+            trade.close_order_id = str(last_trade["orderId"])
+            trade.close_price = last_trade["price"]
+            trade.close_time = datetime.utcfromtimestamp(last_trade["time"] / 1000.0)
             self.db_session.commit()
             self.cur_trade = None
         return trade

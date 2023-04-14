@@ -76,11 +76,11 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         if self.broker.cur_trade:
             # If buy and sl or tp reached, update
             if self.broker.cur_trade.direction() == 1 and \
-                    (self.broker.cur_trade.stop_loss_price >= bid or self.broker.cur_trade.take_profit_price <= ask):
+                    (self.broker.cur_trade.stop_loss_price >= bid or self.broker.cur_trade.take_profit_price <= bid):
                 self.broker.update_trade_if_closed_by_sl_tp(self.broker.cur_trade)
             # If sell and sl or tp reached, update
             elif self.broker.cur_trade.direction() == -1 and \
-                    (self.broker.cur_trade.stop_loss_price <= bid or self.broker.cur_trade.take_profit_price >= ask):
+                    (self.broker.cur_trade.stop_loss_price <= ask or self.broker.cur_trade.take_profit_price >= ask):
                 self.broker.update_trade_if_closed_by_sl_tp(self.broker.cur_trade)
 
     def process_new_data(self):
