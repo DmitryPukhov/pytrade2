@@ -96,8 +96,8 @@ class BinanceBroker:
     def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,
                          price: Optional[float],
-                         stop_loss: float,
-                         take_profit: Optional[float]) -> Optional[Trade]:
+                         stop_loss_price: float,
+                         take_profit_price: Optional[float]) -> Optional[Trade]:
         """
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
@@ -107,7 +107,6 @@ class BinanceBroker:
             return None
 
         if (datetime.utcnow() - self.last_trade_time) <= self.min_trade_interval:
-            self._log.info(f"{self.min_trade_interval} is not elapsed since last trade: {self.last_trade_time}")
             return
 
         self.last_trade_time = datetime.utcnow()
@@ -115,7 +114,7 @@ class BinanceBroker:
 
         self._log.info(
             f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity},"
-            f" stop loss: {stop_loss}, take profit: {take_profit}")
+            f" stop loss: {stop_loss_price}, take profit: {take_profit_price}")
         # Main buy or sell order
         res = self.client.new_order(
             symbol=symbol,
@@ -131,18 +130,22 @@ class BinanceBroker:
             return
 
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
+        stop_loss_price_adj = filled_price - direction * abs(price - stop_loss_price)
+        take_profit_price_adj = filled_price + direction * abs(take_profit_price - price)
+        self._log.info(f"{side} order filled_price={filled_price}, "
+                       f"stop_loss_adj={stop_loss_price_adj}, take_profit_adj={take_profit_price_adj}")
         order_id = res["orderId"]
         try:
             # stop_loss_order_id = None
-            if take_profit:
+            if take_profit_price:
                 # Stop loss and take profit
                 stop_loss_order_id = self.create_sl_tp_order(
                     symbol,
                     base_direction=direction,
                     quantity=quantity,
                     base_price=filled_price,
-                    stop_loss_price=stop_loss,
-                    take_profit_price=take_profit)
+                    stop_loss_price=stop_loss_price_adj,
+                    take_profit_price=take_profit_price_adj)
             else:
                 # Stop loss without take profit
                 stop_loss_order_id = self.create_sl_order(
@@ -150,7 +153,7 @@ class BinanceBroker:
                     base_direction=direction,
                     quantity=quantity,
                     base_price=filled_price,
-                    stop_loss_price=stop_loss)
+                    stop_loss_price=stop_loss_price_adj)
 
             # Set cur trade to opened order with sl/tp
             self.cur_trade = Trade(ticker=symbol,
@@ -158,8 +161,8 @@ class BinanceBroker:
                                    open_time=datetime.utcnow(),
                                    open_price=filled_price,
                                    open_order_id=order_id,
-                                   stop_loss_price=stop_loss,
-                                   take_profit_price=take_profit,
+                                   stop_loss_price=stop_loss_price_adj,
+                                   take_profit_price=take_profit_price_adj,
                                    stop_loss_order_id=stop_loss_order_id,
                                    quantity=quantity)
             self.db_session.add(self.cur_trade)
@@ -169,7 +172,7 @@ class BinanceBroker:
         except Exception as e:
             # If sl/tp order exception, close main order
             logging.error(f"Stop loss or take profit order creation error: {e} ")
-            logging.error(f"Closing created {self.order_side_names[direction]} order with id: f{order_id}")
+            logging.info(f"Closing created {self.order_side_names[direction]} order with id: f{order_id}")
             self.client.new_order(
                 symbol=symbol,
                 side=self.order_side_names[-direction],
@@ -250,7 +253,7 @@ class BinanceBroker:
 
         if not trade or trade.close_time:
             return trade
-        last_trades = self.client.my_trades(symbol=trade.ticker, orderId=trade.open_order_id, limit=1)
+        last_trades = self.client.my_trades(symbol=trade.ticker, limit=3)
         last_trade = ([t for t in last_trades if str(t["orderListId"]) == trade.stop_loss_order_id] or [None])[-1]
 
         if last_trade:

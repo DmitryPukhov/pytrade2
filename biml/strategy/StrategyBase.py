@@ -29,7 +29,7 @@ class StrategyBase:
                                              direction=close_signal,
                                              quantity=self.order_quantity,
                                              price=price,
-                                             stop_loss=stop_loss)
+                                             stop_loss_price=stop_loss)
         else:
             # Get close signal for current trade
             self._log.debug(f"Current {self.broker.cur_trade.side} trade found. Can calculate close signal.")

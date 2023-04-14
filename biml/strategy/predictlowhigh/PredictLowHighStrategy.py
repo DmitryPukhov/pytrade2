@@ -134,8 +134,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                 open_price = [bid, None, ask][open_signal + 1]
                 self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
                                              price=open_price,
-                                             stop_loss=stop_loss,
-                                             take_profit=take_profit)
+                                             stop_loss_price=stop_loss,
+                                             take_profit_price=take_profit)
         return open_signal
 
     def get_signal(self, bid: float, ask: float, bid_min_fut: float, bid_max_fut: float, ask_min_fut: float,
