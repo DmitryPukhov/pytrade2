@@ -102,66 +102,72 @@ class BinanceBroker:
 
         if direction not in {1, -1}:
             return None
-
         side = self.order_side_names[direction]
+
         self._log.info(
-            f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity}, stop loss: {stop_loss}, take profit: {take_profit}")
+            f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity},"
+            f" stop loss: {stop_loss}, take profit: {take_profit}")
         # Main buy or sell order
         res = self.client.new_order(
             symbol=symbol,
             side=side,
-            type="MARKET",
-            quantity=quantity
+            type="LIMIT",
+            price=price,
+            quantity=quantity,
+            timeInForce="FOK"  # Fill or kill
         )
         self._log.debug(f"Create order raw response: {res}")
+        if res["status"] != "FILLED":
+            self._log.info(f"Cannot create {symbol} {side} order at price {price}, that's ok.")
+            return
+
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
         order_id = res["orderId"]
-        if filled_price:
-            try:
-                if take_profit:
-                    # Stop loss and take profit
-                    stop_loss_order_id = self.create_sl_tp_order(
-                        symbol,
-                        base_direction=direction,
-                        quantity=quantity,
-                        base_price=filled_price,
-                        stop_loss_price=stop_loss,
-                        take_profit_price=take_profit)
-                else:
-                    # Stop loss without take profit
-                    stop_loss_order_id = self.create_sl_order(
-                        symbol,
-                        base_direction=direction,
-                        quantity=quantity,
-                        base_price=filled_price,
-                        stop_loss_price=stop_loss)
+        try:
+            # stop_loss_order_id = None
+            if take_profit:
+                # Stop loss and take profit
+                stop_loss_order_id = self.create_sl_tp_order(
+                    symbol,
+                    base_direction=direction,
+                    quantity=quantity,
+                    base_price=filled_price,
+                    stop_loss_price=stop_loss,
+                    take_profit_price=take_profit)
+            else:
+                # Stop loss without take profit
+                stop_loss_order_id = self.create_sl_order(
+                    symbol,
+                    base_direction=direction,
+                    quantity=quantity,
+                    base_price=filled_price,
+                    stop_loss_price=stop_loss)
 
-            except Exception as e:
-                # If sl/tp order exception, close main order
-                logging.error(f"Stop loss or take profit order creation error: {e} ")
-                logging.error(f"Closing created {self.order_side_names[direction]} order with id: f{order_id}")
-                self.client.new_order(
-                    symbol=symbol,
-                    side=self.order_side_names[-direction],
-                    type="MARKET",
-                    quantity=quantity
-                )
-        else:
-            raise Exception(f"New order filled_price is empty: {res}")
+            # Set cur trade to opened order with sl/tp
+            self.cur_trade = Trade(ticker=symbol,
+                                   side=side,
+                                   open_time=datetime.utcnow(),
+                                   open_price=filled_price,
+                                   open_order_id=order_id,
+                                   stop_loss_price=stop_loss,
+                                   take_profit_price=take_profit,
+                                   stop_loss_order_id=stop_loss_order_id,
+                                   quantity=quantity)
+            self.db_session.add(self.cur_trade)
+            self.db_session.commit()
+            self._log.info(f"Created new trade: {self.cur_trade}")
 
-        # Set cur trade to opened order with sl/tp
-        self.cur_trade = Trade(ticker=symbol,
-                               side=side,
-                               open_time=datetime.utcnow(),
-                               open_price=filled_price,
-                               open_order_id=order_id,
-                               stop_loss_price=stop_loss,
-                               take_profit_price=take_profit,
-                               stop_loss_order_id=stop_loss_order_id,
-                               quantity=quantity)
-        self.db_session.add(self.cur_trade)
-        self.db_session.commit()
-        self._log.info(f"Created new trade: {self.cur_trade}")
+        except Exception as e:
+            # If sl/tp order exception, close main order
+            logging.error(f"Stop loss or take profit order creation error: {e} ")
+            logging.error(f"Closing created {self.order_side_names[direction]} order with id: f{order_id}")
+            self.client.new_order(
+                symbol=symbol,
+                side=self.order_side_names[-direction],
+                type="MARKET",
+                quantity=quantity
+            )
+
         return self.cur_trade
 
     def close_opened_trades(self):
