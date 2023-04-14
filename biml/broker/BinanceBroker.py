@@ -65,7 +65,9 @@ class BinanceBroker:
         self._log.debug(f"Create order raw response: {res}")
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
         order_id, stop_loss_order_id = res["orderId"], None
-        if not filled_price:
+        if filled_price:
+            price = filled_price
+        else:
             raise Exception(f"New order filled_price is empty: {res}")
 
         # stop loss

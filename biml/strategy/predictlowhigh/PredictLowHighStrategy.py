@@ -90,10 +90,10 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
                 # Predict
                 X, y = self.predict_low_high()
                 self.fut_low_high = y
-                cur_trade_direction = self.broker.cur_trade.direction() if self.broker.cur_trade else 0
 
                 # Open or close or do nothing
                 open_signal = self.process_new_prediction()
+                cur_trade_direction = self.broker.cur_trade.direction() if self.broker.cur_trade else 0
                 y[["predict_window", "open_signal", "cur_trade"]] = \
                     [self.predict_window, open_signal, cur_trade_direction]
 
