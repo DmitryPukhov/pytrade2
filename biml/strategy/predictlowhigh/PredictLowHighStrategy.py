@@ -74,22 +74,22 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
     def check_cur_trade(self, bid: float, ask: float):
         """ Update cur trade if sl or tp reached """
-
-        if datetime.utcnow() - self.last_trade_check_time < self.trade_check_interval:
-            # Avoid calling currency exchange too often
+        if not self.broker.cur_trade:
             return
+        # Buy order is out of sl-tp interval
+        buy_close_flag = self.broker.cur_trade.direction() == 1 and \
+                         (self.broker.cur_trade.stop_loss_price >= bid or
+                          self.broker.cur_trade.take_profit_price <= bid)
+        # Sell order is out of sl-tp interval
+        sell_close_flag = self.broker.cur_trade.direction() == -1 and \
+                          (self.broker.cur_trade.stop_loss_price <= ask or
+                           self.broker.cur_trade.take_profit_price >= ask)
+        # Timeout from last check passed
+        interval_flag = datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval
 
-        if self.broker.cur_trade:
-            # If buy and sl or tp reached, update
-            if self.broker.cur_trade.direction() == 1 and \
-                    (self.broker.cur_trade.stop_loss_price >= bid or self.broker.cur_trade.take_profit_price <= bid):
-                self.broker.update_trade_status(self.broker.cur_trade)
-                self.last_trade_check_time = datetime.utcnow()
-            # If sell and sl or tp reached, update
-            elif self.broker.cur_trade.direction() == -1 and \
-                    (self.broker.cur_trade.stop_loss_price <= ask or self.broker.cur_trade.take_profit_price >= ask):
-                self.broker.update_trade_status(self.broker.cur_trade)
-                self.last_trade_check_time = datetime.utcnow()
+        if interval_flag or buy_close_flag or sell_close_flag:
+            self.broker.update_trade_status(self.broker.cur_trade)
+            self.last_trade_check_time = datetime.utcnow()
 
     def process_new_data(self):
         if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
@@ -163,7 +163,6 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         return (0, None, None)
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
-
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
         # todo: model predicts bid_diff_fut, ask_diff_fut
         y = self.model.predict(X, verbose=0) if not X.empty else [[np.nan, np.nan, np.nan, np.nan]]
