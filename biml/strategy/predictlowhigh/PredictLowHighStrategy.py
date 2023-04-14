@@ -78,17 +78,18 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         if datetime.utcnow() - self.last_trade_check_time < self.trade_check_interval:
             # Avoid calling currency exchange too often
             return
-        self.last_trade_check_time = datetime.utcnow()
 
         if self.broker.cur_trade:
             # If buy and sl or tp reached, update
             if self.broker.cur_trade.direction() == 1 and \
                     (self.broker.cur_trade.stop_loss_price >= bid or self.broker.cur_trade.take_profit_price <= bid):
                 self.broker.update_trade_status(self.broker.cur_trade)
+                self.last_trade_check_time = datetime.utcnow()
             # If sell and sl or tp reached, update
             elif self.broker.cur_trade.direction() == -1 and \
                     (self.broker.cur_trade.stop_loss_price <= ask or self.broker.cur_trade.take_profit_price >= ask):
                 self.broker.update_trade_status(self.broker.cur_trade)
+                self.last_trade_check_time = datetime.utcnow()
 
     def process_new_data(self):
         if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
