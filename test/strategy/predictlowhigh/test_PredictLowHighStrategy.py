@@ -32,12 +32,12 @@ class TestPredictLowHighStrategy(TestCase):
         def create_cur_trade(self, symbol: str, direction: int,
                              quantity: float,
                              price: Optional[float],
-                             stop_loss: Optional[float],
-                             take_profit: Optional[float]) -> Optional[Trade]:
+                             stop_loss_price: Optional[float],
+                             take_profit_price: Optional[float]) -> Optional[Trade]:
             """ Don't trade, just emulate """
             self.cur_trade = Trade(ticker=symbol, side=Trade.order_side_names.get(direction),
                                    open_time=datetime.utcnow(), open_price=price, open_order_id=None,
-                                   stop_loss_price=stop_loss, take_profit_price=take_profit, stop_loss_order_id=None,
+                                   stop_loss_price=stop_loss_price, take_profit_price=take_profit_price, stop_loss_order_id=None,
                                    quantity=quantity)
 
         def end_cur_trade(self):
@@ -54,6 +54,7 @@ class TestPredictLowHighStrategy(TestCase):
             self.close_profit_loss_ratio = 2
             self.model = TestPredictLowHighStrategy.ModelStub()
             self.broker = TestPredictLowHighStrategy.BrokerStub()
+            self.min_stop_loss = 0
 
         def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
             pass

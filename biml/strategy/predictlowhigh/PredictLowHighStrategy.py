@@ -32,7 +32,6 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.tickers = self.config["biml.tickers"].split(",")
         self.min_history_interval = pd.Timedelta(config['biml.strategy.learn.interval.sec'])
 
-        # self.ticker = pd.DataFrame(columns=BaseFeed.bid_ask_columns).set_index("datetime")
         self.ticker = self.tickers[-1]
 
         self.bid_ask: pd.DataFrame = pd.DataFrame()
@@ -44,9 +43,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.is_processing = False
 
         self.profit_loss_ratio = 2
-        self.close_profit_loss_ratio = 2
-        # Minimum predictged stop loss to allow trade
-        self.min_stop_loss = 10
+        # stop loss should be above price * min_stop_loss_coeff
+        self.min_stop_loss_coeff = 0.00001
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
@@ -150,10 +148,10 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         sell_profit = bid - ask_min_fut
         sell_loss = ask_max_fut - bid
 
-        if buy_profit / buy_loss >= self.profit_loss_ratio and abs(buy_loss) >= self.min_stop_loss:
+        if buy_profit / buy_loss >= self.profit_loss_ratio and abs(buy_loss) >= self.min_stop_loss_coeff * ask:
             # Buy and possibly fix the loss
             return 1, ask - abs(buy_loss), ask + buy_profit
-        elif sell_profit / sell_loss >= self.profit_loss_ratio and abs(sell_loss) >= self.min_stop_loss:
+        elif sell_profit / sell_loss >= self.profit_loss_ratio and abs(sell_loss) >= self.min_stop_loss_coeff * bid:
             # Sell and possibly fix the loss
             return -1, bid + abs(sell_loss), bid - sell_profit
         else:
