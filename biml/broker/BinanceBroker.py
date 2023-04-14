@@ -40,7 +40,8 @@ class BinanceBroker:
     def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,
                          price: Optional[float],
-                         stop_loss: Optional[float]) -> Optional[Trade]:
+                         stop_loss: Optional[float],
+                         take_profit: Optional[float]) -> Optional[Trade]:
         """
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
@@ -52,7 +53,7 @@ class BinanceBroker:
 
         side = self.order_side_names[direction]
         self._log.info(
-            f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity}, stop loss: {stop_loss}")
+            f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity}, stop loss: {stop_loss}, take profit: {take_profit}")
         # Main buy or sell order with stop loss
         # This works
         res = self.client.new_order(
@@ -61,33 +62,51 @@ class BinanceBroker:
             type="MARKET",
             quantity=quantity
         )
+        self._log.debug(f"Create order raw response: {res}")
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
         order_id, stop_loss_order_id = res["orderId"], None
         if not filled_price:
             raise Exception(f"New order filled_price is empty: {res}")
 
         # stop loss
-        if price and stop_loss:
+        if price:
             other_side = self.order_side_names[-direction]
             stop_loss = round(stop_loss, price_precision)
             stop_loss_limit_price = round(stop_loss - (price - stop_loss), price_precision)
-            self._log.info(
-                f"Creating stop loss order, stop_loss={stop_loss}, stop_loss_limit_price={stop_loss_limit_price}")
-            res = self.client.new_order(
-                symbol=symbol,
-                side=other_side,
-                type="STOP_LOSS_LIMIT",
-                stopPrice=stop_loss,  # When stopPrice is reached, place limit order with price.
-                price=stop_loss_limit_price,  # Order executed with this price or better (ideally stopPrice)
-                trailingDelta=200,  # 200 bips=2%
-                timeInForce="GTC",
-                quantity=quantity)
-            stop_loss_order_id = res["orderId"]
-            self._log.debug(f"Stop loss order response: {res}")
+            take_profit = round(take_profit, price_precision)
+            if take_profit and stop_loss:
+                self._log.info(
+                    f"Creating stop loss and take profit order, stop_loss={stop_loss},"
+                    f" stop_loss_limit_price={stop_loss_limit_price}, take_profit={take_profit}")
+                res = self.client.new_oco_order(
+                    symbol=symbol,
+                    side=other_side,
+                    quantity=quantity,
+                    price=take_profit,
+                    stopPrice=stop_loss,
+                    stopLimitPrice=stop_loss_limit_price,
+                    stopLimitTimeInForce='GTC')
+                self._log.debug(f"Stop loss / take profit order raw response: {res}")
+                stop_loss_order_id = res["orderListId"]
+            elif stop_loss:
+                self._log.info(
+                    f"Creating stop loss order, stop_loss={stop_loss}, stop_loss_limit_price={stop_loss_limit_price}")
+                res = self.client.new_order(
+                    symbol=symbol,
+                    side=other_side,
+                    type="STOP_LOSS_LIMIT",
+                    stopPrice=stop_loss,  # When stopPrice is reached, place limit order with price.
+                    price=stop_loss_limit_price,  # Order executed with this price or better (ideally stopPrice)
+                    trailingDelta=200,  # 200 bips=2%
+                    timeInForce="GTC",
+                    quantity=quantity)
+                stop_loss_order_id = res["orderId"]
+                self._log.debug(f"Stop loss order raw response: {res}")
 
         self.cur_trade = Trade(ticker=symbol, side=side,
                                open_time=datetime.utcnow(), open_price=filled_price, open_order_id=order_id,
-                               stop_loss_price=stop_loss, stop_loss_order_id=stop_loss_order_id,
+                               stop_loss_price=stop_loss, take_profit_price=take_profit,
+                               stop_loss_order_id=stop_loss_order_id,
                                quantity=quantity)
         self.db_session.add(self.cur_trade)
         self.db_session.commit()
@@ -129,7 +148,7 @@ class BinanceBroker:
         self._log.info(f"Closing trade: {trade}")
 
         # Check if it's already closed by stop loss
-        self.update_trade_if_closed_by_stop_loss(trade)
+        self.update_trade_if_closed_by_sl_tp(trade)
 
         if trade.close_time:
             # If already closed, do nothing
@@ -160,7 +179,7 @@ class BinanceBroker:
             self.db_session.commit()
         return trade
 
-    def update_trade_if_closed_by_stop_loss(self, trade: Trade) -> Trade:
+    def update_trade_if_closed_by_sl_tp(self, trade: Trade) -> Trade:
         """ If given trade closed by stop loss, update db and set cur trade variable to none """
 
         if not trade or trade.close_time:
