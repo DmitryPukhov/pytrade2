@@ -26,7 +26,7 @@ class TestPredictLowHighStrategy(TestCase):
             self._log = logging.getLogger(self.__class__.__name__)
             self.cur_trade: Trade = None
 
-        def update_trade_if_closed_by_sl_tp(self, trade: Trade) -> Trade:
+        def update_trade_status(self, trade: Trade) -> Trade:
             pass
 
         def create_cur_trade(self, symbol: str, direction: int,

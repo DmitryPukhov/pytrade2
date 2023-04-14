@@ -69,6 +69,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         self.learn_on_last()
 
         # Open/close trade
+        self.broker.update_trade_status(self.broker.cur_trade)
         self.process_new_data()
 
     def close_signal(self) -> int:

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List
 
 import numpy as np
@@ -45,6 +45,8 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
 
         self.profit_loss_ratio = 2
         self.close_profit_loss_ratio = 2
+        self.trade_check_interval = timedelta(seconds=10)
+        self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
 
     def run(self, client):
@@ -73,15 +75,20 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
     def check_cur_trade(self, bid: float, ask: float):
         """ Update cur trade if sl or tp reached """
 
+        if datetime.utcnow() - self.last_trade_check_time < self.trade_check_interval:
+            # Avoid calling currency exchange too often
+            return
+        self.last_trade_check_time = datetime.utcnow()
+
         if self.broker.cur_trade:
             # If buy and sl or tp reached, update
             if self.broker.cur_trade.direction() == 1 and \
                     (self.broker.cur_trade.stop_loss_price >= bid or self.broker.cur_trade.take_profit_price <= bid):
-                self.broker.update_trade_if_closed_by_sl_tp(self.broker.cur_trade)
+                self.broker.update_trade_status(self.broker.cur_trade)
             # If sell and sl or tp reached, update
             elif self.broker.cur_trade.direction() == -1 and \
                     (self.broker.cur_trade.stop_loss_price <= ask or self.broker.cur_trade.take_profit_price >= ask):
-                self.broker.update_trade_if_closed_by_sl_tp(self.broker.cur_trade)
+                self.broker.update_trade_status(self.broker.cur_trade)
 
     def process_new_data(self):
         if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:

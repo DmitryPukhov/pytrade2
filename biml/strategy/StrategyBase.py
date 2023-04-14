@@ -16,7 +16,6 @@ class StrategyBase:
         # self.ticker: str = self.tickers[-1].ticker
 
     def process_new_data(self):
-        self.broker.update_trade_if_closed_by_sl_tp(self.broker.cur_trade)
         if self.broker.cur_trade and self.broker.cur_trade.close_time:
             self.broker.cur_trade = None
 

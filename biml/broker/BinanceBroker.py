@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import pandas as pd
@@ -29,6 +29,8 @@ class BinanceBroker:
             self._log.info(f"Current last opened trade: {self.cur_trade}")
         self._log.info("Completed init broker")
         self.price_precision = 2
+        self.min_trade_interval = timedelta(seconds=10)
+        self.last_trade_time = datetime.utcnow() - self.min_trade_interval
 
     def __init_db__(self):
         # Create database
@@ -103,6 +105,11 @@ class BinanceBroker:
 
         if direction not in {1, -1}:
             return None
+
+        if (datetime.utcnow() - self.last_trade_time) <= self.min_trade_interval:
+            self._log.info(f"{self.min_trade_interval} is not elapsed since last trade: {self.last_trade_time}")
+            return
+
         side = self.order_side_names[direction]
 
         self._log.info(
@@ -156,6 +163,7 @@ class BinanceBroker:
                                    quantity=quantity)
             self.db_session.add(self.cur_trade)
             self.db_session.commit()
+            self.last_trade_time = datetime.utcnow()
             self._log.info(f"Created new trade: {self.cur_trade}")
 
         except Exception as e:
@@ -206,7 +214,7 @@ class BinanceBroker:
         self._log.info(f"Closing trade: {trade}")
 
         # Check if it's already closed by stop loss
-        self.update_trade_if_closed_by_sl_tp(trade)
+        self.update_trade_status(trade)
 
         if trade.close_time:
             # If already closed, do nothing
@@ -237,12 +245,12 @@ class BinanceBroker:
             self.db_session.commit()
         return trade
 
-    def update_trade_if_closed_by_sl_tp(self, trade: Trade) -> Trade:
+    def update_trade_status(self, trade: Trade) -> Trade:
         """ If given trade closed by stop loss, update db and set cur trade variable to none """
 
         if not trade or trade.close_time:
             return trade
-        last_trades = self.client.my_trades(symbol=trade.ticker, limit=1)
+        last_trades = self.client.my_trades(symbol=trade.ticker, orderId=trade.open_order_id, limit=1)
         last_trade = ([t for t in last_trades if str(t["orderListId"]) == trade.stop_loss_order_id] or [None])[-1]
 
         if last_trade:
@@ -252,5 +260,6 @@ class BinanceBroker:
             trade.close_time = datetime.utcfromtimestamp(last_trade["time"] / 1000.0)
             self._log.debug(f"Current trade found closed by stop loss or take profit: {trade}")
             self.db_session.commit()
-            self.cur_trade = None
+            if trade == self.cur_trade:
+                self.cur_trade = None
         return trade
