@@ -48,6 +48,7 @@ class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
         """
         Attach to the feed and listen
         """
+        self.broker.close_opened_trades()
         feed = BinanceCandlesFeed(spot_client=client, tickers=self.tickers)
         feed.consumers.append(self)
         feed.run()

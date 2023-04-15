@@ -80,7 +80,6 @@ class App:
         """
         # self.feed = BinanceCandlesFeed(spot_client=self.client, tickers = self.tickers)
         self.broker = BinanceBroker(client=self.client)
-        self.broker.close_opened_trades()
         #AppTools.close_opened_posisions(self.broker, self.config["biml.tickers"])
 
         # Create strategy class
