@@ -26,7 +26,7 @@ class BinanceBroker:
         self.cur_trade = self.read_last_opened_trade()
 
         if self.cur_trade:
-            self._log.info(f"Current last opened trade: {self.cur_trade}")
+            self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
         self._log.info("Completed init broker")
         self.price_precision = 2
         self.min_trade_interval = timedelta(seconds=10)
