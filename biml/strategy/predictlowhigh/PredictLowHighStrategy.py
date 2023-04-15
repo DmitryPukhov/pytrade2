@@ -87,7 +87,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         # Timeout from last check passed
         interval_flag = datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval
 
-        if interval_flag or buy_close_flag or sell_close_flag:
+        if interval_flag or (interval_flag and (buy_close_flag or sell_close_flag)):
             self.broker.update_trade_status(self.broker.cur_trade)
             self.last_trade_check_time = datetime.utcnow()
 
