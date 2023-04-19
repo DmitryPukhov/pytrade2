@@ -264,7 +264,7 @@ class BinanceBroker:
             trade.close_order_id = str(last_trade["orderId"])
             trade.close_price = last_trade["price"]
             trade.close_time = datetime.utcfromtimestamp(last_trade["time"] / 1000.0)
-            self._log.debug(f"Current trade found closed by stop loss or take profit: {trade}")
+            self._log.info(f"Current trade found closed by stop loss or take profit: {trade}")
             self.db_session.commit()
             if trade == self.cur_trade:
                 self.cur_trade = None

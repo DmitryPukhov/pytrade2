@@ -1,14 +1,14 @@
 version: "3.9"
 services:
-  downloader:
-    container_name: biml-downloader
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./data:/data
-    command: python ./Downloader.py
-    restart: on-failure
+#  downloader:
+#    container_name: biml-downloader
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    volumes:
+#      - ./data:/data
+#    command: python ./Downloader.py
+#    restart: on-failure
 
   trade:
     container_name: biml-trade-bot
