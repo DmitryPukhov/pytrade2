@@ -51,10 +51,12 @@ class PersistableStateStrategy:
         Purge old weights
         """
         keep_files_count = keep_count * 2 + 1  # .data, .index for each weight and one checkpoint file
-        purge_files = sorted(os.listdir(self.model_weights_dir), reverse=True)[keep_files_count]
-        for file in purge_files:
-            os.remove(os.path.join(self.model_weights_dir, file))
-        self._log.debug(f"Purged {len(purge_files)} files in {self.model_weights_dir}")
+        files = os.listdir(self.model_weights_dir)
+        if files:
+            purge_files = sorted(files, reverse=True)[keep_files_count:]
+            for file in purge_files:
+                os.remove(os.path.join(self.model_weights_dir, file))
+            self._log.debug(f"Purged {len(purge_files)} files in {self.model_weights_dir}")
 
     def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
         """
