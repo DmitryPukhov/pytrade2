@@ -79,8 +79,8 @@ class App:
         Application entry point
         """
         # self.feed = BinanceCandlesFeed(spot_client=self.client, tickers = self.tickers)
-        self.broker = BinanceBroker(client=self.client)
-        #AppTools.close_opened_posisions(self.broker, self.config["biml.tickers"])
+        self.broker = BinanceBroker(client=self.client, config=self.config)
+        # AppTools.close_opened_posisions(self.broker, self.config["biml.tickers"])
 
         # Create strategy class
         strategy_file = f"strategy." + self.config["biml.strategy"]

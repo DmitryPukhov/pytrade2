@@ -13,12 +13,12 @@ from sklearn.preprocessing import StandardScaler
 from feed.BaseFeed import BaseFeed
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 from strategy.PeriodicalLearnStrategy import PeriodicalLearnStrategy
-from strategy.PersistableModelStrategy import PersistableModelStrategy
+from strategy.PersistableStateStrategy import PersistableStateStrategy
 from strategy.StrategyBase import StrategyBase
 from strategy.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
 
 
-class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableModelStrategy):
+class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableStateStrategy):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -27,7 +27,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableM
         self.config = config
         StrategyBase.__init__(self, broker, config)
         PeriodicalLearnStrategy.__init__(self, config)
-        PersistableModelStrategy.__init__(self, config)
+        PersistableStateStrategy.__init__(self, config)
 
         self.tickers = self.config["biml.tickers"].split(",")
         self.min_history_interval = pd.Timedelta(config['biml.strategy.learn.interval.sec'])

@@ -15,7 +15,6 @@ class Learn(App):
         super().__init__()
         self._log = logging.getLogger(self.__class__.__name__)
         self.data_dir = self.config["biml.data.dir"]
-        self.model_dir = self.config["biml.model.dir"]
 
     def learn(self):
         self._log.info(f"Learn, data dir: {self.data_dir}")

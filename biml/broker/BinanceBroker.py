@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Dict
 
 import pandas as pd
 from binance.spot import Spot as Client
@@ -15,14 +16,14 @@ class BinanceBroker:
     Orders management: buy, sell etc
     """
 
-    def __init__(self, client: Client):
+    def __init__(self, client: Client, config: Dict[str, str]):
         self._log = logging.getLogger(self.__class__.__name__)
         self.client: Client = client
         self.order_side_names = {1: "BUY", -1: "SELL"}
         self.order_side_codes = dict(map(reversed, self.order_side_names.items()))
 
         # Database
-        self.__init_db__()
+        self.__init_db__(config)
         self.cur_trade = self.read_last_opened_trade()
 
         if self.cur_trade:
@@ -32,9 +33,11 @@ class BinanceBroker:
         self.min_trade_interval = timedelta(seconds=10)
         self.last_trade_time = datetime.utcnow() - self.min_trade_interval
 
-    def __init_db__(self):
+    def __init_db__(self, config: Dict[str, str]):
         # Create database
-        db_path = "../data/biml.db"
+        data_dir = config["biml.data.dir"]
+        Path(data_dir).mkdir(parents=True, exist_ok=True)
+        db_path = f"{data_dir}/biml.db"
         self._log.info(f"Init database, path: {db_path}")
         engine = create_engine(f"sqlite:///{db_path}")
         Trade.metadata.create_all(engine)

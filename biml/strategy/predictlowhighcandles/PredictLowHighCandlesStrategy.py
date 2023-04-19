@@ -16,12 +16,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from AppTools import AppTools
 from feed.BinanceCandlesFeed import BinanceCandlesFeed
-from strategy.PersistableModelStrategy import PersistableModelStrategy
+from strategy.PersistableStateStrategy import PersistableStateStrategy
 from strategy.StrategyBase import StrategyBase
 from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 
 
-class PredictLowHighCandlesStrategy(StrategyBase, PersistableModelStrategy):
+class PredictLowHighCandlesStrategy(StrategyBase, PersistableStateStrategy):
     """
     Candles based. Predict low/high value in the nearest future period.
     Buy if future high/future low > ratio, sell if symmetrically. Off market if both below ratio

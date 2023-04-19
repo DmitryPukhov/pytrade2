@@ -1,5 +1,6 @@
 import glob
 import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
@@ -8,15 +9,16 @@ import pandas as pd
 from keras.models import Model
 
 
-class PersistableModelStrategy:
+class PersistableStateStrategy:
     def __init__(self, config: Dict):
         self._log = logging.getLogger(self.__class__.__name__)
 
         # Directory for model weights and price data
-        self.model_dir = config["biml.model.dir"]
-        if self.model_dir:
-            self.model_weights_dir = str(Path(self.model_dir, self.__class__.__name__, "weights"))
-            self.model_Xy_dir = str(Path(self.model_dir, self.__class__.__name__, "Xy"))
+        self.data_dir = config["biml.data.dir"]
+        if self.data_dir:
+            self.model_weights_dir = str(Path(self.data_dir, self.__class__.__name__, "weights"))
+            Path(self.model_weights_dir).mkdir(parents=True, exist_ok=True)
+            self.model_Xy_dir = str(Path(self.data_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.last_save_time = datetime.utcnow()
         # Save data each 10 seconds
@@ -41,6 +43,18 @@ class PersistableModelStrategy:
         model_path = str(Path(self.model_weights_dir, datetime.utcnow().isoformat()))
         self._log.debug(f"Save model to {model_path}")
         model.save_weights(model_path)
+
+        self.purge_weights()
+
+    def purge_weights(self, keep_count=1):
+        """
+        Purge old weights
+        """
+        keep_files_count = keep_count * 2 + 1  # .data, .index for each weight and one checkpoint file
+        purge_files = sorted(os.listdir(self.model_weights_dir), reverse=True)[keep_files_count]
+        for file in purge_files:
+            os.remove(os.path.join(self.model_weights_dir, file))
+        self._log.debug(f"Purged {len(purge_files)} files in {self.model_weights_dir}")
 
     def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
         """
