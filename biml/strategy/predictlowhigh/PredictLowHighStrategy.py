@@ -45,10 +45,13 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableS
         self.profit_loss_ratio = 2
         # stop loss should be above price * min_stop_loss_coeff
         self.min_stop_loss_coeff = 0.00001
-        self.max_stop_loss_coeff = 0.0002  # For BTCUSDT 30 000 max stop loss would be 6
+        self.max_stop_loss_coeff = 1  # 0.0002 means For BTCUSDT 30 000 max stop loss would be 6
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
+        self._log.info(
+            f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
+            f"min stop loss coeff: {self.min_stop_loss_coeff}, max stop loss coeff: {self.max_stop_loss_coeff}")
 
     def run(self, client):
         """
@@ -219,7 +222,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableS
         model.add(Dense(128, activation='relu'))
         model.add(Dropout(0.1))
         model.add(Dense(32, activation='relu'))
-        #model.add(Dropout(0.1))
+        # model.add(Dropout(0.1))
         model.add(Dense(y_size, activation='softmax'))
         model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['mean_squared_error'])
 
