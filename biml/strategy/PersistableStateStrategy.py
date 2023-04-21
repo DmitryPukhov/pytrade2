@@ -31,7 +31,7 @@ class PersistableStateStrategy:
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
         if saved_models:
             last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
-            self._log.debug(f"Load model from {last_model_path}")
+            self._log.info(f"Load model from {last_model_path}")
             model.load_weights(last_model_path)
         else:
             self._log.info(f"No saved models in {self.model_weights_dir}")
