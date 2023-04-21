@@ -56,7 +56,8 @@ class BinanceBroker:
          """
         other_side = self.order_side_names[-base_direction]
         stop_loss_price = round(stop_loss_price, self.price_precision)
-        stop_loss_limit_price = round(stop_loss_price - (base_price - stop_loss_price), self.price_precision)
+        limit_ratio = 0.01  # 1# slippage to set stop loss limit
+        stop_loss_limit_price = round(stop_loss_price - base_direction * base_price * limit_ratio, self.price_precision)
         take_profit_price = round(take_profit_price, self.price_precision)
         self._log.info(
             f"Creating stop loss and take profit for base {self.order_side_names[base_direction]} order, base_price={base_price}, stop_loss={stop_loss_price},"
