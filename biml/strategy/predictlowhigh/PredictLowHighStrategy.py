@@ -188,7 +188,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableS
     def learn(self):
         if self.is_learning:
             return
-        self._log.info("Learning")
+        self._log.debug("Learning")
         self.is_learning = True
         try:
 
@@ -196,7 +196,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableS
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
                 bid_ask_since_last_learn, self.level2, self.predict_window)
             self._log.info(
-                f"Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}")
+                f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}")
             model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
             if not train_X.empty:
                 model.fit(train_X, train_y)
