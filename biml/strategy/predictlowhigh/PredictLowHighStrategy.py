@@ -45,6 +45,7 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableS
         self.profit_loss_ratio = 2
         # stop loss should be above price * min_stop_loss_coeff
         self.min_stop_loss_coeff = 0.00001
+        self.max_stop_loss_coeff = 0.0002
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
@@ -148,19 +149,17 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableS
         sell_profit = bid - ask_min_fut
         sell_loss = ask_max_fut - bid
 
-        if buy_profit / buy_loss >= self.profit_loss_ratio and abs(buy_loss) >= self.min_stop_loss_coeff * ask:
+        if buy_profit / buy_loss >= self.profit_loss_ratio \
+                and self.max_stop_loss_coeff * ask >= abs(buy_loss) >= self.min_stop_loss_coeff * ask:
             # Buy and possibly fix the loss
             return 1, ask - abs(buy_loss), ask + buy_profit
-        elif sell_profit / sell_loss >= self.profit_loss_ratio and abs(sell_loss) >= self.min_stop_loss_coeff * bid:
+        elif sell_profit / sell_loss >= self.profit_loss_ratio \
+                and self.max_stop_loss_coeff * bid >= abs(sell_loss) >= self.min_stop_loss_coeff * bid:
             # Sell and possibly fix the loss
             return -1, bid + abs(sell_loss), bid - sell_profit
         else:
             # No action
             return 0, None, None
-
-    def close_signal(self):
-        """ Don't use close signal in this strategy """
-        return (0, None, None)
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)

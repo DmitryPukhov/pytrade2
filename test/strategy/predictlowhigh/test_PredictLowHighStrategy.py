@@ -55,6 +55,7 @@ class TestPredictLowHighStrategy(TestCase):
             self.model = TestPredictLowHighStrategy.ModelStub()
             self.broker = TestPredictLowHighStrategy.BrokerStub()
             self.min_stop_loss = 0
+            self.max_stop_loss_coeff = float('inf')
 
         def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
             pass
