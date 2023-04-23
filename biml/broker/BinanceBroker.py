@@ -28,6 +28,7 @@ class BinanceBroker:
 
         if self.cur_trade:
             self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
+            self.update_trade_status(self.cur_trade)
         self._log.info("Completed init broker")
         self.price_precision = 2
         self.min_trade_interval = timedelta(seconds=10)
@@ -263,7 +264,7 @@ class BinanceBroker:
         if last_trade:
             # Update db
             trade.close_order_id = str(last_trade["orderId"])
-            trade.close_price = last_trade["price"]
+            trade.close_price = float(last_trade["price"])
             trade.close_time = datetime.utcfromtimestamp(last_trade["time"] / 1000.0)
             self._log.info(f"Current trade found closed by stop loss or take profit: {trade}")
             self.db_session.commit()
