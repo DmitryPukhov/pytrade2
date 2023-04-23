@@ -35,7 +35,12 @@ class Trade(Base):
         details = f"{self.ticker} {self.side}, open time: {self.open_time}, open price: {self.open_price}, " \
                   f"sl: {self.stop_loss_price}, tp: {self.take_profit_price}"
         if self.close_time:
-            close_details = f", close time: {self.close_time}, close price: {self.close_price}"
+            profit = None
+            if self.side == "BUY":
+                profit = self.close_price - self.open_price
+            elif self.side == "SELL":
+                profit = self.open_price - self.close_price
+            close_details = f", close time: {self.close_time}, close price: {self.close_price}, profit: {profit}"
             details += close_details
         return details
 
