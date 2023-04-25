@@ -24,15 +24,19 @@ class BinanceBroker:
 
         # Database
         self.__init_db__(config)
-        self.cur_trade = self.read_last_opened_trade()
+        self.allow_trade = config.get("biml.broker.trade.allow", False)
 
-        if self.cur_trade:
-            self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
-            self.update_trade_status(self.cur_trade)
-        self._log.info("Completed init broker")
+        # Load saved opened trade
+        if self.allow_trade:
+            self.cur_trade = self.read_last_opened_trade()
+            if self.cur_trade:
+                self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
+                self.update_trade_status(self.cur_trade)
+
         self.price_precision = 2
         self.min_trade_interval = timedelta(seconds=10)
         self.last_trade_time = datetime.utcnow() - self.min_trade_interval
+        self._log.info(f"Completed init broker. Allow trade: {self.allow_trade}")
 
     def __init_db__(self, config: Dict[str, str]):
         # Create database
@@ -50,11 +54,15 @@ class BinanceBroker:
                            quantity: float,
                            base_price: float,
                            stop_loss_price: float,
-                           take_profit_price: float) -> str:
+                           take_profit_price: float) -> Optional[str]:
         """
          After base order filled, create sl/tp oco order
          @:return order list id for sl/tp orders
          """
+        if not self.allow_trade:
+            self._log.debug("Trading in not allowed")
+            return None
+
         other_side = self.order_side_names[-base_direction]
         stop_loss_price = round(stop_loss_price, self.price_precision)
         limit_ratio = 0.01  # 1# slippage to set stop loss limit
@@ -77,7 +85,12 @@ class BinanceBroker:
     def create_sl_order(self, symbol: str,
                         base_direction: int, quantity: float,
                         base_price: float,
-                        stop_loss_price: float) -> str:
+                        stop_loss_price: float) -> Optional[str]:
+
+        if not self.allow_trade:
+            self._log.debug("Trading in not allowed")
+            return None
+
         sl_side = self.order_side_names[-base_direction]
         stop_loss_price = round(stop_loss_price, self.price_precision)
         stop_loss_limit_price = round(stop_loss_price - (base_price - stop_loss_price), self.price_precision)
@@ -108,8 +121,12 @@ class BinanceBroker:
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
 
+        if not self.allow_trade:
+            self._log.debug("Trading in not allowed")
+            return
+
         if direction not in {1, -1}:
-            return None
+            return
 
         if (datetime.utcnow() - self.last_trade_time) <= self.min_trade_interval:
             return
@@ -218,6 +235,10 @@ class BinanceBroker:
         """
         If current opened trade exists,  close it, error otherwise
         """
+        if not self.allow_trade:
+            self._log.debug("Trading in not allowed")
+            return trade
+
         assert trade
         self._log.info(f"Closing trade: {trade}")
 
