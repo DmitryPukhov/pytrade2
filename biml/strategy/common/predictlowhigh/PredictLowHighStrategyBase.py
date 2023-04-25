@@ -12,13 +12,13 @@ from sklearn.preprocessing import StandardScaler
 
 from feed.BaseFeed import BaseFeed
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
-from strategy.PeriodicalLearnStrategy import PeriodicalLearnStrategy
-from strategy.PersistableStateStrategy import PersistableStateStrategy
-from strategy.StrategyBase import StrategyBase
-from strategy.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
+from strategy.common.PersistableStateStrategy import PersistableStateStrategy
+from strategy.common.StrategyBase import StrategyBase
+from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
 
 
-class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableStateStrategy):
+class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, PersistableStateStrategy):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -212,37 +212,3 @@ class PredictLowHighStrategy(StrategyBase, PeriodicalLearnStrategy, PersistableS
         finally:
             self.is_learning = False
 
-    def create_model(self, X_size, y_size):
-        model = Sequential()
-        model.add(Input(shape=(X_size,)))
-        model.add(Dense(64, activation='relu'))
-        model.add(Dropout(0.1))
-        model.add(Dense(512, activation='relu'))
-        model.add(Dropout(0.2))
-        model.add(Dense(128, activation='relu'))
-        model.add(Dropout(0.1))
-        model.add(Dense(32, activation='relu'))
-        # model.add(Dropout(0.1))
-        model.add(Dense(y_size, activation='softmax'))
-        model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['mean_squared_error'])
-
-        # Load weights
-        self.load_last_model(model)
-        # model.summary()
-        return model
-
-    def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
-        # Fit the model
-        regressor = KerasRegressor(model=self.create_model(X_size=len(X.columns), y_size=len(y.columns)),
-                                   epochs=epochs, batch_size=batch_size, verbose=1)
-        column_transformer = ColumnTransformer(
-            [
-                ('xscaler', StandardScaler(), X.columns)
-                # ('yscaler', StandardScaler(), y.columns)
-                # ('cat_encoder', OneHotEncoder(handle_unknown="ignore"), y.columns)
-            ]
-        )
-
-        pipe = Pipeline([("column_transformer", column_transformer), ('model', regressor)])
-        wrapped = TransformedTargetRegressor(regressor=pipe, transformer=StandardScaler())
-        return wrapped

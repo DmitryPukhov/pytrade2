@@ -8,7 +8,7 @@ import pandas as pd
 
 from broker.BinanceBroker import BinanceBroker
 from broker.model.Trade import Trade
-from strategy.predictlowhigh.PredictLowHighStrategy import PredictLowHighStrategy
+from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
 class TestPredictLowHighStrategy(TestCase):
@@ -43,7 +43,7 @@ class TestPredictLowHighStrategy(TestCase):
         def end_cur_trade(self):
             self.cur_trade = None
 
-    class StrategyStub(PredictLowHighStrategy):
+    class StrategyStub(PredictLowHighStrategyBase):
         """ Strategy wrapper for tests """
 
         def __init__(self):

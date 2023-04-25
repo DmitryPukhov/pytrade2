@@ -1,14 +1,10 @@
-import glob
-import logging
-from datetime import datetime
 from functools import reduce
-from pathlib import Path
 from typing import Dict
 import pandas as pd
 from keras import Input
 from keras.layers import Dense
 from keras.layers.core.dropout import Dropout
-from keras.models import Sequential, Model
+from keras.models import Sequential
 from scikeras.wrappers import KerasRegressor
 from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
 from sklearn.model_selection import cross_val_score, TimeSeriesSplit
@@ -16,8 +12,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from AppTools import AppTools
 from feed.BinanceCandlesFeed import BinanceCandlesFeed
-from strategy.PersistableStateStrategy import PersistableStateStrategy
-from strategy.StrategyBase import StrategyBase
+from strategy.common.PersistableStateStrategy import PersistableStateStrategy
+from strategy.common.StrategyBase import StrategyBase
 from strategy.predictlowhighcandles.LowHighCandlesFeatures import LowHighCandlesFeatures
 
 

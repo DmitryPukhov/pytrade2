@@ -1,12 +1,9 @@
 from datetime import datetime
 
-import numpy as np
 import pandas as pd
 from unittest import TestCase
 
-from feed.BaseFeed import BaseFeed
-from strategy.StrategyBase import StrategyBase
-from strategy.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
 
 
 class TestPredictLowHighFeatures(TestCase):

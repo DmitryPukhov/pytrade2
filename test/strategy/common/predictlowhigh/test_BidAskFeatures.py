@@ -4,7 +4,7 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-from strategy.predictlowhigh.BidAskFeatures import BidAskFeatures
+from strategy.common.predictlowhigh.BidAskFeatures import BidAskFeatures
 
 
 class TestBidAskFeatures(TestCase):
