@@ -6,6 +6,4 @@ biml.connector.url: 'https://testnet.binance.vision'
 biml.data.dir: './data'
 log.level: "INFO"
 biml.tickers: "BTCUSDT"
-biml.feed.BTCUSDT.candle.intervals: 1m,15m,1h,1d
-biml.feed.BTCUSDT.candle.limits: 1440,96,24,30
 biml.broker.trade.allow: true

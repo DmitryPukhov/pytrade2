@@ -3,6 +3,7 @@ from typing import List, Dict
 
 import pandas as pd
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
+
 from feed.BaseFeed import BaseFeed
 
 
@@ -10,6 +11,8 @@ class BinanceWebsocketFeed(BaseFeed):
     """
     Binance price data feed. Read data from binance, provide pandas dataframes with that data
     """
+
+    bid_ask_columns = ["datetime", "symbol", "bid", "bid_vol", "ask", "ask_vol"]
 
     def __init__(self, tickers: List[str]):
         super().__init__()

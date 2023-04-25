@@ -6,8 +6,6 @@ import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
-
-from AppTools import AppTools
 from broker.BinanceBroker import BinanceBroker
 
 
