@@ -36,15 +36,17 @@ class LSTMStrategy(PredictLowHighStrategyBase):
         # model.summary()
         return model
 
-    def reshape(self, data):
-        return data.reshape(data.shape[0], self.window_size, data.shape[1])
-
     def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
+
+        # If put reshape() func to class level, multithreading error occurs with FunctionTransformer
+        def reshape(data):
+            return data.reshape(data.shape[0], self.window_size, data.shape[1])
+
         model = self.create_model(X_size=X.values.shape[1], y_size=y.values.shape[1])
         regressor = KerasRegressor(model=model, epochs=epochs, batch_size=self.window_size * batch_size, verbose=1)
 
         xpipe = Pipeline([('xscaler', StandardScaler()),
-                          ('reshape', FunctionTransformer(self.reshape, validate=False)),
+                          ('reshape', FunctionTransformer(reshape, validate=False)),
                           ('model', regressor)])
         ypipe = Pipeline([
             ('yscaler', StandardScaler())
