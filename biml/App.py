@@ -25,7 +25,7 @@ class App:
         pd.set_option("expand_frame_repr", False)
 
         # Load config, set up logging
-        self.config = self._load_config()
+        self.config: Dict[str, str] = self._load_config()
 
         # Init logging
         loglevel = self.config["log.level"]
@@ -83,10 +83,21 @@ class App:
 
     def _init_client(self):
         """ Binance spot client creation. Each strategy can be configured at it's own account"""
-
         strategy = self.config["biml.strategy"].lower()
-        key = self.config[f"biml.connector.{strategy}.key"]
-        secret = self.config[f"biml.connector.{strategy}.secret"]
+        self._log.info(f"Looking config for {strategy} key and secret")
+        strategy_key_param = f"biml.connector.{strategy}.key"
+        strategy_secret_param = f"biml.connector.{strategy}.secret"
+        key_param = f"biml.connector.key"
+        secret_param = f"biml.connector.secret"
+        key, secret = None, None
+        if {strategy_key_param, strategy_secret_param} <= self.config.keys():
+            self._log.info(f"Found {strategy_key_param} and {strategy_secret_param} in config")
+            key, secret = self.config[strategy_key_param], self.config[strategy_secret_param]
+        else:
+            self._log.info(f"{strategy_key_param} or {strategy_secret_param} not found in config. "
+                           f"Using {key_param}, {secret_param}")
+            key, secret = self.config[key_param], self.config[secret_param]
+
         url = self.config["biml.connector.url"]
         self._log.info(f"Init binance client for strategy: {strategy}, url: {url}")
         self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
