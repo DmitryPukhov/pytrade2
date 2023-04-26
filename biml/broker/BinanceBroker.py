@@ -40,9 +40,10 @@ class BinanceBroker:
 
     def __init_db__(self, config: Dict[str, str]):
         # Create database
-        data_dir = config["biml.data.dir"]
+        strategy = config["biml.strategy"]
+        data_dir = config["biml.data.dir"] + "/" + strategy
         Path(data_dir).mkdir(parents=True, exist_ok=True)
-        db_path = f"{data_dir}/biml.db"
+        db_path = f"{data_dir}/{strategy}.db"
         self._log.info(f"Init database, path: {db_path}")
         engine = create_engine(f"sqlite:///{db_path}")
         Trade.metadata.create_all(engine)

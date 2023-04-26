@@ -1,7 +1,10 @@
 import importlib
 import logging.config
+import argparse
 import os
 import sys
+from typing import Dict
+
 import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
@@ -23,21 +26,17 @@ class App:
 
         # Load config, set up logging
         self.config = self._load_config()
-        # self.tickers: List[TickerInfo] = AppTools.read_candles_tickers(self.config)
 
         # Init logging
         loglevel = self.config["log.level"]
-        config_logging(logging, loglevel)  # self._init_logger(self.config['log.dir'])
+        config_logging(logging, loglevel)
         self._log.info(f"Set log level to {loglevel}")
 
-        # Create spot client
-        key, secret, url = self.config["biml.connector.key"], self.config["biml.connector.secret"], self.config[
-            "biml.connector.url"]
-        self._log.info(f"Init binance client, url: {url}")
-        self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
+        # Create binance client
+        self._init_client()
 
         # Init binance feed
-        self.feed, self.broker, self.strategy = None, None, None
+        self.broker, self.strategy = None, None
         self._log.info("App initialized")
 
     @staticmethod
@@ -70,24 +69,47 @@ class App:
 
         # Enviroment variabless
         config.update(os.environ)
+
+        # Parse arguments
+        config.update(App._parse_args())
         return config
 
-    def run(self):
-        """
-        Application entry point
-        """
-        # self.feed = BinanceCandlesFeed(spot_client=self.client, tickers = self.tickers)
-        self.broker = BinanceBroker(client=self.client, config=self.config)
-        # AppTools.close_opened_posisions(self.broker, self.config["biml.tickers"])
+    @staticmethod
+    def _parse_args() -> Dict[str, str]:
+        """ Parse command line arguments"""
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--biml.strategy', help='Strategy class name')
+        return vars(parser.parse_args())
 
-        # Create strategy class
+    def _init_client(self):
+        """ Binance spot client creation. Each strategy can be configured at it's own account"""
+
+        strategy = self.config["biml.strategy"].lower()
+        key = self.config[f"biml.connector.{strategy}.key"]
+        secret = self.config[f"biml.connector.{strategy}.secret"]
+        url = self.config["biml.connector.url"]
+        self._log.info(f"Init binance client for strategy: {strategy}, url: {url}")
+        self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
+
+    def _create_strategy(self):
+        """ Create strategy class"""
+
         strategy_file = f"strategy." + self.config["biml.strategy"]
         strategy_class_name = strategy_file.split(".")[-1]
         self._log.info(f"Running the app with strategy from {strategy_file} import {strategy_class_name}")
         module = importlib.import_module(strategy_file, strategy_class_name)
         strategy = getattr(module, strategy_class_name)(broker=self.broker, config=self.config)
-        # Run
-        strategy.run(self.client)
+        return strategy
+
+    def run(self):
+        """
+        Application entry point
+        """
+        self.broker = BinanceBroker(client=self.client, config=self.config)
+        self.strategy = self._create_strategy()
+
+        # Run and wait until the end
+        self.strategy.run(self.client)
 
         self._log.info("The end")
 

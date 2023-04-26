@@ -1,22 +1,26 @@
 version: "3.9"
 services:
-#  downloader:
-#    container_name: biml-downloader
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    volumes:
-#      - ./data:/data
-#    command: python ./Downloader.py
-#    restart: on-failure
 
   trade:
     container_name: biml-trade-bot
+    profiles: []
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - ./data:/data
       - ./model:/model
-    command: python ./App.py
+    command: python ./App.py --strategy None
     restart: on-failure
+
+  simplekeras:
+    container_name: biml-simple-keras-strategy
+    extends:
+      service: trade
+    command: python ./App.py --biml.strategy SimpleKerasStrategy
+
+  lstm:
+    container_name: biml-lstm-strategy
+    extends:
+      service: trade
+    command: python ./App.py --biml.strategy LSTMStrategy
