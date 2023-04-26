@@ -193,8 +193,8 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
                 bid_ask_since_last_learn, self.level2, self.predict_window)
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}")
-            model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
             if not train_X.empty:
+                model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
                 model.fit(train_X, train_y)
                 self.model = model
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
