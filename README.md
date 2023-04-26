@@ -1,5 +1,5 @@
 # biml
-**Bi**nance **M**achine **L**earning crypto trading bot.
+**Bi**nance **M**achine **L**earning - crypto trading AI bot.
 ## Quick start
 1. Copy default config **biml/cfg/app-defaults.yaml** to your new config  **biml/cfg/app.yaml**
 2. To use virtual Binance account, create your api key here https://testnet.binance.vision/
