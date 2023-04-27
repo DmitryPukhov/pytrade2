@@ -2,7 +2,6 @@ version: "3.9"
 services:
 
   trade:
-    container_name: biml-trade-bot
     profiles: []
     build:
       context: .
@@ -14,13 +13,13 @@ services:
     restart: on-failure
 
   simplekeras:
-    container_name: biml-simple-keras-strategy
+    container_name: biml-simplekeras
     extends:
       service: trade
     command: python ./App.py --biml.strategy SimpleKerasStrategy
 
   lstm:
-    container_name: biml-lstm-strategy
+    container_name: biml-lstm
     extends:
       service: trade
     command: python ./App.py --biml.strategy LSTMStrategy
