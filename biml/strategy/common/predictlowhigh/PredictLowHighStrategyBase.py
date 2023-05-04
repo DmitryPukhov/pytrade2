@@ -3,6 +3,10 @@ from typing import Dict, List
 
 import numpy as np
 import pandas as pd
+from keras.preprocessing.sequence import TimeseriesGenerator
+from numpy import ndarray
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from feed.BaseFeed import BaseFeed
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
@@ -38,14 +42,25 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
 
         self.profit_loss_ratio = 2
         # stop loss should be above price * min_stop_loss_coeff
-        self.min_stop_loss_coeff = 0.00005 # 0.00005 for BTCUSDT 30000 means 1,5
+        self.min_stop_loss_coeff = 0.00005  # 0.00005 for BTCUSDT 30000 means 1,5
         self.max_stop_loss_coeff = 0.005  # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
+        self.X_pipe: Pipeline = None
+        self.y_pipe: Pipeline = None
         self._log.info(
             f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
             f"min stop loss coeff: {self.min_stop_loss_coeff}, max stop loss coeff: {self.max_stop_loss_coeff}")
+
+    def pipe_of(self, X, y) -> (Pipeline, Pipeline):
+        """ Create feature and target pipelines to use for transform and inverse transform """
+        x_pipe = Pipeline(
+            [("xscaler", StandardScaler())])
+        y_pipe = Pipeline(
+            [("yscaler", StandardScaler())])
+
+        return x_pipe, y_pipe
 
     def run(self, client):
         """
@@ -60,13 +75,15 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         Got new order book items event
         """
         new_df = pd.DataFrame(level2, columns=BaseFeed.bid_ask_columns).set_index("datetime", drop=False)
-        self.level2 = self.level2.append(new_df)
+        self.level2 = pd.concat([self.level2, new_df])  # self.level2.append(new_df)
         # self.learn_or_skip()
         # self.process_new_data()
 
     def on_ticker(self, ticker: dict):
         new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime")
-        self.bid_ask = self.bid_ask.append(new_df)
+        self.bid_ask = pd.concat([self.bid_ask, new_df])
+
+        # self.bid_ask = self.bid_ask.append(new_df)
         self.learn_or_skip()
         self.process_new_data()
 
@@ -159,9 +176,13 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
             return 0, None, None
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2)
-        # todo: model predicts bid_diff_fut, ask_diff_fut
-        y = self.model.predict(X, verbose=0) if not X.empty else [[np.nan, np.nan, np.nan, np.nan]]
+        # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
+        X, X_prepared = self.prepare_last_X()
+        # Predict
+        y = self.model.predict(X_prepared, verbose=0) if not X.empty else [[np.nan, np.nan, np.nan, np.nan]]
+
+        # Get prediction result
+        y = self.y_pipe.inverse_transform(y)
         (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1] if y.shape[0] < 2 else y
         y_df = self.bid_ask.loc[X.index][["bid", "ask"]]
         y_df["bid_max_fut"] = y_df["bid"] + bid_max_fut_diff
@@ -181,6 +202,16 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
             return False
         return True
 
+    def generator_of(self, train_X, train_y):
+        """ Data generator for learning """
+        return TimeseriesGenerator(train_X, train_y, length=1,
+                                   sampling_rate=1, batch_size=1)
+
+    def prepare_last_X(self) -> (pd.DataFrame, ndarray):
+        """ Get last X for prediction"""
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2, 1)
+        return X, self.X_pipe.transform(X)
+
     def learn(self):
         if self.is_learning:
             return
@@ -194,10 +225,19 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}")
             if not train_X.empty:
-                model = self.create_pipe(train_X, train_y, 1, 1) if not self.model else self.model
-                model.fit(train_X, train_y)
-                self.model = model
+                model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
+                # Final scaling and normalization
+                if not self.X_pipe or not self.y_pipe:
+                    self.X_pipe, self.y_pipe = self.pipe_of(train_X, train_y)
+                self.X_pipe.fit(train_X)
+                self.y_pipe.fit(train_y)
+                gen = self.generator_of(self.X_pipe.transform(train_X), self.y_pipe.transform(train_y))
+                # Train
+                model.fit(gen)
+                self.model = model
+
+                # Save weights
                 self.save_model()
                 # # Clear the data, already used for learning
                 # self.bid_ask = self.bid_ask[self.bid_ask.index > train_X.index.max()]
@@ -205,4 +245,3 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
 
         finally:
             self.is_learning = False
-

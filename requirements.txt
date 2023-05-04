@@ -1,12 +1,12 @@
 binance-futures-connector==3.1.1
 binance-connector==1.13.0
-pandas~=1.2.1
+pandas~=2.0.1
 PyYAML~=5.3.1
 requests~=2.27.1
 urllib3~=1.25.8
-tensorflow~=2.8.0
-keras~=2.8.0
+tensorflow~=2.12.0
+keras~=2.12.0
 numpy~=1.23.3
 scikit-learn~=1.1.1
-scikeras~=0.8.0
+scikeras~=0.4.1
 sqlalchemy~=2.0.3

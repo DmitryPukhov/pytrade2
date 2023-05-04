@@ -1,14 +1,9 @@
 from typing import Dict
 
-import pandas as pd
-
-from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
-from scikeras.wrappers import KerasRegressor
-from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+
+from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
 class SimpleKerasStrategy(PredictLowHighStrategyBase):
@@ -37,19 +32,3 @@ class SimpleKerasStrategy(PredictLowHighStrategyBase):
         self.load_last_model(model)
         # model.summary()
         return model
-
-    def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
-        # Fit the model
-        regressor = KerasRegressor(model=self.create_model(X_size=len(X.columns), y_size=len(y.columns)),
-                                   epochs=epochs, batch_size=batch_size, verbose=1)
-        column_transformer = ColumnTransformer(
-            [
-                ('xscaler', StandardScaler(), X.columns)
-                # ('yscaler', StandardScaler(), y.columns)
-                # ('cat_encoder', OneHotEncoder(handle_unknown="ignore"), y.columns)
-            ]
-        )
-
-        pipe = Pipeline([("column_transformer", column_transformer), ('model', regressor)])
-        wrapped = TransformedTargetRegressor(regressor=pipe, transformer=StandardScaler())
-        return wrapped

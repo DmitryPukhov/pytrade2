@@ -1,14 +1,14 @@
 from typing import Dict
 
+import numpy as np
 import pandas as pd
-
-from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
-from keras import Sequential, Input
+from keras import Sequential
 from keras.layers import Dense, Dropout, LSTM
-from scikeras.wrappers import KerasRegressor
-from sklearn.compose import ColumnTransformer, TransformedTargetRegressor
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, FunctionTransformer
+from keras.preprocessing.sequence import TimeseriesGenerator
+from numpy import ndarray
+
+from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
 class LSTMStrategy(PredictLowHighStrategyBase):
@@ -18,41 +18,32 @@ class LSTMStrategy(PredictLowHighStrategyBase):
 
     def __init__(self, broker, config: Dict):
         PredictLowHighStrategyBase.__init__(self, broker, config)
-        # todo: change to lstm window
-        self.window_size = 1
+        # lstm window
+        self.lstm_window_size = 10
 
     def create_model(self, X_size, y_size):
         model = Sequential()
-        model.add(LSTM(128, return_sequences=True, input_shape=(self.window_size, X_size)))
+        model.add(LSTM(128, return_sequences=True, input_shape=(self.lstm_window_size, X_size)))
         model.add(Dropout(0.2))
         model.add(LSTM(32))
         model.add(Dropout(0.2))
         model.add(Dense(20, activation='relu'))
         model.add(Dense(y_size, activation='linear'))
-        # model.add(Dense(y_train.shape[1], activation='softmax'))
+        # model.add(Dense(y_size, activation='softmax'))
         model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['mean_squared_error'])
         # Load weights
         self.load_last_model(model)
         # model.summary()
         return model
 
-    def create_pipe(self, X: pd.DataFrame, y: pd.DataFrame, epochs: int, batch_size: int) -> TransformedTargetRegressor:
+    def prepare_last_X(self) -> (pd.DataFrame, ndarray):
+        """ Reshape last features to lstm window"""
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2, self.lstm_window_size)
+        X_trans = self.X_pipe.transform(X)
+        X_reshaped = np.reshape(X_trans, (-1, self.lstm_window_size, X_trans.shape[1]))
+        return X, X_reshaped
 
-        # If put reshape() func to class level, multithreading error occurs with FunctionTransformer
-        def reshape(data):
-            return data.reshape(data.shape[0], self.window_size, data.shape[1])
-
-        model = self.create_model(X_size=X.values.shape[1], y_size=y.values.shape[1])
-        regressor = KerasRegressor(model=model, epochs=epochs, batch_size=self.window_size * batch_size, verbose=1)
-
-        xpipe = Pipeline([('xscaler', StandardScaler()),
-                          ('reshape', FunctionTransformer(reshape, validate=False)),
-                          ('model', regressor)])
-        ypipe = Pipeline([
-            ('yscaler', StandardScaler())
-            # ('reshape', FunctionTransformer(reshape, validate=False))
-        ])
-
-        # Add y transformer
-        wrapped = TransformedTargetRegressor(regressor=xpipe, transformer=ypipe)
-        return wrapped
+    def generator_of(self, train_X, train_y):
+        """ Learning data generator. Override here to return shapes with lstm window"""
+        return TimeseriesGenerator(train_X, train_y, length=self.lstm_window_size,
+                                   sampling_rate=1, batch_size=1)

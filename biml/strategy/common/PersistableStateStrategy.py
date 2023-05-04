@@ -38,7 +38,8 @@ class PersistableStateStrategy:
 
     def save_model(self):
         # Save the model
-        model: Model = self.model.regressor.named_steps["model"].model
+        #model: Model = self.model.regressor.named_steps["model"].model
+        model = self.model
 
         model_path = str(Path(self.model_weights_dir, datetime.utcnow().isoformat()))
         self._log.debug(f"Save model to {model_path}")
@@ -62,9 +63,9 @@ class PersistableStateStrategy:
         """
         Write X,y, data to csv for analysis
         """
-        self.X_buf = self.X_buf.append(X_last)
-        self.y_buf = self.y_buf.append(y_pred_last)
-        self.data_buf = self.data_buf.append(data_last)
+        self.X_buf = pd.concat([self.X_buf, X_last])
+        self.y_buf = pd.concat([self.y_buf, y_pred_last])
+        self.data_buf = pd.concat([self.data_buf, data_last])
 
         if datetime.utcnow() - self.last_save_time < self.save_interval:
             return
