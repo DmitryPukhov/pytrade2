@@ -2,6 +2,7 @@ import importlib
 import logging.config
 import argparse
 import os
+
 import sys
 from typing import Dict
 
@@ -18,6 +19,9 @@ class App:
     """
 
     def __init__(self):
+        # Suppress tensorflow log rubbish
+        os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "1")
+
         self._log = logging.getLogger(self.__class__.__name__)
         # For pandas printing to log
         pd.set_option('display.max_colwidth', None)
