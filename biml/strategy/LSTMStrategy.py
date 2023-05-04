@@ -19,7 +19,8 @@ class LSTMStrategy(PredictLowHighStrategyBase):
     def __init__(self, broker, config: Dict):
         PredictLowHighStrategyBase.__init__(self, broker, config)
         # lstm window
-        self.lstm_window_size = 10
+        self.lstm_window_size = config["biml.strategy.lstm.window.size"]
+        self._log.info(f"LSTM window size: {self.lstm_window_size}")
 
     def create_model(self, X_size, y_size):
         model = Sequential()
