@@ -225,7 +225,8 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}")
             if not train_X.empty:
-                model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
+                if not self.model:
+                    self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
                 # Final scaling and normalization
                 if not self.X_pipe or not self.y_pipe:
@@ -234,8 +235,7 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
                 self.y_pipe.fit(train_y)
                 gen = self.generator_of(self.X_pipe.transform(train_X), self.y_pipe.transform(train_y))
                 # Train
-                model.fit(gen)
-                self.model = model
+                self.model.fit(gen)
 
                 # Save weights
                 self.save_model()
