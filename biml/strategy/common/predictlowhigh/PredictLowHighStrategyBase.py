@@ -47,19 +47,17 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
-        self.X_pipe: Pipeline = None
-        self.y_pipe: Pipeline = None
+        self.X_pipe, self.y_pipe = self.create_pipe()
         self._log.info(
             f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
             f"min stop loss coeff: {self.min_stop_loss_coeff}, max stop loss coeff: {self.max_stop_loss_coeff}")
 
-    def pipe_of(self, X, y) -> (Pipeline, Pipeline):
+    def create_pipe(self) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
         x_pipe = Pipeline(
             [("xscaler", StandardScaler())])
         y_pipe = Pipeline(
             [("yscaler", StandardScaler())])
-
         return x_pipe, y_pipe
 
     def run(self, client):
@@ -179,7 +177,9 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
         X, X_prepared = self.prepare_last_X()
         # Predict
-        y = self.model.predict(X_prepared, verbose=0) if not X.empty else [[np.nan, np.nan, np.nan, np.nan]]
+        #y = self.model.predict(X_prepared, verbose=0) if not X.empty else [[np.nan, np.nan, np.nan, np.nan]]
+        y = self.model.predict(X_prepared, verbose=0) if not X.empty else np.ndarray[np.nan, np.nan, np.nan, np.nan]
+        y = y.reshape((-1,4))
 
         # Get prediction result
         y = self.y_pipe.inverse_transform(y)
@@ -229,8 +229,6 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
                 # Final scaling and normalization
-                if not self.X_pipe or not self.y_pipe:
-                    self.X_pipe, self.y_pipe = self.pipe_of(train_X, train_y)
                 self.X_pipe.fit(train_X)
                 self.y_pipe.fit(train_y)
                 gen = self.generator_of(self.X_pipe.transform(train_X), self.y_pipe.transform(train_y))

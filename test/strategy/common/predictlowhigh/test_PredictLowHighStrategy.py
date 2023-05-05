@@ -8,6 +8,7 @@ import pandas as pd
 
 from broker.BinanceBroker import BinanceBroker
 from broker.model.Trade import Trade
+from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
 from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
@@ -37,7 +38,8 @@ class TestPredictLowHighStrategy(TestCase):
             """ Don't trade, just emulate """
             self.cur_trade = Trade(ticker=symbol, side=Trade.order_side_names.get(direction),
                                    open_time=datetime.utcnow(), open_price=price, open_order_id=None,
-                                   stop_loss_price=stop_loss_price, take_profit_price=take_profit_price, stop_loss_order_id=None,
+                                   stop_loss_price=stop_loss_price, take_profit_price=take_profit_price,
+                                   stop_loss_order_id=None,
                                    quantity=quantity)
 
         def end_cur_trade(self):
@@ -73,6 +75,8 @@ class TestPredictLowHighStrategy(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'ask': 0.9, 'ask_vol': 1},
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
+        strategy.X_pipe.fit(PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2))
+        strategy.y_pipe.fit(PredictLowHighFeatures.targets_of(strategy.bid_ask, predict_window='1s'))
 
         # Call tested method, strategy should process last bidask record
         strategy.process_new_data()
@@ -89,13 +93,15 @@ class TestPredictLowHighStrategy(TestCase):
         strategy.bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",
              "bid": 5, "bid_vol": 6, "ask": 7, "ask_vol": 8},
-            {"datetime": datetime.fromisoformat("2023-03-17 15:56:02"), "symbol": "asset1",
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:12"), "symbol": "asset1",
              "bid": 5, "bid_vol": 6, "ask": 7, "ask_vol": 8}
         ]).set_index("datetime", drop=False)
         strategy.level2 = pd.DataFrame([
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'ask': 0.9, 'ask_vol': 1},
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
+        strategy.X_pipe.fit(PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2))
+        strategy.y_pipe.fit(PredictLowHighFeatures.targets_of(strategy.bid_ask))
 
         X, y = strategy.predict_low_high()
         self.assertEqual(y.index.to_pydatetime().tolist(), strategy.bid_ask.tail(1).index.to_pydatetime().tolist())
@@ -121,7 +127,7 @@ class TestPredictLowHighStrategy(TestCase):
         open_signal = strategy.process_new_prediction()
 
         self.assertEqual(1, open_signal)
-        #self.assertEqual(0, close_signal)
+        # self.assertEqual(0, close_signal)
         self.assertIsNotNone(strategy.broker.cur_trade)
         self.assertEqual(1, strategy.broker.cur_trade.direction())
 
@@ -172,4 +178,3 @@ class TestPredictLowHighStrategy(TestCase):
         self.assertEqual(0, actual_signal)
         self.assertIsNone(actual_loss)
         self.assertIsNone(actual_profit)
-
