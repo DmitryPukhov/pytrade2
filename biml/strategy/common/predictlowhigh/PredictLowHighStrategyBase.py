@@ -141,10 +141,9 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         open_signal = 0
         if not self.broker.cur_trade:
             # Maybe open a new order
-            open_signal, stop_loss, take_profit = self.get_signal(bid, ask, bid_min_fut, bid_max_fut, ask_min_fut,
+            open_signal, open_price, stop_loss, take_profit = self.get_signal(bid, ask, bid_min_fut, bid_max_fut, ask_min_fut,
                                                                   ask_max_fut)
             if open_signal:
-                open_price = [bid, None, ask][open_signal + 1]
                 self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
                                              price=open_price,
                                              stop_loss_price=stop_loss,
@@ -160,15 +159,14 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         buy_loss = ask - bid_min_fut
         sell_profit = bid - ask_min_fut
         sell_loss = ask_max_fut - bid
-
         if buy_profit / buy_loss >= self.profit_loss_ratio \
                 and self.max_stop_loss_coeff * ask >= abs(buy_loss) >= self.min_stop_loss_coeff * ask:
             # Buy and possibly fix the loss
-            return 1, ask - abs(buy_loss), ask + buy_profit
+            return 1,ask, ask - abs(buy_loss), ask + buy_profit
         elif sell_profit / sell_loss >= self.profit_loss_ratio \
                 and self.max_stop_loss_coeff * bid >= abs(sell_loss) >= self.min_stop_loss_coeff * bid:
             # Sell and possibly fix the loss
-            return -1, bid + abs(sell_loss), bid - sell_profit
+            return -1, bid,bid + abs(sell_loss), bid - sell_profit
         else:
             # No action
             return 0, None, None
