@@ -204,8 +204,7 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
 
     def generator_of(self, train_X, train_y):
         """ Data generator for learning """
-        return TimeseriesGenerator(train_X, train_y, length=1,
-                                   sampling_rate=1, batch_size=1)
+        return TimeseriesGenerator(train_X, train_y, length=1)
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""

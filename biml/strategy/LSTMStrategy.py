@@ -46,5 +46,4 @@ class LSTMStrategy(PredictLowHighStrategyBase):
 
     def generator_of(self, train_X, train_y):
         """ Learning data generator. Override here to return shapes with lstm window"""
-        return TimeseriesGenerator(train_X, train_y, length=self.lstm_window_size,
-                                   sampling_rate=1, batch_size=1)
+        return TimeseriesGenerator(train_X, train_y, length=self.lstm_window_size)
