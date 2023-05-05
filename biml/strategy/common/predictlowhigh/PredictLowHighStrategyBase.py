@@ -152,7 +152,7 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         return open_signal
 
     def get_signal(self, bid: float, ask: float, bid_min_fut: float, bid_max_fut: float, ask_min_fut: float,
-                   ask_max_fut: float) -> (int, float, float):
+                   ask_max_fut: float) -> (int, float, float, float):
         """ Calculate buy, sell or nothing signal based on predictions and profit/loss ratio
         :return (<-1 for sell, 0 for none, 1 for buy>, stop loss, take profit)"""
 
@@ -174,7 +174,7 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
             return -1, price_adj, stop_loss_adj, bid - sell_profit
         else:
             # No action
-            return 0, None, None
+            return 0, None, None, None
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization

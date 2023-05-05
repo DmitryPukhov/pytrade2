@@ -136,7 +136,7 @@ class TestPredictLowHighStrategy(TestCase):
         # Strategy with profit/loss ratio = 4
         strategy = self.StrategyStub()
 
-        actual_signal, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=9,
+        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=9,
                                                                         bid_max_fut=18.9, ask_min_fut=0,
                                                                         ask_max_fut=0)
         self.assertEqual(0, actual_signal)
@@ -173,7 +173,7 @@ class TestPredictLowHighStrategy(TestCase):
         # Strategy with profit/loss ratio = 4
         strategy = self.StrategyStub()
 
-        actual_signal, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=0,
+        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=0,
                                                                         bid_max_fut=0, ask_max_fut=12,
                                                                         ask_min_fut=2.1)
 
