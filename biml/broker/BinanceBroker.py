@@ -134,6 +134,7 @@ class BinanceBroker:
 
         self.last_trade_time = datetime.utcnow()
         side = self.order_side_names[direction]
+        price = round(price, self.price_precision)
 
         self._log.info(
             f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity},"
