@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict
@@ -136,21 +137,29 @@ class BinanceBroker:
         side = self.order_side_names[direction]
         price = round(price, self.price_precision)
 
+        max_attempts = 3
+        res = {}
         self._log.info(
             f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity},"
             f" stop loss: {stop_loss_price}, take profit: {take_profit_price}")
-        # Main buy or sell order
-        res = self.client.new_order(
-            symbol=symbol,
-            side=side,
-            type="LIMIT",
-            price=price,
-            quantity=quantity,
-            timeInForce="FOK"  # Fill or kill
-        )
-        self._log.debug(f"Create order raw response: {res}")
+        for attempt in range(1, max_attempts + 1):
+            # Main buy or sell order
+            res = self.client.new_order(
+                symbol=symbol,
+                side=side,
+                type="LIMIT",
+                price=price,
+                quantity=quantity,
+                timeInForce="FOK"  # Fill or kill
+            )
+            self._log.debug(f"Create order raw response: {res}")
+            if res["status"] == "FILLED":
+                break
+            self._log.info(f"Order creation attempt {attempt} failed. Max attempts: {max_attempts}")
+            time.sleep(1)
+
         if res["status"] != "FILLED":
-            self._log.info(f"Cannot create {symbol} {side} order at price {price}, that's ok.")
+            self._log.info(f"Cannot create {symbol} {side} order at price {price}, attempts:{max_attempts}, that's ok.")
             return
 
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
