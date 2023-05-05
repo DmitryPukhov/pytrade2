@@ -114,8 +114,8 @@ class TestPredictLowHighStrategy(TestCase):
                                                                         bid_min_fut=9, ask_min_fut=0,
                                                                         ask_max_fut=0)
         self.assertEqual(1, actual_signal)
-        self.assertEqual(11, price)
-        self.assertEqual(9, actual_loss)
+        self.assertEqual(10.5, price) # sl=2, price_adj = ask-sl*0.25
+        self.assertEqual(8.5, actual_loss) # price - sl*1.25
         self.assertEqual(19, actual_profit)
 
     def test_process_new_prediction__should_buy(self):
@@ -152,8 +152,8 @@ class TestPredictLowHighStrategy(TestCase):
                                                                         ask_max_fut=12)
 
         self.assertEqual(-1, actual_signal)
-        self.assertEqual(10, price)
-        self.assertEqual(12, actual_loss)
+        self.assertEqual(10.5, price) # Adjusted price + sl*0.25
+        self.assertEqual(12.5, actual_loss) # adjusted sl*1.25
         self.assertEqual(2, actual_profit)
 
     def test_process_new_prediction__should_sell(self):

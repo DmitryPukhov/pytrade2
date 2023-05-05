@@ -141,8 +141,9 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         open_signal = 0
         if not self.broker.cur_trade:
             # Maybe open a new order
-            open_signal, open_price, stop_loss, take_profit = self.get_signal(bid, ask, bid_min_fut, bid_max_fut, ask_min_fut,
-                                                                  ask_max_fut)
+            open_signal, open_price, stop_loss, take_profit = self.get_signal(bid, ask, bid_min_fut, bid_max_fut,
+                                                                              ask_min_fut,
+                                                                              ask_max_fut)
             if open_signal:
                 self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
                                              price=open_price,
@@ -162,11 +163,15 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         if buy_profit / buy_loss >= self.profit_loss_ratio \
                 and self.max_stop_loss_coeff * ask >= abs(buy_loss) >= self.min_stop_loss_coeff * ask:
             # Buy and possibly fix the loss
-            return 1,ask, ask - abs(buy_loss), ask + buy_profit
+            stop_loss_adj = ask - abs(buy_loss) * 1.25
+            price_adj = ask - abs(buy_loss) * 0.25
+            return 1, price_adj, stop_loss_adj, ask + buy_profit
         elif sell_profit / sell_loss >= self.profit_loss_ratio \
                 and self.max_stop_loss_coeff * bid >= abs(sell_loss) >= self.min_stop_loss_coeff * bid:
             # Sell and possibly fix the loss
-            return -1, bid,bid + abs(sell_loss), bid - sell_profit
+            stop_loss_adj = bid + abs(sell_loss) * 1.25
+            price_adj = bid + abs(sell_loss) * 0.25
+            return -1, price_adj, stop_loss_adj, bid - sell_profit
         else:
             # No action
             return 0, None, None
@@ -175,9 +180,9 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
         X, X_prepared = self.prepare_last_X()
         # Predict
-        #y = self.model.predict(X_prepared, verbose=0) if not X.empty else [[np.nan, np.nan, np.nan, np.nan]]
+        # y = self.model.predict(X_prepared, verbose=0) if not X.empty else [[np.nan, np.nan, np.nan, np.nan]]
         y = self.model.predict(X_prepared, verbose=0) if not X.empty else np.ndarray[np.nan, np.nan, np.nan, np.nan]
-        y = y.reshape((-1,4))
+        y = y.reshape((-1, 4))
 
         # Get prediction result
         y = self.y_pipe.inverse_transform(y)
