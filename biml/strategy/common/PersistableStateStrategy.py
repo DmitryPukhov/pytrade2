@@ -63,9 +63,9 @@ class PersistableStateStrategy:
         """
         Write X,y, data to csv for analysis
         """
-        self.X_buf = pd.concat([self.X_buf, X_last])
-        self.y_buf = pd.concat([self.y_buf, y_pred_last])
-        self.data_buf = pd.concat([self.data_buf, data_last])
+        self.X_buf = pd.concat([self.X_buf, X_last]).drop_duplicates()
+        self.y_buf = pd.concat([self.y_buf, y_pred_last]).drop_duplicates()
+        self.data_buf = pd.concat([self.data_buf, data_last]).drop_duplicates()
 
         if datetime.utcnow() - self.last_save_time < self.save_interval:
             return
