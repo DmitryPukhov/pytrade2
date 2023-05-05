@@ -164,14 +164,14 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
                 and self.max_stop_loss_coeff * ask >= abs(buy_loss) >= self.min_stop_loss_coeff * ask:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
-            price_adj = ask - abs(buy_loss) * 0.25
-            return 1, price_adj, stop_loss_adj, ask + buy_profit
+            #price_adj = ask - abs(buy_loss) * 0.25
+            return 1, ask, stop_loss_adj, ask + buy_profit
         elif sell_profit / sell_loss >= self.profit_loss_ratio \
                 and self.max_stop_loss_coeff * bid >= abs(sell_loss) >= self.min_stop_loss_coeff * bid:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
-            price_adj = bid + abs(sell_loss) * 0.25
-            return -1, price_adj, stop_loss_adj, bid - sell_profit
+            #price_adj = bid + abs(sell_loss) * 0.25
+            return -1, bid, stop_loss_adj, bid - sell_profit
         else:
             # No action
             return 0, None, None, None
