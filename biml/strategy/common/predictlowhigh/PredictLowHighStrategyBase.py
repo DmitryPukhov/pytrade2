@@ -6,7 +6,7 @@ import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 
 from feed.BaseFeed import BaseFeed
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
@@ -55,11 +55,12 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
     def create_pipe(self) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
         x_pipe = Pipeline(
-            [("xscaler", StandardScaler())])
+            [("xrs", RobustScaler()),  # Remove outliers
+             ("xmms", MinMaxScaler())])  # Equal scales for the features
         y_pipe = Pipeline(
-            [("yscaler", StandardScaler())])
+            [("yrs", RobustScaler()),  # Remove outliers
+             ("ymms", MinMaxScaler())])  # Eaual scales for the features
         return x_pipe, y_pipe
-
     def run(self, client):
         """
         Attach to the feed and listen
