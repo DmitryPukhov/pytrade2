@@ -1,13 +1,12 @@
 import datetime
+import logging
 from typing import List, Dict
 
 import pandas as pd
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
-from feed.BaseFeed import BaseFeed
 
-
-class BinanceWebsocketFeed(BaseFeed):
+class BinanceWebsocketFeed:
     """
     Binance price data feed. Read data from binance, provide pandas dataframes with that data
     """
@@ -15,7 +14,8 @@ class BinanceWebsocketFeed(BaseFeed):
     bid_ask_columns = ["datetime", "symbol", "bid", "bid_vol", "ask", "ask_vol"]
 
     def __init__(self, tickers: List[str]):
-        super().__init__()
+        self.consumers = []
+        self._log = logging.getLogger(self.__class__.__name__)
         self.tickers = tickers
 
     def run(self):
@@ -75,5 +75,3 @@ class BinanceWebsocketFeed(BaseFeed):
             out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "ask": float(msg["a"]),
                         "ask_vol": float(msg["A"])})
         return out
-        # return {"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": msg["b"], "bid_qty": msg["B"],
-        #         "ask": msg["a"], "ask_qty": msg["A"]}

@@ -8,7 +8,6 @@ from numpy import ndarray
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 
-from feed.BaseFeed import BaseFeed
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
@@ -73,7 +72,7 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         """
         Got new order book items event
         """
-        new_df = pd.DataFrame(level2, columns=BaseFeed.bid_ask_columns).set_index("datetime", drop=False)
+        new_df = pd.DataFrame(level2, columns=BinanceWebsocketFeed.bid_ask_columns).set_index("datetime", drop=False)
         self.level2 = pd.concat([self.level2, new_df])  # self.level2.append(new_df)
         # self.learn_or_skip()
         # self.process_new_data()
@@ -165,13 +164,11 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
                 and self.max_stop_loss_coeff * ask >= abs(buy_loss) >= self.min_stop_loss_coeff * ask:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
-            #price_adj = ask - abs(buy_loss) * 0.25
             return 1, ask, stop_loss_adj, ask + buy_profit
         elif sell_profit / sell_loss >= self.profit_loss_ratio \
                 and self.max_stop_loss_coeff * bid >= abs(sell_loss) >= self.min_stop_loss_coeff * bid:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
-            #price_adj = bid + abs(sell_loss) * 0.25
             return -1, bid, stop_loss_adj, bid - sell_profit
         else:
             # No action
@@ -181,7 +178,6 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
         X, X_prepared = self.prepare_last_X()
         # Predict
-        # y = self.model.predict(X_prepared, verbose=0) if not X.empty else [[np.nan, np.nan, np.nan, np.nan]]
         y = self.model.predict(X_prepared, verbose=0) if not X.empty else np.ndarray[np.nan, np.nan, np.nan, np.nan]
         y = y.reshape((-1, 4))
 
