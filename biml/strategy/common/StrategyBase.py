@@ -8,12 +8,9 @@ class StrategyBase:
     def __init__(self, broker: BinanceBroker, config):
         # Binance spot client
         self._log = logging.getLogger(self.__class__.__name__)
-        self.order_quantity = 0.001
+        self.order_quantity = config["biml.order.quantity"]
         self.broker = broker
         self.model = None
-
-        # self.tickers = AppTools.read_candles_tickers(config)
-        # self.ticker: str = self.tickers[-1].ticker
 
     def process_new_data(self):
         if self.broker.cur_trade and self.broker.cur_trade.close_time:

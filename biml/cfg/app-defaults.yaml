@@ -8,3 +8,4 @@ log.level: "INFO"
 biml.tickers: "BTCUSDT"
 biml.broker.trade.allow: true
 biml.strategy.lstm.window.size: 10
+biml.order.quantity: 0.0001

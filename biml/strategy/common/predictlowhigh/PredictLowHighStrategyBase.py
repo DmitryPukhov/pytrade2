@@ -60,6 +60,7 @@ class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, Persista
             [("yrs", RobustScaler()),  # Remove outliers
              ("ymms", MinMaxScaler())])  # Eaual scales for the features
         return x_pipe, y_pipe
+
     def run(self, client):
         """
         Attach to the feed and listen
