@@ -34,15 +34,20 @@ class BinanceWebsocketFeed(BaseFeed):
     def level2_callback(self, msg):
         if "result" in msg and not msg["result"]:
             return
-        for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
-            consumer.on_level2(self.rawlevel2model(msg))
+        try:
+            for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
+                consumer.on_level2(self.rawlevel2model(msg))
+        except Exception as e:
+            self._log.error(e)
 
     def ticker_callback(self, msg):
         if "result" in msg and not msg["result"]:
             return
-
-        for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
-            consumer.on_ticker(self.rawticker2model(msg))
+        try:
+            for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
+                consumer.on_ticker(self.rawticker2model(msg))
+        except Exception as e:
+            self._log.error(e)
 
     def rawticker2model(self, msg: Dict) -> Dict:
         return {"datetime": datetime.datetime.utcnow(),
