@@ -223,12 +223,11 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         self._log.debug("Learning")
         self.is_learning = True
         try:
-
             bid_ask_since_last_learn = self.bid_ask[self.bid_ask.index > self.last_learn_bidask_time]
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
                 bid_ask_since_last_learn, self.level2, self.predict_window)
             self._log.info(
-                f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}")
+                f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}, last bid_ask at: {self.bid_ask.index[-1]}")
             if not train_X.empty:
                 if not self.model:
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
