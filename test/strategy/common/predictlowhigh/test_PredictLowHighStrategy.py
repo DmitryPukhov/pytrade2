@@ -49,8 +49,10 @@ class TestPredictLowHighStrategy(TestCase):
         """ Strategy wrapper for tests """
 
         def __init__(self):
-            conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60, "biml.data.dir": "tmp",
-                    "biml.strategy.predict.window": "10s"}
+            conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60,
+                    "biml.data.dir": "tmp",
+                    "biml.strategy.predict.window": "10s",
+                    "biml.order.quantity": 0.001}
             super().__init__(None, conf)
             self.profit_loss_ratio = 4
             self.close_profit_loss_ratio = 2

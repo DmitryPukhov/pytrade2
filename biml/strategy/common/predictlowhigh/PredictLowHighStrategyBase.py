@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, List
 
@@ -11,18 +12,22 @@ from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
-from strategy.common.StrategyBase import StrategyBase
 from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
 
 
-class PredictLowHighStrategyBase(StrategyBase, PeriodicalLearnStrategy, PersistableStateStrategy):
+class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrategy):
     """
     Listen price data from web socket, predict future low/high
     """
 
     def __init__(self, broker, config: Dict):
+        self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
-        StrategyBase.__init__(self, broker, config)
+        self.order_quantity = config["biml.order.quantity"]
+        self._log.info(f"Order quantity: {self.order_quantity}")
+        self.broker = broker
+        self.model = None
+
         PeriodicalLearnStrategy.__init__(self, config)
         PersistableStateStrategy.__init__(self, config)
 

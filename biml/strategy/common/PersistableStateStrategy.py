@@ -10,6 +10,8 @@ from keras.models import Model
 
 
 class PersistableStateStrategy:
+    """ Strategy whicn can save the data and read/write model weights."""
+
     def __init__(self, config: Dict):
         self._log = logging.getLogger(self.__class__.__name__)
 

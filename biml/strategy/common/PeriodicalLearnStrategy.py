@@ -4,6 +4,8 @@ from threading import Thread
 
 
 class PeriodicalLearnStrategy:
+    """ Each learn interval this strategy fits on new data """
+
     def __init__(self, config):
         self._log = logging.getLogger(self.__class__.__name__)
         self.learn_interval: timedelta = timedelta(seconds=config['biml.strategy.learn.interval.sec'])
