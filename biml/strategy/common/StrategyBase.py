@@ -11,6 +11,7 @@ class StrategyBase:
         self.order_quantity = config["biml.order.quantity"]
         self.broker = broker
         self.model = None
+        self._log.info(f"Order quantity: {self.order_quantity}")
 
     def process_new_data(self):
         if self.broker.cur_trade and self.broker.cur_trade.close_time:
