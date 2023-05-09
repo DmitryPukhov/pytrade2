@@ -13,6 +13,6 @@ RUN pip install -r requirements.txt
 # copy the content of the local src directory to the working directory
 COPY biml/ .
 
-RUN rm ./cfg/app-dev.yaml
+RUN rm -f ./cfg/app-dev.yaml
 # command to run on container start
 #CMD [ "python", "./App.py" ]

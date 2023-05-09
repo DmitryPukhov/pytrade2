@@ -5,6 +5,9 @@
 /biml/cfg/app-dev.yaml
 /biml/cfg/*strategy.yaml
 
+/deploy/yandex_cloud/secret
+/deploy/yandex_cloud/tmp
+
 /test/_trial_temp
 /data
 /model
@@ -15,6 +18,14 @@
 # Idea
 .idea
 *.iml
+
+# Terraform
+*.tfvars
+.terraform.*
+.terraform
+terraform.tfstate
+terraform.tfstate.backup
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
