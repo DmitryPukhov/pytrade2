@@ -35,6 +35,7 @@ build_docker() {
 }
 
 build_baremetal() {
+    # In case of running without docker
     ssh $user@"$public_ip" "sudo apt install -y pip"
     ssh $user@"$public_ip" "cd /home/$user/biml ; sudo pip install -r requirements.txt"
 }
@@ -43,6 +44,4 @@ build_baremetal() {
 prepare_tmp
 copy_to_remote
 build_docker
-
-#
 
