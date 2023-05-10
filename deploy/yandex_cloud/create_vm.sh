@@ -1,10 +1,11 @@
 #!/bin/bash
+vm_name=biml-trade-bots
 
 create_instance() {
   echo "Creating virtual machine"
   yc compute instance create \
-    --name biml-trade-bots \
-    --hostname biml-trade-bots \
+    --name $vm_name \
+    --hostname $vm_name \
     --zone ru-central1-a \
     --memory 4 \
     --cores 2 \

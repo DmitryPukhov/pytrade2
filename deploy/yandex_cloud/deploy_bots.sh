@@ -31,7 +31,7 @@ copy_to_remote() {
 
 build_docker() {
   echo "Building biml at $public_ip"
-  ssh $user@"$public_ip" "cd /home/$user/biml ; sudo docker-compose build lstm"
+  ssh $user@"$public_ip" "cd /home/$user/biml ; sudo docker-compose build --force-recreate"
 }
 
 build_baremetal() {
