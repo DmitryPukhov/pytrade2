@@ -8,7 +8,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./data:/data
-      - ./model:/model
     command: python ./App.py --strategy None
     restart: on-failure
 
