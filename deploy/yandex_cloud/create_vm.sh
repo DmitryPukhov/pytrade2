@@ -29,7 +29,8 @@ install_baremetal() {
 
 # Create instance with docker
 create_instance
-public_ip="$(yc compute instance list | grep biml-trade-bot | awk '{print $10}')"
+yc compute instance start $vm_name
+public_ip="$(yc compute instance list | grep $vm_name | awk '{print $10}')"
 install_docker
 
 

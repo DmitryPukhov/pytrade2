@@ -1,5 +1,6 @@
 #!/bin/bash
-echo "Stopping biml vm"
-yc compute instance stop --name biml-trade-bots || true
+vm_name=biml-trade-bots
+echo "Stopping biml vm $vm_name"
+yc compute instance stop --name $vm_name || true
 echo "Deleting biml vm"
-yc compute instance delete --name biml-trade-bots
+yc compute instance delete --name $vm_name
