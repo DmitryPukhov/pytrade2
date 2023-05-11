@@ -1,4 +1,6 @@
-from sqlalchemy import DateTime, Column, Float, String
+from typing import Optional
+
+from sqlalchemy import DateTime, Column, Float, String, INT, BigInteger, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -14,19 +16,19 @@ class Trade(Base):
     __tablename__ = "trade"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    ticker: Mapped[str] = mapped_column()
-    side: Mapped[str] = mapped_column()
+    ticker: Mapped[str] = mapped_column(String)
+    side: Mapped[str] = mapped_column(String)
     open_time: Mapped[DateTime] = Column(DateTime)
-    open_price: Mapped[float]
-    open_order_id: Mapped[str]
-    stop_loss_price: Mapped[float] = Column(Float, default=None)
-    take_profit_price: Mapped[float] = Column(Float, default=None)
-    stop_loss_order_id: Mapped[str] = Column(String, default=None)
-    trailing_delta: Mapped[float] = Column(Float, default=None)
-    quantity: Mapped[int]
-    close_time: Mapped[DateTime] = Column(DateTime, default=None)
-    close_price: Mapped[float] = Column(Float, default=None)
-    close_order_id: Mapped[str] = Column(String, default=None)
+    open_price: Mapped[float] = mapped_column(Float)
+    open_order_id: Mapped[str] = mapped_column(String)
+    stop_loss_price: Mapped[float] = mapped_column(default=None)
+    take_profit_price: Mapped[float] = mapped_column(default=None)
+    stop_loss_order_id: Mapped[str] = mapped_column(default=None)
+    trailing_delta: Mapped[float] = mapped_column(default=None)
+    quantity: Mapped[float] = mapped_column()
+    close_time: Mapped[DateTime] = Column(DateTime, nullable=True)
+    close_price: Mapped[float] = mapped_column(default=None)
+    close_order_id: Mapped[str] = mapped_column(nullable=True)
 
     order_side_names = {1: "BUY", -1: "SELL"}
     order_side_codes = dict(map(reversed, order_side_names.items()))

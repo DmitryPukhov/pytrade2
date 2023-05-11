@@ -155,7 +155,7 @@ class BinanceBroker:
             self._log.info(f"Cannot create {symbol} {side} order at price {price}, that's ok.")
             return
 
-        order_id = res["orderId"]
+        order_id = str(res["orderId"])
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
         open_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
 
@@ -167,8 +167,8 @@ class BinanceBroker:
                                open_order_id=order_id,
                                quantity=quantity)
 
-        stop_loss_price_adj = filled_price - direction * abs(price - stop_loss_price)
-        take_profit_price_adj = filled_price + direction * abs(take_profit_price - price)
+        stop_loss_price_adj = round(float(filled_price - direction * abs(price - stop_loss_price)), self.price_precision)
+        take_profit_price_adj = round(float(filled_price + direction * abs(take_profit_price - price)), self.price_precision)
         self._log.info(f"{side} order filled_price={filled_price}, "
                        f"stop_loss_adj={stop_loss_price_adj}, take_profit_adj={take_profit_price_adj}")
         try:
@@ -181,9 +181,9 @@ class BinanceBroker:
                     base_price=filled_price,
                     stop_loss_price=stop_loss_price_adj,
                     take_profit_price=take_profit_price_adj)
-                self.cur_trade.stop_loss_price = stop_loss_price_adj,
-                self.cur_trade.take_profit_price = take_profit_price_adj,
-                self.cur_trade.stop_loss_order_id = stop_loss_order_id,
+                self.cur_trade.stop_loss_price = stop_loss_price_adj
+                self.cur_trade.take_profit_price = take_profit_price_adj
+                self.cur_trade.stop_loss_order_id = stop_loss_order_id
 
             else:
                 # Stop loss without take profit
@@ -193,8 +193,8 @@ class BinanceBroker:
                     quantity=quantity,
                     base_price=filled_price,
                     stop_loss_price=stop_loss_price_adj)
-                self.cur_trade.stop_loss_price = stop_loss_price_adj,
-                self.cur_trade.stop_loss_order_id = stop_loss_order_id,
+                self.cur_trade.stop_loss_price = stop_loss_price_adj
+                self.cur_trade.stop_loss_order_id = stop_loss_order_id
 
         except Exception as e:
             # If sl/tp order exception, close main order

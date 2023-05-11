@@ -166,6 +166,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         buy_loss = ask - bid_min_fut
         sell_profit = bid - ask_min_fut
         sell_loss = ask_max_fut - bid
+
         if buy_profit / buy_loss >= self.profit_loss_ratio \
                 and self.max_stop_loss_coeff * ask >= abs(buy_loss) >= self.min_stop_loss_coeff * ask:
             # Buy and possibly fix the loss
