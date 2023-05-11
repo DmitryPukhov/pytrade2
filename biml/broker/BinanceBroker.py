@@ -137,37 +137,38 @@ class BinanceBroker:
         side = self.order_side_names[direction]
         price = round(price, self.price_precision)
 
-        max_attempts = 3
         res = {}
         self._log.info(
             f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity},"
             f" stop loss: {stop_loss_price}, take profit: {take_profit_price}")
-        for attempt in range(1, max_attempts + 1):
-            # Main buy or sell order
-            res = self.client.new_order(
-                symbol=symbol,
-                side=side,
-                type="LIMIT",
-                price=price,
-                quantity=quantity,
-                timeInForce="FOK"  # Fill or kill
-            )
-            self._log.debug(f"Create order raw response: {res}")
-            if res["status"] == "FILLED":
-                break
-            self._log.info(f"Order creation attempt {attempt} failed. Max attempts: {max_attempts}")
-            time.sleep(1)
-
+        # Main buy or sell order
+        res = self.client.new_order(
+            symbol=symbol,
+            side=side,
+            type="LIMIT",
+            price=price,
+            quantity=quantity,
+            timeInForce="FOK"  # Fill or kill
+        )
+        self._log.debug(f"Create order raw response: {res}")
         if res["status"] != "FILLED":
-            self._log.info(f"Cannot create {symbol} {side} order at price {price}, attempts:{max_attempts}, that's ok.")
+            self._log.info(f"Cannot create {symbol} {side} order at price {price}, that's ok.")
             return
 
+        order_id = res["orderId"]
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
+        # Set cur trade to opened order with sl/tp
+        self.cur_trade = Trade(ticker=symbol,
+                               side=side,
+                               open_time=datetime.utcnow(),
+                               open_price=filled_price,
+                               open_order_id=order_id,
+                               quantity=quantity)
+
         stop_loss_price_adj = filled_price - direction * abs(price - stop_loss_price)
         take_profit_price_adj = filled_price + direction * abs(take_profit_price - price)
         self._log.info(f"{side} order filled_price={filled_price}, "
                        f"stop_loss_adj={stop_loss_price_adj}, take_profit_adj={take_profit_price_adj}")
-        order_id = res["orderId"]
         try:
             # stop_loss_order_id = None
             if take_profit_price:
@@ -179,6 +180,10 @@ class BinanceBroker:
                     base_price=filled_price,
                     stop_loss_price=stop_loss_price_adj,
                     take_profit_price=take_profit_price_adj)
+                self.cur_trade.stop_loss_price = stop_loss_price_adj,
+                self.cur_trade.take_profit_price = take_profit_price_adj,
+                self.cur_trade.stop_loss_order_id = stop_loss_order_id,
+
             else:
                 # Stop loss without take profit
                 stop_loss_order_id = self.create_sl_order(
@@ -187,32 +192,24 @@ class BinanceBroker:
                     quantity=quantity,
                     base_price=filled_price,
                     stop_loss_price=stop_loss_price_adj)
-
-            # Set cur trade to opened order with sl/tp
-            self.cur_trade = Trade(ticker=symbol,
-                                   side=side,
-                                   open_time=datetime.utcnow(),
-                                   open_price=filled_price,
-                                   open_order_id=order_id,
-                                   stop_loss_price=stop_loss_price_adj,
-                                   take_profit_price=take_profit_price_adj,
-                                   stop_loss_order_id=stop_loss_order_id,
-                                   quantity=quantity)
-            self.db_session.add(self.cur_trade)
-            self.db_session.commit()
-            self._log.info(f"Created new trade: {self.cur_trade}")
+                self.cur_trade.stop_loss_price = stop_loss_price_adj,
+                self.cur_trade.stop_loss_order_id = stop_loss_order_id,
 
         except Exception as e:
             # If sl/tp order exception, close main order
             logging.error(f"Stop loss or take profit order creation error: {e} ")
             logging.info(f"Closing created {self.order_side_names[direction]} order with id: f{order_id}")
-            self.client.new_order(
+            res = self.client.new_order(
                 symbol=symbol,
                 side=self.order_side_names[-direction],
                 type="MARKET",
                 quantity=quantity
             )
+            self.cur_trade.stop_loss_order_id = res["orderId"]
 
+        self.db_session.add(self.cur_trade)
+        self.db_session.commit()
+        self._log.info(f"Created new trade: {self.cur_trade}")
         return self.cur_trade
 
     def close_opened_trades(self):
@@ -291,14 +288,16 @@ class BinanceBroker:
         if not trade or trade.close_time:
             return trade
         last_trades = self.client.my_trades(symbol=trade.ticker, limit=3)
-        last_trade = ([t for t in last_trades if str(t["orderListId"]) == trade.stop_loss_order_id] or [None])[-1]
+        last_trade = ([t for t in last_trades if str(t["orderListId"]) == trade.stop_loss_order_id \
+                       or str(t["orderId"]) == trade.stop_loss_order_id] \
+                      or [None])[-1]
 
         if last_trade:
             # Update db
             trade.close_order_id = str(last_trade["orderId"])
             trade.close_price = float(last_trade["price"])
             trade.close_time = datetime.utcfromtimestamp(last_trade["time"] / 1000.0)
-            self._log.info(f"Current trade found closed by stop loss or take profit: {trade}")
+            self._log.info(f"Current trade found closed, probably by stop loss or take profit: {trade}")
             self.db_session.commit()
             if trade == self.cur_trade:
                 self.cur_trade = None
