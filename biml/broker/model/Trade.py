@@ -21,13 +21,13 @@ class Trade(Base):
     open_time: Mapped[DateTime] = Column(DateTime)
     open_price: Mapped[float] = mapped_column(Float)
     open_order_id: Mapped[str] = mapped_column(String)
-    stop_loss_price: Mapped[float] = mapped_column(default=None)
-    take_profit_price: Mapped[float] = mapped_column(default=None)
-    stop_loss_order_id: Mapped[str] = mapped_column(default=None)
-    trailing_delta: Mapped[float] = mapped_column(default=None)
+    stop_loss_price: Mapped[float] = mapped_column(nullable=True)
+    take_profit_price: Mapped[float] = mapped_column(nullable=True)
+    stop_loss_order_id: Mapped[str] = mapped_column(nullable=True)
+    trailing_delta: Mapped[float] = mapped_column(nullable=True)
     quantity: Mapped[float] = mapped_column()
     close_time: Mapped[DateTime] = Column(DateTime, nullable=True)
-    close_price: Mapped[float] = mapped_column(default=None)
+    close_price: Mapped[float] = mapped_column(nullable=True)
     close_order_id: Mapped[str] = mapped_column(nullable=True)
 
     order_side_names = {1: "BUY", -1: "SELL"}
