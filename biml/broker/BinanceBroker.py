@@ -157,10 +157,12 @@ class BinanceBroker:
 
         order_id = res["orderId"]
         filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
+        open_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
+
         # Set cur trade to opened order with sl/tp
         self.cur_trade = Trade(ticker=symbol,
                                side=side,
-                               open_time=datetime.utcnow(),
+                               open_time=open_time,
                                open_price=filled_price,
                                open_order_id=order_id,
                                quantity=quantity)
@@ -170,7 +172,6 @@ class BinanceBroker:
         self._log.info(f"{side} order filled_price={filled_price}, "
                        f"stop_loss_adj={stop_loss_price_adj}, take_profit_adj={take_profit_price_adj}")
         try:
-            # stop_loss_order_id = None
             if take_profit_price:
                 # Stop loss and take profit
                 stop_loss_order_id = self.create_sl_tp_order(
@@ -205,11 +206,23 @@ class BinanceBroker:
                 type="MARKET",
                 quantity=quantity
             )
-            self.cur_trade.stop_loss_order_id = res["orderId"]
+            # Set current trade closure fields
+            self.cur_trade.close_order_id = res["orderId"]
+            if res["status"] == "FILLED":
+                self.cur_trade.close_price = float(res["fills"][0]["price"])
+                self.cur_trade.close_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
 
+        # Persist order to db
         self.db_session.add(self.cur_trade)
         self.db_session.commit()
-        self._log.info(f"Created new trade: {self.cur_trade}")
+
+        if not self.cur_trade.close_time:
+            # If no error, order is not closed yet
+            self._log.info(f"Created new trade: {self.cur_trade}")
+        else:
+            # Order is closed in case of exception:
+            self._log.info(f"New trade closed due to sl/tp error: {self.cur_trade}")
+            self.cur_trade = None
         return self.cur_trade
 
     def close_opened_trades(self):
@@ -288,8 +301,10 @@ class BinanceBroker:
         if not trade or trade.close_time:
             return trade
         last_trades = self.client.my_trades(symbol=trade.ticker, limit=3)
-        last_trade = ([t for t in last_trades if str(t["orderListId"]) == trade.stop_loss_order_id \
-                       or str(t["orderId"]) == trade.stop_loss_order_id] \
+        last_trade = ([t for t in last_trades \
+                       if str(t["orderListId"]) == trade.stop_loss_order_id \
+                       or str(t["orderId"]) == trade.stop_loss_order_id \
+                       or str(t["orderId"]) == trade.close_order_id] \
                       or [None])[-1]
 
         if last_trade:

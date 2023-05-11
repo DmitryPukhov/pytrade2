@@ -95,18 +95,18 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         """ Update cur trade if sl or tp reached """
         if not self.broker.cur_trade:
             return
-        # Buy order is out of sl-tp interval
-        buy_close_flag = self.broker.cur_trade.direction() == 1 and \
-                         (self.broker.cur_trade.stop_loss_price >= bid or
-                          self.broker.cur_trade.take_profit_price <= bid)
-        # Sell order is out of sl-tp interval
-        sell_close_flag = self.broker.cur_trade.direction() == -1 and \
-                          (self.broker.cur_trade.stop_loss_price <= ask or
-                           self.broker.cur_trade.take_profit_price >= ask)
+        is_closable = False
+        sl, tp = self.broker.cur_trade.stop_loss_price, self.broker.cur_trade.take_profit_price
+        if self.broker.cur_trade.direction() == 1:
+            is_closable = not sl or sl >= bid or (tp and tp <= bid)
+        elif self.broker.cur_trade.direction() == -1:
+            is_closable = not sl or sl <= ask or (tp and tp >= ask)
+
         # Timeout from last check passed
         interval_flag = datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval
 
-        if interval_flag or (interval_flag and (buy_close_flag or sell_close_flag)):
+        # if interval_flag or (interval_flag and (buy_close_flag or sell_close_flag)):
+        if interval_flag and is_closable:
             self.broker.update_trade_status(self.broker.cur_trade)
             self.last_trade_check_time = datetime.utcnow()
 
