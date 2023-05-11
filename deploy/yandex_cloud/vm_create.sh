@@ -2,16 +2,15 @@
 vm_name=biml-trade-bots
 
 create_instance() {
-  echo "Creating virtual machine"
+  echo "Creating virtual machine $vm_name"
   yc compute instance create \
     --name $vm_name \
     --hostname $vm_name \
     --zone ru-central1-a \
-    --memory 4 \
+    --memory 6 \
     --cores 2 \
-    --core-fraction 50 \
     --network-interface subnet-name=default-ru-central1-a,nat-ip-version=ipv4 \
-    --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2204-lts,size=16 \
+    --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2204-lts,size=32 \
     --ssh-key ./secret/id_rsa.pub
 }
 
@@ -29,8 +28,7 @@ install_baremetal() {
 
 # Create instance with docker
 create_instance
-yc compute instance start $vm_name
-public_ip="$(yc compute instance list | grep $vm_name | awk '{print $10}')"
+lpublic_ip="$(yc compute instance list | grep $vm_name | awk '{print $10}')"
 install_docker
 
 
