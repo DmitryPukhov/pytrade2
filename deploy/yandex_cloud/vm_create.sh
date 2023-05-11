@@ -28,7 +28,7 @@ install_baremetal() {
 
 # Create instance with docker
 create_instance
-lpublic_ip="$(yc compute instance list | grep $vm_name | awk '{print $10}')"
+public_ip="$(yc compute instance list | grep $vm_name | awk '{print $10}')"
 install_docker
 
 
