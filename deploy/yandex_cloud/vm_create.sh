@@ -8,7 +8,7 @@ create_instance() {
     --name $vm_name \
     --hostname $vm_name \
     --zone ru-central1-a \
-    --memory 6 \
+    --memory 4 \
     --cores 2 \
     --platform "standard-v3" \
     --network-interface subnet-name=default-ru-central1-a,nat-ip-version=ipv4 \
