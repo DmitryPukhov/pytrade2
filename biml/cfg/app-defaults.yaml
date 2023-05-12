@@ -1,5 +1,6 @@
 biml.strategy: SimpleKerasStrategy
 biml.strategy.learn.interval.sec: 20
+biml.strategy.purge.window: "120s"
 biml.strategy.predict.window: "60s"
 biml.connector.key: 'please copy app-defaults.yaml to app.yaml and update biml.connector.key there to your binance key'
 biml.connector.url: 'https://testnet.binance.vision'

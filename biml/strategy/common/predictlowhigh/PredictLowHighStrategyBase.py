@@ -10,12 +10,13 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
+from strategy.common.DataPurger import DataPurger
 from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
 
 
-class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrategy):
+class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrategy, DataPurger):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -30,6 +31,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
 
         PeriodicalLearnStrategy.__init__(self, config)
         PersistableStateStrategy.__init__(self, config)
+        DataPurger.__init__(self, config)
 
         self.tickers = self.config["biml.tickers"].split(",")
         self.min_history_interval = pd.Timedelta(config['biml.strategy.learn.interval.sec'])
@@ -92,6 +94,15 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         # self.bid_ask = self.bid_ask.append(new_df)
         self.learn_or_skip()
         self.process_new_data()
+
+        # Purge
+        self.purge_or_skip(self.bid_ask, self.level2, self.fut_low_high)
+
+    def purge_all(self):
+        """ Purge old data to reduce memory usage"""
+        self.bid_ask = self.purged(self.bid_ask)
+        self.level2 = self.purged(self.level2)
+        self.fut_low_high = self.purged(self.fut_low_high)
 
     def check_cur_trade(self, bid: float, ask: float):
         """ Update cur trade if sl or tp reached """
