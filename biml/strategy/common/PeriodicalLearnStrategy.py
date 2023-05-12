@@ -2,6 +2,8 @@ import logging
 from datetime import datetime, timedelta
 from threading import Thread
 
+import pandas as pd
+
 
 class PeriodicalLearnStrategy:
     """ Each learn interval this strategy fits on new data """

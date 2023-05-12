@@ -40,6 +40,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         self.level2: pd.DataFrame = pd.DataFrame()
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
         self.last_learn_bidask_time = datetime(1970, 1, 1)
+        self.min_xy_len = 1
 
         self.is_learning = False
         self.is_processing = False
@@ -51,6 +52,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
+        self.min_xy_len = 1
         self.X_pipe, self.y_pipe = self.create_pipe()
         self._log.info(
             f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
@@ -227,9 +229,10 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
             bid_ask_since_last_learn = self.bid_ask[self.bid_ask.index > self.last_learn_bidask_time]
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
                 bid_ask_since_last_learn, self.level2, self.predict_window)
+
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}, last bid_ask at: {self.bid_ask.index[-1]}")
-            if not train_X.empty:
+            if len(train_X.index) >= self.min_xy_len:
                 if not self.model:
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
@@ -245,6 +248,8 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
                 # # Clear the data, already used for learning
                 # self.bid_ask = self.bid_ask[self.bid_ask.index > train_X.index.max()]
                 # self.level2 = self.level2[self.level2.index > train_y.index.max()]
+            else:
+                self._log.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
 
         finally:
             self.is_learning = False
