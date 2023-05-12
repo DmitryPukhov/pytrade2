@@ -3,12 +3,14 @@ vm_name=biml-trade-bots
 
 create_instance() {
   echo "Creating virtual machine $vm_name"
+  # standard-v2 cascade lake or standard-v3 ice lake
   yc compute instance create \
     --name $vm_name \
     --hostname $vm_name \
     --zone ru-central1-a \
     --memory 6 \
     --cores 2 \
+    --platform "standard-v3" \
     --network-interface subnet-name=default-ru-central1-a,nat-ip-version=ipv4 \
     --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2204-lts,size=32 \
     --ssh-key ./secret/id_rsa.pub
