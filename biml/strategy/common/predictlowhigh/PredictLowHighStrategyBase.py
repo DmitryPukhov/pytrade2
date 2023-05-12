@@ -242,7 +242,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
                 bid_ask_since_last_learn, self.level2, self.predict_window)
 
             self._log.info(
-                f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}, last bid_ask at: {self.bid_ask.index[-1]}")
+                f"Learning on last data. Train data len: {train_X.shape[0]}, bid_ask since last learn: {bid_ask_since_last_learn.shape[0]}, last bid_ask at: {self.bid_ask.index[-1]}, last level2 at: {self.level2.index[-1]}")
             if len(train_X.index) >= self.min_xy_len:
                 if not self.model:
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
