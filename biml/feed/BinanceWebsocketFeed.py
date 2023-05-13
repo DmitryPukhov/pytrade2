@@ -27,9 +27,9 @@ class BinanceWebsocketFeed:
         # Request the data maybe for multiple assets
         for i, ticker in enumerate(self.tickers):
             # todo: find a way to get stock last price
-            # client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
+            client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
             client.live_subscribe(stream="btcusdt@depth", id=1, callback=self.level2_callback)
-            client.live_subscribe(stream="btcusdt@bookTicker", id=1, callback=self.ticker_callback)
+            # client.live_subscribe(stream="btcusdt@bookTicker", id=1, callback=self.ticker_callback)
         client.join()
 
     def level2_callback(self, msg):
@@ -59,7 +59,7 @@ class BinanceWebsocketFeed:
 
     def rawlevel2model(self, msg: Dict):
         # dt=pd.to_datetime(msg["E"], unit='ms')
-        dt = datetime.datetime.utcnow() # bid/ask has no datetime field, so use this machine's time
+        dt = datetime.datetime.utcnow()  # bid/ask has no datetime field, so use this machine's time
         out = [{"datetime": dt, "symbol": msg["s"],
                 "bid": float(price), "bid_vol": float(vol)} for price, vol in msg['b']] + \
               [{"datetime": dt, "symbol": msg["s"],

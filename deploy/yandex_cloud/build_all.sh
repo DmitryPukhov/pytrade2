@@ -15,7 +15,7 @@ prepare_tmp(){
 
   echo "Preparing biml config"
   rm "$tmp_dir/biml/biml/cfg/app-dev.yaml"
-  cp -f "./secret/app.yaml" "./tmp/biml/biml/cfg/"
+  cp -f "./secret/*.yaml" "./tmp/biml/biml/cfg/"
 
   echo "Copying docker files"
   for file in  "Dockerfile" "requirements.txt" "docker-compose.yml"

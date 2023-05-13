@@ -21,6 +21,7 @@ class App:
     def __init__(self):
         # Suppress tensorflow log rubbish
         os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "1")
+        config_logging(logging, "INFO")
 
         self._log = logging.getLogger(self.__class__.__name__)
         # For pandas printing to log
@@ -43,64 +44,57 @@ class App:
         self.broker, self.strategy = None, None
         self._log.info("App initialized")
 
-    @staticmethod
-    def _load_config():
+    def _load_config_file(self, path: str):
+        """ Update config with another from path"""
+        if os.path.exists(path):
+            with open(path, "r") as file:
+                self._log.info(f"Reading config from {path}")
+                conf = yaml.safe_load(file)
+        else:
+            self._log.info(f"Config {path} not found, that could be ok.")
+            conf = {}
+        return conf
+
+    def _load_config(self):
         """
         Load config from cfg folder respecting the order: defaults, app.yaml, environment vars
         """
-        # Defaults
-        default_cfg_path = "cfg/app-defaults.yaml"
-        with open(default_cfg_path, "r") as appdefaults:
-            config = yaml.safe_load(appdefaults)
+        args = App._parse_args()
+        config = {}
 
-        # Custom config, should contain custom information,
-        cfg_path = "cfg/app.yaml"
-        if os.path.exists(cfg_path):
-            with open(cfg_path) as app:
-                config.update(yaml.safe_load(app))
-        else:
-            sys.exit(
-                f"Config {cfg_path} not found. Please copy cfg/app-defaults.yaml to {cfg_path} "
-                f"and update connection info there.")
+        # Fill config files list in order
+        files = ["cfg/app-defaults.yaml", "cfg/app.yaml", "cfg/app-dev.yaml"]
+        # We can pass strategy specific config, usually with binance api keys and strategy class: --config lstm.yaml
+        if "config" in args:
+            path = f"cfg/{args['config']}"
+            if os.path.exists(path):
+                files.append(path)
+            else:
+                sys.exit(f"Obligatory config {path} not found.")
 
-        # Dev debugging config if needed
-        dev_cfg_path = "cfg/app-dev.yaml"
-        if os.path.exists(dev_cfg_path):
-            with open(dev_cfg_path) as app:
-                config.update(yaml.safe_load(app))
-        else:
-            print(f"{dev_cfg_path} not found, maybe it is not developer's run")
+        # Read config files
+        for file in files:
+            config.update(self._load_config_file(file))
 
-        # Enviroment variabless
+        # Enviroment variables
         config.update(os.environ)
 
-        # Parse arguments
-        config.update(App._parse_args())
+        # Args
+        config.update(args)
         return config
 
     @staticmethod
     def _parse_args() -> Dict[str, str]:
         """ Parse command line arguments"""
         parser = argparse.ArgumentParser()
-        parser.add_argument('--biml.strategy', help='Strategy class name')
+        parser.add_argument('--config', help='Additional config file, usually contains api keys and strategy')
         return vars(parser.parse_args())
 
     def _init_client(self):
         """ Binance spot client creation. Each strategy can be configured at it's own account"""
         strategy = self.config["biml.strategy"].lower()
         self._log.info(f"Looking config for {strategy} key and secret")
-        strategy_key_param = f"biml.connector.{strategy}.key"
-        strategy_secret_param = f"biml.connector.{strategy}.secret"
-        key_param = f"biml.connector.key"
-        secret_param = f"biml.connector.secret"
-        key, secret = None, None
-        if {strategy_key_param, strategy_secret_param} <= self.config.keys():
-            self._log.info(f"Found {strategy_key_param} and {strategy_secret_param} in config")
-            key, secret = self.config[strategy_key_param], self.config[strategy_secret_param]
-        else:
-            self._log.info(f"{strategy_key_param} or {strategy_secret_param} not found in config. "
-                           f"Using {key_param}, {secret_param}")
-            key, secret = self.config[key_param], self.config[secret_param]
+        key, secret = self.config["biml.connector.key"], self.config["biml.connector.secret"]
 
         url = self.config["biml.connector.url"]
         self._log.info(f"Init binance client for strategy: {strategy}, url: {url}")
