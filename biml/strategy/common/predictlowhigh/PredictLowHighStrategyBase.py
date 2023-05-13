@@ -47,10 +47,16 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         self.is_learning = False
         self.is_processing = False
 
-        self.profit_loss_ratio = 2
+        # Expected profit/loss >= ratio means signal to trade
+        self.profit_loss_ratio = config.get("biml.strategy.profitloss.ratio", 1)
+
         # stop loss should be above price * min_stop_loss_coeff
-        self.min_stop_loss_coeff = 0.00005  # 0.00005 for BTCUSDT 30000 means 1,5
-        self.max_stop_loss_coeff = 0.005  # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
+        # 0.00005 for BTCUSDT 30000 means 1,5
+        self.stop_loss_min_coeff = config.get("biml.strategy.stoploss.min.coeff", 0)
+
+        # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
+        self.stop_loss_max_coeff = config.get("biml.strategy.stoploss.max.coeff",
+                                              float('inf'))
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
@@ -58,7 +64,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         self.X_pipe, self.y_pipe = self.create_pipe()
         self._log.info(
             f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
-            f"min stop loss coeff: {self.min_stop_loss_coeff}, max stop loss coeff: {self.max_stop_loss_coeff}")
+            f"min stop loss coeff: {self.stop_loss_min_coeff}, max stop loss coeff: {self.stop_loss_max_coeff}")
 
     def create_pipe(self) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
@@ -181,12 +187,12 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         sell_loss = ask_max_fut - bid
 
         if buy_profit / buy_loss >= self.profit_loss_ratio \
-                and self.max_stop_loss_coeff * ask >= abs(buy_loss) >= self.min_stop_loss_coeff * ask:
+                and self.stop_loss_max_coeff * ask >= abs(buy_loss) >= self.stop_loss_min_coeff * ask:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
             return 1, ask, stop_loss_adj, ask + buy_profit
         elif sell_profit / sell_loss >= self.profit_loss_ratio \
-                and self.max_stop_loss_coeff * bid >= abs(sell_loss) >= self.min_stop_loss_coeff * bid:
+                and self.stop_loss_max_coeff * bid >= abs(sell_loss) >= self.stop_loss_min_coeff * bid:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
             return -1, bid, stop_loss_adj, bid - sell_profit

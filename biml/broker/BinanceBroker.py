@@ -1,14 +1,10 @@
 import logging
-import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict
-
-import pandas as pd
 from binance.spot import Spot as Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
 from broker.model.Trade import Trade
 
 
@@ -20,6 +16,8 @@ class BinanceBroker:
     def __init__(self, client: Client, config: Dict[str, str]):
         self._log = logging.getLogger(self.__class__.__name__)
         self.client: Client = client
+
+        # To convert order direction -1, 1 to buy/sell strings
         self.order_side_names = {1: "BUY", -1: "SELL"}
         self.order_side_codes = dict(map(reversed, self.order_side_names.items()))
 
@@ -51,6 +49,122 @@ class BinanceBroker:
         self.db_session = sessionmaker(engine)()
         self.cur_trade = self.read_last_opened_trade()
 
+    def create_cur_trade(self, symbol: str, direction: int,
+                         quantity: float,
+                         price: Optional[float],
+                         stop_loss_price: float,
+                         take_profit_price: Optional[float]) -> Optional[Trade]:
+        """
+        Buy or sell with take profit and stop loss
+        Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
+        """
+
+        if not self.allow_trade:
+            self._log.debug("Trading in not allowed")
+            return
+
+        if (direction not in {1, -1}) or ((datetime.utcnow() - self.last_trade_time) <= self.min_trade_interval):
+            # If signal is out of market or interval is not elapsed
+            return
+
+        # Prepare vars
+        self.last_trade_time = datetime.utcnow()
+        side = self.order_side_names[direction]
+        price = round(price, self.price_precision)
+        stop_loss_price = round(stop_loss_price, self.price_precision)
+        take_profit_price = round(take_profit_price, self.price_precision)
+
+        # Main order
+        self._log.info(
+            f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity},"
+            f" stop loss: {stop_loss_price}, take profit: {take_profit_price}")
+        self.create_main_order(symbol=symbol,
+                               side=side,
+                               price=price,
+                               quantity=quantity)
+        if not self.cur_trade:
+            return None
+        # Adjust sl/tp to order filled price
+        stop_loss_price_adj, take_profit_price_adj = self.adjusted_sl_tp(direction=direction,
+                                                                         orig_price=price,
+                                                                         orig_sl_price=stop_loss_price,
+                                                                         orig_tp_price=take_profit_price,
+                                                                         filled_price=self.cur_trade.open_price)
+        try:
+            if take_profit_price:
+                # Stop loss and take profit
+                self.create_sl_tp_order(
+                    symbol,
+                    base_direction=direction,
+                    quantity=quantity,
+                    base_price=self.cur_trade.open_price,
+                    stop_loss_price=stop_loss_price_adj,
+                    take_profit_price=take_profit_price_adj)
+
+            else:
+                # Stop loss without take profit
+                self.create_sl_order(
+                    symbol,
+                    base_direction=direction,
+                    quantity=quantity,
+                    base_price=self.cur_trade.open_price,
+                    stop_loss_price=stop_loss_price_adj)
+
+        except Exception as e:
+            # If sl/tp order exception, close main order
+            logging.error(f"Stop loss or take profit order creation error: {e} ")
+            self.create_closing_order(direction, quantity, symbol)
+
+        # Persist order to db
+        self.db_session.add(self.cur_trade)
+        self.db_session.commit()
+
+        if not self.cur_trade.close_order_id:
+            # If no error, order is not closed yet
+            self._log.info(f"Created new trade: {self.cur_trade}")
+        else:
+            self.cur_trade = None
+        return self.cur_trade
+
+    def adjusted_sl_tp(self, direction, orig_price: float, orig_sl_price: float, orig_tp_price: float,
+                       filled_price: float):
+        """ Main order filled price can differ from original, so change original sl/tp to filled base price"""
+        stop_loss_price_adj = round(float(filled_price - direction * abs(orig_price - orig_sl_price)),
+                                    self.price_precision)
+        take_profit_price_adj = round(float(filled_price + direction * abs(orig_tp_price - orig_price)),
+                                      self.price_precision)
+        return stop_loss_price_adj, take_profit_price_adj
+
+    def create_main_order(self, symbol: str, side: str, price: float, quantity: float) \
+            -> Optional[Trade]:
+        """ Main buy or sell order. Stop loss and take profit will be set later. """
+
+        res = self.client.new_order(
+            symbol=symbol,
+            side=side,
+            type="LIMIT",
+            price=price,
+            quantity=quantity,
+            timeInForce="FOK"  # Fill or kill
+        )
+        self._log.debug(f"Create main order raw response: {res}")
+
+        if res["status"] != "FILLED":
+            order_id = str(res["orderId"])
+            filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
+            open_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
+
+            # Set cur trade to opened order with sl/tp
+            self.cur_trade = Trade(ticker=symbol,
+                                   side=side,
+                                   open_time=open_time,
+                                   open_price=filled_price,
+                                   open_order_id=order_id,
+                                   quantity=quantity)
+            self._log.info(f"Created main order {self.cur_trade}")
+        else:
+            self._log.info(f"Cannot create main {symbol} {side} order at price {price}, that's ok.")
+
     def create_sl_tp_order(self, symbol: str,
                            base_direction: int,
                            quantity: float,
@@ -71,8 +185,8 @@ class BinanceBroker:
         stop_loss_limit_price = round(stop_loss_price - base_direction * base_price * limit_ratio, self.price_precision)
         take_profit_price = round(take_profit_price, self.price_precision)
         self._log.info(
-            f"Creating stop loss and take profit for base {self.order_side_names[base_direction]} order, base_price={base_price}, stop_loss={stop_loss_price},"
-            f" stop_loss_limit_price={stop_loss_limit_price}, take_profit={take_profit_price}")
+            f"Creating stop loss and take profit for base {self.order_side_names[base_direction]} order, base_price={base_price}, stop_loss_adj={stop_loss_price},"
+            f" stop_loss_limit_price={stop_loss_limit_price}, take_profit_adj={take_profit_price}")
         res = self.client.new_oco_order(
             symbol=symbol,
             side=other_side,
@@ -81,8 +195,13 @@ class BinanceBroker:
             stopPrice=stop_loss_price,
             stopLimitPrice=stop_loss_limit_price,
             stopLimitTimeInForce='GTC')
+        stop_loss_order_id = str(res["orderListId"])
         self._log.debug(f"Stop loss / take profit order raw response: {res}")
-        return str(res["orderListId"])
+
+        # Update cur trade
+        self.cur_trade.stop_loss_price = stop_loss_price
+        self.cur_trade.take_profit_price = take_profit_price
+        self.cur_trade.stop_loss_order_id = stop_loss_order_id
 
     def create_sl_order(self, symbol: str,
                         base_direction: int, quantity: float,
@@ -110,120 +229,29 @@ class BinanceBroker:
             trailingDelta=200,  # 200 bips=2%
             timeInForce="GTC",
             quantity=quantity)
+        order_id = str(res["orderId"])
+        self.cur_trade.stop_loss_price = stop_loss_price
+        self.cur_trade.stop_loss_order_id = order_id
+
         self._log.debug(f"Stop loss order raw response: {res}")
-        return str(res["orderId"])
 
-    def create_cur_trade(self, symbol: str, direction: int,
-                         quantity: float,
-                         price: Optional[float],
-                         stop_loss_price: float,
-                         take_profit_price: Optional[float]) -> Optional[Trade]:
-        """
-        Buy or sell with take profit and stop loss
-        Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
-        """
-
-        if not self.allow_trade:
-            self._log.debug("Trading in not allowed")
-            return
-
-        if direction not in {1, -1}:
-            return
-
-        if (datetime.utcnow() - self.last_trade_time) <= self.min_trade_interval:
-            return
-
-        self.last_trade_time = datetime.utcnow()
-        side = self.order_side_names[direction]
-        price = round(price, self.price_precision)
-
-        res = {}
-        self._log.info(
-            f"Creating order. Asset:{symbol}  side:{side}, price: {price}  quantity: {quantity},"
-            f" stop loss: {stop_loss_price}, take profit: {take_profit_price}")
-        # Main buy or sell order
+    def create_closing_order(self, direction, quantity, symbol):
+        logging.info(f"Closing created {self.order_side_names[direction]} order "
+                     f"with id: f{self.cur_trade.open_order_id}")
         res = self.client.new_order(
             symbol=symbol,
-            side=side,
-            type="LIMIT",
-            price=price,
-            quantity=quantity,
-            timeInForce="FOK"  # Fill or kill
+            side=self.order_side_names[-direction],
+            type="MARKET",
+            quantity=quantity
         )
-        self._log.debug(f"Create order raw response: {res}")
-        if res["status"] != "FILLED":
-            self._log.info(f"Cannot create {symbol} {side} order at price {price}, that's ok.")
-            return
-
-        order_id = str(res["orderId"])
-        filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
-        open_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
-
-        # Set cur trade to opened order with sl/tp
-        self.cur_trade = Trade(ticker=symbol,
-                               side=side,
-                               open_time=open_time,
-                               open_price=filled_price,
-                               open_order_id=order_id,
-                               quantity=quantity)
-
-        stop_loss_price_adj = round(float(filled_price - direction * abs(price - stop_loss_price)), self.price_precision)
-        take_profit_price_adj = round(float(filled_price + direction * abs(take_profit_price - price)), self.price_precision)
-        self._log.info(f"{side} order filled_price={filled_price}, "
-                       f"stop_loss_adj={stop_loss_price_adj}, take_profit_adj={take_profit_price_adj}")
-        try:
-            if take_profit_price:
-                # Stop loss and take profit
-                stop_loss_order_id = self.create_sl_tp_order(
-                    symbol,
-                    base_direction=direction,
-                    quantity=quantity,
-                    base_price=filled_price,
-                    stop_loss_price=stop_loss_price_adj,
-                    take_profit_price=take_profit_price_adj)
-                self.cur_trade.stop_loss_price = stop_loss_price_adj
-                self.cur_trade.take_profit_price = take_profit_price_adj
-                self.cur_trade.stop_loss_order_id = stop_loss_order_id
-
-            else:
-                # Stop loss without take profit
-                stop_loss_order_id = self.create_sl_order(
-                    symbol,
-                    base_direction=direction,
-                    quantity=quantity,
-                    base_price=filled_price,
-                    stop_loss_price=stop_loss_price_adj)
-                self.cur_trade.stop_loss_price = stop_loss_price_adj
-                self.cur_trade.stop_loss_order_id = stop_loss_order_id
-
-        except Exception as e:
-            # If sl/tp order exception, close main order
-            logging.error(f"Stop loss or take profit order creation error: {e} ")
-            logging.info(f"Closing created {self.order_side_names[direction]} order with id: f{order_id}")
-            res = self.client.new_order(
-                symbol=symbol,
-                side=self.order_side_names[-direction],
-                type="MARKET",
-                quantity=quantity
-            )
-            # Set current trade closure fields
-            self.cur_trade.close_order_id = res["orderId"]
-            if res["status"] == "FILLED":
-                self.cur_trade.close_price = float(res["fills"][0]["price"])
-                self.cur_trade.close_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
-
-        # Persist order to db
-        self.db_session.add(self.cur_trade)
-        self.db_session.commit()
-
-        if not self.cur_trade.close_time:
-            # If no error, order is not closed yet
-            self._log.info(f"Created new trade: {self.cur_trade}")
-        else:
-            # Order is closed in case of exception:
+        # Set current trade closure fields
+        if res["status"] == "FILLED":
+            self.cur_trade.close_order_id = str(res["orderId"])
+            self.cur_trade.close_price = float(res["fills"][0]["price"])
+            self.cur_trade.close_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
             self._log.info(f"New trade closed due to sl/tp error: {self.cur_trade}")
-            self.cur_trade = None
-        return self.cur_trade
+        else:
+            self._log.error(f"Cannot create closing order for {self.cur_trade}")
 
     def close_opened_trades(self):
         self._log.info("Closing all opened trades if exist")
