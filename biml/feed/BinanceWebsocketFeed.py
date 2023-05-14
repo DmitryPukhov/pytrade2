@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 import logging
 from typing import List, Dict
 
@@ -17,20 +18,34 @@ class BinanceWebsocketFeed:
         self.consumers = []
         self._log = logging.getLogger(self.__class__.__name__)
         self.tickers = tickers
+        self.client = None
+        self.last_subscribe_time: datetime = datetime.datetime.min
+        self.subscribe_interval: timedelta = timedelta(seconds=60)
 
     def run(self):
         """
         Read data from web socket
         """
-        client = SpotWebsocketClient()
-        client.start()
-        # Request the data maybe for multiple assets
-        for i, ticker in enumerate(self.tickers):
-            # todo: find a way to get stock last price
-            client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
-            client.live_subscribe(stream="btcusdt@depth", id=1, callback=self.level2_callback)
-            # client.live_subscribe(stream="btcusdt@bookTicker", id=1, callback=self.ticker_callback)
-        client.join()
+        self.client = SpotWebsocketClient()
+        self.client.start()
+
+        # Subscribe to streams
+        self.refresh_streams()
+
+        self.client.join()
+
+    def refresh_streams(self):
+        """ Level2 stream stops after some time of work, refresh subscription """
+        if datetime.datetime.now() - self.last_subscribe_time >= self.subscribe_interval:
+            for i, ticker in enumerate(self.tickers):
+                self._log.debug(f"Refreshing subscription to data streams for {ticker}. "
+                                f"Refresh interval: {self.subscribe_interval}")
+                # Bid/ask
+                self.client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
+                # Order book
+                stream_name = f"{ticker.lower()}@depth"
+                self.client.live_subscribe(stream=stream_name, id=1, callback=self.level2_callback)
+                self.last_subscribe_time = datetime.datetime.now()
 
     def level2_callback(self, msg):
         if "result" in msg and not msg["result"]:
@@ -38,6 +53,8 @@ class BinanceWebsocketFeed:
         try:
             for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
                 consumer.on_level2(self.rawlevel2model(msg))
+            # Refresh stream subscriptions if refresh interval passed
+            self.refresh_streams()
         except Exception as e:
             self._log.error(e)
 
