@@ -1,5 +1,4 @@
-import datetime
-from datetime import timedelta
+from datetime import timedelta, datetime
 import logging
 from typing import List, Dict
 
@@ -18,9 +17,11 @@ class BinanceWebsocketFeed:
         self.consumers = []
         self._log = logging.getLogger(self.__class__.__name__)
         self.tickers = tickers
-        self.client = None
-        self.last_subscribe_time: datetime = datetime.datetime.min
-        self.subscribe_interval: timedelta = timedelta(seconds=60)
+        self.client: SpotWebsocketClient = None
+        self.feed_timeout: timedelta = timedelta(seconds=20)
+        self._log.info(f"Feeding tickers: {self.tickers}, reconnection timeout: {self.feed_timeout}")
+        self.last_ticker_time: datetime = datetime.min
+        self.last_level2_time: datetime = datetime.min
 
     def run(self):
         """
@@ -28,47 +29,65 @@ class BinanceWebsocketFeed:
         """
         self.client = SpotWebsocketClient()
         self.client.start()
-
-        # Subscribe to streams
-        self.refresh_streams()
+        self.ensure_streams()
 
         self.client.join()
 
-    def refresh_streams(self):
-        """ Level2 stream stops after some time of work, refresh subscription """
-        if datetime.datetime.now() - self.last_subscribe_time >= self.subscribe_interval:
+    #
+    def ensure_streams(self):
+        """ Start streams in the very beginning or if timeout elapsed. """
+
+        # Start or refresh tickers
+        now = datetime.utcnow()
+        if (now == datetime.min) or (now - self.last_ticker_time > self.feed_timeout):
+            if self.last_ticker_time > datetime.min:
+                self._log.info(f"Ticker stream looks broken, timeout {self.feed_timeout} passed.")
             for i, ticker in enumerate(self.tickers):
-                self._log.debug(f"Refreshing subscription to data streams for {ticker}. "
-                                f"Refresh interval: {self.subscribe_interval}")
-                # Bid/ask
-                self.client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
-                # Order book
+                stream_name = "{}@bookTicker".format(ticker.lower())
+                self.client.stop_socket(stream_name)  # Stop or no action
+                self._log.info(f"Starting ticker stream: {stream_name}")
+                self.client.live_subscribe(stream=stream_name, id=len(self.tickers) + i, callback=self.ticker_callback)
+            self.last_ticker_time = now
+
+        # Start or refresh level2
+        if (now == datetime.min) or (now - self.last_level2_time > self.feed_timeout):
+            if self.last_level2_time > datetime.min:
+                self._log.info(f"Level2 stream looks broken, timeout {self.feed_timeout} passed.")
+            for i, ticker in enumerate(self.tickers):
                 stream_name = f"{ticker.lower()}@depth"
-                self.client.live_subscribe(stream=stream_name, id=1, callback=self.level2_callback)
-                self.last_subscribe_time = datetime.datetime.now()
+                self.client.stop_socket(stream_name)  # Stop or no action
+                self._log.info(f"Starting level2 stream: {stream_name}")
+                self.client.live_subscribe(stream=stream_name, id=len(self.tickers) + i, callback=self.level2_callback)
+            self.last_level2_time = now
 
     def level2_callback(self, msg):
+        self.last_level2_time = datetime.utcnow()
         if "result" in msg and not msg["result"]:
             return
         try:
             for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
                 consumer.on_level2(self.rawlevel2model(msg))
-            # Refresh stream subscriptions if refresh interval passed
-            self.refresh_streams()
+
+            # Refresh stream subscriptions if timeout
+            self.ensure_streams()
         except Exception as e:
             self._log.error(e)
 
     def ticker_callback(self, msg):
+        self.last_ticker_time = datetime.utcnow()
         if "result" in msg and not msg["result"]:
             return
         try:
             for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
                 consumer.on_ticker(self.rawticker2model(msg))
+
+            # Refresh stream subscriptions if timeout
+            self.ensure_streams()
         except Exception as e:
             self._log.error(e)
 
     def rawticker2model(self, msg: Dict) -> Dict:
-        return {"datetime": datetime.datetime.utcnow(),
+        return {"datetime": datetime.utcnow(),
                 "symbol": msg["s"],
                 "bid": float(msg["b"]), "bid_vol": float(msg["B"]),
                 "ask": float(msg["a"]), "ask_vol": float(msg["A"]),
@@ -76,7 +95,7 @@ class BinanceWebsocketFeed:
 
     def rawlevel2model(self, msg: Dict):
         # dt=pd.to_datetime(msg["E"], unit='ms')
-        dt = datetime.datetime.utcnow()  # bid/ask has no datetime field, so use this machine's time
+        dt = datetime.utcnow()  # bid/ask has no datetime field, so use this machine's time
         out = [{"datetime": dt, "symbol": msg["s"],
                 "bid": float(price), "bid_vol": float(vol)} for price, vol in msg['b']] + \
               [{"datetime": dt, "symbol": msg["s"],
@@ -89,9 +108,9 @@ class BinanceWebsocketFeed:
         """
         out = []
         if msg["b"]:
-            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": float(msg["b"]),
+            out.append({"datetime": datetime.utcnow(), "symbol": msg["s"], "bid": float(msg["b"]),
                         "bid_vol": float(msg["B"])})
         if msg["a"]:
-            out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "ask": float(msg["a"]),
+            out.append({"datetime": datetime.utcnow(), "symbol": msg["s"], "ask": float(msg["a"]),
                         "ask_vol": float(msg["A"])})
         return out
