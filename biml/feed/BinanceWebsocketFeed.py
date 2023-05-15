@@ -18,7 +18,7 @@ class BinanceWebsocketFeed:
         self._log = logging.getLogger(self.__class__.__name__)
         self.tickers = tickers
         self.client: SpotWebsocketClient = None
-        self.feed_timeout: timedelta = timedelta(seconds=20)
+        self.feed_timeout: timedelta = timedelta(seconds=60)
         self._log.info(f"Feeding tickers: {self.tickers}, reconnection timeout: {self.feed_timeout}")
         self.last_ticker_time: datetime = datetime.min
         self.last_level2_time: datetime = datetime.min
