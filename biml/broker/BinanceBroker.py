@@ -149,7 +149,7 @@ class BinanceBroker:
         )
         self._log.debug(f"Create main order raw response: {res}")
 
-        if res["status"] != "FILLED":
+        if res["status"] == "FILLED":
             order_id = str(res["orderId"])
             filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
             open_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
