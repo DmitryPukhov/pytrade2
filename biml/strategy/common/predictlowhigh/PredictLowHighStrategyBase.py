@@ -46,6 +46,9 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
 
         self.is_learning = False
         self.is_processing = False
+        self.is_data_gap = False
+
+        self.data_gap_max = timedelta(seconds=config.get("biml.strategy.data.gap.max.sec", 60))
 
         # Expected profit/loss >= ratio means signal to trade
         self.profit_loss_ratio = config.get("biml.strategy.profitloss.ratio", 1)
@@ -64,7 +67,8 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         self.X_pipe, self.y_pipe = self.create_pipe()
         self._log.info(
             f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
-            f"min stop loss coeff: {self.stop_loss_min_coeff}, max stop loss coeff: {self.stop_loss_max_coeff}")
+            f"min stop loss coeff: {self.stop_loss_min_coeff}, max stop loss coeff: {self.stop_loss_max_coeff},"
+            f"max allowed time gap between bidask and level2 data: {self.data_gap_max}")
 
     def create_pipe(self) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
@@ -84,22 +88,42 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         feed.consumers.append(self)
         feed.run()
 
+    def check_data_gap(self):
+        """ Check the gap between last bidask and level2 """
+
+        # Calculate the gap
+
+        last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
+        last_level2 = self.level2.index.max() if not self.level2.empty else None
+        gap = abs(last_bid_ask - last_level2) if last_bid_ask and last_level2 else timedelta.min
+        is_gap = gap > self.data_gap_max
+
+        # Logging
+        if is_gap != self.is_data_gap:
+            status = "Bad" if is_gap else "Good"
+            self._log.info(f"{status} data quality. "
+                           f"Gap: {gap}, last bid ask: {last_bid_ask}, last level2: {last_level2}")
+
+        self.is_data_gap = is_gap
+        return self.is_data_gap
+
     def on_level2(self, level2: List[Dict]):
         """
         Got new order book items event
         """
+        # Add new data to df
         new_df = pd.DataFrame(level2, columns=BinanceWebsocketFeed.bid_ask_columns).set_index("datetime", drop=False)
         self.level2 = pd.concat([self.level2, new_df])  # self.level2.append(new_df)
-        # self.learn_or_skip()
-        # self.process_new_data()
 
     def on_ticker(self, ticker: dict):
-        new_df = pd.DataFrame([ticker], columns=ticker.keys()).set_index("datetime")
+        # Add new data to df
+        new_df = pd.DataFrame([ticker], columns=list(ticker.keys())).set_index("datetime")
         self.bid_ask = pd.concat([self.bid_ask, new_df])
 
-        # self.bid_ask = self.bid_ask.append(new_df)
-        self.learn_or_skip()
-        self.process_new_data()
+        if not self.check_data_gap():
+            # Learn and predict only if no gap between level2 and bidask
+            self.learn_or_skip()
+            self.process_new_data()
 
         # Purge
         self.purge_or_skip(self.bid_ask, self.level2, self.fut_low_high)
@@ -162,7 +186,8 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         self.check_cur_trade(bid, ask)
 
         bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = self.fut_low_high.loc[self.fut_low_high.index[-1], \
-            ["bid_min_fut", "bid_max_fut", "ask_min_fut", "ask_max_fut"]]
+                                                                                   ["bid_min_fut", "bid_max_fut",
+                                                                                    "ask_min_fut", "ask_max_fut"]]
         open_signal = 0
         if not self.broker.cur_trade:
             # Maybe open a new order

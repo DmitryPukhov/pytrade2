@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from unittest import TestCase
 
@@ -12,7 +12,7 @@ from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHigh
 from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
-class TestPredictLowHighStrategy(TestCase):
+class TestPredictLowHighStrategyBase(TestCase):
     class ModelStub:
         """ Model emulation for unit tests"""
 
@@ -51,18 +51,56 @@ class TestPredictLowHighStrategy(TestCase):
         def __init__(self):
             conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60,
                     "biml.data.dir": "tmp",
+                    "biml.strategy.data.gap.max.sec": 10,
                     "biml.strategy.predict.window": "10s",
                     "biml.order.quantity": 0.001}
             super().__init__(None, conf)
             self.profit_loss_ratio = 4
             self.close_profit_loss_ratio = 2
-            self.model = TestPredictLowHighStrategy.ModelStub()
-            self.broker = TestPredictLowHighStrategy.BrokerStub()
+            self.model = TestPredictLowHighStrategyBase.ModelStub()
+            self.broker = TestPredictLowHighStrategyBase.BrokerStub()
             self.min_stop_loss = 0
             self.max_stop_loss_coeff = float('inf')
 
         def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
             pass
+
+    def test_check_data_gap(self):
+        strategy = self.StrategyStub()
+        strategy.data_gap_max = timedelta(seconds=10)
+
+        strategy.bid_ask = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:28:00")}]) \
+            .set_index("datetime", drop=False)
+
+        # Level2  11s after bidask, gap> 10s
+        strategy.level2 = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:28:11")}]) \
+            .set_index("datetime", drop=False)
+        self.assertTrue(strategy.check_data_gap())
+        self.assertTrue(strategy.is_data_gap)
+
+        # Level2 11s before bidask, gap > 10s
+        strategy.level2 = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:27:49")}]) \
+            .set_index("datetime", drop=False)
+        self.assertTrue(strategy.check_data_gap())
+        self.assertTrue(strategy.is_data_gap)
+
+        # No gap
+        strategy.level2 = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:28:10")}]) \
+            .set_index("datetime", drop=False)
+        self.assertFalse(strategy.check_data_gap())
+        self.assertFalse(strategy.is_data_gap)
+
+        # Empty level2, bad data quality, but not a gap
+        strategy.level2 = pd.DataFrame()
+        self.assertFalse(strategy.check_data_gap())
+        self.assertFalse(strategy.is_data_gap)
+
+        # Empty bidask, bad data quality, but not a gap
+        strategy.level2 = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:28:10")}]) \
+            .set_index("datetime", drop=False)
+        strategy.bid_ask = pd.DataFrame()
+        self.assertFalse(strategy.check_data_gap())
+        self.assertFalse(strategy.is_data_gap)
 
     def test_process_new_data__should_set_fut_columns(self):
         strategy = self.StrategyStub()
@@ -113,11 +151,11 @@ class TestPredictLowHighStrategy(TestCase):
         strategy = self.StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_max_fut=19,
-                                                                        bid_min_fut=9, ask_min_fut=0,
-                                                                        ask_max_fut=0)
+                                                                               bid_min_fut=9, ask_min_fut=0,
+                                                                               ask_max_fut=0)
         self.assertEqual(1, actual_signal)
         self.assertEqual(11, price)
-        self.assertEqual(8.5, actual_loss) # price - sl*1.25
+        self.assertEqual(8.5, actual_loss)  # price - sl*1.25
         self.assertEqual(19, actual_profit)
 
     def test_process_new_prediction__should_buy(self):
@@ -139,8 +177,8 @@ class TestPredictLowHighStrategy(TestCase):
         strategy = self.StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=9,
-                                                                        bid_max_fut=18.9, ask_min_fut=0,
-                                                                        ask_max_fut=0)
+                                                                               bid_max_fut=18.9, ask_min_fut=0,
+                                                                               ask_max_fut=0)
         self.assertEqual(0, actual_signal)
         self.assertIsNone(actual_loss)
         self.assertIsNone(actual_profit)
@@ -150,12 +188,12 @@ class TestPredictLowHighStrategy(TestCase):
         strategy = self.StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=0,
-                                                                        bid_max_fut=0, ask_min_fut=2,
-                                                                        ask_max_fut=12)
+                                                                               bid_max_fut=0, ask_min_fut=2,
+                                                                               ask_max_fut=12)
 
         self.assertEqual(-1, actual_signal)
         self.assertEqual(10, price)
-        self.assertEqual(12.5, actual_loss) # adjusted sl*1.25
+        self.assertEqual(12.5, actual_loss)  # adjusted sl*1.25
         self.assertEqual(2, actual_profit)
 
     def test_process_new_prediction__should_sell(self):
@@ -176,8 +214,8 @@ class TestPredictLowHighStrategy(TestCase):
         strategy = self.StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=0,
-                                                                        bid_max_fut=0, ask_max_fut=12,
-                                                                        ask_min_fut=2.1)
+                                                                               bid_max_fut=0, ask_max_fut=12,
+                                                                               ask_min_fut=2.1)
 
         self.assertEqual(0, actual_signal)
         self.assertIsNone(actual_loss)

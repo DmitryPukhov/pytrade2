@@ -135,8 +135,7 @@ class BinanceBroker:
                                       self.price_precision)
         return stop_loss_price_adj, take_profit_price_adj
 
-    def create_main_order(self, symbol: str, side: str, price: float, quantity: float) \
-            -> Optional[Trade]:
+    def create_main_order(self, symbol: str, side: str, price: float, quantity: float):
         """ Main buy or sell order. Stop loss and take profit will be set later. """
 
         res = self.client.new_order(
