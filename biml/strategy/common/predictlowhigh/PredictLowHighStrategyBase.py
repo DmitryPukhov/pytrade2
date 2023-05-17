@@ -125,8 +125,8 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
             self.learn_or_skip()
             self.process_new_data()
 
-        # Purge
-        self.purge_or_skip(self.bid_ask, self.level2, self.fut_low_high)
+            # Purge
+            self.purge_or_skip(self.bid_ask, self.level2, self.fut_low_high)
 
     def purge_all(self):
         """ Purge old data to reduce memory usage"""
