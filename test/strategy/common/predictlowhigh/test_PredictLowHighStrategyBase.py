@@ -65,7 +65,7 @@ class TestPredictLowHighStrategyBase(TestCase):
         def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
             pass
 
-    def test_check_data_gap(self):
+    def test_is_data_gap(self):
         strategy = self.StrategyStub()
         strategy.data_gap_max = timedelta(seconds=10)
 
@@ -75,32 +75,29 @@ class TestPredictLowHighStrategyBase(TestCase):
         # Level2  11s after bidask, gap> 10s
         strategy.level2 = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:28:11")}]) \
             .set_index("datetime", drop=False)
-        self.assertTrue(strategy.check_data_gap())
+        self.assertTrue(strategy.is_data_gap())
         self.assertTrue(strategy.is_data_gap)
 
         # Level2 11s before bidask, gap > 10s
         strategy.level2 = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:27:49")}]) \
             .set_index("datetime", drop=False)
-        self.assertTrue(strategy.check_data_gap())
+        self.assertTrue(strategy.is_data_gap())
         self.assertTrue(strategy.is_data_gap)
 
         # No gap
         strategy.level2 = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:28:10")}]) \
             .set_index("datetime", drop=False)
-        self.assertFalse(strategy.check_data_gap())
-        self.assertFalse(strategy.is_data_gap)
+        self.assertFalse(strategy.is_data_gap())
 
         # Empty level2, bad data quality, but not a gap
         strategy.level2 = pd.DataFrame()
-        self.assertFalse(strategy.check_data_gap())
-        self.assertFalse(strategy.is_data_gap)
+        self.assertFalse(strategy.is_data_gap())
 
         # Empty bidask, bad data quality, but not a gap
         strategy.level2 = pd.DataFrame([{"datetime": datetime.fromisoformat("2023-05-16 21:28:10")}]) \
             .set_index("datetime", drop=False)
         strategy.bid_ask = pd.DataFrame()
-        self.assertFalse(strategy.check_data_gap())
-        self.assertFalse(strategy.is_data_gap)
+        self.assertFalse(strategy.is_data_gap())
 
     def test_process_new_data__should_set_fut_columns(self):
         strategy = self.StrategyStub()

@@ -46,9 +46,8 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
 
         self.is_learning = False
         self.is_processing = False
-        self.is_data_gap = False
 
-        self.data_gap_max = timedelta(seconds=config.get("biml.strategy.data.gap.max.sec", 60))
+        self.data_gap_max = timedelta(seconds=config.get("biml.strategy.data.gap.max.sec", 2))
 
         # Expected profit/loss >= ratio means signal to trade
         self.profit_loss_ratio = config.get("biml.strategy.profitloss.ratio", 1)
@@ -88,7 +87,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         feed.consumers.append(self)
         feed.run()
 
-    def check_data_gap(self):
+    def is_data_gap(self):
         """ Check the gap between last bidask and level2 """
 
         # Calculate the gap
@@ -96,16 +95,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
         last_level2 = self.level2.index.max() if not self.level2.empty else None
         gap = abs(last_bid_ask - last_level2) if last_bid_ask and last_level2 else timedelta.min
-        is_gap = gap > self.data_gap_max
-
-        # Logging
-        if is_gap != self.is_data_gap:
-            status = "Bad" if is_gap else "Good"
-            self._log.info(f"{status} data quality. "
-                           f"Gap: {gap}, last bid ask: {last_bid_ask}, last level2: {last_level2}")
-
-        self.is_data_gap = is_gap
-        return self.is_data_gap
+        return gap > self.data_gap_max
 
     def on_level2(self, level2: List[Dict]):
         """
@@ -120,7 +110,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         new_df = pd.DataFrame([ticker], columns=list(ticker.keys())).set_index("datetime")
         self.bid_ask = pd.concat([self.bid_ask, new_df])
 
-        if not self.check_data_gap():
+        if not self.is_data_gap():
             # Learn and predict only if no gap between level2 and bidask
             self.learn_or_skip()
             self.process_new_data()
