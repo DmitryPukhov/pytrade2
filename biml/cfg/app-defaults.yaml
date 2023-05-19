@@ -9,7 +9,7 @@ biml.strategy.stoploss.min.coeff: 0.00005
 # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
 biml.strategy.stoploss.max.coeff: 0.005
 
-biml.strategy.profitloss.ratio: 2
+biml.strategy.profitloss.ratio: 4
 
 
 biml.connector.key: 'please copy app-defaults.yaml to app.yaml and update biml.connector.key there to your binance key'

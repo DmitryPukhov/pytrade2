@@ -41,7 +41,7 @@ class Trade(Base):
             if self.side == "BUY":
                 profit = self.close_price - self.open_price
             elif self.side == "SELL":
-                profit = self.open_price - self.close_price
+                profit = (self.open_price - self.close_price)*self.quantity
             close_details = f", close time: {self.close_time}, close price: {self.close_price}, profit: {profit}"
             details += close_details
         return details
