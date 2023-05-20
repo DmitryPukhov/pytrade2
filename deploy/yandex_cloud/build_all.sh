@@ -15,7 +15,8 @@ prepare_tmp(){
 
   echo "Preparing biml config"
   rm "$tmp_dir/biml/biml/cfg/app-dev.yaml"
-  cp -f "./secret/*.yaml" "./tmp/biml/biml/cfg/"
+  files=$(ls ./secret/*.yaml)
+  for f in $files; do cp -v -f $f ./tmp/biml/biml/cfg/; done
 
   echo "Copying docker files"
   for file in  "Dockerfile" "requirements.txt" "docker-compose.yml"
@@ -31,7 +32,8 @@ copy_to_remote() {
 
 build_docker() {
   echo "Building biml at $public_ip"
-  ssh $user@"$public_ip" "cd /home/$user/biml ; sudo docker-compose build lstm simplekeras"
+  #ssh $user@"$public_ip" "cd /home/$user/biml ; sudo docker-compose build lstm simplekeras"
+  ssh $user@"$public_ip" "cd /home/$user/biml ; sudo docker-compose build"
 }
 
 build_baremetal() {
