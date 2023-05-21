@@ -10,13 +10,14 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 
 from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
+from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.DataPurger import DataPurger
 from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
 
 
-class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrategy, DataPurger):
+class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, PersistableStateStrategy, DataPurger):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -24,19 +25,19 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
     def __init__(self, broker, config: Dict):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
+        self.tickers = self.config["biml.tickers"].split(",")
+        self.ticker = self.tickers[-1]
         self.order_quantity = config["biml.order.quantity"]
         self._log.info(f"Order quantity: {self.order_quantity}")
         self.broker = broker
         self.model = None
 
+        CandlesStrategy.__init__(self, ticker=self.ticker, spot_client=broker.client)
         PeriodicalLearnStrategy.__init__(self, config)
         PersistableStateStrategy.__init__(self, config)
         DataPurger.__init__(self, config)
 
-        self.tickers = self.config["biml.tickers"].split(",")
         self.min_history_interval = pd.Timedelta(config['biml.strategy.learn.interval.sec'])
-
-        self.ticker = self.tickers[-1]
 
         self.bid_ask: pd.DataFrame = pd.DataFrame()
         self.level2: pd.DataFrame = pd.DataFrame()
@@ -112,6 +113,7 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
 
         if not self.is_data_gap():
             # Learn and predict only if no gap between level2 and bidask
+            self.read_candles_or_skip()
             self.learn_or_skip()
             self.process_new_data()
 
@@ -176,8 +178,8 @@ class PredictLowHighStrategyBase(PeriodicalLearnStrategy, PersistableStateStrate
         self.check_cur_trade(bid, ask)
 
         bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = self.fut_low_high.loc[self.fut_low_high.index[-1], \
-                                                                                   ["bid_min_fut", "bid_max_fut",
-                                                                                    "ask_min_fut", "ask_max_fut"]]
+            ["bid_min_fut", "bid_max_fut",
+             "ask_min_fut", "ask_max_fut"]]
         open_signal = 0
         if not self.broker.cur_trade:
             # Maybe open a new order
