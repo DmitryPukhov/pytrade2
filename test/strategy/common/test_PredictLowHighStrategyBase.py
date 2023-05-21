@@ -112,7 +112,11 @@ class TestPredictLowHighStrategyBase(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'ask': 0.9, 'ask_vol': 1},
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
-        strategy.X_pipe.fit(PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2))
+        strategy.candles_features = pd.DataFrame([
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "doesntmatter": 1}
+        ]).set_index("datetime")
+        strategy.X_pipe.fit(
+            PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, strategy.candles_features))
         strategy.y_pipe.fit(PredictLowHighFeatures.targets_of(strategy.bid_ask, predict_window='1s'))
 
         # Call tested method, strategy should process last bidask record
@@ -137,7 +141,12 @@ class TestPredictLowHighStrategyBase(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'ask': 0.9, 'ask_vol': 1},
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
-        strategy.X_pipe.fit(PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2))
+        strategy.candles_features = pd.DataFrame([
+            {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "doesntmatter": 1}
+        ]).set_index("datetime")
+
+        strategy.X_pipe.fit(
+            PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, strategy.candles_features))
         strategy.y_pipe.fit(PredictLowHighFeatures.targets_of(strategy.bid_ask))
 
         X, y = strategy.predict_low_high()

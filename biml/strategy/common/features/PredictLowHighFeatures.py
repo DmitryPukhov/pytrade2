@@ -11,24 +11,24 @@ class PredictLowHighFeatures:
     """
     default_predict_window = "10s"
 
-    @staticmethod
-    def last_data_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
-        """ @:return (last bid ask value, last level2 values just before last bid ask)"""
-        last_bid_ask = bid_ask.tail(1)
-        last_level2 = level2[level2.index <= last_bid_ask.index.max()]
-        return last_bid_ask, last_level2
+    # @staticmethod
+    # def last_data_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+    #     """ @:return (last bid ask value, last level2 values just before last bid ask)"""
+    #     last_bid_ask = bid_ask.tail(1)
+    #     last_level2 = level2[level2.index <= last_bid_ask.index.max()]
+    #     return last_bid_ask, last_level2
 
     @staticmethod
-    def last_features_of(bid_ask: pd.DataFrame,  n: int, level2: pd.DataFrame) -> pd.DataFrame:
+    def last_features_of(bid_ask: pd.DataFrame,  n: int, level2: pd.DataFrame, candles_features: pd.DataFrame) -> pd.DataFrame:
         # Need 2 last records because features contain diff.
         last_bid_ask = bid_ask.tail(n + 1)
         last_level2 = level2[level2.index <= last_bid_ask.index.max()]
-        return PredictLowHighFeatures.features_of(last_bid_ask, last_level2)
+        return PredictLowHighFeatures.features_of(last_bid_ask, last_level2, candles_features)
 
     @staticmethod
-    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, predict_window=default_predict_window) \
+    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame, predict_window=default_predict_window) \
             -> (pd.DataFrame, pd.DataFrame):
-        features = PredictLowHighFeatures.features_of(bid_ask, level2)
+        features = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features)
         targets = PredictLowHighFeatures.targets_of(bid_ask, predict_window)
         merged = pd.merge_asof(features, targets, left_index=True, right_index=True, direction="forward") \
             .dropna()
@@ -37,8 +37,8 @@ class PredictLowHighFeatures:
         return features, targets
 
     @staticmethod
-    def features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame):
-        if bid_ask.empty or level2.empty:
+    def features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame):
+        if bid_ask.empty or level2.empty or candles_features.empty:
             return pd.DataFrame()
         l2_features = Level2Features().level2_buckets(level2)
         bid_ask_features = pd.merge(BidAskFeatures.time_features_of(bid_ask),
@@ -46,6 +46,7 @@ class PredictLowHighFeatures:
                                     left_index=True, right_index=True)
         features = pd.merge_asof(bid_ask_features, l2_features, left_index=True, right_index=True, direction="backward")
         # features.drop(["symbol", "datetime"], axis=1, inplace=True)
+        features = pd.merge_asof(features, candles_features, left_index=True, right_index=True)
         return features.dropna()
 
     @staticmethod

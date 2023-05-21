@@ -237,7 +237,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
         # Check learn conditions
-        if self.is_learning or self.bid_ask.empty or self.level2.empty:
+        if self.is_learning or self.bid_ask.empty or self.level2.empty or self.candles_features.empty:
             return False
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
@@ -251,7 +251,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2)
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, self.candles_features)
         return X, self.X_pipe.transform(X)
 
     def learn(self):
@@ -263,12 +263,13 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
             new_bid_ask = self.bid_ask[self.bid_ask.index > self.last_learn_bidask_time]
             new_level2 = self.level2[self.level2.index > self.last_learn_bidask_time]
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
-                new_bid_ask, self.level2, self.predict_window)
+                new_bid_ask, self.level2, self.candles_features, self.predict_window)
 
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, "
                 f"new bid_ask: {new_bid_ask.shape[0]}, new level2: {new_level2.shape[0]}, "
-                f"last bid_ask at: {self.bid_ask.index[-1]}, last level2 at: {self.level2.index[-1]}")
+                f"last bid_ask at: {self.bid_ask.index[-1]}, last level2 at: {self.level2.index[-1]}, "
+                f"last candle at: {self.candles_features.index[-1]}")
             if len(train_X.index) >= self.min_xy_len:
                 if not self.model:
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])

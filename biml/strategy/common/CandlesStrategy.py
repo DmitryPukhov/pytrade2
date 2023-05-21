@@ -19,9 +19,9 @@ class CandlesStrategy:
         self.candles_features = pd.DataFrame()
         # Candles intervals
         self.candles_fast_interval, self.candles_slow_interval = "1m", "5m"
-        self.candles_fast_limit, self.candles_slow_limit = 5, 5
-        self._log.info(f"Candles fast interval:{self.candles_fast_interval}, limit: {self.candles_fast_limit}")
-        self._log.info(f"Candles slow interval:{self.candles_slow_interval}, limit: {self.candles_slow_limit}")
+        self.candles_fast_window, self.candles_slow_window = 5, 5
+        self._log.info(f"Candles fast interval:{self.candles_fast_interval}, window: {self.candles_fast_window}")
+        self._log.info(f"Candles slow interval:{self.candles_slow_interval}, window: {self.candles_slow_window}")
 
     def read_candles_or_skip(self):
         """ If time elapsed, read candles from binance."""
@@ -31,10 +31,10 @@ class CandlesStrategy:
         if elapsed >= read_interval:
             self._log.debug(f"Reading last {self.ticker} candles from binance")
             # Read fast, clow candles from binance
-            candles_fast = self.feed.read_candles(self.ticker, self.candles_fast_interval, self.candles_fast_limit)
-            candles_slow = self.feed.read_candles(self.ticker, self.candles_slow_interval, self.candles_slow_limit)
+            candles_fast = self.feed.read_candles(self.ticker, self.candles_fast_interval, self.candles_fast_window+1)
+            candles_slow = self.feed.read_candles(self.ticker, self.candles_slow_interval, self.candles_slow_window+1)
             # Prepare candles features
-            self.candles_features = CandlesFeatures.candles_combined_features_of(candles_fast, self.candles_fast_limit,
-                                                                                 candles_slow, self.candles_slow_limit)
+            self.candles_features = CandlesFeatures.candles_combined_features_of(candles_fast, self.candles_fast_window,
+                                                                                 candles_slow, self.candles_slow_window)
 
             self.last_candles_read_time = datetime.utcnow()
