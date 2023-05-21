@@ -45,4 +45,4 @@ class BinanceCandlesFeed:
         # Convert strings to float prices
         df[["open", "high", "low", "close", "vol"]] = df[["open", "high", "low", "close", "vol"]].astype(float)
 
-        return df[["ticker", "interval", "open", "high", "low", "close"]]
+        return df[["ticker", "interval", "open", "high", "low", "close", "vol"]]

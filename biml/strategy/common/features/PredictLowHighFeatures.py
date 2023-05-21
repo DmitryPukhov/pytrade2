@@ -19,7 +19,7 @@ class PredictLowHighFeatures:
         return last_bid_ask, last_level2
 
     @staticmethod
-    def last_features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, n: int = 1) -> pd.DataFrame:
+    def last_features_of(bid_ask: pd.DataFrame,  n: int, level2: pd.DataFrame) -> pd.DataFrame:
         # Need 2 last records because features contain diff.
         last_bid_ask = bid_ask.tail(n + 1)
         last_level2 = level2[level2.index <= last_bid_ask.index.max()]

@@ -251,7 +251,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2, 1)
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2)
         return X, self.X_pipe.transform(X)
 
     def learn(self):

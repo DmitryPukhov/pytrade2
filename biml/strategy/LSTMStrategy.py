@@ -40,7 +40,7 @@ class LSTMStrategy(PredictLowHighStrategyBase):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Reshape last features to lstm window"""
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.level2, self.lstm_window_size)
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.lstm_window_size, self.level2)
         X_trans = self.X_pipe.transform(X)
         X_reshaped = np.reshape(X_trans, (-1, self.lstm_window_size, X_trans.shape[1]))
         return X, X_reshaped

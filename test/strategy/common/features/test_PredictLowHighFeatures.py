@@ -27,7 +27,7 @@ class TestPredictLowHighFeatures(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:16'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
         # Call
-        actual = PredictLowHighFeatures.last_features_of(bid_ask, level2)
+        actual = PredictLowHighFeatures.last_features_of(bid_ask, 1, level2)
         # Assert
         self.assertListEqual(actual.index.to_pydatetime().tolist(),
                              [datetime.fromisoformat("2023-03-17 15:56:15")])
