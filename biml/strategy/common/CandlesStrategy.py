@@ -5,6 +5,7 @@ import pandas as pd
 from binance.spot import Spot as Client
 
 from feed.BinanceCandlesFeed import BinanceCandlesFeed
+from strategy.common.features.CandlesFeatures import CandlesFeatures
 
 
 class CandlesStrategy:
@@ -15,7 +16,7 @@ class CandlesStrategy:
         self._log = logging.getLogger(self.__class__.__name__)
         self.feed = BinanceCandlesFeed(spot_client)
         self.ticker = ticker
-        self.candles_fast, self.candles_slow = pd.DataFrame(), pd.DataFrame()
+        self.candles_features = pd.DataFrame()
         # Candles intervals
         self.candles_fast_interval, self.candles_slow_interval = "1m", "5m"
         self.candles_fast_limit, self.candles_slow_limit = 5, 5
@@ -29,6 +30,11 @@ class CandlesStrategy:
         elapsed = datetime.utcnow() - self.last_candles_read_time
         if elapsed >= read_interval:
             self._log.debug(f"Reading last {self.ticker} candles from binance")
-            self.candles_fast = self.feed.read_candles(self.ticker, self.candles_fast_interval, self.candles_fast_limit)
-            self.candles_slow = self.feed.read_candles(self.ticker, self.candles_slow_interval, self.candles_slow_limit)
+            # Read fast, clow candles from binance
+            candles_fast = self.feed.read_candles(self.ticker, self.candles_fast_interval, self.candles_fast_limit)
+            candles_slow = self.feed.read_candles(self.ticker, self.candles_slow_interval, self.candles_slow_limit)
+            # Prepare candles features
+            self.candles_features = CandlesFeatures.candles_combined_features_of(candles_fast, self.candles_fast_limit,
+                                                                                 candles_slow, self.candles_slow_limit)
+
             self.last_candles_read_time = datetime.utcnow()
