@@ -26,22 +26,23 @@ class BinanceCandlesFeed:
                                               interval=interval,
                                               limit=limit)
         # Convert raw data to candles df
-        candles_df = self.candle2df(raw_candles=raw_candles)
+        candles_df = self.candle2df(ticker=ticker, interval=interval, raw_candles=raw_candles)
         return candles_df
 
-    def candle2df(self, raw_candles) -> pd.DataFrame:
+    def candle2df(self, ticker: str, interval: str, raw_candles) -> pd.DataFrame:
         """ Convert candles from raw json to pandas dataframe """
 
         # Json to df
         df = pd.DataFrame(data=raw_candles, columns=self.raw_candle_columns)
         df = df[self.candle_columns]
+        df[["ticker", "interval"]] = [ticker, interval]
 
         # Convert time from millis to datetime
-        #df["close_time"] = pd.to_datetime(df["close_time"], unit='ms')
+        # df["close_time"] = pd.to_datetime(df["close_time"], unit='ms')
         df.loc[:, "close_time"] = pd.to_datetime(df["close_time"], unit='ms')
-        df.set_index("close_time", drop=False, inplace=True)
+        df.set_index("close_time", inplace=True)
 
         # Convert strings to float prices
         df[["open", "high", "low", "close", "vol"]] = df[["open", "high", "low", "close", "vol"]].astype(float)
 
-        return df
+        return df[["ticker", "interval", "open", "high", "low", "close"]]
