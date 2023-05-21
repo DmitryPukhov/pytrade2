@@ -30,9 +30,9 @@ class CandlesStrategy:
         elapsed = datetime.utcnow() - self.last_candles_read_time
         if elapsed >= read_interval:
             self._log.debug(f"Reading last {self.ticker} candles from binance")
-            # Read fast, clow candles from binance
-            candles_fast = self.feed.read_candles(self.ticker, self.candles_fast_interval, self.candles_fast_window+1)
-            candles_slow = self.feed.read_candles(self.ticker, self.candles_slow_interval, self.candles_slow_window+1)
+            # Read fast, clow candles from binance +1 for last candle in progress, and +1 for diff
+            candles_fast = self.feed.read_candles(self.ticker, self.candles_fast_interval, self.candles_fast_window+2)
+            candles_slow = self.feed.read_candles(self.ticker, self.candles_slow_interval, self.candles_slow_window+2)
             # Prepare candles features
             self.candles_features = CandlesFeatures.candles_combined_features_of(candles_fast, self.candles_fast_window,
                                                                                  candles_slow, self.candles_slow_window)

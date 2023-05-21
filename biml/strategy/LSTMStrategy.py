@@ -35,7 +35,7 @@ class LSTMStrategy(PredictLowHighStrategyBase):
         model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['mean_squared_error'])
         # Load weights
         self.load_last_model(model)
-        # model.summary()
+        model.summary()
         return model
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):

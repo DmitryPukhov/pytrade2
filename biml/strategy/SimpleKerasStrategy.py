@@ -30,5 +30,5 @@ class SimpleKerasStrategy(PredictLowHighStrategyBase):
 
         # Load weights
         self.load_last_model(model)
-        # model.summary()
+        model.summary()
         return model
