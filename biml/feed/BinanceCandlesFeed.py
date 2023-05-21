@@ -19,7 +19,7 @@ class BinanceCandlesFeed:
 
     def read_candles(self, ticker, interval, limit):
         """ Read candles from Binance """
-        self._log.info(f"Reading {limit} last {ticker} {interval} candles from binance")
+        self._log.debug(f"Reading {limit} last {ticker} {interval} candles from binance")
 
         # Call binance client
         raw_candles = self.spot_client.klines(symbol=ticker,
