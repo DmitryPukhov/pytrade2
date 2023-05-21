@@ -32,7 +32,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.broker = broker
         self.model = None
 
-        CandlesStrategy.__init__(self, ticker=self.ticker, spot_client=broker.client)
+        CandlesStrategy.__init__(self, ticker=self.ticker, spot_client=broker.client if broker else None)
         PeriodicalLearnStrategy.__init__(self, config)
         PersistableStateStrategy.__init__(self, config)
         DataPurger.__init__(self, config)
