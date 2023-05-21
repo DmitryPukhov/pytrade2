@@ -31,4 +31,4 @@ class CandlesFeatures:
         for col in cols:
             features.rename(columns={col: f"{interval}_{col}"}, inplace=True)
 
-        return features.dropna()
+        return features.diff().dropna()
