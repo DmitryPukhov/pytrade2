@@ -7,8 +7,8 @@ from keras.layers import Dense, Dropout, LSTM
 from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
 
-from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
-from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
+from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
 class LSTMStrategy(PredictLowHighStrategyBase):

@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 from unittest import TestCase
 
-from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 
 
 class TestPredictLowHighFeatures(TestCase):

@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from strategy.common.predictlowhigh.BidAskFeatures import BidAskFeatures
-from strategy.common.predictlowhigh.Level2Features import Level2Features
+from strategy.common.features.BidAskFeatures import BidAskFeatures
+from strategy.common.features.Level2Features import Level2Features
 
 
 class PredictLowHighFeatures:

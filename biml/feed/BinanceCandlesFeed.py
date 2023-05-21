@@ -37,7 +37,8 @@ class BinanceCandlesFeed:
         df = df[self.candle_columns]
 
         # Convert time from millis to datetime
-        df["close_time"] = pd.to_datetime(df["close_time"], unit='ms')
+        #df["close_time"] = pd.to_datetime(df["close_time"], unit='ms')
+        df.loc[:, "close_time"] = pd.to_datetime(df["close_time"], unit='ms')
         df.set_index("close_time", drop=False, inplace=True)
 
         # Convert strings to float prices

@@ -8,8 +8,8 @@ import pandas as pd
 
 from broker.BinanceBroker import BinanceBroker
 from broker.model.Trade import Trade
-from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
-from strategy.common.predictlowhigh.PredictLowHighStrategyBase import PredictLowHighStrategyBase
+from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
 class TestPredictLowHighStrategyBase(TestCase):

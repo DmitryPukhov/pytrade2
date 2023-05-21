@@ -14,7 +14,7 @@ from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.DataPurger import DataPurger
 from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
-from strategy.common.predictlowhigh.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 
 
 class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, PersistableStateStrategy, DataPurger):
