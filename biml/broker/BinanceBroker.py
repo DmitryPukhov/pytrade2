@@ -201,8 +201,8 @@ class BinanceBroker:
         self._log.debug(f"Stop loss / take profit order raw response: {res}")
 
         # new_oco_order returns order list id only, so get order ids for sl and tp
-        oco_res = self.client.get_oco_order(orderListId=res["orderListId"])
-        stop_loss_order_id = ",".join([sl_tp_order["orderId"] for sl_tp_order in oco_res["orders"]])
+        oco_res = self.client.get_oco_order(orderListId=str(res["orderListId"]))
+        stop_loss_order_id = ",".join([str(sl_tp_order["orderId"]) for sl_tp_order in oco_res["orders"]])
 
         # Update cur trade
         self.cur_trade.stop_loss_price = stop_loss_price
