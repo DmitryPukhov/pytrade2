@@ -1,6 +1,6 @@
 # Config files
 /biml/cfg/app.yaml
-
+tmp
 /env
 /biml/cfg/app-dev.yaml
 /biml/cfg/*strategy.yaml
