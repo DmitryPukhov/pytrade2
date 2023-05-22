@@ -2,7 +2,7 @@ from typing import Optional
 
 from sqlalchemy import DateTime, Column, Float, String, INT, BigInteger, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+from sqlalchemy import extract
 
 class Base(DeclarativeBase):
     pass
@@ -45,6 +45,9 @@ class Trade(Base):
             close_details = f", close time: {self.close_time}, close price: {self.close_price}, profit: {profit}"
             details += close_details
         return details
+
+    def open_time_epoch_millis(self):
+        return extract('epoch', self.open_time) * 1000
 
     def direction(self):
         return Trade.order_side_codes.get(self.side)

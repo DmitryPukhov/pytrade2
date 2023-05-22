@@ -327,7 +327,8 @@ class BinanceBroker:
 
         if not trade or trade.close_time:
             return trade
-        last_trades = self.client.my_trades(symbol=trade.ticker, limit=3)
+        # 6 last trades: main,sl,tp plus possible expire/recreate
+        last_trades = self.client.my_trades(symbol=trade.ticker, startTime=trade.open_time_epoch_millis(),  limit=6)
         last_trade = ([t for t in last_trades \
                        if str(t["orderListId"]) == trade.stop_loss_order_id \
                        or str(t["orderId"]) == trade.stop_loss_order_id \
