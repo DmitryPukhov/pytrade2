@@ -2,7 +2,8 @@ from typing import Optional
 
 from sqlalchemy import DateTime, Column, Float, String, INT, BigInteger, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import extract
+from sqlalchemy import func, cast
+
 
 class Base(DeclarativeBase):
     pass
@@ -39,15 +40,16 @@ class Trade(Base):
         if self.close_time:
             profit = None
             if self.side == "BUY":
-                profit = (self.close_price - self.open_price)*self.quantity
+                profit = (self.close_price - self.open_price) * self.quantity
             elif self.side == "SELL":
-                profit = (self.open_price - self.close_price)*self.quantity
+                profit = (self.open_price - self.close_price) * self.quantity
             close_details = f", close time: {self.close_time}, close price: {self.close_price}, profit: {profit}"
             details += close_details
         return details
 
     def open_time_epoch_millis(self):
-        return extract('epoch', self.open_time) * 1000
+        # Timestamp is a float number of seconds, *1000 gets milliseconds
+        return int(self.open_time.timestamp()*1000)
 
     def direction(self):
         return Trade.order_side_codes.get(self.side)
