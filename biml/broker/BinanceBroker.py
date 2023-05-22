@@ -15,6 +15,7 @@ class BinanceBroker:
 
     def __init__(self, client: Client, config: Dict[str, str]):
         self._log = logging.getLogger(self.__class__.__name__)
+        self.allow_trade = config.get("biml.broker.trade.allow", False)
         self.client: Client = client
 
         # To convert order direction -1, 1 to buy/sell strings
@@ -23,7 +24,10 @@ class BinanceBroker:
 
         # Database
         self.__init_db__(config)
-        self.allow_trade = config.get("biml.broker.trade.allow", False)
+
+        # Set current opened trade if present
+        self.cur_trade = self.read_last_opened_trade()
+        self.update_trade_status(self.cur_trade)
 
         # Load saved opened trade
         if self.allow_trade:
@@ -47,7 +51,6 @@ class BinanceBroker:
         engine = create_engine(f"sqlite:///{db_path}")
         Trade.metadata.create_all(engine)
         self.db_session = sessionmaker(engine)()
-        self.cur_trade = self.read_last_opened_trade()
 
     def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,
@@ -194,8 +197,12 @@ class BinanceBroker:
             stopPrice=stop_loss_price,
             stopLimitPrice=stop_loss_limit_price,
             stopLimitTimeInForce='GTC')
-        stop_loss_order_id = str(res["orderListId"])
+
         self._log.debug(f"Stop loss / take profit order raw response: {res}")
+
+        # new_oco_order returns order list id only, so get order ids for sl and tp
+        oco_res = self.client.get_oco_order(orderListId=res["orderListId"])
+        stop_loss_order_id = ",".join([sl_tp_order["orderId"] for sl_tp_order in oco_res["orders"]])
 
         # Update cur trade
         self.cur_trade.stop_loss_price = stop_loss_price
@@ -327,21 +334,18 @@ class BinanceBroker:
 
         if not trade or trade.close_time:
             return trade
-        # 6 last trades: main,sl,tp plus possible expire/recreate
-        last_trades = self.client.my_trades(symbol=trade.ticker, startTime=trade.open_time_epoch_millis(),  limit=6)
-        last_trade = ([t for t in last_trades \
-                       if str(t["orderListId"]) == trade.stop_loss_order_id \
-                       or str(t["orderId"]) == trade.stop_loss_order_id \
-                       or str(t["orderId"]) == trade.close_order_id] \
-                      or [None])[-1]
+        # Try to get trade for stop loss or take profit
+        for sltp_order_id in trade.stop_loss_order_id.split(","):
 
-        if last_trade:
-            # Update db
-            trade.close_order_id = str(last_trade["orderId"])
-            trade.close_price = float(last_trade["price"])
-            trade.close_time = datetime.utcfromtimestamp(last_trade["time"] / 1000.0)
-            self._log.info(f"Current trade found closed, probably by stop loss or take profit: {trade}")
-            self.db_session.commit()
-            if trade == self.cur_trade:
-                self.cur_trade = None
+            # Actually a single trade or empty list will be returned by my_trades
+            for close_trade in self.client.my_trades(symbol=trade.ticker, orderId=sltp_order_id):
+                # Update db
+                trade.close_order_id = str(close_trade["orderId"])
+                trade.close_price = float(close_trade["price"])
+                trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
+                self._log.info(f"Current trade found closed, probably by stop loss or take profit: {trade}")
+                self.db_session.commit()
+                if trade == self.cur_trade:
+                    self.cur_trade = None
+
         return trade
