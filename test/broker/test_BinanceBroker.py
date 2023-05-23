@@ -47,6 +47,8 @@ class TestBinanceBroker(unittest.TestCase):
                                               "fills": [{"price": 20}],
                                               "transactTime": 123})
         client.new_oco_order = Mock(return_value={"status": "FILLED", "orderListId": 2})
+        client.get_oco_order = Mock(return_value={"status": "FILLED", "orderListId": 2,
+                                                  "orders": [{"orderId": 3}, {"orderId": 4}]})
 
         # Class under test
         broker = BinanceBroker(client, TestBinanceBroker.config)
