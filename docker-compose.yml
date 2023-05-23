@@ -22,3 +22,9 @@ services:
     extends:
       service: trade
     command: python ./App.py --config lstmstrategy.yaml
+
+  lstm2:
+    container_name: biml-lstm2
+    extends:
+      service: trade
+    command: python ./App.py --config lstmstrategy2.yaml
