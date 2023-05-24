@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
 
@@ -64,20 +65,27 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["biml.strategy.predict.window"]
         self.min_xy_len = 1
-        self.X_pipe, self.y_pipe = self.create_pipe()
+        self.X_pipe, self.y_pipe = None, None
         self._log.info(
             f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
             f"min stop loss coeff: {self.stop_loss_min_coeff}, max stop loss coeff: {self.stop_loss_max_coeff},"
             f"max allowed time gap between bidask and level2 data: {self.data_gap_max}")
 
-    def create_pipe(self) -> (Pipeline, Pipeline):
+    def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
+
+        time_cols = [col for col in X.columns if col.startswith("time")]
+        float_cols = list(set(X.columns) - set(time_cols))
+
         x_pipe = Pipeline(
-            [("xrs", RobustScaler()),  # Remove outliers
-             ("xmms", MinMaxScaler())])  # Equal scales for the features
+            [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
+             ("xmms", MinMaxScaler())])
+        x_pipe.fit(X)
+
         y_pipe = Pipeline(
-            [("yrs", RobustScaler()),  # Remove outliers
-             ("ymms", MinMaxScaler())])  # Eaual scales for the features
+            [("yrs", RobustScaler()),
+             ("ymms", MinMaxScaler())])
+        y_pipe.fit(y)
         return x_pipe, y_pipe
 
     def run(self, client):
@@ -146,7 +154,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
             self.last_trade_check_time = datetime.utcnow()
 
     def process_new_data(self):
-        if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing:
+        if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing \
+                and self.X_pipe and self.y_pipe:
             try:
                 self.is_processing = True
                 # Predict
@@ -274,6 +283,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
                 if not self.model:
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
+                if not (self.X_pipe and self.y_pipe):
+                    self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
                 # Final scaling and normalization
                 self.X_pipe.fit(train_X)
                 self.y_pipe.fit(train_y)
@@ -283,9 +294,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
                 # Save weights
                 self.save_model()
-                # # Clear the data, already used for learning
-                # self.bid_ask = self.bid_ask[self.bid_ask.index > train_X.index.max()]
-                # self.level2 = self.level2[self.level2.index > train_y.index.max()]
             else:
                 self._log.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
 

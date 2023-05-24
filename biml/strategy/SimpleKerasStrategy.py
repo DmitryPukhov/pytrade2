@@ -10,10 +10,6 @@ class SimpleKerasStrategy(PredictLowHighStrategyBase):
     """
     Keras simple NN
     """
-
-    def __init__(self, broker, config: Dict):
-        PredictLowHighStrategyBase.__init__(self, broker, config)
-
     def create_model(self, X_size, y_size):
         model = Sequential()
         model.add(Input(shape=(X_size,)))
