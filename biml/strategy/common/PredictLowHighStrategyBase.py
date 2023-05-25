@@ -169,7 +169,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
                     [self.predict_window, open_signal, cur_trade_direction]
 
                 # Save to historical data
-                self.save_lastXy(X.tail(1), y, self.bid_ask.tail(1))
+                self.save_lastXy(X.tail(1), y.tail(1), self.bid_ask.tail(1))
 
             except Exception as e:
                 self._log.error(e)
