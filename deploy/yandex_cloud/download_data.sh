@@ -23,6 +23,7 @@ print_last_trades(){
     last_open_time=$(sqlite3 "$strategy_file" "SELECT MAX(open_time) from trade")
     echo "$strategy last opened: $last_open_time, closed: $last_close_time"
   done
+  echo "Current time $(date -u)"
 }
 
 
