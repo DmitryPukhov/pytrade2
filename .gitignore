@@ -3,7 +3,7 @@
 tmp
 /env
 /biml/cfg/app-dev.yaml
-/biml/cfg/*strategy.yaml
+/biml/cfg/*strategy*.yaml
 
 /deploy/yandex_cloud/secret
 /deploy/yandex_cloud/tmp

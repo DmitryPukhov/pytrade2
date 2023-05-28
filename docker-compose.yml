@@ -15,16 +15,16 @@ services:
     container_name: biml-simplekeras
     extends:
       service: trade
-    command: python ./App.py --config simplekerasstrategy.yaml
+    command: python ./App.py --biml.strategy SimpleKerasStrategy
 
   lstm:
     container_name: biml-lstm
     extends:
       service: trade
-    command: python ./App.py --config lstmstrategy.yaml
+    command: python ./App.py --biml.strategy LSTMStrategy
 
   lstm2:
     container_name: biml-lstm2
     extends:
       service: trade
-    command: python ./App.py --config lstmstrategy2.yaml
+    command: python ./App.py --biml.strategy LSTMStrategy2

@@ -11,8 +11,8 @@ biml.strategy.stoploss.max.coeff: 0.005
 
 biml.strategy.profitloss.ratio: 4
 
-
-biml.connector.key: 'please copy app-defaults.yaml to app.yaml and update biml.connector.key there to your binance key'
+biml.connector.key: 'Your binance credentials should be here'
+biml.connector.secret: 'Your binance credentials should be here'
 biml.connector.url: 'https://testnet.binance.vision'
 biml.data.dir: './data'
 log.level: "INFO"
