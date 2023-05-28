@@ -18,8 +18,8 @@ class ExchangeProvider:
 
         if name not in self.exchanges:
             # Create exchange
-            exchange_class_name="Exchange"
-            exchange_file = f"pytrade2.exch.{name}.{exchange_class_name}"
+            exchange_class_name = "Exchange"
+            exchange_file = f"exch.{name}.{exchange_class_name}"
             self._log.info(f"Providing exchange: from {exchange_file} import {exchange_class_name}")
             module = importlib.import_module(exchange_file, exchange_class_name)
             exchange_object = getattr(module, exchange_class_name)(config=self.config)
@@ -27,4 +27,3 @@ class ExchangeProvider:
 
         # Get old or created exchange
         return self.exchanges[name]
-
