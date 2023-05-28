@@ -1,6 +1,4 @@
-pytrade2.exchange: binance
-pytrade2.broker: BinanceBroker
-pytrade2.feed: HuobiFeed
+pytrade2.exchange: huobi
 pytrade2.strategy: SimpleKerasStrategy
 pytrade2.strategy.learn.interval.sec: 20
 pytrade2.strategy.purge.window: "120s"
@@ -16,7 +14,8 @@ pytrade2.strategy.profitloss.ratio: 4
 
 pytrade2.connector.key: 'Your binance credentials should be here'
 pytrade2.connector.secret: 'Your binance credentials should be here'
-pytrade2.connector.url: 'https://testnet.binance.vision'
+#pytrade2.connector.url: 'https://testnet.binance.vision'
+pytrade2.connector.url: "wss://api.huobi.pro/ws"
 pytrade2.data.dir: './data'
 log.level: "INFO"
 pytrade2.tickers: "BTCUSDT"

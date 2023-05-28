@@ -115,7 +115,7 @@ class App:
 
         strategy_file = f"strategy." + self.config["pytrade2.strategy"]
         strategy_class_name = strategy_file.split(".")[-1]
-        self._log.info(f"Running the app with strategy from {strategy_file} import {strategy_class_name}")
+        self._log.info(f"Running the strategy: {strategy_file}")
         module = importlib.import_module(strategy_file, strategy_class_name)
         strategy = getattr(module, strategy_class_name)(config = self.config, exchange_provider = exchange_provider)
         return strategy

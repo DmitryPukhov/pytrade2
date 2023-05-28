@@ -100,8 +100,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.websocket_feed = self.exchange.websocket_feed()
         self.websocket_feed.consumers.append(self)
 
-        self.candles_feed = self.exchange.canldes_feed()
-        self.broker = self.exchange.broker()
+        self.candles_feed = self.exchange.candles_feed()
+        #self.broker = self.exchange.broker()
 
         self.websocket_feed.run()
 
