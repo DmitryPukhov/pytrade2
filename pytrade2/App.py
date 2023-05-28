@@ -4,6 +4,7 @@ import argparse
 import os
 
 import sys
+from collections import defaultdict
 from typing import Dict
 
 import pandas as pd
@@ -30,7 +31,7 @@ class App:
         pd.set_option("expand_frame_repr", False)
 
         # Load config, set up logging
-        self.config: Dict[str, str] = self._load_config()
+        self.config = self._load_config()
 
         # Init logging
         loglevel = self.config["log.level"]
@@ -44,12 +45,13 @@ class App:
         self.broker, self.strategy = None, None
         self._log.info("App initialized")
 
-    def _load_config_file(self, path: str):
-        """ Update config with another from path"""
+    def _read_config(self, path: str, required=False):
         if os.path.exists(path):
             with open(path, "r") as file:
                 self._log.info(f"Reading config from {path}")
                 conf = yaml.safe_load(file)
+        elif required:
+            sys.exit(f"Obligatory config {path} not found.")
         else:
             self._log.info(f"Config {path} not found, that could be ok.")
             conf = {}
@@ -60,38 +62,40 @@ class App:
         Load config from cfg folder respecting the order: defaults, app.yaml, environment vars
         """
         args = App._parse_args()
-        config = {}
-
-        # Fill config files list in order
-        files = ["cfg/app-defaults.yaml", "cfg/app.yaml", "cfg/app-dev.yaml"]
-
-        # If strategy parameter set in args, add its config to files
         strategy_key = "pytrade2.strategy"
-        if args[strategy_key]:
-            config[strategy_key] = args[strategy_key]
-        path = f"cfg/{ config[strategy_key].lower()}.yaml"
-        if os.path.exists(path):
-            files.append(path)
-        else:
-            self._log.info(f"Strategy config {path} not found. Maybe the strategy does not require it.")
+        config: Dict[str, str] = defaultdict()
 
-        # Read config files
-        for file in files:
-            config.update(self._load_config_file(file))
+        # App configs
+        app_config = self._read_config("cfg/app-defaults.yaml")
+        app_config.update(self._read_config("cfg/app.yaml"))
+        app_config.update(self._read_config("cfg/app-dev.yaml"))
 
-        # Enviroment variables
+        # Extra config if passed in command line
+        extra_config = self._read_config(f"cfg/{args['config']}", required=True) \
+            if args["config"] else defaultdict()
+
+        # Determine strategy name
+        final_strategy = args[strategy_key] or extra_config[strategy_key] or config[strategy_key]
+        if not final_strategy:
+            sys.exit("Please set pytrate2.strategy")
+        # Read strategy config
+        strategy_config = self._read_config(f"cfg/{final_strategy.lower()}.yaml")
+
+        # Create final config in priority order
+        config.update(app_config)
+        config.update(strategy_config)
+        config.update(extra_config)
         config.update(os.environ)
-
-        # Args
-        config.update([(key, value) for (key, value) in args.items() if value])
-
+        config["pytrade2.strategy"] = final_strategy
         return config
 
     @staticmethod
     def _parse_args() -> Dict[str, str]:
         """ Parse command line arguments"""
         parser = argparse.ArgumentParser()
-        parser.add_argument('--pytrade2.strategy', help='Strategy class, example: --pytrade2.strategy SimpleKerasStraategy')
+        parser.add_argument('--pytrade2.strategy',
+                            help='Strategy class, example: --pytrade2.strategy SimpleKerasStraategy')
+        parser.add_argument('--config', help='Additional config file')
         return vars(parser.parse_args())
 
     def _init_client(self):
@@ -101,7 +105,8 @@ class App:
         key, secret = self.config["pytrade2.connector.key"], self.config["pytrade2.connector.secret"]
 
         url = self.config["pytrade2.connector.url"]
-        self._log.info(f"Init binance client for strategy: {strategy}, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+        self._log.info(
+            f"Init binance client for strategy: {strategy}, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
         self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
 
     def _create_strategy(self):

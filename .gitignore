@@ -3,7 +3,7 @@
 tmp
 data
 /env
-/pytrade2/cfg/app-dev.yaml
+/pytrade2/cfg/*-dev.yaml
 /pytrade2/cfg/*strategy*.yaml
 
 /deploy/yandex_cloud/secret
