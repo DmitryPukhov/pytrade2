@@ -101,7 +101,7 @@ class App:
         key, secret = self.config["biml.connector.key"], self.config["biml.connector.secret"]
 
         url = self.config["biml.connector.url"]
-        self._log.info(f"Init binance client for strategy: {strategy}, url: {url}")
+        self._log.info(f"Init binance client for strategy: {strategy}, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
         self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
 
     def _create_strategy(self):
