@@ -8,7 +8,7 @@ from broker.BinanceBroker import BinanceBroker
 
 
 class TestBinanceBroker(unittest.TestCase):
-    config: Dict[str, any] = {"biml.broker.trade.allow": True}
+    config: Dict[str, any] = {"pytrade2.broker.trade.allow": True}
 
     @staticmethod
     def __broker__init_db__(self, cfg):

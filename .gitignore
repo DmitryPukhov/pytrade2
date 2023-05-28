@@ -1,9 +1,10 @@
 # Config files
-/biml/cfg/app.yaml
+/pytrade2/cfg/app.yaml
 tmp
+data
 /env
-/biml/cfg/app-dev.yaml
-/biml/cfg/*strategy*.yaml
+/pytrade2/cfg/app-dev.yaml
+/pytrade2/cfg/*strategy*.yaml
 
 /deploy/yandex_cloud/secret
 /deploy/yandex_cloud/tmp

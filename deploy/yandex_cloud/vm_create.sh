@@ -1,5 +1,5 @@
 #!/bin/bash
-app_name=biml-trade-bots
+app_name=pytrade2-trade-bots
 zone="ru-central1-a"
 
 create_instance() {

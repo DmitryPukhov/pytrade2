@@ -2,7 +2,7 @@
 FROM python:3.8
 
 # set the working directory in the container
-WORKDIR /biml
+WORKDIR /pytrade2
 
 # copy the dependencies file to the working directory
 COPY requirements.txt .
@@ -11,7 +11,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # copy the content of the local src directory to the working directory
-COPY biml/ .
+COPY pytrade2/ .
 
 RUN rm -f ./cfg/app-dev.yaml
 # command to run on container start

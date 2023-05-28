@@ -12,19 +12,19 @@ services:
     restart: on-failure
 
   simplekeras:
-    container_name: biml-simplekeras
+    container_name: pytrade2-simplekeras
     extends:
       service: trade
-    command: python ./App.py --biml.strategy SimpleKerasStrategy
+    command: python ./App.py --pytrade2.strategy SimpleKerasStrategy
 
   lstm:
-    container_name: biml-lstm
+    container_name: pytrade2-lstm
     extends:
       service: trade
-    command: python ./App.py --biml.strategy LSTMStrategy
+    command: python ./App.py --pytrade2.strategy LSTMStrategy
 
   lstm2:
-    container_name: biml-lstm2
+    container_name: pytrade2-lstm2
     extends:
       service: trade
-    command: python ./App.py --biml.strategy LSTMStrategy2
+    command: python ./App.py --pytrade2.strategy LSTMStrategy2

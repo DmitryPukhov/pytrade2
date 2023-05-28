@@ -1,0 +1,22 @@
+pytrade2.strategy: SimpleKerasStrategy
+pytrade2.strategy.learn.interval.sec: 20
+pytrade2.strategy.purge.window: "120s"
+pytrade2.strategy.predict.window: "60s"
+
+# coeff 0.00005 for BTCUSDT 30000 means 1,5
+pytrade2.strategy.stoploss.min.coeff: 0.00005
+
+# 0.005 means For BTCUSDT 30 000 max stop loss would be 150
+pytrade2.strategy.stoploss.max.coeff: 0.005
+
+pytrade2.strategy.profitloss.ratio: 4
+
+pytrade2.connector.key: 'Your binance credentials should be here'
+pytrade2.connector.secret: 'Your binance credentials should be here'
+pytrade2.connector.url: 'https://testnet.binance.vision'
+pytrade2.data.dir: './data'
+log.level: "INFO"
+pytrade2.tickers: "BTCUSDT"
+pytrade2.broker.trade.allow: true
+pytrade2.strategy.lstm.window.size: 10
+pytrade2.order.quantity: 0.001

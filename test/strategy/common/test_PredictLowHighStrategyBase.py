@@ -49,11 +49,11 @@ class TestPredictLowHighStrategyBase(TestCase):
         """ Strategy wrapper for tests """
 
         def __init__(self):
-            conf = {"biml.tickers": "test", "biml.strategy.learn.interval.sec": 60,
-                    "biml.data.dir": "tmp",
-                    "biml.strategy.data.gap.max.sec": 10,
-                    "biml.strategy.predict.window": "10s",
-                    "biml.order.quantity": 0.001}
+            conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
+                    "pytrade2.data.dir": "tmp",
+                    "pytrade2.strategy.data.gap.max.sec": 10,
+                    "pytrade2.strategy.predict.window": "10s",
+                    "pytrade2.order.quantity": 0.001}
             super().__init__(None, conf)
             self.profit_loss_ratio = 4
             self.close_profit_loss_ratio = 2
