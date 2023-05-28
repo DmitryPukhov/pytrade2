@@ -11,7 +11,8 @@ import pandas as pd
 import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
-from broker.BinanceBroker import BinanceBroker
+
+from exch.ExchangeProvider import ExchangeProvider
 
 
 class App:
@@ -39,10 +40,10 @@ class App:
         self._log.info(f"Set log level to {loglevel}")
 
         # Create binance client
-        self._init_client()
+        #self._init_client()
 
         # Init binance feed
-        self.broker, self.strategy = None, None
+        #self.broker, self.strategy = None, None
         self._log.info("App initialized")
 
     def _read_config(self, path: str, required=False):
@@ -98,36 +99,37 @@ class App:
         parser.add_argument('--config', help='Additional config file')
         return vars(parser.parse_args())
 
-    def _init_client(self):
-        """ Binance spot client creation. Each strategy can be configured at it's own account"""
-        strategy = self.config["pytrade2.strategy"].lower()
-        self._log.info(f"Looking config for {strategy} key and secret")
-        key, secret = self.config["pytrade2.connector.key"], self.config["pytrade2.connector.secret"]
-
-        url = self.config["pytrade2.connector.url"]
-        self._log.info(
-            f"Init binance client for strategy: {strategy}, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-        self.client: Client = Client(key=key, secret=secret, base_url=url, timeout=10)
+    # def _create_broker(self):
+    #     """ Create strategy class"""
+    #
+    #     broker_file = f"broker." + self.config["pytrade2.broker"]
+    #     broker_class_name = broker_file.split(".")[-1]
+    #     self._log.info(f"Creating broker: from {broker_file} import {broker_class_name}")
+    #     module = importlib.import_module(broker_file, broker_class_name)
+    #     broker = getattr(module, broker_class_name)(broker=self.broker, config=self.config)
+    #     return broker
 
     def _create_strategy(self):
         """ Create strategy class"""
+        exchange_provider = ExchangeProvider(self.config)
 
         strategy_file = f"strategy." + self.config["pytrade2.strategy"]
         strategy_class_name = strategy_file.split(".")[-1]
         self._log.info(f"Running the app with strategy from {strategy_file} import {strategy_class_name}")
         module = importlib.import_module(strategy_file, strategy_class_name)
-        strategy = getattr(module, strategy_class_name)(broker=self.broker, config=self.config)
+        strategy = getattr(module, strategy_class_name)(config = self.config, exchange_provider = exchange_provider)
         return strategy
 
     def run(self):
         """
         Application entry point
         """
-        self.broker = BinanceBroker(client=self.client, config=self.config)
+        # self.broker = BinanceBroker(client=self.client, config=self.config)
+        #self.broker = self._create_broker()
         self.strategy = self._create_strategy()
 
         # Run and wait until the end
-        self.strategy.run(self.client)
+        self.strategy.run()
 
         self._log.info("The end")
 

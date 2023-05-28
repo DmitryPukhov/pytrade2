@@ -1,8 +1,6 @@
 from unittest import TestCase
 
-import pandas as pd
-
-from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
+from feed.binance.BinanceWebsocketFeed import BinanceWebsocketFeed
 
 
 class TestBinanceWebsocketFeed(TestCase):

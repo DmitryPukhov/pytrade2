@@ -1,3 +1,6 @@
+pytrade2.exchange: binance
+pytrade2.broker: BinanceBroker
+pytrade2.feed: HuobiFeed
 pytrade2.strategy: SimpleKerasStrategy
 pytrade2.strategy.learn.interval.sec: 20
 pytrade2.strategy.purge.window: "120s"

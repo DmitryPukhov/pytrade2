@@ -8,9 +8,9 @@ from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler, RobustScaler, MinMaxScaler
+from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
-from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
+from exch.ExchangeProvider import ExchangeProvider
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.DataPurger import DataPurger
 from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
@@ -23,17 +23,21 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
     Listen price data from web socket, predict future low/high
     """
 
-    def __init__(self, broker, config: Dict):
+    def __init__(self, config: Dict, exchange_provider: ExchangeProvider):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.tickers = self.config["pytrade2.tickers"].split(",")
         self.ticker = self.tickers[-1]
         self.order_quantity = config["pytrade2.order.quantity"]
         self._log.info(f"Order quantity: {self.order_quantity}")
-        self.broker = broker
+        self.exchange_provider = exchange_provider
+        self.exchange = None
+        self.websocket_feed = None
+        self.candles_feed = None
         self.model = None
+        self.broker = None
 
-        CandlesStrategy.__init__(self, ticker=self.ticker, spot_client=broker.client if broker else None)
+        CandlesStrategy.__init__(self, ticker=self.ticker, candles_feed=self.candles_feed)
         PeriodicalLearnStrategy.__init__(self, config)
         PersistableStateStrategy.__init__(self, config)
         DataPurger.__init__(self, config)
@@ -88,13 +92,18 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         y_pipe.fit(y)
         return x_pipe, y_pipe
 
-    def run(self, client):
+    def run(self):
         """
         Attach to the feed and listen
         """
-        feed = BinanceWebsocketFeed(tickers=self.tickers)
-        feed.consumers.append(self)
-        feed.run()
+        self.exchange = self.exchange_provider.exchange(self.config["pytrade2.exchange"])
+        self.websocket_feed = self.exchange.websocket_feed()
+        self.websocket_feed.consumers.append(self)
+
+        self.candles_feed = self.exchange.canldes_feed()
+        self.broker = self.exchange.broker()
+
+        self.websocket_feed.run()
 
     def is_data_gap(self):
         """ Check the gap between last bidask and level2 """
@@ -110,8 +119,10 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         """
         Got new order book items event
         """
+        bid_ask_columns = ["datetime", "symbol", "bid", "bid_vol", "ask", "ask_vol"]
+
         # Add new data to df
-        new_df = pd.DataFrame(level2, columns=BinanceWebsocketFeed.bid_ask_columns).set_index("datetime", drop=False)
+        new_df = pd.DataFrame(level2, columns=bid_ask_columns).set_index("datetime", drop=False)
         self.level2 = pd.concat([self.level2, new_df])  # self.level2.append(new_df)
 
     def on_ticker(self, ticker: dict):

@@ -5,7 +5,7 @@ from typing import Optional, Dict
 from binance.spot import Spot as Client
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from broker.model.Trade import Trade
+from model.Trade import Trade
 
 
 class BinanceBroker:
