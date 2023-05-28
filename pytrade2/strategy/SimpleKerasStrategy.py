@@ -21,7 +21,7 @@ class SimpleKerasStrategy(PredictLowHighStrategyBase):
         model.add(Dropout(0.1))
         model.add(Dense(32, activation='relu'))
         # model.add(Dropout(0.1))
-        model.add(Dense(y_size, activation='softmax'))
+        model.add(Dense(y_size, activation='linear'))
         model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['mean_squared_error'])
 
         # Load weights
