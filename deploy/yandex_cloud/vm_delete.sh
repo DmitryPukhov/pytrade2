@@ -1,5 +1,5 @@
 #!/bin/bash
-app_name=pytrade2-trade-bots
+app_name=pytrade2
 
 echo "Stopping pytrade2 vm $app_name"
 yc compute instance stop --name $app_name || true

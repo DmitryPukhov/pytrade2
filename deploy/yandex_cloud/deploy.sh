@@ -6,7 +6,7 @@ bot_names=${*:-"$default_bot_names"}
 echo "Deploying $bot_names"
 
 user="yc-user"
-public_ip="$(yc compute instance list | grep pytrade2-trade-bots | awk '{print $10}')"
+public_ip="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
 pytrade2_vm_dir="/home/$user/pytrade2"
 
 dockercomposeup() {

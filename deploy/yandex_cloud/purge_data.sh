@@ -4,7 +4,7 @@
 # Purge remote data directory, leave only last 2 days
 #####################################################
 
-public_ip=$(yc vpc address list | grep pytrade2-trade-bots | awk '{print $6}')
+public_ip=$(yc vpc address list | grep pytrade2 | awk '{print $6}')
 user="yc-user"
 data_dir="/home/$user/pytrade2/data"
 

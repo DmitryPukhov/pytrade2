@@ -1,6 +1,6 @@
 #!/bin/bash
 
-public_ip="$(yc compute instance list | grep pytrade2-trade-bots | awk '{print $10}')"
+public_ip="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
 user="yc-user"
 tmp_dir="$(pwd)/tmp"
 pytrade2_dir="$(pwd)/../.."

@@ -1,5 +1,5 @@
 #!/bin/bash
-app_name=pytrade2-trade-bots
+app_name=pytrade2
 zone="ru-central1-a"
 
 create_instance() {
@@ -9,8 +9,8 @@ create_instance() {
     --name $app_name \
     --hostname $app_name \
     --zone $zone\
-    --memory 4 \
-    --cores 2 \
+    --memory 8 \
+    --cores 4 \
     --platform "standard-v3" \
     --network-interface subnet-name=default-ru-central1-a,nat-ip-version=ipv4,nat-address="$public_ip" \
     --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2204-lts,type=network-hdd,size=32 \

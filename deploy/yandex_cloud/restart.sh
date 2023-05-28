@@ -3,7 +3,7 @@
 bot_name=${1?"Please provide bot name. Example: $0 lstm"} # arg1 is a bot name
 
 user="yc-user"
-public_ip="$(yc compute instance list | grep pytrade2-trade-bots | awk '{print $10}')"
+public_ip="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
 pytrade2_vm_dir="/home/$user/pytrade2"
 
 echo "Restarting bot $bot_name at $public_ip machine"

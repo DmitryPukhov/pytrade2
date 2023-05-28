@@ -1,6 +1,6 @@
 #!/bin/bash
 
-public_ip="$(yc compute instance list | grep pytrade2-trade-bots | awk '{print $10}')"
+public_ip="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
 user="yc-user"
 local_pytrade2_dir="$(pwd)/../.."
 local_data_dir="$local_pytrade2_dir/data/yandex-cloud"
@@ -9,7 +9,7 @@ local_data_dir="$local_pytrade2_dir/data/yandex-cloud"
 download_data(){
   mkdir -p $local_data_dir
   vm_data_dir="/home/$user/pytrade2/data"
-  echo "Downloading bots data from $public_ip to $local_data_dir"
+  echo "Downloading pytrade2 data from $public_ip to $local_data_dir"
   rsync -v -r $user@$public_ip:$vm_data_dir/  $local_data_dir
 }
 
