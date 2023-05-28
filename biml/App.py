@@ -64,13 +64,16 @@ class App:
 
         # Fill config files list in order
         files = ["cfg/app-defaults.yaml", "cfg/app.yaml", "cfg/app-dev.yaml"]
-        # We can pass strategy specific config, usually with binance api keys and strategy class: --config lstm.yaml
-        if "config" in args:
-            path = f"cfg/{args['config']}"
-            if os.path.exists(path):
-                files.append(path)
-            else:
-                sys.exit(f"Obligatory config {path} not found.")
+
+        # If strategy parameter set in args, add its config to files
+        strategy_key = "biml.strategy"
+        if args[strategy_key]:
+            config[strategy_key] = args[strategy_key]
+        path = f"cfg/{ config[strategy_key].lower()}.yaml"
+        if os.path.exists(path):
+            files.append(path)
+        else:
+            self._log.info(f"Strategy config {path} not found. Maybe the strategy does not require it.")
 
         # Read config files
         for file in files:
@@ -80,14 +83,15 @@ class App:
         config.update(os.environ)
 
         # Args
-        config.update(args)
+        config.update([(key, value) for (key, value) in args.items() if value])
+
         return config
 
     @staticmethod
     def _parse_args() -> Dict[str, str]:
         """ Parse command line arguments"""
         parser = argparse.ArgumentParser()
-        parser.add_argument('--config', help='Additional config file, usually contains api keys and strategy')
+        parser.add_argument('--biml.strategy', help='Strategy class, example: --biml.strategy SimpleKerasStraategy')
         return vars(parser.parse_args())
 
     def _init_client(self):
