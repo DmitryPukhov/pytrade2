@@ -12,7 +12,6 @@ class BinanceBroker:
 
     def __init__(self, client: Client, config: Dict[str, str]):
         self._log = logging.getLogger(self.__class__.__name__)
-        self.allow_trade = config.get("pytrade2.broker.trade.allow", False)
         self.client: Client = client
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:

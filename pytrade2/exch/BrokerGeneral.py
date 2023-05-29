@@ -115,7 +115,8 @@ class BrokerGeneral:
         return self.cur_trade
 
     def close_cur_trade(self):
-        self.cur_trade = self.client.close_cur_trade(self.cur_trade)
+        self.cur_trade = self.client.close_order(self.cur_trade)
+        self._log.info(f"Closed current trade:{self.cur_trade}")
 
     def adjusted_sl_tp(self, direction, orig_price: float, orig_sl_price: float, orig_tp_price: float,
                        filled_price: float):
