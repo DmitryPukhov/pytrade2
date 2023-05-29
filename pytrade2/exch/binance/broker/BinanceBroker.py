@@ -105,7 +105,7 @@ class BinanceBroker:
     def update_trade_status(self, trade: Trade) -> Trade:
         """ If given trade closed by stop loss, update db and set cur trade variable to none """
 
-        if not trade or trade.close_time:
+        if not trade or trade.close_time or not trade.stop_loss_order_id:
             return trade
 
         # Try to get trade for stop loss or take profit

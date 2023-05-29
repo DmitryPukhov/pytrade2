@@ -2,11 +2,10 @@ import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict
-from binance.spot import Spot as Client
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from exch.binance.broker.BinanceBroker import BinanceBroker
 from model.Trade import Trade
 
 
