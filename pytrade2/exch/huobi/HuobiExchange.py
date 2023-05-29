@@ -1,6 +1,6 @@
 import logging
 
-from exch.huobi.broker.HuobiBroker import HuobiBroker
+from exch.huobi.broker.HuobiBroker_ import HuobiBroker
 from huobi.client.market import MarketClient
 
 from exch.huobi.feed.HuobiCandlesFeed import HuobiCandlesFeed
