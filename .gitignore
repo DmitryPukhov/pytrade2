@@ -1,6 +1,7 @@
 # Config files
 /pytrade2/cfg/app.yaml
 tmp
+_trial_temp
 data
 /env
 /pytrade2/cfg/*-dev.yaml
