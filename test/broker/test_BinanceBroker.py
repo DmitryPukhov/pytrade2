@@ -4,7 +4,8 @@ from typing import Dict
 from unittest import mock
 from unittest.mock import Mock, MagicMock
 
-from broker.BinanceBroker import BinanceBroker
+from exch.binance.broker.BinanceBroker import BinanceBroker
+from exch.BrokerGeneral import BrokerGeneral
 
 
 class TestBinanceBroker(unittest.TestCase):
@@ -15,8 +16,8 @@ class TestBinanceBroker(unittest.TestCase):
         self.db_session = MagicMock()
 
     def setUp(self) -> None:
-        mock.patch.object(BinanceBroker, '__init_db__', self.__broker__init_db__).start()
-        mock.patch.object(BinanceBroker, "read_last_opened_trade", lambda self: None).start()
+        mock.patch.object(BrokerGeneral, '__init_db__', self.__broker__init_db__).start()
+        mock.patch.object(BrokerGeneral, "read_last_opened_trade", lambda self: None).start()
 
     def test_create_cur_trade__not_filled(self):
         # Binance client mock
@@ -25,7 +26,8 @@ class TestBinanceBroker(unittest.TestCase):
         client.new_oco_order = Mock()
 
         # Class under test
-        broker = BinanceBroker(client, TestBinanceBroker.config)
+
+        broker = BrokerGeneral(BinanceBroker(client, TestBinanceBroker.config), TestBinanceBroker.config)
 
         # Test call
         broker.create_cur_trade(symbol="BTCUSDT",
@@ -51,7 +53,7 @@ class TestBinanceBroker(unittest.TestCase):
                                                   "orders": [{"orderId": 3}, {"orderId": 4}]})
 
         # Class under test
-        broker = BinanceBroker(client, TestBinanceBroker.config)
+        broker = BrokerGeneral(BinanceBroker(client, TestBinanceBroker.config),TestBinanceBroker.config)
 
         # Test call
         broker.create_cur_trade(symbol="BTCUSDT",

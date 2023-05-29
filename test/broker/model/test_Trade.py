@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import DateTime
 
-from broker.model.Trade import Trade
+from model.Trade import Trade
 
 
 class TestTrade(TestCase):

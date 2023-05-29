@@ -65,14 +65,16 @@ class BinanceWebsocketFeed:
         except Exception as e:
             self._log.error(e)
 
-    def rawticker2model(self, msg: Dict) -> Dict:
+    @staticmethod
+    def rawticker2model(msg: Dict) -> Dict:
         return {"datetime": datetime.datetime.utcnow(),
                 "symbol": msg["s"],
                 "bid": float(msg["b"]), "bid_vol": float(msg["B"]),
                 "ask": float(msg["a"]), "ask_vol": float(msg["A"]),
                 }
 
-    def rawlevel2model(self, msg: Dict):
+    @staticmethod
+    def rawlevel2model(msg: Dict):
         # dt=pd.to_datetime(msg["E"], unit='ms')
         dt = datetime.datetime.utcnow()  # bid/ask has no datetime field, so use this machine's time
         out = [{"datetime": dt, "symbol": msg["s"],
@@ -81,7 +83,8 @@ class BinanceWebsocketFeed:
                 "ask": float(price), "ask_vol": float(vol)} for price, vol in msg['a']]
         return out
 
-    def rawbidask2model(self, msg: Dict):
+    @staticmethod
+    def rawbidask2model(msg: Dict):
         """
         Convert raw binance data to model
         """
