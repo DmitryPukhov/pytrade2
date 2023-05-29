@@ -4,7 +4,9 @@ from pathlib import Path
 from typing import Optional, Dict
 
 import huobi.client.wallet
+import pandas as pd
 from binance.spot import Spot as Client
+from huobi.constant import OrderType, OrderSource
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from model.Trade import Trade
@@ -21,7 +23,7 @@ class HuobiBroker:
         self._log = logging.getLogger(self.__class__.__name__)
         self.allow_trade = config.get("pytrade2.broker.trade.allow", False)
         self.client: TradeClient = TradeClient()
-
+        self.account_id=int(config["pytrade2.broker.account.id"])
         # To convert order direction -1, 1 to buy/sell strings
         self.order_side_names = {1: "BUY", -1: "SELL"}
         self.order_side_codes = dict(map(reversed, self.order_side_names.items()))
@@ -142,31 +144,29 @@ class HuobiBroker:
                                       self.price_precision)
         return stop_loss_price_adj, take_profit_price_adj
 
-    def create_main_order(self, symbol: str, side: str, price: float, quantity: float):
+    def create_main_order(self, symbol: str, side:str, price: float, quantity: float):
         """ Main buy or sell order. Stop loss and take profit will be set later. """
+        direction = self.order_side_codes[side]
+        order_type= OrderType.BUY_LIMIT_FOK if direction == 1 else OrderType.SELL_LIMIT_FOK
 
-        res = self.client.new_order(
+        order_id = self.client.create_order(
             symbol=symbol,
-            side=side,
-            type="LIMIT",
+            account_id=self.account_id,
+            order_type=order_type,
             price=price,
-            quantity=quantity,
-            timeInForce="FOK"  # Fill or kill
+            amount=quantity,
+            source=OrderSource.API
         )
-        self._log.debug(f"Create main order raw response: {res}")
-
-        if res["status"] == "FILLED":
-            order_id = str(res["orderId"])
-            filled_price = float(res["fills"][0]["price"] if res["fills"] else price)
-            open_time = datetime.utcfromtimestamp(res["transactTime"] / 1000.0)
+        if order_id:
+            order = self.client.get_order(order_id)
 
             # Set cur trade to opened order with sl/tp
             self.cur_trade = Trade(ticker=symbol,
                                    side=side,
-                                   open_time=open_time,
-                                   open_price=filled_price,
+                                   open_time=pd.to_datetime(order.created_at, unit="ms"),
+                                   open_price=order.price,
                                    open_order_id=order_id,
-                                   quantity=quantity)
+                                   quantity=order.amount)
             self._log.info(f"Created main order {self.cur_trade}")
         else:
             self._log.info(f"Cannot create main {symbol} {side} order at price {price}, that's ok.")
@@ -193,7 +193,7 @@ class HuobiBroker:
         self._log.info(
             f"Creating stop loss and take profit for base {self.order_side_names[base_direction]} order, base_price={base_price}, stop_loss_adj={stop_loss_price},"
             f" stop_loss_limit_price={stop_loss_limit_price}, take_profit_adj={take_profit_price}")
-        res = self.client.new_oco_order(
+        res = self.client.batch_create_order(
             symbol=symbol,
             side=other_side,
             quantity=quantity,
@@ -281,7 +281,7 @@ class HuobiBroker:
 
     def read_last_opened_trade(self) -> Trade:
         """ Returns current opened trade, stored in db or none """
-        return None
+
         return self.db_session \
             .query(Trade) \
             .where(Trade.close_time.is_(None)) \

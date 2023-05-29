@@ -8,7 +8,7 @@ from exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
 
-class Exchange:
+class BinanceExchange:
     def __init__(self, config: dict):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
@@ -26,7 +26,7 @@ class Exchange:
             self.__websocket_feed = BinanceWebsocketFeed(config=self.config, websocket_client=self._websocket_client())
         return self.__websocket_feed
 
-    def canldes_feed(self) -> BinanceCandlesFeed:
+    def candles_feed(self) -> BinanceCandlesFeed:
         """ Binance candles feed lazy creation """
         if not self.__candles_feed:
             self.__candles_feed = BinanceCandlesFeed(self._spot_client())
@@ -47,8 +47,8 @@ class Exchange:
     def _spot_client(self) -> Spot:
         """ Binance spot client creation. Each strategy can be configured at it's own account"""
         if not self.__spot_client:
-            key, secret = self.config["pytrade2.connector.key"], self.config["pytrade2.connector.secret"]
-            url = self.config["pytrade2.connector.url"]
+            key, secret = self.config["pytrade2.exchange.binance.connector.key"], self.config["pytrade2.exchange.binance.connector.secret"]
+            url = self.config["pytrade2.exchange.binance.spot.url"]
             self._log.info(
                 f"Init binance client, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
             self.__spot_client: Spot = Spot(key=key, secret=secret, base_url=url, timeout=10)

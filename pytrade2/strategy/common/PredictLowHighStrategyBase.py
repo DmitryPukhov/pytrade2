@@ -10,7 +10,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
-from exch.ExchangeProvider import ExchangeProvider
+from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.DataPurger import DataPurger
 from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
@@ -23,7 +23,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
     Listen price data from web socket, predict future low/high
     """
 
-    def __init__(self, config: Dict, exchange_provider: ExchangeProvider):
+    def __init__(self, config: Dict, exchange_provider: Exchange):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.tickers = self.config["pytrade2.tickers"].split(",")
@@ -96,12 +96,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         """
         Attach to the feed and listen
         """
-        self.exchange = self.exchange_provider.exchange(self.config["pytrade2.exchange"])
-        self.websocket_feed = self.exchange.websocket_feed()
+        exchange_name=self.config["pytrade2.exchange"]
+        self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
         self.websocket_feed.consumers.append(self)
 
-        self.candles_feed = self.exchange.candles_feed()
-        #self.broker = self.exchange.broker()
+        self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
+        self.broker = self.exchange_provider.broker(exchange_name)
 
         self.websocket_feed.run()
 
@@ -161,7 +161,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
         # if interval_flag or (interval_flag and (buy_close_flag or sell_close_flag)):
         if interval_flag and is_closable:
-            self.broker.update_trade_status(self.broker.cur_trade)
+            self.broker.update_cur_trade_status()
             self.last_trade_check_time = datetime.utcnow()
 
     def process_new_data(self):

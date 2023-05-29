@@ -7,7 +7,7 @@ from exch.huobi.feed.HuobiCandlesFeed import HuobiCandlesFeed
 from exch.huobi.feed.HuobiWebsocketFeed import HuobiWebsocketFeed
 
 
-class Exchange:
+class HuobiExchange:
     def __init__(self, config: dict):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
@@ -42,7 +42,7 @@ class Exchange:
         """ Huobi spot client creation. Each strategy can be configured at it's own account"""
         if not self.__market_client:
             key, secret = self.config["pytrade2.connector.key"], self.config["pytrade2.connector.secret"]
-            url = self.config["pytrade2.connector.url"]
+            url = self.config["pytrade2.exchange.huobi.client.websocket.url"]
             self._log.info(
                 f"Init Huobi client, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
             #self.__market_client: MarketClient = MarketClient(api_key=key, secret_key=secret, url=url, init_log=True)

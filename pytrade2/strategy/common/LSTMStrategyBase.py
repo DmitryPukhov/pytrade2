@@ -5,7 +5,7 @@ import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
 
-from exch.ExchangeProvider import ExchangeProvider
+from exch.Exchange import Exchange
 from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 
@@ -13,7 +13,7 @@ from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatur
 class LSTMStrategyBase(PredictLowHighStrategyBase):
     """ LSTM Strategies base class with lstm window support"""
 
-    def __init__(self, config: Dict, exchange_provider: ExchangeProvider):
+    def __init__(self, config: Dict, exchange_provider: Exchange):
         PredictLowHighStrategyBase.__init__(self, config=config, exchange_provider=exchange_provider)
         # lstm window
         self.lstm_window_size = config["pytrade2.strategy.lstm.window.size"]

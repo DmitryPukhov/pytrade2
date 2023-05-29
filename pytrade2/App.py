@@ -12,7 +12,7 @@ import yaml
 from binance.lib.utils import config_logging
 from binance.spot import Spot as Client
 
-from exch.ExchangeProvider import ExchangeProvider
+from exch.Exchange import Exchange
 
 
 class App:
@@ -111,13 +111,13 @@ class App:
 
     def _create_strategy(self):
         """ Create strategy class"""
-        exchange_provider = ExchangeProvider(self.config)
+        exchange = Exchange(self.config)
 
         strategy_file = f"strategy." + self.config["pytrade2.strategy"]
         strategy_class_name = strategy_file.split(".")[-1]
         self._log.info(f"Running the strategy: {strategy_file}")
         module = importlib.import_module(strategy_file, strategy_class_name)
-        strategy = getattr(module, strategy_class_name)(config = self.config, exchange_provider = exchange_provider)
+        strategy = getattr(module, strategy_class_name)(config = self.config, exchange_provider = exchange)
         return strategy
 
     def run(self):
