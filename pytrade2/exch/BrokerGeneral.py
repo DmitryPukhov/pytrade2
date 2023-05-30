@@ -118,6 +118,7 @@ class BrokerGeneral:
         return self.cur_trade
 
     def close_cur_trade(self):
+        self._log.info(f"Closing current trade:{self.cur_trade}")
         self.cur_trade = self.exch_broker.close_order(self.cur_trade)
         self._log.info(f"Closed current trade:{self.cur_trade}")
 
@@ -130,7 +131,7 @@ class BrokerGeneral:
                                       self.price_precision)
         return stop_loss_price_adj, take_profit_price_adj
 
-    def create_main_order(self, symbol: str, direction: int, price: float, quantity: float) -> Trade:
+    def create_main_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Main buy or sell order. Stop loss and take profit will be set later. """
         if not self.allow_trade:
             self._log.info("Trading in not allowed")
