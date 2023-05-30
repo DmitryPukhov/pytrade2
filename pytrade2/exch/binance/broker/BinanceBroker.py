@@ -85,7 +85,7 @@ class BinanceBroker:
     def close_order(self, trade: Trade):
         base_direction = Trade.order_side_codes[trade.side]
         res = self.client.new_order(
-            symbol=trade.symbol,
+            symbol=trade.ticker,
             side=Trade.order_side_names[-base_direction],
             type="MARKET",
             quantity=trade.quantity
