@@ -65,7 +65,7 @@ class HuobiBroker:
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""
-        self.sub_events(symbol)
+        # self.sub_events(symbol)
 
         # Calculate huobi order type
         if direction == 1:
@@ -124,10 +124,13 @@ class HuobiBroker:
         # Calculate huobi order type
         if base_trade.direction() == 1:
             sl_order_type = OrderType.SELL_STOP_LIMIT
+            operator = "lte"  # operator for stop price
         elif base_trade.direction() == -1:
             sl_order_type = OrderType.BUY_STOP_LIMIT
+            operator = "gte"  # operator for stop price
         else:
-            sl_order_type = 0
+            sl_order_type, operator = 0, None  # should never come here
+
         # Trade client we stop loss???
         sl_tp_order_id = self.trade_client.create_order(
             symbol=base_trade.ticker,
@@ -136,7 +139,8 @@ class HuobiBroker:
             amount=base_trade.quantity,
             price=stop_loss_limit_price,
             stop_price=stop_loss_price,
-            source=OrderSource.API
+            source=OrderSource.API,
+            operator=operator
         )
 
         # Algo wo stop loss ??
@@ -150,7 +154,7 @@ class HuobiBroker:
         #     order_type=AlgoOrderType.LIMIT
         # )
         sl_tp_order = self.trade_client.get_order(sl_tp_order_id)
-        if sl_tp_order.state == OrderState.FILLED:
+        if sl_tp_order.state != OrderState.CANCELED:
             self._log.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
             base_trade.stop_loss_order_id = sl_tp_order_id
             base_trade.stop_loss_price = float(stop_loss_price)
@@ -216,7 +220,7 @@ class HuobiBroker:
         if close_order_id:
 
             close_order = self.trade_client.get_order(close_order_id)
-            if(close_order.state == OrderState.FILLED):
+            if close_order.state == OrderState.FILLED:
                 trade.close_order_id = close_order_id
                 trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
@@ -253,9 +257,11 @@ class DevFunc:
         self.huobi_broker = broker_general.exch_broker
 
     def dev_create_order_with_sl_tp(self, direction: int):
-        price = self.dev_get_last_price() - direction * 10/30000
-        sl = price * (1 - direction * 0.003)
-        tp = price * (1 + direction * 0.003)
+        last_price = self.dev_get_last_price()
+        # price = last_price* (1- float(direction) *0.001)
+        price = last_price
+        sl = price * (1.0 - float(direction) * 0.003)
+        tp = price * (1.0 + float(direction) * 0.003)
         self.broker_general.create_cur_trade(
             symbol="btcusdt",
             direction=direction,
@@ -265,8 +271,8 @@ class DevFunc:
             take_profit_price=tp
         )
 
-    def dev_create_huobi_order(self, direction:int):
-        price = round(self.dev_get_last_price() - direction * 10/30000, 2)
+    def dev_create_huobi_order(self, direction: int):
+        price = round(self.dev_get_last_price() - direction * 10 / 30000, 2)
 
         trade = self.huobi_broker.create_order(symbol="btcusdt", direction=direction, price=price, quantity=0.0005)
         if trade:
@@ -287,15 +293,24 @@ class DevFunc:
 
     def dev_print_orders(self):
         # # Print all orders
-        #state="filled,canceled"
-        state="filled"
+
+        opened = self.huobi_broker.trade_client.get_open_orders(symbol="btcusdt",
+                                                                account_id=self.huobi_broker.account_id)
+        for order in opened:
+            print(f"Opened order id: {order.id}, type:{order.type}, state: {order.state}, "
+                  f"time:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
+        state = "filled,canceled,created"
         orders = self.huobi_broker.trade_client.get_orders(symbol="btcusdt", order_state=state)
+
         for order in orders:
             print(
                 f"Order id: {order.id}, type:{order.type}, state: {order.state}, time:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
 
     def dev_get_last_price(self):
-        lastprice = self.huobi_broker.market_client.get_candlestick('btcusdt', '1min', 1)[-1].close
+        # client: MarketClient = self.huobi_broker.market_client
+        # detail=client.get_market_detail("btcusdt")
+        lastprice = self.huobi_broker.market_client.get_market_trade("btcusdt")[-1].price
+        # lastprice = self.huobi_broker.market_client.get_candlestick('btcusdt', '1min', 1)[-1].close
         print(f"Last price:{lastprice}")
         return lastprice
 
@@ -308,14 +323,19 @@ if __name__ == "__main__":
     sys.argv.append("SimpleKerasStrategy")
     from pytrade2.App import App
     from pytrade2.exch.Exchange import Exchange
+
     # Create broker and devfunc
-    broker = Exchange(App().config).broker("huobi.HuobiExchange")
-    broker.allow_trade=True
+    cfg = App().config
+    cfg["pytrade2.broker.trade.allow"] = True
+    broker = Exchange(cfg).broker("huobi.HuobiExchange")
     devfunc = DevFunc(broker)
 
-
+    # 2023-05-30 22:20
+    # usdt: 45.676476744, type: trade
+    # btc: 0.0004936, type: trade
+    devfunc.dev_create_order_with_sl_tp(1)
+    devfunc.dev_print_orders()
     devfunc.dev_print_actual_balance()
-    #devfunc.dev_create_order_with_sl_tp(1)
 
-    #devfunc.dev_print_orders()
+    # devfunc.dev_print_orders()
     # huobi_broker.dev_print_last_price()
