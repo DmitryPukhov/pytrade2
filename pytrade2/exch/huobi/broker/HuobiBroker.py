@@ -30,8 +30,8 @@ class HuobiBroker(BrokerBase):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.trade_client = self._create_trade_client()
-        self.account_client = self._create_account_client()
-        self.market_client = self._create_market_client()
+        #self.account_client = self._create_account_client()
+        # self.market_client = self._create_market_client()
 
         self.account_id = int(config["pytrade2.broker.huobi.account.id"])
 
@@ -48,11 +48,11 @@ class HuobiBroker(BrokerBase):
         secret = self.config["pytrade2.exchange.huobi.connector.secret"]
         return key, secret
 
-    def _create_market_client(self):
-        key, secret = self._key_secret()
-        url = self.config["pytrade2.exchange.huobi.connector.url"]
-        self._log.info(f"Creating huobi market client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-        return MarketClient(api_key=key, secret_key=secret, init_log=True)
+    # def _create_market_client(self):
+    #     key, secret = self._key_secret()
+    #     url = self.config["pytrade2.exchange.huobi.connector.url"]
+    #     self._log.info(f"Creating huobi market client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+    #     return MarketClient(api_key=key, secret_key=secret, init_log=True)
 
     def _create_trade_client(self):
         """ Huobi trade client creation."""
@@ -367,6 +367,7 @@ class DevFunc:
 if __name__ == "__main__":
 
     devfunc = DevFunc()
+    devfunc.broker.market_client.sub_candlestick()
 
     #devfunc.dev_create_order_with_sl_tp(1)
 

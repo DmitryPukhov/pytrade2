@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from datetime import timedelta
 import logging
 from typing import List, Dict
@@ -7,10 +7,12 @@ import huobi.model.market
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
 import pandas as pd
+from huobi.constant import CandlestickInterval
 
 from huobi.model.market import *
 from huobi.client.market import MarketClient
 from huobi.model.market.depth_entry import *
+from huobi.utils import PrintBasic
 
 
 class HuobiWebsocketFeed:
@@ -31,10 +33,13 @@ class HuobiWebsocketFeed:
         """
         Read data from web socket
         """
-
-        self.__market_client.sub_pricedepth_bbo(symbols=",".join(self.tickers), callback=self.ticker_callback)
-        self.__market_client.sub_pricedepth(symbols=",".join(self.tickers), depth_step="step1",
-                                            callback=self.level2_callback)
+        symbols = ",".join(self.tickers)
+        PrintBasic.print_basic = lambda data, name: None # Supress hiobi api print response ts for each response
+        self.__market_client.sub_pricedepth_bbo(symbols=symbols, callback=self.ticker_callback)
+        self.__market_client.sub_pricedepth(symbols=symbols, depth_step="step1",
+                                            callback=self.level2_callback, )
+        # self.__market_client.sub_candlestick(symbols=symbols, interval=CandlestickInterval.MIN1,
+        #                                       callback=self.candle_callback, error_handler=self.error_callback)
 
     # def refresh_streams(self):
     #     """ Level2 stream stops after some time of work, refresh subscription """
@@ -45,16 +50,22 @@ class HuobiWebsocketFeed:
     #             self.__market_client.sub_trade_detail(symbols="btcusdt", callback=lambda msg: print(msg),
     #                                                   error_handler=lambda e: print(f"Error: {e}"))
 
-                # Bid/ask
-                # self.market_client.sub_pricedepth(symbols=self.tickers, callback=self.ticker_callback)
-                # Order book
-                # print(self.market_client.get_market_tickers())
+    # Bid/ask
+    # self.market_client.sub_pricedepth(symbols=self.tickers, callback=self.ticker_callback)
+    # Order book
+    # print(self.market_client.get_market_tickers())
 
-                # self.__market_client.sub_pricedepth(symbols=",".join(self.tickers), depth_step="step5", callback=self.level2_callback )
+    # self.__market_client.sub_pricedepth(symbols=",".join(self.tickers), depth_step="step5", callback=self.level2_callback )
 
-                # stream_name = f"{ticker.lower()}@depth"
-                # self.market_client.live_subscribe(stream=stream_name, id=1, callback=self.level2_callback)
-                # self.last_subscribe_time = datetime.datetime.utcnow()
+    # stream_name = f"{ticker.lower()}@depth"
+    # self.market_client.live_subscribe(stream=stream_name, id=1, callback=self.level2_callback)
+    # self.last_subscribe_time = datetime.datetime.utcnow()
+    def error_callback(self, msg):
+        self._log.error(msg)
+
+    def candle_callback(self, msg: CandlestickEvent):
+        c = msg.tick
+        print(f"Got candlestick event time={datetime.utcfromtimestamp(msg.ts/1000)}, o={c.open}, h={c.high}, low={c.low}, c={c.close}")
 
     def level2_callback(self, msg: PriceDepthEvent):
         try:
@@ -71,7 +82,7 @@ class HuobiWebsocketFeed:
             self._log.error(e)
 
     def rawticker2model(self, tick: PriceDepthBbo) -> Dict:
-        dt = datetime.datetime.utcnow()
+        dt = datetime.utcnow()
         return {"datetime": dt,
                 "symbol": tick.symbol,
                 "bid": tick.bid,
@@ -80,7 +91,7 @@ class HuobiWebsocketFeed:
                 "ask_vol": tick.askSize
                 }
 
-    def rawlevel2model(self, symbol:str, tick: PriceDepth):
+    def rawlevel2model(self, symbol: str, tick: PriceDepth):
         dt = pd.to_datetime(tick.ts, unit="ms")
         out = [{"datetime": dt, "symbol": symbol,
                 "bid": entry.price, "bid_vol": entry.amount} for entry in tick.bids] + \
@@ -94,9 +105,9 @@ class HuobiWebsocketFeed:
     #     """
     #     out = []
     #     if msg["b"]:
-    #         out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "bid": float(msg["b"]),
+    #         out.append({"datetime": datetime.utcnow(), "symbol": msg["s"], "bid": float(msg["b"]),
     #                     "bid_vol": float(msg["B"])})
     #     if msg["a"]:
-    #         out.append({"datetime": datetime.datetime.utcnow(), "symbol": msg["s"], "ask": float(msg["a"]),
+    #         out.append({"datetime": datetime.utcnow(), "symbol": msg["s"], "ask": float(msg["a"]),
     #                     "ask_vol": float(msg["A"])})
     #     return out
