@@ -5,7 +5,7 @@ from unittest import mock
 from unittest.mock import Mock, MagicMock
 
 from exch.binance.broker.BinanceBroker import BinanceBroker
-from exch.BrokerGeneral import BrokerGeneral
+from exch.BrokerBase import BrokerBase
 
 
 class TestBinanceBroker(unittest.TestCase):
@@ -16,8 +16,8 @@ class TestBinanceBroker(unittest.TestCase):
         self.db_session = MagicMock()
 
     def setUp(self) -> None:
-        mock.patch.object(BrokerGeneral, '__init_db__', self.__broker__init_db__).start()
-        mock.patch.object(BrokerGeneral, "read_last_opened_trade", lambda self: None).start()
+        mock.patch.object(BrokerBase, '__init_db__', self.__broker__init_db__).start()
+        mock.patch.object(BrokerBase, "read_last_opened_trade", lambda self: None).start()
 
     def test_create_cur_trade__not_filled(self):
         # Binance client mock
@@ -27,7 +27,7 @@ class TestBinanceBroker(unittest.TestCase):
 
         # Class under test
 
-        broker = BrokerGeneral(BinanceBroker(client, TestBinanceBroker.config), TestBinanceBroker.config)
+        broker = BinanceBroker(client, TestBinanceBroker.config)
 
         # Test call
         broker.create_cur_trade(symbol="BTCUSDT",
@@ -53,7 +53,7 @@ class TestBinanceBroker(unittest.TestCase):
                                                   "orders": [{"orderId": 3}, {"orderId": 4}]})
 
         # Class under test
-        broker = BrokerGeneral(BinanceBroker(client, TestBinanceBroker.config),TestBinanceBroker.config)
+        broker = BinanceBroker(client, TestBinanceBroker.config)
 
         # Test call
         broker.create_cur_trade(symbol="BTCUSDT",

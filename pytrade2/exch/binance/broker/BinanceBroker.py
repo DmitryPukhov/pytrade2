@@ -4,14 +4,15 @@ from typing import Dict, Optional
 
 from binance.spot import Spot as Client
 
+from exch.BrokerBase import BrokerBase
 from model.Trade import Trade
 
 
-class BinanceBroker:
+class BinanceBroker(BrokerBase):
     """ Trading functions for Binance """
 
     def __init__(self, client: Client, config: Dict[str, str]):
-        self._log = logging.getLogger(self.__class__.__name__)
+        super().__init__(config)
         self.client: Client = client
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:

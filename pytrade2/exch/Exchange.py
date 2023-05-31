@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from typing import Dict
 
-from exch.BrokerGeneral import BrokerGeneral
+from exch.BrokerBase import BrokerBase
 
 
 class Exchange:
@@ -30,10 +30,9 @@ class Exchange:
         # Get old or created exchange
         return self.exchanges[exch_name]
 
-    def broker(self, exch_name: str):
+    def broker(self, exch_name: str) -> BrokerBase:
         """ Get or create broker for given exchange"""
-        exch_broker = self.exchange(exch_name).broker()
-        return BrokerGeneral(exch_broker, self.config)
+        return self.exchange(exch_name).broker()
 
     def websocket_feed(self, exch_name: str):
         """ Get or create streaming feed for given exchange"""

@@ -9,15 +9,15 @@ from sqlalchemy.orm import sessionmaker
 from model.Trade import Trade
 
 
-class BrokerGeneral:
+class BrokerBase:
     """
     Orders management: buy, sell etc
     """
 
-    def __init__(self, broker, config: Dict[str, str]):
+    def __init__(self, config: Dict[str, str]):
         self._log = logging.getLogger(self.__class__.__name__)
+        self.config = config
         self.allow_trade = config.get("pytrade2.broker.trade.allow", False)
-        self.exch_broker = broker
 
         # Database
         self.__init_db__(config)
@@ -29,7 +29,7 @@ class BrokerGeneral:
                 self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
                 self.update_cur_trade_status()
         else:
-            self.cur_trade = None
+            self.cur_trade: Optional[Trade] = None
         self.price_precision = 2
         self.min_trade_interval = timedelta(seconds=10)
         self.last_trade_time = datetime.utcnow() - self.min_trade_interval
@@ -55,6 +55,9 @@ class BrokerGeneral:
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
+        if self.cur_trade:
+            self._log.error(f"Cannot create current trade: another current trade already exists: {self.cur_trade}")
+            return None
 
         if not self.allow_trade:
             self._log.info("Trading in not allowed")
@@ -76,10 +79,10 @@ class BrokerGeneral:
             self._log.info(
                 f"Creating order. Asset:{symbol}  direction:{direction}, price: {price}  quantity: {quantity},"
                 f" stop loss: {stop_loss_price}, take profit: {take_profit_price}")
-            self.cur_trade = self.create_main_order(symbol=symbol,
-                                                    direction=direction,
-                                                    price=price,
-                                                    quantity=quantity)
+            self.cur_trade = self.create_main_trade_part(symbol=symbol,
+                                                         direction=direction,
+                                                         price=price,
+                                                         quantity=quantity)
             if not self.cur_trade:
                 return None
             # Adjust sl/tp to order filled price
@@ -90,13 +93,13 @@ class BrokerGeneral:
                                                                              filled_price=self.cur_trade.open_price)
             if take_profit_price:
                 # Stop loss and take profit
-                sl_tp_trade = self.create_sl_tp_order(base_trade=self.cur_trade,
-                                                         stop_loss_price=stop_loss_price_adj,
-                                                         take_profit_price=take_profit_price_adj)
+                sl_tp_trade = self.create_sl_tp_trade_part(base_trade=self.cur_trade,
+                                                           stop_loss_price=stop_loss_price_adj,
+                                                           take_profit_price=take_profit_price_adj)
             else:
                 # Stop loss without take profit
-                sl_tp_trade = self.create_sl_order(base_trade=self.cur_trade,
-                                                      stop_loss_price=stop_loss_price_adj)
+                sl_tp_trade = self.create_sl_trade_part(base_trade=self.cur_trade,
+                                                        stop_loss_price=stop_loss_price_adj)
             if not sl_tp_trade:
                 raise "sl/tp not created"
             self.cur_trade = sl_tp_trade
@@ -106,20 +109,23 @@ class BrokerGeneral:
             if self.cur_trade:
                 self.close_cur_trade()
 
-        # Persist order to db
-        self.db_session.add(self.cur_trade)
-        self.db_session.commit()
+        if self.cur_trade:
+            # Persist created order to db
+            self.db_session.add(self.cur_trade)
+            self.db_session.commit()
 
-        if not self.cur_trade.close_order_id:
-            # If no error, order is not closed yet
-            self._log.info(f"Created new trade: {self.cur_trade}")
-        else:
-            self.cur_trade = None
+            if not self.cur_trade.close_order_id:
+                # If order is not closed by error
+                self._log.info(f"Created new trade: {self.cur_trade}")
+            else:
+                # If order is closed by error
+                self.cur_trade = None
+
         return self.cur_trade
 
     def close_cur_trade(self):
         self._log.info(f"Closing current trade:{self.cur_trade}")
-        self.cur_trade = self.exch_broker.close_order(self.cur_trade)
+        self.cur_trade = self.close_order(self.cur_trade)
         self._log.info(f"Closed current trade:{self.cur_trade}")
 
     def adjusted_sl_tp(self, direction, orig_price: float, orig_sl_price: float, orig_tp_price: float,
@@ -131,13 +137,13 @@ class BrokerGeneral:
                                       self.price_precision)
         return stop_loss_price_adj, take_profit_price_adj
 
-    def create_main_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
+    def create_main_trade_part(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Main buy or sell order. Stop loss and take profit will be set later. """
         if not self.allow_trade:
             self._log.info("Trading in not allowed")
             return None
 
-        trade = self.exch_broker.create_order(
+        trade = self.create_order(
             symbol=symbol,
             direction=direction,
             price=price,
@@ -149,7 +155,7 @@ class BrokerGeneral:
             self._log.info(f"Cannot create main {symbol} direction: {direction}, price: {price}, that's ok.")
         return trade
 
-    def create_sl_tp_order(self, base_trade: Trade, stop_loss_price: float, take_profit_price: float) -> \
+    def create_sl_tp_trade_part(self, base_trade: Trade, stop_loss_price: float, take_profit_price: float) -> \
             Optional[Trade]:
         """
          After base order filled, create sl/tp oco order
@@ -166,12 +172,12 @@ class BrokerGeneral:
         self._log.info(
             f"Creating stop loss and take profit order, base order: {base_trade.side} {base_trade.ticker}, base_price={base_trade.open_price}, stop_loss_adj={stop_loss_price},"
             f" stop_loss_limit_price={stop_loss_limit_price}, take_profit_adj={take_profit_price}")
-        return self.exch_broker.create_sl_tp_order(base_trade=base_trade,
-                                                   stop_loss_price=stop_loss_price,
-                                                   stop_loss_limit_price=stop_loss_limit_price,
-                                                   take_profit_price=take_profit_price)
+        return self.create_sl_tp_order(base_trade=base_trade,
+                                       stop_loss_price=stop_loss_price,
+                                       stop_loss_limit_price=stop_loss_limit_price,
+                                       take_profit_price=take_profit_price)
 
-    def create_sl_order(self, base_trade: Trade, stop_loss_price: float) -> Optional[Trade]:
+    def create_sl_trade_part(self, base_trade: Trade, stop_loss_price: float) -> Optional[Trade]:
         if not self.allow_trade:
             self._log.info("Trading in not allowed")
             return None
@@ -183,9 +189,9 @@ class BrokerGeneral:
             f"Creating stop loss order. Base order: {base_trade.side} {base_trade.ticker}, "
             f"stop_loss={stop_loss_price}, stop_loss_limit_price={stop_loss_limit_price}")
 
-        return self.exch_broker.create_sl_order(base_trade=base_trade,
-                                                stop_loss_price=stop_loss_price,
-                                                stop_loss_limit_price=stop_loss_limit_price)
+        return self.create_sl_order(base_trade=base_trade,
+                                    stop_loss_price=stop_loss_price,
+                                    stop_loss_limit_price=stop_loss_limit_price)
 
     def close_opened_trades(self):
         self._log.info("Closing all opened trades if exist")
@@ -214,7 +220,7 @@ class BrokerGeneral:
         if not self.cur_trade:
             return
         # Check if closed by sl/tp
-        self.exch_broker.update_trade_status(self.cur_trade)
+        self.update_trade_status(self.cur_trade)
 
         if self.cur_trade.close_time:
             self._log.info(f"Current trade found closed, probably by stop loss or take profit: {self.cur_trade}")
@@ -234,13 +240,28 @@ class BrokerGeneral:
         self._log.info(f"Closing trade: {trade}")
 
         # Read trade orders from exchange, maybe closed by sl/tp
-        trade = self.exch_broker.update_trade_status(trade)
+        trade = self.update_trade_status(trade)
 
         if not trade.close_time:
             # Close the trade
-            trade = self.exch_broker.close_cur_trade(trade)
+            trade = self.close_cur_trade(trade)
             self._log.info(f"Trade is already closed, probably by stop loss or take profit: {trade}")
         else:
             self._log.info(f"Trade is already closed, probably by stop loss or take profit: {trade}")
         self.db_session.commit()
         return trade
+
+    def create_order(self, symbol, direction, price, quantity):
+        raise NotImplementedError
+
+    def update_trade_status(self, trade):
+        raise NotImplementedError
+
+    def create_sl_order(self, base_trade, stop_loss_price, stop_loss_limit_price):
+        raise NotImplementedError
+
+    def create_sl_tp_order(self, base_trade, stop_loss_price, stop_loss_limit_price, take_profit_price):
+        raise NotImplementedError
+
+    def close_order(self, cur_trade):
+        raise NotImplementedError

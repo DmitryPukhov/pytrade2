@@ -4,11 +4,12 @@ from datetime import datetime
 from typing import Dict, Optional
 
 import pandas as pd
+from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
 from huobi.constant import *
 from huobi.model.trade import OrderUpdateEvent
 
-from exch.BrokerGeneral import BrokerGeneral
+from exch.BrokerBase import BrokerBase
 from exch.huobi.feed.HuobiCandlesFeed import HuobiCandlesFeed
 from model.Trade import Trade
 
@@ -20,19 +21,25 @@ from huobi.client.algo import AlgoClient
 from model.Trade import Trade
 
 
-class HuobiBroker:
+class HuobiBroker(BrokerBase):
     """ Trading functions for Huobi """
 
     def __init__(self, config: Dict[str, str]):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
-
         self.trade_client = self._create_trade_client()
         self.account_client = self._create_account_client()
         self.market_client = self._create_market_client()
 
         self.account_id = int(config["pytrade2.broker.huobi.account.id"])
-        self.symbols_traded = set()
+
+        self.subscribed_symbols = set()
+        for ticker in config["pytrade2.tickers"].split(","):
+            self.sub_events(ticker.lower())
+
+        # Read last opened trade etc in base class
+        super().__init__(config)
+
 
     def _key_secret(self):
         key = self.config["pytrade2.exchange.huobi.connector.key"]
@@ -49,8 +56,8 @@ class HuobiBroker:
         """ Huobi trade client creation."""
         key, secret = self._key_secret()
         url = self.config["pytrade2.exchange.huobi.connector.url"]
-        self._log.info(f"Creating huobi market client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-        return TradeClient(api_key=key, secret_key=secret, init_log=True)
+        self._log.info(f"Creating huobi market client, url:{url} key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+        return TradeClient(url=url, api_key=key, secret_key=secret, init_log=True)
 
     def _create_account_client(self):
         key, secret = self._key_secret()
@@ -59,26 +66,24 @@ class HuobiBroker:
         return AccountClient(api_key=key, secret_key=secret, init_log=True)
 
     def sub_events(self, symbol: str):
-        if symbol not in self.symbols_traded:
-            self.symbols_traded.add(symbol)
+        if symbol not in self.subscribed_symbols:
+            self.subscribed_symbols.add(symbol)
             self.trade_client.sub_order_update(symbols=symbol, callback=self.on_order_update)
+            self._log.debug(f"Subscribed to order update events for {symbol}")
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""
-        # self.sub_events(symbol)
+        self.sub_events(symbol)
 
         # Calculate huobi order type
         if direction == 1:
+            #order_type = OrderType.BUY_MARKET
             order_type = OrderType.BUY_LIMIT_FOK
         elif direction == -1:
+            #order_type = OrderType.SELL_MARKET
             order_type = OrderType.SELL_LIMIT_FOK
         else:
             order_type = 0
-
-        # Subscribe to orders for this symbol if not already subscribed
-        # if symbol not in self.subscribed_symbols:
-        #     self.trade_client.sub_order_update(symbols=symbol, callback=self.on_order_update)
-        #     self.subscribed_symbols.update(symbol)
 
         # Make order using trade client
         # order_id is always returned, exception otherwise
@@ -242,30 +247,56 @@ class HuobiBroker:
             if close_order.state == OrderState.FILLED:
                 # Update db
                 trade.close_order_id = sltp_order_id
-                trade.close_price = close_order.price
+                trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
         return trade
 
     def on_order_update(self, event: OrderUpdateEvent):
-        print("Order update event:")
-        print(event.data.print_object())
+        """ Update current trade prices from filled main or sl/tp order"""
+
+        order_time = datetime.utcfromtimestamp(event.data.tradeTime/1000.0)
+        self._log.info(f"{event.data.symbol} {event.data.type} update event. Order id:{event.data.orderId}, "
+                        f"status:{event.data.orderStatus} price: {event.data.tradePrice}, time:{order_time}")
+        order = event.data
+        if not self.cur_trade or order.orderStatus != OrderState.FILLED:
+            # This update is not about filling current trade
+            return
+
+        if self.cur_trade.id == order.orderId:
+            # Main order filled
+            self.cur_trade.open_price = order.tradePrice
+            self.cur_trade.open_time = order_time
+            self._log.info(f"Got current trade opened event: {self.cur_trade}")
+            # Save to db
+            self.db_session.commit()
+        elif self.cur_trade.stop_loss_order_id == order.orderId:
+            self.cur_trade.close_price = order.tradePrice
+            self.cur_trade.close_order_id = order.orderId
+            self.cur_trade.close_time = order_time
+            self.db_session.commit()
+            self._log.info(f"Got current trade closed event: {self.cur_trade}")
+            self.cur_trade = None
 
 
 class DevFunc:
-    def __init__(self, broker_general: BrokerGeneral):
-        self.broker_general = broker_general
-        self.huobi_broker = broker_general.exch_broker
+    def __init__(self, broker: HuobiBroker):
+        self.broker = broker
+
+    def dev_get_order_hist(self):
+        for order in self.broker.trade_client.get_history_orders("btcusdt"):
+            print(
+                f"Order id: {order.id}, type:{order.type}, state: {order.state}, time:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
 
     def dev_create_order_with_sl_tp(self, direction: int):
         last_price = self.dev_get_last_price()
-        # price = last_price* (1- float(direction) *0.001)
+        #price = last_price* (1- float(direction) *0.001)
         price = last_price
         sl = price * (1.0 - float(direction) * 0.003)
         tp = price * (1.0 + float(direction) * 0.003)
-        self.broker_general.create_cur_trade(
+        self.broker.create_cur_trade(
             symbol="btcusdt",
             direction=direction,
-            quantity=0.0005,
+            quantity=0.0005, # 0.0005
             price=price,
             stop_loss_price=sl,
             take_profit_price=tp
@@ -273,10 +304,10 @@ class DevFunc:
 
     def dev_create_huobi_order(self, direction: int):
         price = round(self.dev_get_last_price() - direction * 10 / 30000, 2)
-
-        trade = self.huobi_broker.create_order(symbol="btcusdt", direction=direction, price=price, quantity=0.0005)
+        price = 26000
+        trade = self.broker.create_order(symbol="btcusdt", direction=direction, price=price, quantity=0.0005)
         if trade:
-            order = self.huobi_broker.trade_client.get_order(trade.open_order_id)
+            order = self.broker.trade_client.get_order(trade.open_order_id)
             print(f"Created {order.type} order.  {order.state}, id: {order.id}, {order.price}")
         else:
             print("Order is not filled")
@@ -284,7 +315,7 @@ class DevFunc:
     def dev_print_actual_balance(self):
         """ Get actual balance on account"""
 
-        balance = self.huobi_broker.account_client.get_balance(self.huobi_broker.account_id)
+        balance = self.broker.account_client.get_balance(self.broker.account_id)
         actual_balance = [b for b in balance if float(b.balance) > 0]
         print("Balance:")
         for b in actual_balance:
@@ -294,25 +325,32 @@ class DevFunc:
     def dev_print_orders(self):
         # # Print all orders
 
-        opened = self.huobi_broker.trade_client.get_open_orders(symbol="btcusdt",
-                                                                account_id=self.huobi_broker.account_id)
+        opened = self.broker.trade_client.get_open_orders(symbol="btcusdt",
+                                                                account_id=self.broker.account_id)
         for order in opened:
             print(f"Opened order id: {order.id}, type:{order.type}, state: {order.state}, "
                   f"time:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
         state = "filled,canceled,created"
-        orders = self.huobi_broker.trade_client.get_orders(symbol="btcusdt", order_state=state)
+        orders = self.broker.trade_client.get_orders(symbol="btcusdt", order_state=state)
 
         for order in orders:
             print(
                 f"Order id: {order.id}, type:{order.type}, state: {order.state}, time:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
 
     def dev_get_last_price(self):
-        # client: MarketClient = self.huobi_broker.market_client
+        # client: MarketClient = self.broker.market_client
         # detail=client.get_market_detail("btcusdt")
-        lastprice = self.huobi_broker.market_client.get_market_trade("btcusdt")[-1].price
-        # lastprice = self.huobi_broker.market_client.get_candlestick('btcusdt', '1min', 1)[-1].close
+        lastprice = self.broker.market_client.get_market_trade("btcusdt")[-1].price
+        # lastprice = self.broker.market_client.get_candlestick('btcusdt', '1min', 1)[-1].close
         print(f"Last price:{lastprice}")
         return lastprice
+
+    def dev_get_order(self):
+        order_id = 808073037255279
+        o = self.broker.trade_client.get_order(order_id=order_id)
+        # orders=self.broker.trade_client.get_order(order_id=order_id)
+        "Closed order:"
+        print(o)
 
 
 # todo: remove
@@ -327,15 +365,19 @@ if __name__ == "__main__":
     # Create broker and devfunc
     cfg = App().config
     cfg["pytrade2.broker.trade.allow"] = True
-    broker = Exchange(cfg).broker("huobi.HuobiExchange")
+    broker:HuobiBroker = Exchange(cfg).broker("huobi.HuobiExchange")
     devfunc = DevFunc(broker)
 
+    # devfunc.dev_get_order()
     # 2023-05-30 22:20
     # usdt: 45.676476744, type: trade
     # btc: 0.0004936, type: trade
-    devfunc.dev_create_order_with_sl_tp(1)
-    devfunc.dev_print_orders()
-    devfunc.dev_print_actual_balance()
 
+    #devfunc.dev_create_order_with_sl_tp(1)
+    # devfunc.dev_get_order_hist()
     # devfunc.dev_print_orders()
-    # huobi_broker.dev_print_last_price()
+    # devfunc.dev_print_actual_balance()
+    broker.trade_client.cancel_open_orders(account_id=broker.account_id)
+    devfunc.dev_create_huobi_order(-1)
+    devfunc.dev_print_actual_balance()
+    # broker.dev_print_last_price()
