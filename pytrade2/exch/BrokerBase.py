@@ -60,7 +60,8 @@ class BrokerBase:
             return None
 
         if not self.allow_trade:
-            self._log.info("Trading in not allowed")
+            self._log.info(f"Trading is not allowed. "
+                           f"{symbol} {Trade.order_side_names[direction]} order at {price} will not be executed.")
             return
 
         if (direction not in {1, -1}) or ((datetime.utcnow() - self.last_trade_time) <= self.min_trade_interval):
