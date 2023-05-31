@@ -5,6 +5,8 @@ from typing import Dict, Optional
 
 import pandas as pd
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
+from pytrade2.App import App
+from pytrade2.exch.Exchange import Exchange
 
 from huobi.constant import *
 from huobi.model.trade import OrderUpdateEvent
@@ -279,8 +281,16 @@ class HuobiBroker(BrokerBase):
 
 
 class DevFunc:
-    def __init__(self, broker: HuobiBroker):
-        self.broker = broker
+
+    def __init__(self):
+
+        sys.argv.append("--pytrade2.strategy")
+        sys.argv.append("SimpleKerasStrategy")
+
+        # Create broker and devfunc
+        cfg = App().config
+        cfg["pytrade2.broker.trade.allow"] = True
+        self.broker:HuobiBroker = Exchange(cfg).broker("huobi.HuobiExchange")
 
     def dev_get_order_hist(self):
         for order in self.broker.trade_client.get_history_orders("btcusdt"):
@@ -355,29 +365,14 @@ class DevFunc:
 
 # todo: remove
 if __name__ == "__main__":
-    from huobi.client.account import AccountClient
 
-    sys.argv.append("--pytrade2.strategy")
-    sys.argv.append("SimpleKerasStrategy")
-    from pytrade2.App import App
-    from pytrade2.exch.Exchange import Exchange
-
-    # Create broker and devfunc
-    cfg = App().config
-    cfg["pytrade2.broker.trade.allow"] = True
-    broker:HuobiBroker = Exchange(cfg).broker("huobi.HuobiExchange")
-    devfunc = DevFunc(broker)
-
-    # devfunc.dev_get_order()
-    # 2023-05-30 22:20
-    # usdt: 45.676476744, type: trade
-    # btc: 0.0004936, type: trade
+    devfunc = DevFunc()
 
     #devfunc.dev_create_order_with_sl_tp(1)
-    # devfunc.dev_get_order_hist()
-    # devfunc.dev_print_orders()
-    # devfunc.dev_print_actual_balance()
-    broker.trade_client.cancel_open_orders(account_id=broker.account_id)
-    devfunc.dev_create_huobi_order(-1)
+
+    # Clear current buy order
+    #broker.trade_client.cancel_open_orders(account_id=broker.account_id)
+    #devfunc.dev_create_huobi_order(-1)
+
+    devfunc.dev_print_orders()
     devfunc.dev_print_actual_balance()
-    # broker.dev_print_last_price()
