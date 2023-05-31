@@ -75,6 +75,7 @@ class HuobiBroker(BrokerBase):
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""
+        symbol = symbol.lower()
         self.sub_events(symbol)
 
         # Calculate huobi order type
