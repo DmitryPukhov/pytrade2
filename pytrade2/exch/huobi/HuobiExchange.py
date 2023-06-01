@@ -1,5 +1,7 @@
 import logging
 
+from huobi.utils import PrintBasic
+
 from exch.huobi.broker.HuobiBroker import HuobiBroker
 from huobi.client.market import MarketClient
 
@@ -9,6 +11,7 @@ from exch.huobi.feed.HuobiWebsocketFeed import HuobiWebsocketFeed
 
 class HuobiExchange:
     def __init__(self, config: dict):
+        PrintBasic.print_basic = lambda data, name: None # Supress hiobi api print response ts for each response
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
 

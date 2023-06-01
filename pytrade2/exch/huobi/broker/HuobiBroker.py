@@ -1,6 +1,8 @@
 import logging
 import sys
+import threading
 from datetime import datetime
+from io import StringIO
 from typing import Dict, Optional
 
 import pandas as pd
@@ -35,6 +37,10 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
 
         # Read last opened trade etc in base class
         super().__init__(config)
+
+        # Print current account balance each x seconds
+        self._log_report_interval_sec = 60
+        self._log_report(is_periodical=True)
 
     def _key_secret(self):
         key = self.config["pytrade2.exchange.huobi.connector.key"]
@@ -137,16 +143,6 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             operator=operator
         )
 
-        # Algo wo stop loss ??
-        # sl_tp_order_id = self.client.create_order(
-        #     symbol=base_trade.ticker,
-        #     order_side=Trade.order_side_names[-base_trade.direction()],
-        #     order_value=base_trade.quantity,
-        #     stop_price=stop_loss_price,
-        #     order_price=stop_loss_limit_price,
-        #     take_profit_price=take_profit_price,
-        #     order_type=AlgoOrderType.LIMIT
-        # )
         sl_tp_order = self.trade_client.get_order(sl_tp_order_id)
         if sl_tp_order.state != OrderState.CANCELED:
             self._log.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
@@ -253,6 +249,25 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             self.db_session.commit()
             self._log.info(f"Got current trade closed event: {self.cur_trade}")
             self.cur_trade = None
+
+    def _log_report(self, is_periodical=False):
+        """ Periodical write current status to log"""
+
+        msg = StringIO()
+        msg.write("\n-------------- Trading report --------------\n")
+
+        msg.write(f"Allow trade: {self.allow_trade}\n")
+        msg.write(f"Current trade: {self.cur_trade}\n")
+        # Account balance
+        balance = self.account_client.get_balance(self.account_id)
+        actual_balance = "\n".join(
+            [f"{b.currency} amount: {b.balance}, type: {b.type}" for b in balance if float(b.balance) > 0])
+        msg.write(actual_balance)
+        msg.write("\n--------------------------------------------\n")
+
+        # Write to log
+        self._log.info(msg.getvalue())
+        threading.Timer(self._log_report_interval_sec, self._log_report, args=[is_periodical]).start()
 
 
 class DevFunc:

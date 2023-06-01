@@ -25,7 +25,6 @@ class HuobiWebsocketFeed:
         Read data from web socket
         """
         symbols = ",".join(self.tickers)
-        PrintBasic.print_basic = lambda data, name: None # Supress hiobi api print response ts for each response
         self.__market_client.sub_pricedepth_bbo(symbols=symbols, callback=self.ticker_callback)
         self.__market_client.sub_pricedepth(symbols=symbols, depth_step="step1",
                                             callback=self.level2_callback, )
