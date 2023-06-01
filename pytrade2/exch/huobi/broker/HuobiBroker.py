@@ -251,13 +251,24 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             self.cur_trade = None
 
     def _log_report(self, is_periodical=False):
-        """ Periodical write current status to log"""
+        """ Periodical writing current status to log"""
 
+        # Form message string
         msg = StringIO()
         msg.write("\n-------------- Trading report --------------\n")
-
         msg.write(f"Allow trade: {self.allow_trade}\n")
+
+        # Opened trade
         msg.write(f"Current trade: {self.cur_trade}\n")
+
+        # Opened orders
+        for symbol in self.subscribed_symbols:
+            opened_orders = self.trade_client.get_open_orders(symbol=symbol, account_id=self.account_id)
+            for order in opened_orders:
+                msg.write(f"Opened order: {symbol}, id: {order.id}, type:{order.type}, state: {order.state}, "
+                          f"created:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
+                msg.write("\n")
+
         # Account balance
         balance = self.account_client.get_balance(self.account_id)
         actual_balance = "\n".join(
@@ -265,104 +276,9 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         msg.write(actual_balance)
         msg.write("\n--------------------------------------------\n")
 
-        # Write to log
+        # Write prepared msg string to log
         self._log.info(msg.getvalue())
-        threading.Timer(self._log_report_interval_sec, self._log_report, args=[is_periodical]).start()
 
-
-class DevFunc:
-
-    def __init__(self):
-
-        sys.argv.append("--pytrade2.strategy")
-        sys.argv.append("SimpleKerasStrategy")
-
-        # Create broker and devfunc
-        cfg = App().config
-        cfg["pytrade2.broker.trade.allow"] = True
-        self.broker: HuobiBroker = Exchange(cfg).broker("huobi.HuobiExchange")
-
-    def dev_get_order_hist(self):
-        for order in self.broker.trade_client.get_history_orders("btcusdt"):
-            print(
-                f"Order id: {order.id}, type:{order.type}, state: {order.state}, time:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
-
-    def dev_create_order_with_sl_tp(self, direction: int):
-        last_price = self.dev_get_last_price()
-        # price = last_price* (1- float(direction) *0.001)
-        price = last_price
-        sl = price * (1.0 - float(direction) * 0.003)
-        tp = price * (1.0 + float(direction) * 0.003)
-        self.broker.create_cur_trade(
-            symbol="btcusdt",
-            direction=direction,
-            quantity=0.0005,  # 0.0005
-            price=price,
-            stop_loss_price=sl,
-            take_profit_price=tp
-        )
-
-    def dev_create_huobi_order(self, direction: int):
-        price = round(self.dev_get_last_price() - direction * 10 / 30000, 2)
-        price = 26000
-        trade = self.broker.create_order(symbol="btcusdt", direction=direction, price=price, quantity=0.0005)
-        if trade:
-            order = self.broker.trade_client.get_order(trade.open_order_id)
-            print(f"Created {order.type} order.  {order.state}, id: {order.id}, {order.price}")
-        else:
-            print("Order is not filled")
-
-    def dev_print_actual_balance(self):
-        """ Get actual balance on account"""
-
-        balance = self.broker.account_client.get_balance(self.broker.account_id)
-        actual_balance = [b for b in balance if float(b.balance) > 0]
-        print("Balance:")
-        for b in actual_balance:
-            print(f"{b.currency}: {b.balance}, type: {b.type}")
-        return actual_balance
-
-    def dev_print_orders(self):
-        # # Print all orders
-
-        opened = self.broker.trade_client.get_open_orders(symbol="btcusdt",
-                                                          account_id=self.broker.account_id)
-        for order in opened:
-            print(f"Opened order id: {order.id}, type:{order.type}, state: {order.state}, "
-                  f"time:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
-        state = "filled,canceled,created"
-        orders = self.broker.trade_client.get_orders(symbol="btcusdt", order_state=state)
-
-        for order in orders:
-            print(
-                f"Order id: {order.id}, type:{order.type}, state: {order.state}, time:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
-
-    def dev_get_last_price(self):
-        # client: MarketClient = self.broker.market_client
-        # detail=client.get_market_detail("btcusdt")
-        lastprice = self.broker.market_client.get_market_trade("btcusdt")[-1].price
-        # lastprice = self.broker.market_client.get_candlestick('btcusdt', '1min', 1)[-1].close
-        print(f"Last price:{lastprice}")
-        return lastprice
-
-    def dev_get_order(self):
-        order_id = 808073037255279
-        o = self.broker.trade_client.get_order(order_id=order_id)
-        # orders=self.broker.trade_client.get_order(order_id=order_id)
-        "Closed order:"
-        print(o)
-
-
-# todo: remove
-if __name__ == "__main__":
-    devfunc = DevFunc()
-    devfunc.broker.market_client.sub_candlestick()
-
-    # devfunc.dev_create_order_with_sl_tp(1)
-
-    # Clear current buy order
-    # broker.trade_client.cancel_open_orders(account_id=broker.account_id)
-    # devfunc.dev_create_huobi_order(-1)
-
-    devfunc.dev_print_orders()
-    devfunc.dev_print_actual_balance()
+        if is_periodical:
+            # Schedule next report
+            threading.Timer(self._log_report_interval_sec, self._log_report, args=[is_periodical]).start()
