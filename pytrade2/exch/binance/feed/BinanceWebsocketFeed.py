@@ -1,10 +1,9 @@
 import datetime
-from datetime import timedelta
 import logging
-from typing import List, Dict
-from binance.websocket.spot.websocket_client import SpotWebsocketClient
+from datetime import timedelta
+from typing import Dict
 
-import pandas as pd
+from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
 
 class BinanceWebsocketFeed:

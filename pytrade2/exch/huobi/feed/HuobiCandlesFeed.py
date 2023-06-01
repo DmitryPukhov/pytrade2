@@ -12,10 +12,6 @@ class HuobiCandlesFeed:
     """
     Huobi candles data feed. Read data from huobi, provide pandas dataframes with that data
     """
-    # raw_candle_columns = ["open_time", "open", "high", "low", "close", "vol", "close_time", "quote_asset_volume",
-    #                       "number_of_trades", " taker_buy_base_asset_volume", "taker_buy_quote_asset_volume",
-    #                       "ignore"]
-    #candle_columns = ["close_time", "open", "high", "low", "close", "vol"]
 
     def __init__(self, market_client: MarketClient):
         self._log = logging.getLogger(self.__class__.__name__)

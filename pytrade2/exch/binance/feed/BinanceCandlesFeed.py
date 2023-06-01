@@ -38,7 +38,6 @@ class BinanceCandlesFeed:
         df[["ticker", "interval"]] = [ticker, interval]
 
         # Convert time from millis to datetime
-        # df["close_time"] = pd.to_datetime(df["close_time"], unit='ms')
         df.loc[:, "close_time"] = pd.to_datetime(df["close_time"], unit='ms')
         df.set_index("close_time", inplace=True)
 
