@@ -1,11 +1,11 @@
 import logging
 
 from binance.spot import Spot
+from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
 from exch.binance.broker.BinanceBroker import BinanceBroker
 from exch.binance.feed.BinanceCandlesFeed import BinanceCandlesFeed
 from exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
-from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
 
 class BinanceExchange:
