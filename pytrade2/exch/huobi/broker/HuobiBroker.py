@@ -1,5 +1,4 @@
 import logging
-import sys
 import threading
 from datetime import datetime
 from io import StringIO
@@ -15,8 +14,6 @@ from huobi.model.trade import OrderUpdateEvent
 from exch.BrokerBase import BrokerBase
 from exch.huobi.broker.TrailingStopSupport import TrailingStopSupport
 from model.Trade import Trade
-from pytrade2.App import App
-from pytrade2.exch.Exchange import Exchange
 
 
 class HuobiBroker(BrokerBase, TrailingStopSupport):
