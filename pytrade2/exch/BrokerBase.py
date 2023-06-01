@@ -242,13 +242,12 @@ class BrokerBase:
         assert trade
         self._log.info(f"Closing trade: {trade}")
 
-        # Read trade orders from exchange, maybe closed by sl/tp
+        # Read trade orders from exchange
         trade = self.update_trade_status(trade)
 
         if not trade.close_time:
             # Close the trade
-            trade = self.close_cur_trade(trade)
-            self._log.info(f"Trade is already closed, probably by stop loss or take profit: {trade}")
+            self.close_cur_trade()
         else:
             self._log.info(f"Trade is already closed, probably by stop loss or take profit: {trade}")
         self.db_session.commit()
