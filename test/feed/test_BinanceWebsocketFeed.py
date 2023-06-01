@@ -1,8 +1,6 @@
 from unittest import TestCase
 
-import pandas as pd
-
-from feed.BinanceWebsocketFeed import BinanceWebsocketFeed
+from exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 
 
 class TestBinanceWebsocketFeed(TestCase):
@@ -13,7 +11,7 @@ class TestBinanceWebsocketFeed(TestCase):
                'b': [['1.01', '1.1'], ['1.02', '1.2']],
                'a': [['2.01', '2.1'], ['2.02', '2.2']]}
 
-        actual = BinanceWebsocketFeed(["BTCUSDT"]).rawlevel2model(msg=msg)
+        actual = BinanceWebsocketFeed.rawlevel2model(msg=msg)
         self.assertListEqual([1.01, 1.02], sorted([a["bid"] for a in actual if "bid" in a]))
         self.assertListEqual([1.1, 1.2], sorted([a["bid_vol"] for a in actual if "bid_vol" in a]))
         self.assertListEqual([2.01, 2.02], sorted([a["ask"] for a in actual if "ask" in a]))
@@ -25,7 +23,7 @@ class TestBinanceWebsocketFeed(TestCase):
     def test_rawbidask2model(self):
         raw = {'u': 26909985931, 's': 'BTCUSDT', 'b': 21401.86000000, 'B': 0.08000000, 'a': 21401.99000000,
                'A': 0.00940000}
-        converted = BinanceWebsocketFeed(["BTCUSDT"]).rawbidask2model(raw)
+        converted = BinanceWebsocketFeed.rawbidask2model(raw)
         expected_bid = list(filter(lambda i: "bid" in i, converted))[0]
         expected_ask = list(filter(lambda i: "ask" in i, converted))[0]
 

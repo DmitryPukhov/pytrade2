@@ -6,8 +6,8 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-from broker.BinanceBroker import BinanceBroker
-from broker.model.Trade import Trade
+from exch.binance.broker.BinanceBroker import BinanceBroker
+from model.Trade import Trade
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
@@ -54,7 +54,7 @@ class TestPredictLowHighStrategyBase(TestCase):
                     "pytrade2.strategy.data.gap.max.sec": 10,
                     "pytrade2.strategy.predict.window": "10s",
                     "pytrade2.order.quantity": 0.001}
-            super().__init__(None, conf)
+            super().__init__(conf, None)
             self.profit_loss_ratio = 4
             self.close_profit_loss_ratio = 2
             self.model = TestPredictLowHighStrategyBase.ModelStub()

@@ -49,7 +49,7 @@ class Trade(Base):
 
     def open_time_epoch_millis(self):
         # Timestamp is a float number of seconds, *1000 gets milliseconds
-        return int(self.open_time.timestamp()*1000)
+        return int(self.open_time.timestamp() * 1000)
 
-    def direction(self):
+    def direction(self) -> int:
         return Trade.order_side_codes.get(self.side)
