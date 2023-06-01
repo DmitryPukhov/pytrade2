@@ -5,6 +5,8 @@ from typing import Dict, Optional
 
 import pandas as pd
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
+
+from exch.huobi.broker.TrailingStopSupport import TrailingStopSupport
 from pytrade2.App import App
 from pytrade2.exch.Exchange import Exchange
 
@@ -23,7 +25,7 @@ from huobi.client.algo import AlgoClient
 from model.Trade import Trade
 
 
-class HuobiBroker(BrokerBase):
+class HuobiBroker(BrokerBase, TrailingStopSupport):
     """ Trading functions for Huobi """
 
     def __init__(self, config: Dict[str, str]):
@@ -31,7 +33,7 @@ class HuobiBroker(BrokerBase):
         self.config = config
         self.trade_client = self._create_trade_client()
         #self.account_client = self._create_account_client()
-        # self.market_client = self._create_market_client()
+        self.market_client = self._create_market_client()
 
         self.account_id = int(config["pytrade2.broker.huobi.account.id"])
 
@@ -48,11 +50,11 @@ class HuobiBroker(BrokerBase):
         secret = self.config["pytrade2.exchange.huobi.connector.secret"]
         return key, secret
 
-    # def _create_market_client(self):
-    #     key, secret = self._key_secret()
-    #     url = self.config["pytrade2.exchange.huobi.connector.url"]
-    #     self._log.info(f"Creating huobi market client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-    #     return MarketClient(api_key=key, secret_key=secret, init_log=True)
+    def _create_market_client(self):
+        key, secret = self._key_secret()
+        url = self.config["pytrade2.exchange.huobi.connector.url"]
+        self._log.info(f"Creating huobi market client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+        return MarketClient(api_key=key, secret_key=secret, init_log=True)
 
     def _create_trade_client(self):
         """ Huobi trade client creation."""
@@ -71,6 +73,8 @@ class HuobiBroker(BrokerBase):
         if symbol not in self.subscribed_symbols:
             self.subscribed_symbols.add(symbol)
             self.trade_client.sub_order_update(symbols=symbol, callback=self.on_order_update)
+            TrailingStopSupport.sub_events(self, symbol)
+            self.market_client.sub_trade_detail(symbols=symbol, callback=self.on_price_changed)
             self._log.debug(f"Subscribed to order update events for {symbol}")
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
