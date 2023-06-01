@@ -18,6 +18,7 @@ class BrokerBase:
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.allow_trade = config.get("pytrade2.broker.trade.allow", False)
+        self._log.info(f"Allow trade: {self.allow_trade}")
 
         # Database
         self.__init_db__(config)
@@ -29,11 +30,12 @@ class BrokerBase:
                 self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
                 self.update_cur_trade_status()
         else:
+            self._log.info("Opened trades not found")
             self.cur_trade: Optional[Trade] = None
         self.price_precision = 2
         self.min_trade_interval = timedelta(seconds=10)
         self.last_trade_time = datetime.utcnow() - self.min_trade_interval
-        self._log.info(f"Completed init broker. Allow trade: {self.allow_trade}")
+        self._log.info(f"Completed init broker.")
 
     def __init_db__(self, config: Dict[str, str]):
         # Create database
@@ -60,7 +62,7 @@ class BrokerBase:
             return None
 
         if not self.allow_trade:
-            self._log.info(f"Trading is not allowed. "
+            self._log.debug(f"Trading is not allowed. "
                            f"{symbol} {Trade.order_side_names[direction]} order at {price} will not be executed.")
             return
 
