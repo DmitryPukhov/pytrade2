@@ -1,13 +1,12 @@
 import logging
 
 from huobi.client.account import AccountClient
+from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 from huobi.connection.impl.websocket_manage import WebsocketManage
 from huobi.utils import PrintBasic
 
 from exch.huobi.broker.HuobiBroker import HuobiBroker
-from huobi.client.market import MarketClient
-
 from exch.huobi.feed.HuobiCandlesFeed import HuobiCandlesFeed
 from exch.huobi.feed.HuobiWebsocketFeed import HuobiWebsocketFeed
 

@@ -1,11 +1,9 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pandas as pd
-from huobi.model.market.candlestick import Candlestick
 from huobi.client.market import MarketClient
-from huobi.client.generic import GenericClient
-from huobi.constant.definition import *
+from huobi.model.market.candlestick import Candlestick
 
 
 class HuobiCandlesFeed:

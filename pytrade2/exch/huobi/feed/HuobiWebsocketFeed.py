@@ -32,10 +32,6 @@ class HuobiWebsocketFeed:
     def error_callback(self, msg):
         self._log.error(msg)
 
-    # def candle_callback(self, msg: CandlestickEvent):
-    #     c = msg.tick
-    #     print(f"Got candlestick event time={datetime.utcfromtimestamp(msg.ts/1000)}, o={c.open}, h={c.high}, low={c.low}, c={c.close}")
-
     def level2_callback(self, msg: PriceDepthEvent):
         try:
             for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
