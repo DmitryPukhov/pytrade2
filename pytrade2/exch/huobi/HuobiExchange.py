@@ -1,5 +1,6 @@
 import logging
 
+from huobi.connection.impl.websocket_manage import WebsocketManage
 from huobi.utils import PrintBasic
 
 from exch.huobi.broker.HuobiBroker import HuobiBroker
@@ -11,7 +12,10 @@ from exch.huobi.feed.HuobiWebsocketFeed import HuobiWebsocketFeed
 
 class HuobiExchange:
     def __init__(self, config: dict):
+        # Apply fixes to reduce rubbish in logs
         PrintBasic.print_basic = lambda data, name: None # Supress hiobi api print response ts for each response
+        WebsocketManage.on_close = lambda msg: self._log.info("Web socket on close called")
+
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
 

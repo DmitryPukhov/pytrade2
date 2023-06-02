@@ -3,6 +3,7 @@ import importlib
 import logging.config
 import os
 import sys
+import threading
 from collections import defaultdict
 from typing import Dict
 
@@ -34,7 +35,28 @@ class App:
         loglevel = self.config["log.level"]
         logging.basicConfig(level=loglevel)
         self._log.info(f"Set log level to {loglevel}")
+        self._log_report_interval_sec = 10
         self._log.info("App initialized")
+
+    def log_report(self):
+        """ Periodically report to log"""
+
+        # Header
+        exchange_name = self.config["pytrade2.exchange"].split(".")[-1]
+        strategy_name = self.config["pytrade2.strategy"]
+        header = f"\n--------- {exchange_name} {strategy_name} report --------------\n"
+
+        report = self.strategy.get_report()
+
+
+        # Footer
+        footer = "\n".ljust(len(header), "-") + "\n"
+
+        # Write to log
+        self._log.info(header + report + footer)
+
+        # Schedule next report
+        threading.Timer(self._log_report_interval_sec, self.log_report).start()
 
     def _read_config_file(self, path: str, required=False):
         if os.path.exists(path):
@@ -48,7 +70,7 @@ class App:
             conf = {}
         return conf
 
-    def _load_config(self)->dict:
+    def _load_config(self) -> dict:
         """
         Load config from cfg folder respecting the order: defaults, app.yaml, environment vars
         """
@@ -97,7 +119,7 @@ class App:
         strategy_class_name = strategy_file.split(".")[-1]
         self._log.info(f"Running the strategy: {strategy_file}")
         module = importlib.import_module(strategy_file, strategy_class_name)
-        strategy = getattr(module, strategy_class_name)(config = self.config, exchange_provider = exchange)
+        strategy = getattr(module, strategy_class_name)(config=self.config, exchange_provider=exchange)
         return strategy
 
     def run(self):
@@ -105,6 +127,8 @@ class App:
         Application entry point
         """
         self.strategy = self._create_strategy()
+
+        self.log_report()
 
         # Run and wait until the end
         self.strategy.run()

@@ -35,10 +35,6 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         # Read last opened trade etc in base class
         super().__init__(config)
 
-        # Print current account balance each x seconds
-        self._log_report_interval_sec = 60
-        self._log_report(is_periodical=True)
-
     def _key_secret(self):
         key = self.config["pytrade2.exchange.huobi.connector.key"]
         secret = self.config["pytrade2.exchange.huobi.connector.secret"]
@@ -247,12 +243,11 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             self._log.info(f"Got current trade closed event: {self.cur_trade}")
             self.cur_trade = None
 
-    def _log_report(self, is_periodical=False):
-        """ Periodical writing current status to log"""
+    def get_report(self):
+        """ Short info for report """
 
         # Form message string
         msg = StringIO()
-        msg.write("\n-------------- Trading report --------------\n")
         msg.write(f"Allow trade: {self.allow_trade}\n")
 
         # Opened trade
@@ -271,11 +266,4 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         actual_balance = "\n".join(
             [f"{b.currency} amount: {b.balance}, type: {b.type}" for b in balance if float(b.balance) > 0])
         msg.write(actual_balance)
-        msg.write("\n--------------------------------------------\n")
-
-        # Write prepared msg string to log
-        self._log.info(msg.getvalue())
-
-        if is_periodical:
-            # Schedule next report
-            threading.Timer(self._log_report_interval_sec, self._log_report, args=[is_periodical]).start()
+        return msg.getvalue()

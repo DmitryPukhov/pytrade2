@@ -75,6 +75,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
             f"min stop loss coeff: {self.stop_loss_min_coeff}, max stop loss coeff: {self.stop_loss_max_coeff},"
             f"max allowed time gap between bidask and level2 data: {self.data_gap_max}")
 
+    def get_report(self):
+        """ Short info for report """
+
+        broker_report = self.broker.get_report() if hasattr(self.broker, "get_report") else "Not provided"
+        return broker_report
+
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
 
@@ -96,7 +102,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         """
         Attach to the feed and listen
         """
-        exchange_name=self.config["pytrade2.exchange"]
+        exchange_name = self.config["pytrade2.exchange"]
         self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
         self.websocket_feed.consumers.append(self)
 
