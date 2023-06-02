@@ -25,16 +25,16 @@ class HuobiWebsocketFeed:
         Read data from web socket
         """
         symbols = ",".join(self.tickers)
-        self.__market_client.sub_pricedepth_bbo(symbols=symbols, callback=self.ticker_callback)
+        self.__market_client.sub_pricedepth_bbo(symbols=symbols, callback=self.ticker_callback, error_handler=self.error_callback)
         self.__market_client.sub_pricedepth(symbols=symbols, depth_step="step1",
-                                            callback=self.level2_callback, )
+                                            callback=self.level2_callback, error_handler=self.error_callback)
 
     def error_callback(self, msg):
         self._log.error(msg)
 
-    def candle_callback(self, msg: CandlestickEvent):
-        c = msg.tick
-        print(f"Got candlestick event time={datetime.utcfromtimestamp(msg.ts/1000)}, o={c.open}, h={c.high}, low={c.low}, c={c.close}")
+    # def candle_callback(self, msg: CandlestickEvent):
+    #     c = msg.tick
+    #     print(f"Got candlestick event time={datetime.utcfromtimestamp(msg.ts/1000)}, o={c.open}, h={c.high}, low={c.low}, c={c.close}")
 
     def level2_callback(self, msg: PriceDepthEvent):
         try:

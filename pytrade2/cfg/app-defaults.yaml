@@ -15,8 +15,6 @@ pytrade2.strategy.stoploss.max.coeff: 0.005
 
 pytrade2.strategy.profitloss.ratio: 4
 
-pytrade2.connector.key: 'Your binance credentials should be here'
-pytrade2.connector.secret: 'Your binance credentials should be here'
 pytrade2.data.dir: './data'
 log.level: "INFO"
 pytrade2.tickers: "BTCUSDT"

@@ -35,7 +35,7 @@ class App:
         loglevel = self.config["log.level"]
         logging.basicConfig(level=loglevel)
         self._log.info(f"Set log level to {loglevel}")
-        self._log_report_interval_sec = 10
+        self._log_report_interval_sec = 60
         self._log.info("App initialized")
 
     def log_report(self):

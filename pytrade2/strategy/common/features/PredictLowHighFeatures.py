@@ -11,13 +11,6 @@ class PredictLowHighFeatures:
     """
     default_predict_window = "10s"
 
-    # @staticmethod
-    # def last_data_of(bid_ask: pd.DataFrame, level2: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
-    #     """ @:return (last bid ask value, last level2 values just before last bid ask)"""
-    #     last_bid_ask = bid_ask.tail(1)
-    #     last_level2 = level2[level2.index <= last_bid_ask.index.max()]
-    #     return last_bid_ask, last_level2
-
     @staticmethod
     def last_features_of(bid_ask: pd.DataFrame,  n: int, level2: pd.DataFrame, candles_features: pd.DataFrame) -> pd.DataFrame:
         # Need 2 last records because features contain diff.

@@ -129,12 +129,14 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
         # Add new data to df
         new_df = pd.DataFrame(level2, columns=bid_ask_columns).set_index("datetime", drop=False)
-        self.level2 = pd.concat([self.level2, new_df])  # self.level2.append(new_df)
+        self.level2 = pd.concat([self.level2, new_df])
+        self.level2.sort_index(inplace=True)  # self.level2.append(new_df)
 
     def on_ticker(self, ticker: dict):
         # Add new data to df
         new_df = pd.DataFrame([ticker], columns=list(ticker.keys())).set_index("datetime")
         self.bid_ask = pd.concat([self.bid_ask, new_df])
+        self.bid_ask.sort_index(inplace=True)
 
         if not self.is_data_gap():
             # Learn and predict only if no gap between level2 and bidask

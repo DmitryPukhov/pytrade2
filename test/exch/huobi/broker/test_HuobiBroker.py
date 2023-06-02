@@ -4,6 +4,7 @@ from typing import Dict
 from unittest import mock
 from unittest.mock import Mock, MagicMock
 
+from huobi.client.account import AccountClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 from huobi.constant import OrderState, OrderType
@@ -37,7 +38,8 @@ class TestHuobiBroker(unittest.TestCase):
         mock.patch.object(TradeClient, "get_order", Mock()).start()
 
         # Class under test
-        broker = HuobiBroker(TestHuobiBroker.config)
+        broker = HuobiBroker(config=TestHuobiBroker.config, market_client=MarketClient(),
+                             account_client=AccountClient(), trade_client=TradeClient())
 
         # Test call
         broker.create_cur_trade(symbol="BTCUSDT",
@@ -87,7 +89,8 @@ class TestHuobiBroker(unittest.TestCase):
         mock.patch.object(TradeClient, "get_order", Mock(wraps=get_order_wrap)).start()
 
         # Class under test
-        broker = HuobiBroker(TestHuobiBroker.config)
+        broker = HuobiBroker(config=TestHuobiBroker.config, market_client=MarketClient(),
+                             account_client=AccountClient(), trade_client=TradeClient())
 
         # Call
         broker.create_cur_trade(symbol="BTCUSDT",
@@ -128,7 +131,8 @@ class TestHuobiBroker(unittest.TestCase):
         mock.patch.object(TradeClient, "get_order", Mock(wraps=get_order_wrap)).start()
 
         # Class under test
-        broker = HuobiBroker(TestHuobiBroker.config)
+        broker = HuobiBroker(config=TestHuobiBroker.config, market_client=MarketClient(),
+                             account_client=AccountClient(), trade_client=TradeClient())
 
         # Call
         broker.create_cur_trade(symbol="BTCUSDT",

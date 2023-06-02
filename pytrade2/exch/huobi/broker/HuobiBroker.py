@@ -19,12 +19,12 @@ from model.Trade import Trade
 class HuobiBroker(BrokerBase, TrailingStopSupport):
     """ Trading functions for Huobi """
 
-    def __init__(self, config: Dict[str, str]):
+    def __init__(self, config: Dict[str, str], market_client: MarketClient, account_client: AccountClient, trade_client : TradeClient):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
-        self.trade_client = self._create_trade_client()
-        self.account_client = self._create_account_client()
-        self.market_client = self._create_market_client()
+        self.trade_client = trade_client
+        self.account_client = account_client
+        self.market_client = market_client
 
         self.account_id = int(config["pytrade2.broker.huobi.account.id"])
 
@@ -34,30 +34,6 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
 
         # Read last opened trade etc in base class
         super().__init__(config)
-
-    def _key_secret(self):
-        key = self.config["pytrade2.exchange.huobi.connector.key"]
-        secret = self.config["pytrade2.exchange.huobi.connector.secret"]
-        return key, secret
-
-    def _create_market_client(self):
-        key, secret = self._key_secret()
-        url = self.config["pytrade2.exchange.huobi.connector.url"]
-        self._log.info(f"Creating huobi market client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-        return MarketClient(api_key=key, secret_key=secret, init_log=True)
-
-    def _create_trade_client(self):
-        """ Huobi trade client creation."""
-        key, secret = self._key_secret()
-        url = self.config["pytrade2.exchange.huobi.connector.url"]
-        self._log.info(f"Creating huobi market client, url:{url} key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-        return TradeClient(url=url, api_key=key, secret_key=secret, init_log=True)
-
-    def _create_account_client(self):
-        key, secret = self._key_secret()
-        # url = self.config["pytrade2.exchange.huobi.connector.url"]
-        self._log.info(f"Creating huobi account client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-        return AccountClient(api_key=key, secret_key=secret, init_log=True)
 
     def sub_events(self, symbol: str):
         if symbol not in self.subscribed_symbols:

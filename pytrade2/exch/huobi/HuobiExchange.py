@@ -1,5 +1,7 @@
 import logging
 
+from huobi.client.account import AccountClient
+from huobi.client.trade import TradeClient
 from huobi.connection.impl.websocket_manage import WebsocketManage
 from huobi.utils import PrintBasic
 
@@ -13,7 +15,7 @@ from exch.huobi.feed.HuobiWebsocketFeed import HuobiWebsocketFeed
 class HuobiExchange:
     def __init__(self, config: dict):
         # Apply fixes to reduce rubbish in logs
-        PrintBasic.print_basic = lambda data, name: None # Supress hiobi api print response ts for each response
+        PrintBasic.print_basic = lambda data, name: None  # Supress hiobi api print response ts for each response
         WebsocketManage.on_close = lambda msg: self._log.info("Web socket on close called")
 
         self._log = logging.getLogger(self.__class__.__name__)
@@ -21,6 +23,8 @@ class HuobiExchange:
 
         # Attrs for lazy initialization
         self.__market_client: MarketClient = None
+        self.__trade_client: TradeClient = None
+        self.__account_client: AccountClient = None
         self.__broker: HuobiBroker = None
         self.__websocket_feed: HuobiWebsocketFeed = None
         self.__candles_feed: HuobiCandlesFeed = None
@@ -30,43 +34,50 @@ class HuobiExchange:
     def websocket_feed(self) -> HuobiWebsocketFeed:
         """ Binance websocket feed lazy creation """
         if not self.__websocket_feed:
-            self.__websocket_feed = HuobiWebsocketFeed(config=self.config, market_client=self._websocket_client())
+            self.__websocket_feed = HuobiWebsocketFeed(config=self.config, market_client=self._market_client())
         return self.__websocket_feed
 
     def candles_feed(self) -> HuobiCandlesFeed:
         """ Binance candles feed lazy creation """
         if not self.__candles_feed:
-            self.__candles_feed = HuobiCandlesFeed(self._websocket_client())
+            self.__candles_feed = HuobiCandlesFeed(self._market_client())
         return self.__candles_feed
 
     def broker(self) -> HuobiBroker:
         """ Binance broker lazy creation """
         if not self.__broker:
-            self.__broker = HuobiBroker(self.config)
+            self.__broker = HuobiBroker(config=self.config,
+                                        account_client=self._account_client(),
+                                        trade_client=self._trade_client(),
+                                        market_client=self._market_client())
         return self.__broker
 
-    def _websocket_client(self) -> MarketClient:
-        """ Huobi spot client creation. Each strategy can be configured at it's own account"""
+    def _key_secret(self):
+        key = self.config["pytrade2.exchange.huobi.connector.key"]
+        secret = self.config["pytrade2.exchange.huobi.connector.secret"]
+        return key, secret
+
+    def _market_client(self):
         if not self.__market_client:
-            key, secret = self.config["pytrade2.connector.key"], self.config["pytrade2.connector.secret"]
-            url = self.config["pytrade2.exchange.huobi.client.websocket.url"]
-            self._log.info(
-                f"Init Huobi client, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            #self.__market_client: MarketClient = MarketClient(api_key=key, secret_key=secret, url=url, init_log=True)
-            # todo: add key and secret
-            #self.__market_client: MarketClient = MarketClient()
-            self.__market_client: MarketClient = MarketClient(url=url, init_log=True)
+            key, secret = self._key_secret()
+            #url = self.config.get("pytrade2.exchange.huobi.market.client.url")
+            self._log.info(f"Creating huobi market client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+            self.__market_client = MarketClient(api_key=key, secret_key=secret, init_log=True)
         return self.__market_client
 
-    def __market_client(self, url) -> MarketClient:
-        """ Huobi spot client creation. Each strategy can be configured at it's own account"""
-        if not self.__market_client:
-            key, secret = self.config["pytrade2.connector.key"], self.config["pytrade2.connector.secret"]
-            url = self.config["pytrade2.connector.url"]
-            self._log.info(
-                f"Init Huobi client, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            #self.__market_client: MarketClient = MarketClient(api_key=key, secret_key=secret, url=url, init_log=True)
-            # todo: add key and secret
-            #self.__market_client: MarketClient = MarketClient()
-            self.__market_client: MarketClient = MarketClient(url=url, init_log=True)
-        return self.__market_client
+    def _trade_client(self):
+        """ Huobi trade client creation."""
+        if not self.__trade_client:
+            key, secret = self._key_secret()
+            #url = self.config.get("pytrade2.exchange.huobi.trade.client.url")
+            self._log.info(f"Creating huobi trade client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+            self.__trade_client = TradeClient(api_key=key, secret_key=secret, init_log=True)
+        return self.__trade_client
+
+    def _account_client(self):
+        if not self.__account_client:
+            key, secret = self._key_secret()
+            #url = self.config.get("pytrade2.exchange.huobi.account.client.url")
+            self._log.info(f"Creating huobi account client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+            self.__account_client = AccountClient(api_key=key, secret_key=secret, init_log=True)
+        return self.__account_client
