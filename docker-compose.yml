@@ -8,6 +8,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./data:/data
+      - ./pytrade2/cfg:/pytrade2/cfg
     command: python ./App.py --strategy None
     restart: on-failure
 
