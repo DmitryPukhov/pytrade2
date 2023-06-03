@@ -1,6 +1,6 @@
 #!/bin/bash
 
-bot_name=${1?"Please provide bot name. Example: $0 lstm"} # arg1 is a bot name
+bot_name=${1?"Please provide bot name. Example: $0 lstmstrategy"} # arg1 is a bot name
 
 user="yc-user"
 public_ip="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"

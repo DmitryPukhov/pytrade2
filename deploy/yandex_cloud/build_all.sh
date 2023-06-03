@@ -32,7 +32,6 @@ copy_to_remote() {
 
 build_docker() {
   echo "Building pytrade2 at $public_ip"
-  #ssh $user@"$public_ip" "cd /home/$user/pytrade2 ; sudo docker-compose build lstm simplekeras"
   ssh $user@"$public_ip" "cd /home/$user/pytrade2 ; sudo docker-compose build"
 }
 

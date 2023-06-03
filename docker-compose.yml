@@ -12,20 +12,20 @@ services:
     command: python ./App.py --strategy None
     restart: on-failure
 
-  simplekeras:
-    container_name: pytrade2-simplekeras
+  simplekerasstrategy:
+    container_name: simplekerasstrategy
     extends:
       service: trade
     command: python ./App.py --pytrade2.strategy SimpleKerasStrategy
 
-  lstm:
-    container_name: pytrade2-lstm
+  lstmstrategy:
+    container_name: lstmstrategy
     extends:
       service: trade
     command: python ./App.py --pytrade2.strategy LSTMStrategy
 
-  lstm2:
-    container_name: pytrade2-lstm2
+  lstmstrategy2:
+    container_name: lstmstrategy2
     extends:
       service: trade
     command: python ./App.py --pytrade2.strategy LSTMStrategy2
