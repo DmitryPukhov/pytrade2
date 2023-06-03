@@ -22,3 +22,5 @@ scp "$tmp_cfg" "$remote_cfg"
 
 echo "Starting remote docker"
 ssh $user@"$public_ip" "cd $pytrade2_vm_dir ; sudo docker-compose start $bot_name &"
+
+./logs.sh $bot_name
