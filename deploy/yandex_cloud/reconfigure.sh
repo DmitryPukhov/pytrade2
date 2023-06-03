@@ -14,7 +14,7 @@ remote_cfg="$user@$public_ip:$pytrade2_vm_dir/pytrade2/cfg/$bot_name.yaml"
 echo "Reconfiguring $bot_name at $public_ip machine. Copy $local_cfg to $remote_cfg"
 
 echo "Stopping remote docker"
-ssh ""$user@$public_ip" "cd $pytrade2_vm_dir ; sudo docker-compose stop $bot_name"
+ssh "$user@$public_ip" "cd $pytrade2_vm_dir ; sudo docker-compose stop $bot_name"
 
 echo "Preparing temp config to copy"
 cp -f "$local_cfg" "$tmp_cfg"
