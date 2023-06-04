@@ -174,36 +174,36 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             amount=trade.quantity,
             price=trade.open_price,
             source=OrderSource.API)
-
-        if close_order_id:
-            close_order = self.trade_client.get_order(close_order_id)
-            if close_order.state == OrderState.FILLED:
-                trade.close_order_id = close_order_id
-                trade.close_price = float(close_order.price)
-                trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
-                trade.status = TradeStatus.closed
-        if not trade.close_time:
-            # Full stop, hanging order, requires urgent investigation
-            raise f"Cannot create closing order for {trade}"
+        #
+        # if close_order_id:
+        #     close_order = self.trade_client.get_order(close_order_id)
+        #     if close_order.state == OrderState.FILLED:
+        #         trade.close_order_id = close_order_id
+        #         trade.close_price = float(close_order.price)
+        #         trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
+        #         trade.status = TradeStatus.closed
+        # if not trade.close_time:
+        #     # Full stop, hanging order, requires urgent investigation
+        #     raise f"Cannot create closing order for {trade}"
         return trade
 
-    def update_trade_status(self, trade: Trade) -> Trade:
-        """ If given trade closed by stop loss, update db and set cur trade variable to none """
-
-        if not trade or trade.close_time or not trade.stop_loss_order_id:
-            return trade
-
-        # Try to get trade for stop loss or take profit
-        for sltp_order_id in trade.stop_loss_order_id.split(","):
-            # Actually a single trade or empty list will be returned by my_trades
-            close_order = self.trade_client.get_order(order_id=int(trade.stop_loss_order_id))
-            if close_order.state == OrderState.FILLED:
-                # Update db
-                trade.close_order_id = sltp_order_id
-                trade.close_price = float(close_order.price)
-                trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
-                trade.status = TradeStatus.closed
-        return trade
+    # def update_trade_status(self, trade: Trade) -> Trade:
+    #     """ If given trade closed by stop loss, update db and set cur trade variable to none """
+    #
+    #     if not trade or trade.close_time or not trade.stop_loss_order_id:
+    #         return trade
+    #
+    #     # Try to get trade for stop loss or take profit
+    #     for sltp_order_id in trade.stop_loss_order_id.split(","):
+    #         # Actually a single trade or empty list will be returned by my_trades
+    #         close_order = self.trade_client.get_order(order_id=int(trade.stop_loss_order_id))
+    #         if close_order.state == OrderState.FILLED:
+    #             # Update db
+    #             trade.close_order_id = sltp_order_id
+    #             trade.close_price = float(close_order.price)
+    #             trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
+    #             trade.status = TradeStatus.closed
+    #     return trade
 
     def on_order_update(self, event: OrderUpdateEvent):
         """ Update current trade prices from filled main or sl/tp order"""
