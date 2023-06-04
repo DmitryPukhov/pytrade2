@@ -57,7 +57,8 @@ class HuobiWebsocketFeed:
                 }
 
     def rawlevel2model(self, symbol: str, tick: PriceDepth):
-        dt = pd.to_datetime(tick.ts, unit="ms")
+        #dt = pd.to_datetime(tick.ts, unit="ms")
+        dt=datetime.utcnow()
         out = [{"datetime": dt, "symbol": symbol,
                 "bid": entry.price, "bid_vol": entry.amount} for entry in tick.bids] + \
               [{"datetime": dt, "symbol": symbol,
