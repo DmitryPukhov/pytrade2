@@ -49,7 +49,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.level2: pd.DataFrame = pd.DataFrame()
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
         self.last_learn_bidask_time = datetime(1970, 1, 1)
-        self.min_xy_len = 1
+        self.min_xy_len = 2
 
         self.is_learning = False
         self.is_processing = False
@@ -80,6 +80,9 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         """ Short info for report """
 
         broker_report = self.broker.get_report() if hasattr(self.broker, "get_report") else "Not provided"
+        last_tick_time = self.bid_ask.index.max() if not self.bid_ask.empty else None
+        broker_report += f"\nLast tick: {last_tick_time}"
+
         return broker_report
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
@@ -117,7 +120,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         # Last received data was too long ago
         delta = datetime.utcnow() - self.bid_ask.index.max() if self.bid_ask is not None and not self.bid_ask.empty else Timedelta.min
         is_alive = delta < maxdelta
-        self._log.debug(f"Strategy is_alive:{is_alive}. Time since last data: {delta}. Max inactivity: {maxdelta}")
+        self._log.info(f"Strategy is_alive:{is_alive}. Time since last data: {delta}. Max inactivity: {maxdelta}")
         return is_alive
 
     def is_data_gap(self):
