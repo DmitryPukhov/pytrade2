@@ -8,6 +8,8 @@ from model.Trade import Trade
 from huobi.model.market.trade_detail_event import TradeDetailEvent
 from huobi.constant import TradeDirection
 
+from model.TradeStatus import TradeStatus
+
 
 class TrailingStopSupport:
     """ Programmatically support trailing stop because Huobi does not have oco orders???  for sl/tp"""
@@ -25,7 +27,7 @@ class TrailingStopSupport:
     def on_price_changed(self, event: TradeDetailEvent):
         """ Price changing event, check tp"""
 
-        if not self.cur_trade or self.cur_trade.close_time:
+        if not self.cur_trade or self.cur_trade.status != TradeStatus.opened:
             return
 
         for element in event.data:

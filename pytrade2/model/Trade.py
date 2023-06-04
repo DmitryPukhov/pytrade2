@@ -30,12 +30,13 @@ class Trade(Base):
     close_time: Mapped[DateTime] = Column(DateTime, nullable=True)
     close_price: Mapped[float] = mapped_column(nullable=True)
     close_order_id: Mapped[str] = mapped_column(nullable=True)
+    status: Mapped[str] = mapped_column(String)
 
     order_side_names = {1: "BUY", -1: "SELL"}
     order_side_codes = dict(map(reversed, order_side_names.items()))
 
     def __str__(self):
-        details = f"{self.ticker} {self.side}, open time: {self.open_time}, open price: {self.open_price}, " \
+        details = f"{self.ticker} {self.side}, status: {self.status}, open time: {self.open_time}, open price: {self.open_price}, " \
                   f"sl: {self.stop_loss_price}, tp: {self.take_profit_price}"
         if self.close_time:
             profit = None

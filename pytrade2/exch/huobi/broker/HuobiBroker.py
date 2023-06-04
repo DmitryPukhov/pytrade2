@@ -6,6 +6,7 @@ from typing import Dict, Optional
 
 import pandas as pd
 from huobi.client.account import AccountClient
+from huobi.client.algo import AlgoClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 from huobi.constant import *
@@ -14,15 +15,22 @@ from huobi.model.trade import OrderUpdateEvent
 from exch.BrokerBase import BrokerBase
 from exch.huobi.broker.TrailingStopSupport import TrailingStopSupport
 from model.Trade import Trade
+from model.TradeStatus import TradeStatus
 
 
 class HuobiBroker(BrokerBase, TrailingStopSupport):
     """ Trading functions for Huobi """
 
-    def __init__(self, config: Dict[str, str], market_client: MarketClient, account_client: AccountClient, trade_client : TradeClient):
+    def __init__(self, config: Dict[str, str],
+                 market_client: MarketClient,
+                 account_client: AccountClient,
+                 trade_client: TradeClient,
+                 algo_client: AlgoClient,
+                 ):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.trade_client = trade_client
+        self.algo_client = algo_client
         self.account_client = account_client
         self.market_client = market_client
 
@@ -88,7 +96,6 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                            stop_loss_price: float,
                            stop_loss_limit_price: float,
                            take_profit_price: float) -> Trade:
-        ## todo: take profit!!!
         """ Stop loss + take profit order """
         # Calculate huobi order type
         if base_trade.direction() == 1:
@@ -156,6 +163,10 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         else:
             close_order_type = None
 
+        # Closed opened stop loss order
+        if trade.stop_loss_order_id:
+            self.trade_client.cancel_order(order_id=trade.stop_loss_order_id)
+
         close_order_id = self.trade_client.create_order(
             symbol=trade.ticker,
             account_id=self.account_id,
@@ -171,6 +182,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 trade.close_order_id = close_order_id
                 trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
+                trade.status = TradeStatus.closed
         if not trade.close_time:
             # Full stop, hanging order, requires urgent investigation
             raise f"Cannot create closing order for {trade}"
@@ -191,6 +203,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 trade.close_order_id = sltp_order_id
                 trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
+                trade.status = TradeStatus.closed
         return trade
 
     def on_order_update(self, event: OrderUpdateEvent):
@@ -208,13 +221,17 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             # Main order filled
             self.cur_trade.open_price = order.tradePrice
             self.cur_trade.open_time = order_time
+            self.cur_trade.status = TradeStatus.opened
             self._log.info(f"Got current trade opened event: {self.cur_trade}")
             # Save to db
             self.db_session.commit()
+
         elif self.cur_trade.stop_loss_order_id == order.orderId:
             self.cur_trade.close_price = order.tradePrice
             self.cur_trade.close_order_id = order.orderId
             self.cur_trade.close_time = order_time
+            self.cur_trade.status = TradeStatus.closed
+            # Save to db
             self.db_session.commit()
             self._log.info(f"Got current trade closed event: {self.cur_trade}")
             self.cur_trade = None

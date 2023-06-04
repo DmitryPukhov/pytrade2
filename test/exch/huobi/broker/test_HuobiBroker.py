@@ -5,6 +5,7 @@ from unittest import mock
 from unittest.mock import Mock, MagicMock
 
 from huobi.client.account import AccountClient
+from huobi.client.algo import AlgoClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 from huobi.constant import OrderState, OrderType
@@ -34,12 +35,15 @@ class TestHuobiBroker(unittest.TestCase):
 
     def test_create_cur_trade__not_filled(self):
         # Empty orders mocks
+        mock.patch.object(AlgoClient, "create_order", Mock()).start()
+        mock.patch.object(AlgoClient, "get_order", Mock()).start()
+
         mock.patch.object(TradeClient, "create_order", Mock()).start()
         mock.patch.object(TradeClient, "get_order", Mock()).start()
 
         # Class under test
         broker = HuobiBroker(config=TestHuobiBroker.config, market_client=MarketClient(),
-                             account_client=AccountClient(), trade_client=TradeClient())
+                             account_client=AccountClient(), trade_client=TradeClient(), algo_client=AlgoClient())
 
         # Test call
         broker.create_cur_trade(symbol="BTCUSDT",
@@ -86,11 +90,14 @@ class TestHuobiBroker(unittest.TestCase):
             return order
 
         mock.patch.object(TradeClient, "create_order", Mock(wraps=create_order_wrap)).start()
+        mock.patch.object(TradeClient, "cancel_order", Mock()).start()
         mock.patch.object(TradeClient, "get_order", Mock(wraps=get_order_wrap)).start()
+        mock.patch.object(AlgoClient, "create_order", Mock(wraps=create_order_wrap)).start()
+        mock.patch.object(AlgoClient, "get_order", Mock(wraps=get_order_wrap)).start()
 
         # Class under test
         broker = HuobiBroker(config=TestHuobiBroker.config, market_client=MarketClient(),
-                             account_client=AccountClient(), trade_client=TradeClient())
+                             account_client=AccountClient(), trade_client=TradeClient(), algo_client=AlgoClient())
 
         # Call
         broker.create_cur_trade(symbol="BTCUSDT",
@@ -132,7 +139,7 @@ class TestHuobiBroker(unittest.TestCase):
 
         # Class under test
         broker = HuobiBroker(config=TestHuobiBroker.config, market_client=MarketClient(),
-                             account_client=AccountClient(), trade_client=TradeClient())
+                             account_client=AccountClient(), trade_client=TradeClient(), algo_client=AlgoClient())
 
         # Call
         broker.create_cur_trade(symbol="BTCUSDT",

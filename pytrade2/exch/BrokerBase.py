@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from model.Trade import Trade
+from model.TradeStatus import TradeStatus
 
 
 class BrokerBase:
@@ -86,6 +87,7 @@ class BrokerBase:
                                                          direction=direction,
                                                          price=price,
                                                          quantity=quantity)
+            self.cur_trade.status = TradeStatus.opening
             if not self.cur_trade:
                 return None
             # Adjust sl/tp to order filled price
@@ -105,6 +107,7 @@ class BrokerBase:
                                                         stop_loss_price=stop_loss_price_adj)
             if not sl_tp_trade:
                 raise "sl/tp not created"
+            sl_tp_trade.status = TradeStatus.opened
             self.cur_trade = sl_tp_trade
         except Exception as e:
             # If sl/tp order exception, close main order
@@ -128,7 +131,12 @@ class BrokerBase:
 
     def close_cur_trade(self):
         self._log.info(f"Closing current trade:{self.cur_trade}")
+        self.cur_trade.status = TradeStatus.closing
+
+        # Call exchange broker to close the order
         self.cur_trade = self.close_order(self.cur_trade)
+
+        self.cur_trade.status = TradeStatus.closed
         self._log.info(f"Closed current trade:{self.cur_trade}")
 
     def adjusted_sl_tp(self, direction, orig_price: float, orig_sl_price: float, orig_tp_price: float,

@@ -6,6 +6,7 @@ from binance.spot import Spot as Client
 
 from exch.BrokerBase import BrokerBase
 from model.Trade import Trade
+from model.TradeStatus import TradeStatus
 
 
 class BinanceBroker(BrokerBase):
@@ -116,4 +117,5 @@ class BinanceBroker(BrokerBase):
                 trade.close_order_id = str(close_trade["orderId"])
                 trade.close_price = float(close_trade["price"])
                 trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
+                trade.status = TradeStatus.closed
         return trade
