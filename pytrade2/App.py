@@ -2,6 +2,7 @@ import argparse
 import importlib
 import logging.config
 import os
+import signal
 import sys
 import threading
 from collections import defaultdict
@@ -130,10 +131,22 @@ class App:
 
         self.log_report()
 
+        # Watchdog starts after initial interval
+        threading.Timer(60, self.watchdog_check).start()
+
         # Run and wait until the end
         self.strategy.run()
 
         self._log.info("The end")
+
+    def watchdog_check(self):
+        """ If not alive, reset websocket feed"""
+        if not self.strategy.is_alive():
+            self._log.error(f"Strategy reports to be dead, exiting")
+            os.kill(os.getpid(), signal.SIGINT)
+        else:
+            # Schedule next check
+            threading.Timer(60, self.watchdog_check).start()
 
 
 if __name__ == "__main__":

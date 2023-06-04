@@ -10,7 +10,7 @@ services:
       - ./data:/data
       - ./pytrade2/cfg:/pytrade2/cfg
     command: python ./App.py --strategy None
-    restart: on-failure
+    restart: always
 
   simplekerasstrategy:
     container_name: simplekerasstrategy

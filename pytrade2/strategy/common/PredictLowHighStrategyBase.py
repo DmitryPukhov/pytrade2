@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
+from pandas import Timedelta
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler
@@ -111,6 +112,13 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
         self.websocket_feed.run()
 
+    def is_alive(self):
+        maxdelta = pd.Timedelta("60s")
+        # Last received data was too long ago
+        delta = datetime.utcnow() - self.bid_ask.index.max() if self.bid_ask is not None and not self.bid_ask.empty else Timedelta.min
+        self._log.debug(f"Strategy is unactive during: {delta}. Max timeout: {maxdelta}")
+        return delta < maxdelta
+
     def is_data_gap(self):
         """ Check the gap between last bidask and level2 """
 
@@ -206,8 +214,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.check_cur_trade(bid, ask)
 
         bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = self.fut_low_high.loc[self.fut_low_high.index[-1], \
-            ["bid_min_fut", "bid_max_fut",
-             "ask_min_fut", "ask_max_fut"]]
+                                                                                   ["bid_min_fut", "bid_max_fut",
+                                                                                    "ask_min_fut", "ask_max_fut"]]
         open_signal = 0
         if not self.broker.cur_trade:
             # Maybe open a new order
