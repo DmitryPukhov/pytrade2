@@ -165,7 +165,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
 
         # Closed opened stop loss order
         if trade.stop_loss_order_id:
-            self.trade_client.cancel_order(order_id=trade.stop_loss_order_id)
+            self.trade_client.cancel_order(symbol=trade.ticker, order_id=trade.stop_loss_order_id)
 
         close_order_id = self.trade_client.create_order(
             symbol=trade.ticker,
