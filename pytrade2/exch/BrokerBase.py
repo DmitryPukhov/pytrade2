@@ -87,9 +87,9 @@ class BrokerBase:
                                                          direction=direction,
                                                          price=price,
                                                          quantity=quantity)
-            self.cur_trade.status = TradeStatus.opening
             if not self.cur_trade:
                 return None
+            self.cur_trade.status = TradeStatus.opening
             # Adjust sl/tp to order filled price
             stop_loss_price_adj, take_profit_price_adj = self.adjusted_sl_tp(direction=direction,
                                                                              orig_price=price,
