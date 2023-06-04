@@ -176,7 +176,6 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             source=OrderSource.API)
 
         if close_order_id:
-
             close_order = self.trade_client.get_order(close_order_id)
             if close_order.state == OrderState.FILLED:
                 trade.close_order_id = close_order_id
@@ -226,7 +225,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             # Save to db
             self.db_session.commit()
 
-        elif self.cur_trade.stop_loss_order_id == order.orderId:
+        elif self.cur_trade.stop_loss_order_id == order.orderId or self.cur_trade.status == TradeStatus.closing:
+            # Stop loss order filled
             self.cur_trade.close_price = order.tradePrice
             self.cur_trade.close_order_id = order.orderId
             self.cur_trade.close_time = order_time
