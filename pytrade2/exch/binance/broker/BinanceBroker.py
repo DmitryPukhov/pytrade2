@@ -103,19 +103,19 @@ class BinanceBroker(BrokerBase):
             raise f"Cannot create closing order for {trade}"
         return trade
 
-    def update_trade_status(self, trade: Trade) -> Trade:
+    def update_cur_trade_status(self):
         """ If given trade closed by stop loss, update db and set cur trade variable to none """
 
-        if not trade or trade.close_time or not trade.stop_loss_order_id:
-            return trade
+        """ If given trade closed by stop loss, update db and set cur trade variable to none """
+        if not self.cur_trade or self.cur_trade.status == TradeStatus.closed or not self.cur_trade.stop_loss_order_id:
+            return
 
         # Try to get trade for stop loss or take profit
-        for sltp_order_id in trade.stop_loss_order_id.split(","):
+        for sltp_order_id in self.cur_trade.stop_loss_order_id.split(","):
             # Actually a single trade or empty list will be returned by my_trades
-            for close_trade in self.client.my_trades(symbol=trade.ticker, orderId=sltp_order_id):
+            for close_trade in self.client.my_trades(symbol=self.cur_trade.ticker, orderId=sltp_order_id):
                 # Update db
-                trade.close_order_id = str(close_trade["orderId"])
-                trade.close_price = float(close_trade["price"])
-                trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
-                trade.status = TradeStatus.closed
-        return trade
+                self.cur_trade.close_order_id = str(close_trade["orderId"])
+                self.cur_trade.close_price = float(close_trade["price"])
+                self.cur_trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
+                self.cur_trade.status = TradeStatus.closed
