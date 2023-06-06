@@ -49,9 +49,6 @@ class TrailingStopSupport:
                         f"current trade: {self.cur_trade}")
                     # Close
                     self.close_cur_trade()
-
-                    if self.cur_trade.status == TradeStatus.closed:
-                        self.cur_trade = None
                     break
 
     def update_trade_status(self, trade: Trade) -> Trade:
