@@ -19,4 +19,4 @@ log.level: "INFO"
 pytrade2.tickers: "BTCUSDT"
 pytrade2.broker.trade.allow: true
 pytrade2.strategy.lstm.window.size: 10
-pytrade2.order.quantity: 0.001
+pytrade2.order.quantity: 0.0005

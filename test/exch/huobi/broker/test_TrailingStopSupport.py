@@ -1,4 +1,5 @@
 import unittest
+from threading import RLock
 from unittest.mock import Mock
 
 from huobi.constant import TradeDirection
@@ -23,11 +24,12 @@ class TestTrailingStopSupport(unittest.TestCase):
     @staticmethod
     def tss_of(open_price, tp_price):
         tss = TrailingStopSupport()
+        tss.trade_lock = RLock()
         tss.cur_trade = Trade()
         tss.cur_trade.open_price, tss.cur_trade.take_profit_price = open_price, tp_price
         tss.cur_trade.status = "opened"
         tss.close_cur_trade = Mock()
-
+        tss.update_trade_status = Mock()
         return tss
 
     def test_tp_buy_not_reached(self):

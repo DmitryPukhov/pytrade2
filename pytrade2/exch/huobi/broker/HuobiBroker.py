@@ -29,6 +29,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                  ):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
+        self.trade_lock = threading.RLock()
+
         self.trade_client = trade_client
         self.algo_client = algo_client
         self.account_client = account_client
@@ -53,188 +55,196 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""
-        symbol = symbol.lower()
-        self.sub_events(symbol)
+        with self.trade_lock:
+            symbol = symbol.lower()
+            self.sub_events(symbol)
 
-        # Calculate huobi order type
-        if direction == 1:
-            # order_type = OrderType.BUY_MARKET
-            order_type = OrderType.BUY_LIMIT_FOK
-        elif direction == -1:
-            # order_type = OrderType.SELL_MARKET
-            order_type = OrderType.SELL_LIMIT_FOK
-        else:
-            order_type = 0
+            # Calculate huobi order type
+            if direction == 1:
+                # order_type = OrderType.BUY_MARKET
+                order_type = OrderType.BUY_LIMIT_FOK
+            elif direction == -1:
+                # order_type = OrderType.SELL_MARKET
+                order_type = OrderType.SELL_LIMIT_FOK
+            else:
+                order_type = 0
 
-        # Make order using trade client
-        # order_id is always returned, exception otherwise
-        order_id = self.trade_client.create_order(
-            symbol=symbol,
-            account_id=self.account_id,
-            order_type=order_type,
-            amount=quantity,
-            price=price,
-            source=OrderSource.API
-        )
-        self._log.debug(f"Created order with id:{order_id}")
+            # Make order using trade client
+            # order_id is always returned, exception otherwise
+            order_id = self.trade_client.create_order(
+                symbol=symbol,
+                account_id=self.account_id,
+                order_type=order_type,
+                amount=quantity,
+                price=price,
+                source=OrderSource.API
+            )
+            self._log.debug(f"Created order with id:{order_id}")
 
-        # Create trade to return
-        order = self.trade_client.get_order(order_id)
-        if order.state == OrderState.FILLED:
-            # Set cur trade to opened order with sl/tp
-            trade = Trade(ticker=symbol,
-                          side=Trade.order_side_names[direction],
-                          open_time=pd.to_datetime(order.created_at, unit="ms"),
-                          open_price=float(order.price),
-                          open_order_id=order_id,
-                          quantity=float(order.amount))
-        else:
-            trade = None
-        return trade
+            # Create trade to return
+            order = self.trade_client.get_order(order_id)
+            if order.state == OrderState.FILLED:
+                # Set cur trade to opened order with sl/tp
+                trade = Trade(ticker=symbol,
+                              side=Trade.order_side_names[direction],
+                              open_time=pd.to_datetime(order.created_at, unit="ms"),
+                              open_price=float(order.price),
+                              open_order_id=order_id,
+                              quantity=float(order.amount))
+            else:
+                trade = None
+            return trade
 
     def create_sl_tp_order(self, base_trade: Trade,
                            stop_loss_price: float,
                            stop_loss_limit_price: float,
                            take_profit_price: float) -> Trade:
         """ Stop loss + take profit order """
-        # Calculate huobi order type
-        if base_trade.direction() == 1:
-            sl_order_type = OrderType.SELL_STOP_LIMIT
-            operator = "lte"  # operator for stop price
-        elif base_trade.direction() == -1:
-            sl_order_type = OrderType.BUY_STOP_LIMIT
-            operator = "gte"  # operator for stop price
-        else:
-            sl_order_type, operator = 0, None  # should never come here
+        with self.trade_lock:
+            # Calculate huobi order type
+            if base_trade.direction() == 1:
+                sl_order_type = OrderType.SELL_STOP_LIMIT
+                operator = "lte"  # operator for stop price
+            elif base_trade.direction() == -1:
+                sl_order_type = OrderType.BUY_STOP_LIMIT
+                operator = "gte"  # operator for stop price
+            else:
+                sl_order_type, operator = 0, None  # should never come here
 
-        # Trade client we stop loss???
-        sl_tp_order_id = self.trade_client.create_order(
-            symbol=base_trade.ticker,
-            account_id=self.account_id,
-            order_type=sl_order_type,
-            amount=base_trade.quantity,
-            price=stop_loss_limit_price,
-            stop_price=stop_loss_price,
-            source=OrderSource.API,
-            operator=operator
-        )
+            # Trade client we stop loss???
+            sl_tp_order_id = self.trade_client.create_order(
+                symbol=base_trade.ticker,
+                account_id=self.account_id,
+                order_type=sl_order_type,
+                amount=base_trade.quantity,
+                price=stop_loss_limit_price,
+                stop_price=stop_loss_price,
+                source=OrderSource.API,
+                operator=operator
+            )
 
-        sl_tp_order = self.trade_client.get_order(sl_tp_order_id)
-        if sl_tp_order.state != OrderState.CANCELED:
-            self._log.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
-            base_trade.stop_loss_order_id = sl_tp_order_id
-            base_trade.stop_loss_price = float(stop_loss_price)
-            base_trade.take_profit_price = float(take_profit_price)
-        return base_trade
+            sl_tp_order = self.trade_client.get_order(sl_tp_order_id)
+            if sl_tp_order.state != OrderState.CANCELED:
+                self._log.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
+                base_trade.stop_loss_order_id = sl_tp_order_id
+                base_trade.stop_loss_price = float(stop_loss_price)
+                base_trade.take_profit_price = float(take_profit_price)
+            return base_trade
 
     def create_sl_order(self, base_trade: Trade,
                         stop_loss_price: float,
                         stop_loss_limit_price: float) -> Optional[Trade]:
         """ Stop loss order without take profit"""
-        """ Stop loss + take profit order """
-        # Calculate huobi order type
-        if base_trade.direction() == 1:
-            sl_order_type = OrderType.SELL_STOP_LIMIT
-        elif base_trade.direction() == -1:
-            sl_order_type = OrderType.BUY_STOP_LIMIT
-        else:
-            sl_order_type = 0
-        # Trade client we stop loss???
-        sl_tp_order_id = self.trade_client.create_order(
-            symbol=base_trade.ticker,
-            account_id=self.account_id,
-            order_type=sl_order_type,
-            amount=base_trade.quantity,
-            price=stop_loss_limit_price,
-            stop_price=stop_loss_price,
-            source=OrderSource.API)
+        with self.trade_lock:
+            # Calculate huobi order type
+            if base_trade.direction() == 1:
+                sl_order_type = OrderType.SELL_STOP_LIMIT
+            elif base_trade.direction() == -1:
+                sl_order_type = OrderType.BUY_STOP_LIMIT
+            else:
+                sl_order_type = 0
+            # Trade client we stop loss???
+            sl_tp_order_id = self.trade_client.create_order(
+                symbol=base_trade.ticker,
+                account_id=self.account_id,
+                order_type=sl_order_type,
+                amount=base_trade.quantity,
+                price=stop_loss_limit_price,
+                stop_price=stop_loss_price,
+                source=OrderSource.API)
 
-        self._log.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
-        base_trade.stop_loss_order_id = sl_tp_order_id
-        base_trade.stop_loss_price = stop_loss_price
-        return base_trade
+            self._log.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
+            base_trade.stop_loss_order_id = sl_tp_order_id
+            base_trade.stop_loss_price = stop_loss_price
+            return base_trade
 
-    def close_order(self, trade: Trade):
-        base_direction = Trade.order_side_codes[trade.side]
-        if base_direction == 1:
-            close_order_type = OrderType.SELL_MARKET
-        elif base_direction == -1:
-            close_order_type = OrderType.BUY_MARKET
-        else:
-            close_order_type = None
+    def create_closing_order(self, trade: Trade):
+        with self.trade_lock:
+            base_direction = Trade.order_side_codes[trade.side]
+            if base_direction == 1:
+                close_order_type = OrderType.SELL_MARKET
+            elif base_direction == -1:
+                close_order_type = OrderType.BUY_MARKET
+            else:
+                close_order_type = None
 
-        # Closed opened stop loss order
-        if trade.stop_loss_order_id:
-            self.trade_client.cancel_order(symbol=trade.ticker, order_id=trade.stop_loss_order_id)
+            # Closed stop loss order if not closed
+            if trade.stop_loss_order_id:
+                try:
+                    self.trade_client.cancel_order(symbol=trade.ticker, order_id=trade.stop_loss_order_id)
+                except Exception as e:
+                    self._log.error(f"Cannot cancel stop loss order, maybe stop loss already cancelled. Trade: {trade}, error:{e}")
 
-        close_order_id = self.trade_client.create_order(
-            symbol=trade.ticker,
-            account_id=self.account_id,
-            order_type=close_order_type,
-            amount=trade.quantity,
-            price=trade.open_price,
-            source=OrderSource.API)
-        #
-        # if close_order_id:
-        #     close_order = self.trade_client.get_order(close_order_id)
-        #     if close_order.state == OrderState.FILLED:
-        #         trade.close_order_id = close_order_id
-        #         trade.close_price = float(close_order.price)
-        #         trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
-        #         trade.status = TradeStatus.closed
-        # if not trade.close_time:
-        #     # Full stop, hanging order, requires urgent investigation
-        #     raise f"Cannot create closing order for {trade}"
-        return trade
+            close_order_id = self.trade_client.create_order(
+                symbol=trade.ticker,
+                account_id=self.account_id,
+                order_type=close_order_type,
+                amount=trade.quantity,
+                price=trade.open_price,
+                source=OrderSource.API)
+            #
+            trade.close_order_id = close_order_id
+            close_order = self.trade_client.get_order(close_order_id)
+            if close_order.state == OrderState.FILLED:
+                trade.close_order_id = close_order_id
+                trade.close_price = float(close_order.price)
+                trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
+                trade.status = TradeStatus.closed
+            return trade
 
-    # def update_trade_status(self, trade: Trade) -> Trade:
-    #     """ If given trade closed by stop loss, update db and set cur trade variable to none """
-    #
-    #     if not trade or trade.close_time or not trade.stop_loss_order_id:
-    #         return trade
-    #
-    #     # Try to get trade for stop loss or take profit
-    #     for sltp_order_id in trade.stop_loss_order_id.split(","):
-    #         # Actually a single trade or empty list will be returned by my_trades
-    #         close_order = self.trade_client.get_order(order_id=int(trade.stop_loss_order_id))
-    #         if close_order.state == OrderState.FILLED:
-    #             # Update db
-    #             trade.close_order_id = sltp_order_id
-    #             trade.close_price = float(close_order.price)
-    #             trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
-    #             trade.status = TradeStatus.closed
-    #     return trade
+    def update_cur_trade_status(self):
+        """ If given trade closed by stop loss, update db and set cur trade variable to none """
+        if not self.cur_trade or self.cur_trade.status == TradeStatus.closed or not self.cur_trade.stop_loss_order_id:
+            return
+
+        with self.trade_lock:
+            try:
+                # Try to get trade for stop loss or take profit
+                for sltp_order_id in self.cur_trade.stop_loss_order_id.split(","):
+                    # Actually a single trade or empty list will be returned by my_trades
+                    close_order = self.trade_client.get_order(order_id=int(self.cur_trade.stop_loss_order_id))
+                    if close_order.state == OrderState.FILLED:
+                        # Close trade in db
+                        self.cur_trade.close_order_id = sltp_order_id
+                        self.cur_trade.close_price = float(close_order.price)
+                        self.cur_trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
+                        self.cur_trade.status = TradeStatus.closed
+
+                        self.db_session.commit()
+                        self.cur_trade = None
+            except Exception as e:
+                self._log.error(f"Error updating status of the trade: {self.cur_trade}. Error: {e}")
 
     def on_order_update(self, event: OrderUpdateEvent):
         """ Update current trade prices from filled main or sl/tp order"""
+        with self.trade_lock:
+            order_time = datetime.utcfromtimestamp(event.data.tradeTime / 1000.0)
+            self._log.info(f"{event.data.symbol} {event.data.type} update event. Order id:{event.data.orderId}, "
+                           f"status:{event.data.orderStatus} price: {event.data.tradePrice}, time:{order_time}")
+            order = event.data
+            if not self.cur_trade or order.orderStatus != OrderState.FILLED:
+                # This update is not about filling current trade
+                return
 
-        order_time = datetime.utcfromtimestamp(event.data.tradeTime / 1000.0)
-        self._log.info(f"{event.data.symbol} {event.data.type} update event. Order id:{event.data.orderId}, "
-                       f"status:{event.data.orderStatus} price: {event.data.tradePrice}, time:{order_time}")
-        order = event.data
-        if not self.cur_trade or order.orderStatus != OrderState.FILLED:
-            # This update is not about filling current trade
-            return
+            if self.cur_trade.id == order.orderId:
+                # Main order filled
+                self.cur_trade.open_price = order.tradePrice
+                self.cur_trade.open_time = order_time
+                self.cur_trade.status = TradeStatus.opened
+                self._log.info(f"Got current trade opened event: {self.cur_trade}")
+                # Save to db
+                self.db_session.commit()
 
-        if self.cur_trade.id == order.orderId:
-            # Main order filled
-            self.cur_trade.open_price = order.tradePrice
-            self.cur_trade.open_time = order_time
-            self.cur_trade.status = TradeStatus.opened
-            self._log.info(f"Got current trade opened event: {self.cur_trade}")
-            # Save to db
-            self.db_session.commit()
-
-        elif self.cur_trade.stop_loss_order_id == order.orderId or self.cur_trade.status == TradeStatus.closing:
-            # Stop loss order filled
-            self.cur_trade.close_price = order.tradePrice
-            self.cur_trade.close_order_id = order.orderId
-            self.cur_trade.close_time = order_time
-            self.cur_trade.status = TradeStatus.closed
-            # Save to db
-            self.db_session.commit()
-            self._log.info(f"Got current trade closed event: {self.cur_trade}")
-            self.cur_trade = None
+            elif self.cur_trade.stop_loss_order_id == order.orderId or self.cur_trade.status == TradeStatus.closing:
+                # Stop loss order filled
+                self.cur_trade.close_price = order.tradePrice
+                self.cur_trade.close_order_id = order.orderId
+                self.cur_trade.close_time = order_time
+                self.cur_trade.status = TradeStatus.closed
+                # Save to db
+                self.db_session.commit()
+                self._log.info(f"Got current trade closed event: {self.cur_trade}")
+                self.cur_trade = None
 
     def get_report(self):
         """ Short info for report """

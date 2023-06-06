@@ -13,8 +13,8 @@ class BinanceBroker(BrokerBase):
     """ Trading functions for Binance """
 
     def __init__(self, client: Client, config: Dict[str, str]):
-        super().__init__(config)
         self.client: Client = client
+        super().__init__(config)
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""
@@ -84,7 +84,7 @@ class BinanceBroker(BrokerBase):
         base_trade.stop_loss_price = stop_loss_price
         return base_trade
 
-    def close_order(self, trade: Trade):
+    def create_closing_order(self, trade: Trade):
         base_direction = Trade.order_side_codes[trade.side]
         res = self.client.new_order(
             symbol=trade.ticker,
