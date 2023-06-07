@@ -25,12 +25,16 @@ class HuobiWebsocketFeed:
         Read data from web socket
         """
         symbols = ",".join(self.tickers)
-        self.__market_client.sub_pricedepth_bbo(symbols=symbols, callback=self.ticker_callback, error_handler=self.error_callback)
-        self.__market_client.sub_pricedepth(symbols=symbols, depth_step="step1",
-                                            callback=self.level2_callback, error_handler=self.error_callback)
+        self.__market_client.sub_pricedepth_bbo(symbols=symbols,
+                                                callback=self.ticker_callback,
+                                                error_handler=self.error_callback)
+        self.__market_client.sub_pricedepth(symbols=symbols,
+                                            depth_step="step1",
+                                            callback=self.level2_callback,
+                                            error_handler=self.error_callback)
 
     def error_callback(self, msg):
-        self._log.error(msg)
+        self._log.error(f"Web socket price depth subscription error: {msg}")
 
     def level2_callback(self, msg: PriceDepthEvent):
         try:
@@ -57,8 +61,8 @@ class HuobiWebsocketFeed:
                 }
 
     def rawlevel2model(self, symbol: str, tick: PriceDepth):
-        #dt = pd.to_datetime(tick.ts, unit="ms")
-        dt=datetime.utcnow()
+        # dt = pd.to_datetime(tick.ts, unit="ms")
+        dt = datetime.utcnow()
         out = [{"datetime": dt, "symbol": symbol,
                 "bid": entry.price, "bid_vol": entry.amount} for entry in tick.bids] + \
               [{"datetime": dt, "symbol": symbol,

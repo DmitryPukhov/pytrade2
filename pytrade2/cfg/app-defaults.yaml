@@ -1,6 +1,10 @@
 pytrade2.exchange: binance.BinanceExchange
 pytrade2.exchange.binance.spot.url: 'https://testnet.binance.vision'
 
+pytrade2.exchange.huobi.market.client.url: "https://api.huobi.pro"
+pytrade2.exchange.huobi.trade.client.url: "https://api.huobi.pro"
+pytrade2.exchange.huobi.account.client.url: "https://api.huobi.pro"
+
 pytrade2.strategy: SimpleKerasStrategy
 pytrade2.strategy.learn.interval.sec: 20
 pytrade2.strategy.purge.window: "120s"

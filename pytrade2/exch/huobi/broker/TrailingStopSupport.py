@@ -22,8 +22,13 @@ class TrailingStopSupport:
 
     def sub_events(self, symbol: str):
         """ Subscribe to price changing events to track takeprofit """
-        self.market_client.sub_trade_detail(symbols=symbol, callback=self.on_price_changed)
+        self.market_client.sub_trade_detail(symbols=symbol,
+                                            callback=self.on_price_changed,
+                                            error_handler=self.error_callback)
         self._log.debug(f"Subscribed to price changed events for {symbol}")
+
+    def error_callback(self, msg):
+        self._log.error(f"Trailing stop trade subscription error: {msg}")
 
     def on_price_changed(self, event: TradeDetailEvent):
         """ Price changing event, check tp"""

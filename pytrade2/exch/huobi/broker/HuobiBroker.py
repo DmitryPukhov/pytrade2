@@ -48,10 +48,17 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
     def sub_events(self, symbol: str):
         if symbol not in self.subscribed_symbols:
             self.subscribed_symbols.add(symbol)
-            self.trade_client.sub_order_update(symbols=symbol, callback=self.on_order_update)
+            self.trade_client.sub_order_update(symbols=symbol,
+                                               callback=self.on_order_update,
+                                               error_handler=self.error_callback)
             TrailingStopSupport.sub_events(self, symbol)
-            self.market_client.sub_trade_detail(symbols=symbol, callback=self.on_price_changed)
+            self.market_client.sub_trade_detail(symbols=symbol,
+                                                callback=self.on_price_changed,
+                                                error_handler=self.error_callback)
             self._log.debug(f"Subscribed to order update events for {symbol}")
+
+    def error_callback(self, msg):
+        self._log.error(f"Broker trade subscription error: {msg}")
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""
@@ -173,7 +180,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 try:
                     self.trade_client.cancel_order(symbol=trade.ticker, order_id=trade.stop_loss_order_id)
                 except Exception as e:
-                    self._log.error(f"Cannot cancel stop loss order, maybe stop loss already cancelled. Trade: {trade}, error:{e}")
+                    self._log.error(
+                        f"Cannot cancel stop loss order, maybe stop loss already cancelled. Trade: {trade}, error:{e}")
 
             close_order_id = self.trade_client.create_order(
                 symbol=trade.ticker,

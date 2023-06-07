@@ -62,33 +62,33 @@ class HuobiExchange:
     def _market_client(self):
         if not self.__market_client:
             key, secret = self._key_secret()
-            # url = self.config.get("pytrade2.exchange.huobi.market.client.url")
-            self._log.info(f"Creating huobi market client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            self.__market_client = MarketClient(api_key=key, secret_key=secret, init_log=True)
+            url = self.config.get("pytrade2.exchange.huobi.market.client.url")
+            self._log.info(f"Creating huobi market client, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+            self.__market_client = MarketClient(url=url, api_key=key, secret_key=secret, init_log=True)
         return self.__market_client
 
     def _trade_client(self):
         """ Huobi trade client creation."""
         if not self.__trade_client:
             key, secret = self._key_secret()
-            # url = self.config.get("pytrade2.exchange.huobi.trade.client.url")
-            self._log.info(f"Creating huobi trade client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            self.__trade_client = TradeClient(api_key=key, secret_key=secret, init_log=True)
+            url = self.config.get("pytrade2.exchange.huobi.trade.client.url")
+            self._log.info(f"Creating huobi trade client, url:{url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+            self.__trade_client = TradeClient(url=url, api_key=key, secret_key=secret, init_log=True)
         return self.__trade_client
 
     def _algo_client(self):
         """ Huobi algo client creation."""
         if not self.__algo_client:
             key, secret = self._key_secret()
-            # url = self.config.get("pytrade2.exchange.huobi.trade.client.url")
-            self._log.info(f"Creating huobi algo trade client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            self.__algo_client = AlgoClient(api_key=key, secret_key=secret, init_log=True)
+            url = self.config.get("pytrade2.exchange.huobi.trade.client.url")
+            self._log.info(f"Creating huobi algo trade client, url:{url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+            self.__algo_client = AlgoClient(url=url, api_key=key, secret_key=secret, init_log=True)
         return self.__algo_client
 
     def _account_client(self):
         if not self.__account_client:
             key, secret = self._key_secret()
-            # url = self.config.get("pytrade2.exchange.huobi.account.client.url")
-            self._log.info(f"Creating huobi account client, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            self.__account_client = AccountClient(api_key=key, secret_key=secret, init_log=True)
+            url = self.config.get("pytrade2.exchange.huobi.account.client.url")
+            self._log.info(f"Creating huobi account client, url:{url} key: ***{key[-3:]}, secret: ***{secret[-3:]}")
+            self.__account_client = AccountClient(url=url, api_key=key, secret_key=secret, init_log=True)
         return self.__account_client
