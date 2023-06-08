@@ -235,7 +235,6 @@ class BrokerBase:
                 if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
                     self._log.error(f"Cannot fix bad trade: {self.cur_trade}")
 
-
     def update_cur_trade_status(self):
         """ Update current trade sl/tp status from exchange.
         This func is called to check what's happened on exchange when the bot was turned off or disconnected.
@@ -243,16 +242,16 @@ class BrokerBase:
         raise NotImplementedError()
 
     def create_order(self, symbol, direction, price, quantity):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def update_trade_status(self, trade):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def create_sl_order(self, base_trade, stop_loss_price, stop_loss_limit_price):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def create_sl_tp_order(self, base_trade, stop_loss_price, stop_loss_limit_price, take_profit_price):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def create_closing_order(self, cur_trade):
-        raise NotImplementedError
+        raise NotImplementedError()
