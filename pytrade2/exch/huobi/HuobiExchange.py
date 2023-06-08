@@ -30,6 +30,7 @@ class HuobiExchange:
         self.__websocket_feed: HuobiWebsocketFeed = None
         self.__candles_feed: HuobiCandlesFeed = None
         # Supress rubbish logging
+        logging.getLogger("huobi-client").setLevel("CRITICAL")
         logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
 
     def websocket_feed(self) -> HuobiWebsocketFeed:
@@ -64,7 +65,7 @@ class HuobiExchange:
             key, secret = self._key_secret()
             url = self.config.get("pytrade2.exchange.huobi.market.client.url")
             self._log.info(f"Creating huobi market client, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            self.__market_client = MarketClient(url=url, api_key=key, secret_key=secret, init_log=True)
+            self.__market_client = MarketClient(url=url, api_key=key, secret_key=secret, init_log=False)
         return self.__market_client
 
     def _trade_client(self):
@@ -73,7 +74,7 @@ class HuobiExchange:
             key, secret = self._key_secret()
             url = self.config.get("pytrade2.exchange.huobi.trade.client.url")
             self._log.info(f"Creating huobi trade client, url:{url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            self.__trade_client = TradeClient(url=url, api_key=key, secret_key=secret, init_log=True)
+            self.__trade_client = TradeClient(url=url, api_key=key, secret_key=secret, init_log=False)
         return self.__trade_client
 
     def _algo_client(self):
@@ -82,7 +83,7 @@ class HuobiExchange:
             key, secret = self._key_secret()
             url = self.config.get("pytrade2.exchange.huobi.trade.client.url")
             self._log.info(f"Creating huobi algo trade client, url:{url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            self.__algo_client = AlgoClient(url=url, api_key=key, secret_key=secret, init_log=True)
+            self.__algo_client = AlgoClient(url=url, api_key=key, secret_key=secret, init_log=False)
         return self.__algo_client
 
     def _account_client(self):
@@ -90,5 +91,5 @@ class HuobiExchange:
             key, secret = self._key_secret()
             url = self.config.get("pytrade2.exchange.huobi.account.client.url")
             self._log.info(f"Creating huobi account client, url:{url} key: ***{key[-3:]}, secret: ***{secret[-3:]}")
-            self.__account_client = AccountClient(url=url, api_key=key, secret_key=secret, init_log=True)
+            self.__account_client = AccountClient(url=url, api_key=key, secret_key=secret, init_log=False)
         return self.__account_client
