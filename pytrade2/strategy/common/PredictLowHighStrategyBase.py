@@ -120,7 +120,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         # Last received data was too long ago
         delta = datetime.utcnow() - self.bid_ask.index.max() if self.bid_ask is not None and not self.bid_ask.empty else Timedelta.min
         is_alive = delta < maxdelta
-        self._log.info(f"Strategy is_alive:{is_alive}. Time since last data: {delta}. Max inactivity: {maxdelta}")
+        self._log.info(f"Strategy is_alive:{is_alive}. Time since last data: {delta}, max allowed inactivity: {maxdelta}")
         return is_alive
 
     def is_data_gap(self):
