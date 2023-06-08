@@ -146,9 +146,11 @@ class BrokerBase:
                 self.cur_trade = self.create_closing_order(self.cur_trade)
                 self.db_session.commit()
                 if self.cur_trade.status == TradeStatus.closed:
+                    self._log.info(f"Closed current trade:{self.cur_trade}")
                     self.cur_trade = None
+                else:
+                    self._log.info(f"Cannot close current trade: {self.cur_trade}")
 
-                self._log.info(f"Closed current trade:{self.cur_trade}")
             except Exception as e:
                 self._log.error(f"Cannot close cur trade {self.cur_trade}. Error: {e}")
 
@@ -189,11 +191,11 @@ class BrokerBase:
             self._log.info("Trading in not allowed")
             return None
         with self.trade_lock:
-
             # Adjust stop loss, calc stop loss limit pric
             limit_ratio = 0.01  # 1# slippage to set stop loss limit
-            stop_loss_limit_price = round(stop_loss_price - base_trade.direction() * base_trade.open_price * limit_ratio,
-                                          self.price_precision)
+            stop_loss_limit_price = round(
+                stop_loss_price - base_trade.direction() * base_trade.open_price * limit_ratio,
+                self.price_precision)
             self._log.info(
                 f"Creating stop loss and take profit order, base order: {base_trade.side} {base_trade.ticker}, base_price={base_trade.open_price}, stop_loss_adj={stop_loss_price},"
                 f" stop_loss_limit_price={stop_loss_limit_price}, take_profit_adj={take_profit_price}")
@@ -208,7 +210,8 @@ class BrokerBase:
             return None
         with self.trade_lock:
             # stop_loss_price = round(stop_loss_price, self.price_precision)
-            stop_loss_limit_price = round(stop_loss_price - (base_trade.open_price - stop_loss_price), self.price_precision)
+            stop_loss_limit_price = round(stop_loss_price - (base_trade.open_price - stop_loss_price),
+                                          self.price_precision)
 
             self._log.info(
                 f"Creating stop loss order. Base order: {base_trade.side} {base_trade.ticker}, "
@@ -217,6 +220,7 @@ class BrokerBase:
             return self.create_sl_order(base_trade=base_trade,
                                         stop_loss_price=stop_loss_price,
                                         stop_loss_limit_price=stop_loss_limit_price)
+
     def read_last_opened_trade(self) -> Trade:
         """ Returns current opened trade, stored in db or none """
         return self.db_session \
