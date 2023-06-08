@@ -1,5 +1,7 @@
 from datetime import datetime
 import unittest
+from struct import Struct
+from types import SimpleNamespace
 from typing import Dict
 from unittest import mock
 from unittest.mock import Mock, MagicMock
@@ -53,9 +55,11 @@ class TestHuobiBroker(unittest.TestCase):
     def test_create_cur_trade__main_order_error(self):
         # Prepare mocks
         def create_order_crash(selfsymbol: 'str', account_id: 'int', order_type: 'OrderType', amount: 'float',
-                     price: 'float', source:'str', client_order_id=None, stop_price=None, operator=None) -> int:
+                               price: 'float', source: 'str', client_order_id=None, stop_price=None,
+                               operator=None) -> int:
             """ Main order not created on Huobi exchange"""
-            raise  Exception()
+            raise Exception()
+
         trade_client = MagicMock()
         mock.patch.object(trade_client, "create_order", Mock(create_order_crash)).start()
 
@@ -73,7 +77,6 @@ class TestHuobiBroker(unittest.TestCase):
         # Assert
         broker.trade_client.create_order.assert_called_once()  # Single attempt and nothing to cancel
         self.assertIsNone(broker.cur_trade)
-
 
     def test_create_cur_trade__sl_tp_error(self):
         # Mocks
@@ -229,6 +232,17 @@ class TestHuobiBroker(unittest.TestCase):
         self.assertEqual(2, broker.cur_trade.stop_loss_order_id)
         self.assertEqual(9, broker.cur_trade.stop_loss_price)
         self.assertEqual(11, broker.cur_trade.take_profit_price)
+
+    def test__order_amount_of(self):
+        broker = HuobiBroker(config=TestHuobiBroker.config, market_client=MarketClient(),
+                             account_client=AccountClient(), trade_client=TradeClient(), algo_client=AlgoClient())
+        market_detail = SimpleNamespace()
+        market_detail.bid = [3333.3333]
+        broker.market_client.get_market_detail_merged = lambda ticker: market_detail
+
+        amount = broker.order_amount_of(1, "ticker1", 0.001)
+
+        self.assertEqual(3.33, amount)
 
 
 if __name__ == '__main__':

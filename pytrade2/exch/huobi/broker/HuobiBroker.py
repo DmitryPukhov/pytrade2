@@ -46,7 +46,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         # Read last opened trade etc in base class
         super().__init__(config)
 
-    def order_amount_of(self, direction: int, ticker: str, base_quantity: float):
+    def order_amount_of(self, direction: int, ticker: str, base_quantity: float)->float:
         """
         If sell, order amount is in base currency (btc for btcusdt),
         if buy - in second currency (usdt for btcusdt)
@@ -54,7 +54,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         """
         if direction == 1:
             # Recalculate buy amount using last bid
-            amount = self.market_client.get_market_detail_merged(ticker).bid[0] * base_quantity
+            amount = round(self.market_client.get_market_detail_merged(ticker).bid[0] * base_quantity, self.amount_precision)
             self._log.debug(
                 f"Recalculated {ticker} amount, direction:{direction}, quantity:{base_quantity} -> {amount}")
         else:
@@ -109,7 +109,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 # Set cur trade to opened order with sl/tp
                 trade = Trade(ticker=symbol,
                               side=Trade.order_side_names[direction],
-                              open_time=pd.to_datetime(order.created_at, unit="ms"),
+                              open_time=datetime.utcfromtimestamp(order.created_at / 1000.0),
                               open_price=float(order.price),
                               open_order_id=order_id,
                               quantity=float(order.amount))
