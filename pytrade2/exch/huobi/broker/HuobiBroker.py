@@ -55,6 +55,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         if direction == 1:
             # Recalculate buy amount using last bid
             amount = self.market_client.get_market_detail_merged(ticker).bid[0] * base_quantity
+            self._log.debug(
+                f"Recalculated {ticker} amount, direction:{direction}, quantity:{base_quantity} -> {amount}")
         else:
             # Leave as is
             amount = base_quantity
