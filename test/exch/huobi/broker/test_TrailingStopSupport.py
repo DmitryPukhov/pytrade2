@@ -29,7 +29,7 @@ class TestTrailingStopSupport(unittest.TestCase):
         tss.cur_trade.open_price, tss.cur_trade.take_profit_price = open_price, tp_price
         tss.cur_trade.status = "opened"
         tss.close_cur_trade = Mock()
-        tss.update_trade_status = Mock()
+        tss.update_cur_trade_status = Mock()
         return tss
 
     def test_tp_buy_not_reached(self):
