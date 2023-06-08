@@ -1,6 +1,5 @@
 import logging
 import threading
-import traceback
 from datetime import datetime
 from io import StringIO
 from typing import Dict, Optional
@@ -11,7 +10,6 @@ from huobi.client.algo import AlgoClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 from huobi.constant import *
-from huobi.exception.huobi_api_exception import HuobiApiException
 from huobi.model.trade import OrderUpdateEvent
 
 from exch.BrokerBase import BrokerBase
@@ -55,20 +53,10 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                                                callback=self.on_order_update,
                                                error_handler=self.trade_client_error_callback)
             TrailingStopSupport.sub_events(self, symbol)
-            self.market_client.sub_trade_detail(symbols=symbol,
-                                                callback=self.on_price_changed,
-                                                error_handler=self.market_client_error_callback)
             self._log.debug(f"Subscribed to order update events for {symbol}")
 
     def trade_client_error_callback(self, ex):
         self._log.error(HuobiTools.format_exception("Trade client", ex))
-
-    def market_client_error_callback(self, ex):
-        self._log.error(HuobiTools.format_exception("Market client", ex))
-
-    def error_callback(self, source_name: str, ex):
-
-        self._log.error(f"{source_name} subscription error:{ex}. Traceback: {traceback.format_tb(ex)}")
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""
@@ -235,34 +223,38 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
 
     def on_order_update(self, event: OrderUpdateEvent):
         """ Update current trade prices from filled main or sl/tp order"""
+
         with self.trade_lock:
-            order_time = datetime.utcfromtimestamp(event.data.tradeTime / 1000.0)
-            self._log.info(f"{event.data.symbol} {event.data.type} update event. Order id:{event.data.orderId}, "
-                           f"status:{event.data.orderStatus} price: {event.data.tradePrice}, time:{order_time}")
-            order = event.data
-            if not self.cur_trade or order.orderStatus != OrderState.FILLED:
-                # This update is not about filling current trade
-                return
+            try:
+                order_time = datetime.utcfromtimestamp(event.data.tradeTime / 1000.0)
+                self._log.info(f"{event.data.symbol} {event.data.type} update event. Order id:{event.data.orderId}, "
+                               f"status:{event.data.orderStatus} price: {event.data.tradePrice}, time:{order_time}")
+                order = event.data
+                if not self.cur_trade or order.orderStatus != OrderState.FILLED:
+                    # This update is not about filling current trade
+                    return
 
-            if self.cur_trade.id == order.orderId:
-                # Main order filled
-                self.cur_trade.open_price = order.tradePrice
-                self.cur_trade.open_time = order_time
-                self.cur_trade.status = TradeStatus.opened
-                self._log.info(f"Got current trade opened event: {self.cur_trade}")
-                # Save to db
-                self.db_session.commit()
+                if self.cur_trade.id == order.orderId:
+                    # Main order filled
+                    self.cur_trade.open_price = order.tradePrice
+                    self.cur_trade.open_time = order_time
+                    self.cur_trade.status = TradeStatus.opened
+                    self._log.info(f"Got current trade opened event: {self.cur_trade}")
+                    # Save to db
+                    self.db_session.commit()
 
-            elif self.cur_trade.stop_loss_order_id == order.orderId or self.cur_trade.status == TradeStatus.closing:
-                # Stop loss order filled
-                self.cur_trade.close_price = order.tradePrice
-                self.cur_trade.close_order_id = order.orderId
-                self.cur_trade.close_time = order_time
-                self.cur_trade.status = TradeStatus.closed
-                # Save to db
-                self.db_session.commit()
-                self._log.info(f"Got current trade closed event: {self.cur_trade}")
-                self.cur_trade = None
+                elif self.cur_trade.stop_loss_order_id == order.orderId or self.cur_trade.status == TradeStatus.closing:
+                    # Stop loss order filled
+                    self.cur_trade.close_price = order.tradePrice
+                    self.cur_trade.close_order_id = order.orderId
+                    self.cur_trade.close_time = order_time
+                    self.cur_trade.status = TradeStatus.closed
+                    # Save to db
+                    self.db_session.commit()
+                    self._log.info(f"Got current trade closed event: {self.cur_trade}")
+                    self.cur_trade = None
+            except Exception as e:
+                self._log.error(f"on_order_update error:{e}")
 
     def get_report(self):
         """ Short info for report """
