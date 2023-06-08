@@ -22,6 +22,7 @@ class App:
     def __init__(self):
         # Suppress tensorflow log rubbish
         os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "1")
+        self._init_logger()
         self._log = logging.getLogger(self.__class__.__name__)
 
         # For pandas printing to log
@@ -32,10 +33,6 @@ class App:
         # Load config, set up logging
         self.config = self._load_config()
 
-        # Init logging
-        loglevel = self.config["log.level"]
-        logging.basicConfig(level=loglevel)
-        self._log.info(f"Set log level to {loglevel}")
         self._log_report_interval_sec = 60
         self._log.info("App initialized")
 
@@ -49,7 +46,6 @@ class App:
 
         report = self.strategy.get_report()
 
-
         # Footer
         footer = "\n".ljust(len(header), "-") + "\n"
 
@@ -58,6 +54,16 @@ class App:
 
         # Schedule next report
         threading.Timer(self._log_report_interval_sec, self.log_report).start()
+
+    def _init_logger(self):
+        # Ensure logging directory exists
+        # os.makedirs(logdir, exist_ok=True)
+        cfgpaths = ["cfg/log.cfg", "cfg/log-dev.cfg"]
+        for cfgpath in cfgpaths:
+            if os.path.exists(cfgpath):
+                logging.config.fileConfig(cfgpath)
+                self._logger = logging.getLogger(__name__)
+                self._logger.info(f"Logging configured from {cfgpath}")
 
     def _read_config_file(self, path: str, required=False):
         if os.path.exists(path):

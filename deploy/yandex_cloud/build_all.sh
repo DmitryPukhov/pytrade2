@@ -15,6 +15,7 @@ prepare_tmp(){
 
   echo "Preparing pytrade2 config"
   rm "$tmp_dir/pytrade2/pytrade2/cfg/app-dev.yaml"
+  rm "$tmp_dir/pytrade2/pytrade2/cfg/log-dev.cfg"
   files=$(ls ./secret/*.yaml)
   for f in $files; do cp -v -f $f ./tmp/pytrade2/pytrade2/cfg/; done
 

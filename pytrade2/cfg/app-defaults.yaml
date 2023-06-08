@@ -19,7 +19,7 @@ pytrade2.strategy.stoploss.max.coeff: 0.005
 pytrade2.strategy.profitloss.ratio: 4
 
 pytrade2.data.dir: './data'
-log.level: "INFO"
+
 pytrade2.tickers: "BTCUSDT"
 pytrade2.broker.trade.allow: true
 pytrade2.strategy.lstm.window.size: 10
