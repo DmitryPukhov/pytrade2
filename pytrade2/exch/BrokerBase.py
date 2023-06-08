@@ -228,11 +228,12 @@ class BrokerBase:
             return
         with self.trade_lock:
             self.update_cur_trade_status()
-            if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
-                self._log.info(f"Fixing bad trade: {self.cur_trade}")
-                self.close_cur_trade()
-            if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
-                self._log.error(f"Cannot fix bad trade: {self.cur_trade}")
+            if self.cur_trade:
+                if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
+                    self._log.info(f"Fixing bad trade: {self.cur_trade}")
+                    self.close_cur_trade()
+                if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
+                    self._log.error(f"Cannot fix bad trade: {self.cur_trade}")
 
 
     def update_cur_trade_status(self):

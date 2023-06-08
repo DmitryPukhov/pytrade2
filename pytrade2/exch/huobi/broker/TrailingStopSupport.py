@@ -1,9 +1,11 @@
 import logging
+import traceback
 from typing import Optional
 
 from huobi.client.market import MarketClient
 from huobi.model.market import TradeDetail
 
+from exch.huobi.HuobiTools import HuobiTools
 from model.Trade import Trade
 from huobi.model.market.trade_detail_event import TradeDetailEvent
 from huobi.constant import TradeDirection
@@ -24,11 +26,11 @@ class TrailingStopSupport:
         """ Subscribe to price changing events to track takeprofit """
         self.market_client.sub_trade_detail(symbols=symbol,
                                             callback=self.on_price_changed,
-                                            error_handler=self.error_callback)
+                                            error_handler=self.tss_error_callback)
         self._log.debug(f"Subscribed to price changed events for {symbol}")
 
-    def error_callback(self, msg):
-        self._log.error(f"Trailing stop trade subscription error: {msg}")
+    def tss_error_callback(self, ex):
+        self._log.error(HuobiTools.format_exception("TrailingStopSupport market client", ex))
 
     def on_price_changed(self, event: TradeDetailEvent):
         """ Price changing event, check tp"""
@@ -58,5 +60,6 @@ class TrailingStopSupport:
 
     def update_trade_status(self, trade: Trade) -> Trade:
         raise NotImplementedError()
+
     def close_cur_trade(self):
         raise NotImplementedError()

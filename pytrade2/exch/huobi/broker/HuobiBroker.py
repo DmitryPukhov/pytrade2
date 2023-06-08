@@ -1,5 +1,6 @@
 import logging
 import threading
+import traceback
 from datetime import datetime
 from io import StringIO
 from typing import Dict, Optional
@@ -10,9 +11,11 @@ from huobi.client.algo import AlgoClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 from huobi.constant import *
+from huobi.exception.huobi_api_exception import HuobiApiException
 from huobi.model.trade import OrderUpdateEvent
 
 from exch.BrokerBase import BrokerBase
+from exch.huobi.HuobiTools import HuobiTools
 from exch.huobi.broker.TrailingStopSupport import TrailingStopSupport
 from model.Trade import Trade
 from model.TradeStatus import TradeStatus
@@ -50,15 +53,22 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             self.subscribed_symbols.add(symbol)
             self.trade_client.sub_order_update(symbols=symbol,
                                                callback=self.on_order_update,
-                                               error_handler=self.error_callback)
+                                               error_handler=self.trade_client_error_callback)
             TrailingStopSupport.sub_events(self, symbol)
             self.market_client.sub_trade_detail(symbols=symbol,
                                                 callback=self.on_price_changed,
-                                                error_handler=self.error_callback)
+                                                error_handler=self.market_client_error_callback)
             self._log.debug(f"Subscribed to order update events for {symbol}")
 
-    def error_callback(self, msg):
-        self._log.error(f"Broker trade subscription error: {msg}")
+    def trade_client_error_callback(self, ex):
+        self._log.error(HuobiTools.format_exception("Trade client", ex))
+
+    def market_client_error_callback(self, ex):
+        self._log.error(HuobiTools.format_exception("Market client", ex))
+
+    def error_callback(self, source_name: str, ex):
+
+        self._log.error(f"{source_name} subscription error:{ex}. Traceback: {traceback.format_tb(ex)}")
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""

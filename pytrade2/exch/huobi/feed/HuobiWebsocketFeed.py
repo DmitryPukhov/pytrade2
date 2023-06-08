@@ -1,4 +1,5 @@
 import logging
+import traceback
 from datetime import datetime
 from typing import Dict
 
@@ -6,6 +7,8 @@ import pandas as pd
 from huobi.client.market import MarketClient
 from huobi.model.market import *
 from huobi.utils import PrintBasic
+
+from exch.huobi.HuobiTools import HuobiTools
 
 
 class HuobiWebsocketFeed:
@@ -27,14 +30,14 @@ class HuobiWebsocketFeed:
         symbols = ",".join(self.tickers)
         self.__market_client.sub_pricedepth_bbo(symbols=symbols,
                                                 callback=self.ticker_callback,
-                                                error_handler=self.error_callback)
+                                                error_handler=self.socket_error_callback)
         self.__market_client.sub_pricedepth(symbols=symbols,
                                             depth_step="step1",
                                             callback=self.level2_callback,
-                                            error_handler=self.error_callback)
+                                            error_handler=self.socket_error_callback)
 
-    def error_callback(self, msg):
-        self._log.error(f"Web socket price depth subscription error: {msg}")
+    def socket_error_callback(self, ex):
+        self._log.error(HuobiTools.format_exception("HuobiWebSocketFeed price depth", ex))
 
     def level2_callback(self, msg: PriceDepthEvent):
         try:
