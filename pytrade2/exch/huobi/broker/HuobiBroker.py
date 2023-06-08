@@ -253,8 +253,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                     self.db_session.commit()
                     self._log.info(f"Got current trade closed event: {self.cur_trade}")
                     self.cur_trade = None
-            except Exception as e:
-                self._log.error(f"on_order_update error:{e}")
+            except Exception as ex:
+                self._log.error(f"on_order_update error:{ex}")
 
     def get_report(self):
         """ Short info for report """
