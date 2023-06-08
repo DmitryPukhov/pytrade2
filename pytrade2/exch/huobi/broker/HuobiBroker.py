@@ -134,7 +134,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 sl_order_type, operator = 0, None  # should never come here
 
             # If buy, amount should be in the second currency in pair.
-            amount = self.order_amount_of(direction=-base_trade.direction(), ticker=base_trade.ticker,
+            amount = self.order_amount_of(direction=base_trade.direction(), ticker=base_trade.ticker,
                                           base_quantity=base_trade.quantity)
 
             # Trade client we stop loss???
@@ -171,7 +171,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 sl_order_type = 0
 
             # If buy, amount should be in the second currency in pair.
-            amount = self.order_amount_of(direction=-base_trade.direction(), ticker=base_trade.ticker,
+            amount = self.order_amount_of(direction=base_trade.direction(), ticker=base_trade.ticker,
                                           base_quantity=base_trade.quantity)
 
             # Trade client we stop loss???
