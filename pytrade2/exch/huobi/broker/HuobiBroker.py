@@ -46,6 +46,20 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         # Read last opened trade etc in base class
         super().__init__(config)
 
+    def order_amount_of(self, direction: int, ticker: str, base_quantity: float):
+        """
+        If sell, order amount is in base currency (btc for btcusdt),
+        if buy - in second currency (usdt for btcusdt)
+        That's what exchange expects in create_order() call
+        """
+        if direction == 1:
+            # Recalculate buy amount using last bid
+            amount = self.market_client.get_market_detail_merged(ticker).bid[0] * base_quantity
+        else:
+            # Leave as is
+            amount = base_quantity
+        return amount
+
     def sub_events(self, symbol: str):
         if symbol not in self.subscribed_symbols:
             self.subscribed_symbols.add(symbol)
@@ -73,6 +87,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 order_type = OrderType.SELL_LIMIT_FOK
             else:
                 order_type = 0
+            amount = self.order_amount_of(direction=direction, ticker=symbol, base_quantity=quantity)
 
             # Make order using trade client
             # order_id is always returned, exception otherwise
@@ -80,7 +95,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 symbol=symbol,
                 account_id=self.account_id,
                 order_type=order_type,
-                amount=quantity,
+                amount=amount,
                 price=price,
                 source=OrderSource.API
             )
@@ -116,12 +131,16 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             else:
                 sl_order_type, operator = 0, None  # should never come here
 
+            # If buy, amount should be in the second currency in pair.
+            amount = self.order_amount_of(direction=-base_trade.direction(), ticker=base_trade.ticker,
+                                          base_quantity=base_trade.quantity)
+
             # Trade client we stop loss???
             sl_tp_order_id = self.trade_client.create_order(
                 symbol=base_trade.ticker,
                 account_id=self.account_id,
                 order_type=sl_order_type,
-                amount=base_trade.quantity,
+                amount=amount,
                 price=stop_loss_limit_price,
                 stop_price=stop_loss_price,
                 source=OrderSource.API,
@@ -148,12 +167,17 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 sl_order_type = OrderType.BUY_STOP_LIMIT
             else:
                 sl_order_type = 0
+
+            # If buy, amount should be in the second currency in pair.
+            amount = self.order_amount_of(direction=-base_trade.direction(), ticker=base_trade.ticker,
+                                          base_quantity=base_trade.quantity)
+
             # Trade client we stop loss???
             sl_tp_order_id = self.trade_client.create_order(
                 symbol=base_trade.ticker,
                 account_id=self.account_id,
                 order_type=sl_order_type,
-                amount=base_trade.quantity,
+                amount=amount,
                 price=stop_loss_limit_price,
                 stop_price=stop_loss_price,
                 source=OrderSource.API)
@@ -173,6 +197,10 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             else:
                 close_order_type = None
 
+            # If buy, amount should be in the second currency in pair.
+            amount = self.order_amount_of(direction=-trade.direction(), ticker=trade.ticker,
+                                          base_quantity=trade.quantity)
+
             # Closed stop loss order if not closed
             if trade.stop_loss_order_id:
                 try:
@@ -185,7 +213,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 symbol=trade.ticker,
                 account_id=self.account_id,
                 order_type=close_order_type,
-                amount=trade.quantity,
+                amount=amount,
                 price=trade.open_price,
                 source=OrderSource.API)
             #
