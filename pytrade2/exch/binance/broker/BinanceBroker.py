@@ -14,6 +14,7 @@ class BinanceBroker(BrokerBase):
     """ Trading functions for Binance """
 
     def __init__(self, client: Client, config: Dict[str, str]):
+        self._log = logging.getLogger(self.__class__.__name__)
         self.client: Client = client
         super().__init__(config)
 
@@ -108,7 +109,7 @@ class BinanceBroker(BrokerBase):
         """ If given trade closed by stop loss, update db and set cur trade variable to none """
 
         """ If given trade closed by stop loss, update db and set cur trade variable to none """
-        if not self.cur_trade or self.cur_trade.status == TradeStatus.closed or not self.cur_trade.stop_loss_order_id:
+        if not self.cur_trade or not self.cur_trade.stop_loss_order_id:
             return
 
         # Try to get trade for stop loss or take profit
@@ -121,6 +122,8 @@ class BinanceBroker(BrokerBase):
                 self.cur_trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
                 self.cur_trade.status = TradeStatus.closed
                 self.db_session.commit()
+
+        if self.cur_trade.status == TradeStatus.closed:
                 self.cur_trade = None
 
     def get_report(self):

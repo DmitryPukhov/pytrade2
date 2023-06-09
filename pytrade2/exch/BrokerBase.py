@@ -225,7 +225,7 @@ class BrokerBase:
         """ Returns current opened trade, stored in db or none """
         return self.db_session \
             .query(Trade) \
-            .where(Trade.close_time.is_(None)) \
+            .where(Trade.status.isnot(TradeStatus.closed)) \
             .order_by(Trade.open_time.desc()).first()
 
     def fix_cur_trade(self):
