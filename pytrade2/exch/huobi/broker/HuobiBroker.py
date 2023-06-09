@@ -289,10 +289,10 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 if not self.cur_trade or order.orderStatus != OrderState.FILLED:
                     # This update is not about filling current trade
                     self._log.debug(f"This update of order with id:{order.orderId} "
-                                    f"is not about filling current trade: {self.cur_trade}")
+                                    f"is not about final filling current trade: {self.cur_trade}")
                     return
 
-                if self.cur_trade.id == order.orderId:
+                if self.cur_trade.id == str(order.orderId):
                     # Main order filled
                     self.cur_trade.open_price = order.tradePrice
                     self.cur_trade.open_time = order_time
@@ -300,7 +300,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                     self._log.info(f"Got current trade opened event: {self.cur_trade}")
                     # Save to db
                     self.db_session.commit()
-                elif self.cur_trade.stop_loss_order_id == order.orderId or self.cur_trade.close_order_id == order.orderId:
+                elif self.cur_trade.stop_loss_order_id == order.orderId \
+                        or self.cur_trade.close_order_id == str(order.orderId):
                     # Stop loss, take profit or closure order filled
                     self.cur_trade.close_price = order.tradePrice
                     self.cur_trade.close_time = order_time
@@ -309,6 +310,9 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                     self.db_session.commit()
                     self._log.info(f"Got current trade closed event: {self.cur_trade}")
                     self.cur_trade = None
+                else:
+                    self._log.info(f"This update of order id: {order.orderId} "
+                                   f"is not opening or closing cur trade: {self.cur_trade}")
             except Exception as ex:
                 self._log.error(f"on_order_update error:{ex}")
 
