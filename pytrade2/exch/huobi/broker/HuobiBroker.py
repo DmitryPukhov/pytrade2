@@ -46,7 +46,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         # Read last opened trade etc in base class
         super().__init__(config)
 
-    def order_amount_of(self, direction: int, ticker: str, base_quantity: float)->float:
+    def order_amount_of(self, direction: int, ticker: str, base_quantity: float) -> float:
         """
         If sell, order amount is in base currency (btc for btcusdt),
         if buy - in second currency (usdt for btcusdt)
@@ -54,7 +54,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         """
         if direction == 1:
             # Recalculate buy amount using last bid
-            amount = round(self.market_client.get_market_detail_merged(ticker).bid[0] * base_quantity, self.amount_precision)
+            amount = round(self.market_client.get_market_detail_merged(ticker).bid[0] * base_quantity,
+                           self.amount_precision)
             self._log.debug(
                 f"Recalculated {ticker} amount, direction:{direction}, quantity:{base_quantity} -> {amount}")
         else:
@@ -89,7 +90,9 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 order_type = OrderType.SELL_LIMIT_FOK
             else:
                 order_type = 0
-            amount = self.order_amount_of(direction=direction, ticker=symbol, base_quantity=quantity)
+
+            amount = quantity  # Don't recalculate btc/usdt
+            # amount = self.order_amount_of(direction=direction, ticker=symbol, base_quantity=quantity)
 
             # Make order using trade client
             # order_id is always returned, exception otherwise
@@ -133,9 +136,10 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             else:
                 sl_order_type, operator = 0, None  # should never come here
 
+            amount = base_trade.quantity  # Don't recalculate amount
             # If buy, amount should be in the second currency in pair.
-            amount = self.order_amount_of(direction=base_trade.direction(), ticker=base_trade.ticker,
-                                          base_quantity=base_trade.quantity)
+            # amount = self.order_amount_of(direction=base_trade.direction(), ticker=base_trade.ticker,
+            #                               base_quantity=base_trade.quantity)
 
             # Trade client we stop loss???
             sl_tp_order_id = self.trade_client.create_order(
@@ -171,8 +175,10 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 sl_order_type = 0
 
             # If buy, amount should be in the second currency in pair.
-            amount = self.order_amount_of(direction=base_trade.direction(), ticker=base_trade.ticker,
-                                          base_quantity=base_trade.quantity)
+            # amount = self.order_amount_of(direction=base_trade.direction(), ticker=base_trade.ticker,
+            #                               base_quantity=base_trade.quantity)
+
+            amount = base_trade.quantity  # Don't recalculate quantity
 
             # Trade client we stop loss???
             sl_tp_order_id = self.trade_client.create_order(
@@ -191,18 +197,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
 
     def create_closing_order(self, trade: Trade):
         with self.trade_lock:
-            base_direction = Trade.order_side_codes[trade.side]
-            if base_direction == 1:
-                close_order_type = OrderType.SELL_MARKET
-            elif base_direction == -1:
-                close_order_type = OrderType.BUY_MARKET
-            else:
-                close_order_type = None
-
-            # If buy, amount should be in the second currency in pair.
-            amount = self.order_amount_of(direction=-trade.direction(), ticker=trade.ticker,
-                                          base_quantity=trade.quantity)
-
+            trade.status = TradeStatus.closing
             # Closed stop loss order if not closed
             if trade.stop_loss_order_id:
                 try:
@@ -211,17 +206,46 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                     self._log.error(
                         f"Cannot cancel stop loss order, maybe stop loss already cancelled. Trade: {trade}, error:{e}")
 
+            # Close main order
+            # Get latest price to use in the order
+            md = self.market_client.get_market_detail_merged(trade.ticker)
+            lastbid, lastask = md.bid[0], md.ask[0]
+            self._log.debug(f"Got last {trade.ticker} bid: {lastbid}, ask: {lastask}")
+
+            base_direction = Trade.order_side_codes[trade.side]
+            if base_direction == 1:
+                # Main order was buy, closing will be sell
+                close_order_type = OrderType.SELL_LIMIT
+                price = round(lastbid * (1 - 0.01), self.price_precision)
+            elif base_direction == -1:
+                # Main order was sell, closing will be buy
+                close_order_type = OrderType.BUY_LIMIT
+                price = round(lastask * (1 + 0.01), self.price_precision)
+            else:
+                close_order_type = None
+
+            # If buy, amount should be in the second currency in pair.
+            # amount = self.order_amount_of(direction=-trade.direction(), ticker=trade.ticker,
+            #                               base_quantity=trade.quantity)
+            amount = trade.quantity
+            self._log.debug(
+                f"Creating {trade.ticker} {close_order_type} order to close main one, amount: {amount}, price: {price}")
             close_order_id = self.trade_client.create_order(
                 symbol=trade.ticker,
                 account_id=self.account_id,
                 order_type=close_order_type,
                 amount=amount,
-                price=trade.open_price,
+                price=price,
                 source=OrderSource.API)
             #
             trade.close_order_id = close_order_id
+            self._log.debug(f"Created closure order, id: {trade.close_order_id}")
+
+            # Get closure order details
             close_order = self.trade_client.get_order(close_order_id)
             if close_order.state == OrderState.FILLED:
+                self._log.debug(f"Closure order {trade.close_order_id} at price {close_order.price} filled. "
+                                f"Filled amount: {close_order.filled_amount}, cache amount: {close_order.filled_cash_amount}")
                 trade.close_order_id = close_order_id
                 trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)

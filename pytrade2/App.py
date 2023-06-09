@@ -6,6 +6,7 @@ import signal
 import sys
 import threading
 from collections import defaultdict
+from pprint import pprint
 from typing import Dict
 
 import pandas as pd
@@ -157,3 +158,4 @@ class App:
 
 if __name__ == "__main__":
     App().run()
+
