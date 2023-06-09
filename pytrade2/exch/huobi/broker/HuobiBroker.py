@@ -14,6 +14,7 @@ from huobi.model.trade import OrderUpdateEvent
 
 from exch.BrokerBase import BrokerBase
 from exch.huobi.HuobiTools import HuobiTools
+from exch.huobi.broker.AccountManager import AccountManager
 from exch.huobi.broker.TrailingStopSupport import TrailingStopSupport
 from model.Trade import Trade
 from model.TradeStatus import TradeStatus
@@ -36,6 +37,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         self.algo_client = algo_client
         self.account_client = account_client
         self.market_client = market_client
+
+        self.account_manager = AccountManager(account_client=account_client, config=config)
 
         self.account_id = int(config["pytrade2.broker.huobi.account.id"])
 
@@ -70,6 +73,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                                                callback=self.on_order_update,
                                                error_handler=self.trade_client_error_callback)
             TrailingStopSupport.sub_events(self, symbol)
+            self.account_manager.sub_events()
+
             self._log.debug(f"Subscribed to order update events for {symbol}")
 
     def trade_client_error_callback(self, ex):
@@ -312,7 +317,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                     self.cur_trade = None
                 else:
                     self._log.debug(f"This update of order id: {order.orderId} "
-                                   f"is not opening or closing cur trade: {self.cur_trade}")
+                                    f"is not opening or closing cur trade: {self.cur_trade}")
             except Exception as ex:
                 self._log.error(f"on_order_update error:{ex}")
 
