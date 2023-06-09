@@ -311,7 +311,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                     self._log.info(f"Got current trade closed event: {self.cur_trade}")
                     self.cur_trade = None
                 else:
-                    self._log.info(f"This update of order id: {order.orderId} "
+                    self._log.debug(f"This update of order id: {order.orderId} "
                                    f"is not opening or closing cur trade: {self.cur_trade}")
             except Exception as ex:
                 self._log.error(f"on_order_update error:{ex}")
