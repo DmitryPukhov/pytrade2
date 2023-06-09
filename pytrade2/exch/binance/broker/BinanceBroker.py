@@ -120,6 +120,8 @@ class BinanceBroker(BrokerBase):
                 self.cur_trade.close_price = float(close_trade["price"])
                 self.cur_trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
                 self.cur_trade.status = TradeStatus.closed
+                self.db_session.commit()
+                self.cur_trade = None
 
     def get_report(self):
         """ Short info for report """
