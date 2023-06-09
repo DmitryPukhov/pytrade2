@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from io import StringIO
 from typing import Dict, Optional
 
 from binance.spot import Spot as Client
@@ -119,3 +120,32 @@ class BinanceBroker(BrokerBase):
                 self.cur_trade.close_price = float(close_trade["price"])
                 self.cur_trade.close_time = datetime.utcfromtimestamp(close_trade["time"] / 1000.0)
                 self.cur_trade.status = TradeStatus.closed
+
+    def get_report(self):
+        """ Short info for report """
+
+        # Form message string
+        msg = StringIO()
+        msg.write(f"Allow trade: {self.allow_trade}\n")
+
+        # Opened trade
+        msg.write(f"Current trade: {self.cur_trade}\n")
+
+        try:
+            # Opened orders
+            for order in self.client.get_open_orders():
+                order_time = datetime.utcfromtimestamp(order["time"] / 1000.0)
+                msg.write(f"Opened order: {order['side']} {order['symbol']}, id: {order['orderId']}, "
+                          f"price: {order['price']}, time: {order_time}\n")
+        except Exception as e:
+            self._log.error(f"Error reporting opened orders: {e}")
+
+        try:
+            # Account balance
+            for b in self.client.account()["balances"]:
+                if float(b["free"]) > 0 or b["locked"] > 0:
+                    msg.write(f"{b['asset']} free: {b['free']}, locked: {b['locked']}\n")
+        except Exception as e:
+            self._log.error(f"Error reporting account info: {e}")
+
+        return msg.getvalue()
