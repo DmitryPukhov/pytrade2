@@ -235,9 +235,9 @@ class BrokerBase:
         with self.trade_lock:
             self.update_cur_trade_status()
             if self.cur_trade:
-                if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
+                if self.cur_trade.status != TradeStatus.opened:
                     self._log.info(f"Fixing bad trade: {self.cur_trade}")
-                    if self.cur_trade.close_order_id:
+                    if self.cur_trade.status == TradeStatus.closed:
                         self._log.info(f"Bad trade was already closed, maybe final update not received. "
                                        f"Just set closed status to the order.")
                         self.cur_trade.status = TradeStatus.closed
@@ -246,7 +246,7 @@ class BrokerBase:
                     else:
                         self._log.info(f"Bad trade will be closed: {self.cur_trade}")
                         self.close_cur_trade()
-                if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
+                if self.cur_trade and self.cur_trade.status != TradeStatus.opened:
                     self._log.error(f"Cannot fix bad trade: {self.cur_trade}")
 
     def update_cur_trade_status(self):
