@@ -149,7 +149,7 @@ class BrokerBase:
                     self._log.info(f"Closed current trade:{self.cur_trade}")
                     self.cur_trade = None
                 else:
-                    self._log.info(f"Cannot close current trade: {self.cur_trade}")
+                    self._log.debug(f"Current trade not closed immediately: {self.cur_trade}")
 
             except Exception as e:
                 self._log.error(f"Cannot close cur trade {self.cur_trade}. Error: {e}")

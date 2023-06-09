@@ -249,7 +249,9 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 trade.close_order_id = close_order_id
                 trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
-                trade.status = TradeStatus.closed
+
+                # Final closure will be not here when  on_order_update event triggered
+                # trade.status = TradeStatus.closed
             return trade
 
     def update_cur_trade_status(self):
@@ -280,12 +282,13 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
 
         with self.trade_lock:
             try:
-                order_time = datetime.utcfromtimestamp(event.data.tradeTime / 1000.0)
-                self._log.info(f"{event.data.symbol} {event.data.type} update event. Order id:{event.data.orderId}, "
-                               f"status:{event.data.orderStatus} price: {event.data.tradePrice}, time:{order_time}")
                 order = event.data
+                order_time = datetime.utcfromtimestamp(order.tradeTime / 1000.0)
+                self._log.debug(f"{order.symbol} {order.type} update event. Order id:{order.orderId}, "
+                                f"status:{order.orderStatus} price: {order.tradePrice}, time:{order_time}")
                 if not self.cur_trade or order.orderStatus != OrderState.FILLED:
                     # This update is not about filling current trade
+                    self._log.debug(f"This update of order with id:{order.orderId} is not about filling current trade")
                     return
 
                 if self.cur_trade.id == order.orderId:
@@ -296,13 +299,11 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                     self._log.info(f"Got current trade opened event: {self.cur_trade}")
                     # Save to db
                     self.db_session.commit()
-
-                elif self.cur_trade.stop_loss_order_id == order.orderId or self.cur_trade.status == TradeStatus.closing:
-                    # Stop loss order filled
+                elif self.cur_trade.stop_loss_order_id == order.orderId or self.cur_trade.close_order_id == order.orderId:
+                    # Stop loss, take profit or closure order filled
                     self.cur_trade.close_price = order.tradePrice
-                    self.cur_trade.close_order_id = order.orderId
                     self.cur_trade.close_time = order_time
-                    self.cur_trade.status = TradeStatus.closed
+                    self.cur_trade.status = TradeStatus.closed  # Final closure is here
                     # Save to db
                     self.db_session.commit()
                     self._log.info(f"Got current trade closed event: {self.cur_trade}")
