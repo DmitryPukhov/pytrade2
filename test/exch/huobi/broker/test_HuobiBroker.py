@@ -11,7 +11,7 @@ from huobi.client.algo import AlgoClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 from huobi.constant import OrderState, OrderType
-from huobi.model.trade import Order
+from huobi.model.trade import Order, OrderUpdateEvent, OrderUpdate
 from exch.huobi.broker.HuobiBroker import HuobiBroker
 from exch.BrokerBase import BrokerBase
 
@@ -96,7 +96,7 @@ class TestHuobiBroker(unittest.TestCase):
             elif order_type == OrderType.SELL_STOP_LIMIT:
                 # Sl order, problems happened
                 raise Exception("Sl/tp not created")
-            elif order_type == OrderType.SELL_MARKET:
+            elif order_type == OrderType.SELL_LIMIT:
                 # Order to close main
                 return 3
 
@@ -128,6 +128,17 @@ class TestHuobiBroker(unittest.TestCase):
                                 stop_loss_price=9,
                                 take_profit_price=11)
 
+        # Receive closing order filled event
+        oa = OrderUpdate()
+        oa.orderId = broker.cur_trade.close_order_id
+        oa.orderStatus = OrderState.FILLED
+        oa.tradePrice = broker.cur_trade.open_price
+        oa.tradeTime = datetime(2023, 6, 9, 11, 44).timestamp() / 1000.0
+        oae = OrderUpdateEvent()
+        oae.data = oa
+        broker.on_order_update(oae)
+
+        # Asserts
         self.assertIsNone(broker.cur_trade)
         broker.trade_client.create_order.assert_called()  # Main order attempt
         broker.trade_client.get_order.assert_called()  # Main order attempt

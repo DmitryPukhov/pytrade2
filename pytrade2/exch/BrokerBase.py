@@ -130,9 +130,9 @@ class BrokerBase:
                 if not self.cur_trade.close_order_id:
                     # If order is not closed by error
                     self._log.info(f"Created new trade: {self.cur_trade}")
-                else:
-                    # If order is closed by error
-                    self.cur_trade = None
+                # else:
+                #     # If order is closed by error
+                #     self.cur_trade = None
 
             return self.cur_trade
 
@@ -237,7 +237,15 @@ class BrokerBase:
             if self.cur_trade:
                 if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
                     self._log.info(f"Fixing bad trade: {self.cur_trade}")
-                    self.close_cur_trade()
+                    if self.cur_trade.close_order_id:
+                        self._log.info(f"Bad trade was already closed, maybe final update not received. "
+                                       f"Just set closed status to the order.")
+                        self.cur_trade.status = TradeStatus.closed
+                        self.db_session.commit()
+                        self.cur_trade = None
+                    else:
+                        self._log.info(f"Bad trade will be closed: {self.cur_trade}")
+                        self.close_cur_trade()
                 if self.cur_trade.status not in {TradeStatus.opened, TradeStatus.closed}:
                     self._log.error(f"Cannot fix bad trade: {self.cur_trade}")
 

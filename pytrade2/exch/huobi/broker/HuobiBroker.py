@@ -265,7 +265,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 for sltp_order_id in self.cur_trade.stop_loss_order_id.split(","):
                     # Actually a single trade or empty list will be returned by my_trades
                     close_order = self.trade_client.get_order(order_id=int(self.cur_trade.stop_loss_order_id))
-                    if close_order.state == OrderState.FILLED:
+                    if close_order.state == OrderState.FILLED and not self.cur_trade.close_order_id:
                         # Close trade in db
                         self.cur_trade.close_order_id = sltp_order_id
                         self.cur_trade.close_price = float(close_order.price)
@@ -288,7 +288,8 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                                 f"status:{order.orderStatus} price: {order.tradePrice}, time:{order_time}")
                 if not self.cur_trade or order.orderStatus != OrderState.FILLED:
                     # This update is not about filling current trade
-                    self._log.debug(f"This update of order with id:{order.orderId} is not about filling current trade")
+                    self._log.debug(f"This update of order with id:{order.orderId} "
+                                    f"is not about filling current trade: {self.cur_trade}")
                     return
 
                 if self.cur_trade.id == order.orderId:

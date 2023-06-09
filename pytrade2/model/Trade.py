@@ -36,16 +36,24 @@ class Trade(Base):
     order_side_codes = dict(map(reversed, order_side_names.items()))
 
     def __str__(self):
-        details = f"{self.ticker} {self.side}, status: {self.status}, open time: {self.open_time}, open price: {self.open_price}, " \
-                  f"sl: {self.stop_loss_price}, tp: {self.take_profit_price}, quantity:{self.quantity}"
-        if self.close_time:
+        # Open details
+        details = f"{self.ticker} {self.side},  quantity:{self.quantity}, status: {self.status}, " \
+                  f"open order id: {self.open_order_id}, open time: {self.open_time}, open price: {self.open_price}, " \
+                  f"sl order id: {self.stop_loss_order_id}, sl: {self.stop_loss_price}, " \
+                  f"tp: {self.take_profit_price}"
+
+        # Profit
+        if self.side == "BUY" and self.close_price and self.open_price and self.quantity:
+            profit = (self.close_price - self.open_price) * self.quantity
+        elif self.side == "SELL" and self.close_price and self.open_price and self.quantity:
+            profit = (self.open_price - self.close_price) * self.quantity
+        else:
             profit = None
-            if self.side == "BUY":
-                profit = (self.close_price - self.open_price) * self.quantity
-            elif self.side == "SELL":
-                profit = (self.open_price - self.close_price) * self.quantity
-            close_details = f", close time: {self.close_time}, close price: {self.close_price}, profit: {profit}"
-            details += close_details
+
+        # Close details
+        close_details = f", close order id: {self.close_order_id}, close time: {self.close_time}," \
+                        f"close price: {self.close_price}, profit: {profit}"
+        details += close_details
         return details
 
     def open_time_epoch_millis(self):
