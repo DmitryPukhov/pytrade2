@@ -17,7 +17,7 @@ class HuobiExchange:
     def __init__(self, config: dict):
         # Apply fixes to reduce rubbish in logs
         PrintBasic.print_basic = lambda data, name: None  # Supress hiobi api print response ts for each response
-        WebsocketManage.on_close = lambda src, msg: self._log.info(f"WebsocketManage on_close called: {msg}")
+        WebsocketManage.on_close = lambda msg: self._log.info(f"WebsocketManage on_close called: {msg}")
 
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
