@@ -257,15 +257,14 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
         with self.trade_lock:
             try:
                 order = event.data
-                order_time = datetime.utcfromtimestamp(order.tradeTime / 1000.0)
                 self._log.debug(f"{order.symbol} {order.type} update event. Order id:{order.orderId}, "
-                                f"status:{order.orderStatus} price: {order.tradePrice}, time:{order_time}")
+                                f"status:{order.orderStatus} price: {order.tradePrice}, trade time: {order.tradeTime}")
                 if not self.cur_trade or order.orderStatus != OrderState.FILLED:
                     # This update is not about filling current trade
                     self._log.debug(f"This update of order with id:{order.orderId} "
                                     f"is not about final filling current trade: {self.cur_trade}")
                     return
-
+                order_time = datetime.utcfromtimestamp(order.tradeTime / 1000.0)
                 if self.cur_trade.open_order_id == str(order.orderId):
                     # Main order filled
                     self.cur_trade.open_price = order.tradePrice
