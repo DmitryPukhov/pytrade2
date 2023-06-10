@@ -180,7 +180,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             # Close main order
             # Get latest price to use in the order
             md = self.market_client.get_market_detail_merged(trade.ticker)
-            lastbid, lastask = md.bid[0], md.ask[0]
+            lastbid, lastask = float(md.bid[0]), float(md.ask[0])
             self._log.debug(f"Got last {trade.ticker} bid: {lastbid}, ask: {lastask}")
 
             base_direction = Trade.order_side_codes[trade.side]
@@ -267,7 +267,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 order_time = datetime.utcfromtimestamp(order.tradeTime / 1000.0)
                 if self.cur_trade.open_order_id == str(order.orderId):
                     # Main order filled
-                    self.cur_trade.open_price = order.tradePrice
+                    self.cur_trade.open_price = float(order.tradePrice)
                     self.cur_trade.open_time = order_time
                     self.cur_trade.status = TradeStatus.opened
                     self._log.info(f"Got current trade opened event: {self.cur_trade}")
@@ -276,7 +276,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 elif self.cur_trade.stop_loss_order_id == str(order.orderId) or self.cur_trade.close_order_id == str(
                         order.orderId):
                     # Stop loss, take profit or closure order filled
-                    self.cur_trade.close_price = order.tradePrice
+                    self.cur_trade.close_price = float(order.tradePrice)
                     self.cur_trade.close_time = order_time
                     self.cur_trade.status = TradeStatus.closed  # Final closure is here
                     # Save to db

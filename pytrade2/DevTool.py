@@ -37,7 +37,7 @@ class DevTool():
 
 if __name__ == "__main__":
     tool = DevTool()
-    #tool.print_balance("Before")
+    tool.print_balance("Before")
 
     # orderid1 = tool.trade_client.create_order(
     #     symbol="btcusdt",
