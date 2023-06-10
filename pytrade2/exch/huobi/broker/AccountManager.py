@@ -51,7 +51,7 @@ class AccountManager:
         """ Convert huobi model to dictionary for pd dataframe"""
         time = datetime.utcnow()
         return {"time": time, "account_id": au.accountId, "asset": au.currency, "account_type": au.accountType,
-                "balance": au.balance, "available": au.available}
+                "change_type": au.changeType, "balance": au.balance, "available": au.available}
 
     def account_error_handler(self, ex):
         self._log.error(HuobiTools.format_exception("Account client", ex))

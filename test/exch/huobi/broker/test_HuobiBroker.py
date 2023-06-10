@@ -12,6 +12,8 @@ from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 from huobi.constant import OrderState, OrderType
 from huobi.model.trade import Order, OrderUpdateEvent, OrderUpdate
+
+from exch.huobi.broker.AccountManager import AccountManager
 from exch.huobi.broker.HuobiBroker import HuobiBroker
 from exch.BrokerBase import BrokerBase
 
@@ -22,7 +24,8 @@ class TestHuobiBroker(unittest.TestCase):
                               "pytrade2.exchange.huobi.connector.secret": "456",
                               "pytrade2.exchange.huobi.connector.url": None,
                               "pytrade2.broker.huobi.account.id": 1,
-                              "pytrade2.tickers": "btcusdt"
+                              "pytrade2.tickers": "btcusdt",
+                              "pytrade2.data.dir": ""
                               }
 
     @staticmethod
@@ -32,8 +35,12 @@ class TestHuobiBroker(unittest.TestCase):
     def setUp(self) -> None:
         mock.patch.object(BrokerBase, '__init_db__', self.__broker__init_db__).start()
         mock.patch.object(BrokerBase, "read_last_opened_trade", lambda self: None).start()
+        mock.patch.object(HuobiBroker, "_sub_events", lambda self, ticker: None).start()
         mock.patch.object(TradeClient, "sub_order_update", Mock()).start()
         mock.patch.object(MarketClient, "sub_trade_detail", Mock()).start()
+
+        mock.patch.object(AccountManager, "__init__", Mock(return_value=None)).start()
+
 
     def test_create_cur_trade__main_order_not_filled(self):
 
@@ -212,7 +219,7 @@ class TestHuobiBroker(unittest.TestCase):
 
         def get_order_wrap(order_id: int) -> Order:
             order = Order()
-            order.orderId = order_id
+            order.orderId = str(order_id)
             order.created_at = datetime.utcnow().timestamp() * 1000
             order.price = 10
             order.amount = 1
@@ -236,24 +243,13 @@ class TestHuobiBroker(unittest.TestCase):
 
         # Assert
         self.assertEqual("BUY", broker.cur_trade.side)
-        self.assertEqual(1, broker.cur_trade.open_order_id)
+        self.assertEqual('1', broker.cur_trade.open_order_id)
         self.assertEqual(1.0, broker.cur_trade.quantity)
         self.assertEqual(10, broker.cur_trade.open_price)
 
-        self.assertEqual(2, broker.cur_trade.stop_loss_order_id)
+        self.assertEqual('2', broker.cur_trade.stop_loss_order_id)
         self.assertEqual(9, broker.cur_trade.stop_loss_price)
         self.assertEqual(11, broker.cur_trade.take_profit_price)
-
-    def test__order_amount_of(self):
-        broker = HuobiBroker(config=TestHuobiBroker.config, market_client=MarketClient(),
-                             account_client=AccountClient(), trade_client=TradeClient(), algo_client=AlgoClient())
-        market_detail = SimpleNamespace()
-        market_detail.bid = [3333.3333]
-        broker.market_client.get_market_detail_merged = lambda ticker: market_detail
-
-        amount = broker.order_amount_of(1, "ticker1", 0.001)
-
-        self.assertEqual(3.33, amount)
 
 
 if __name__ == '__main__':

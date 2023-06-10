@@ -22,7 +22,7 @@ class TrailingStopSupport:
         self.trade_client: TradeClient = None
         self.trade_lock = None
 
-    def sub_events(self, symbol: str):
+    def _sub_events(self, symbol: str):
         """ Subscribe to price changing events to track takeprofit """
         self.market_client.sub_trade_detail(symbols=symbol,
                                             callback=self.on_price_changed,
@@ -46,6 +46,7 @@ class TrailingStopSupport:
                     is_buy_tp = e.direction == TradeDirection.BUY and e.price >= self.cur_trade.take_profit_price
                     is_sell_tp = e.direction == TradeDirection.SELL and e.price <= self.cur_trade.take_profit_price
                     if is_buy_tp or is_sell_tp:
+
                         # Reread from stock exchange, maybe stop loss already triggered
                         self.update_cur_trade_status()
                         if not self.cur_trade or self.cur_trade.status != TradeStatus.opened:
@@ -55,17 +56,13 @@ class TrailingStopSupport:
                             f"Triggering take profit of base {e.direction} order. "
                             f"Price: {e.price}, take profit price: {self.cur_trade.take_profit_price}, "
                             f"current trade: {self.cur_trade}")
-
-                        # Cancel sl/tp
-                        self.trade_client.cancel_order(symbol=self.cur_trade.ticker,
-                                                       order_id=self.cur_trade.stop_loss_order_id)
-                        # Create order to close current trade
-                        self.create_closing_order(trade=self.cur_trade, cancel_sl_tp=False)
-
+                        # Close main order
+                        self.create_closing_order(trade=self.cur_trade)
                         # Final closure will be not here but when on_order_update event triggered
                         break
             except Exception as ex:
                 self._log.error(f"on_price_changed error: {ex}")
+                self.update_cur_trade_status()
 
     def update_cur_trade_status(self):
         raise NotImplementedError("update_cur_trade_status not implemented")
@@ -73,5 +70,5 @@ class TrailingStopSupport:
     def close_cur_trade(self):
         raise NotImplementedError("close_cur_trade not implemented")
 
-    def create_closing_order(self, trade: Trade, cancel_sl_tp):
+    def create_closing_order(self, trade: Trade):
         raise NotImplementedError("create_closing_order not implemented")
