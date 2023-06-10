@@ -120,7 +120,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.websocket_feed.run()
 
     def is_alive(self):
-        maxdelta = pd.Timedelta("60s")
+        maxdelta = pd.Timedelta("90s")
 
         # Last received data
         last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
