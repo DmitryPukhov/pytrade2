@@ -80,9 +80,13 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         """ Short info for report """
 
         broker_report = self.broker.get_report() if hasattr(self.broker, "get_report") else "Not provided"
-        last_tick_time = self.bid_ask.index.max() if not self.bid_ask.empty else None
-        broker_report += f"\nLast tick: {last_tick_time}"
+        last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
+        last_level2 = self.level2.index.max() if not self.level2.empty else None
+        last_candle = self.last_candles_read_time
 
+        broker_report += f"\nLast bid ask: {last_bid_ask}" \
+                         f"\nLast level2: {last_level2}" \
+                         f"\nLast candle: {last_candle}"
         return broker_report
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
@@ -117,10 +121,17 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
     def is_alive(self):
         maxdelta = pd.Timedelta("60s")
-        # Last received data was too long ago
-        delta = datetime.utcnow() - self.bid_ask.index.max() if self.bid_ask is not None and not self.bid_ask.empty else Timedelta.min
+
+        # Last received data
+        last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
+        last_level2 = self.level2.index.max() if not self.level2.empty else None
+        last_candle = self.last_candles_read_time
+        dt = datetime.utcnow()
+        delta = max([dt - last_bid_ask, dt - last_level2, dt - last_candle])
+
         is_alive = delta < maxdelta
-        self._log.info(f"Strategy is_alive:{is_alive}. Time since last data: {delta}, max allowed inactivity: {maxdelta}")
+        self._log.info(
+            f"Strategy is_alive:{is_alive}. Time since last full data: {delta}, max allowed inactivity: {maxdelta}.")
         return is_alive
 
     def is_data_gap(self):
@@ -218,8 +229,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.check_cur_trade(bid, ask)
 
         bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = self.fut_low_high.loc[self.fut_low_high.index[-1], \
-                                                                                   ["bid_min_fut", "bid_max_fut",
-                                                                                    "ask_min_fut", "ask_max_fut"]]
+            ["bid_min_fut", "bid_max_fut",
+             "ask_min_fut", "ask_max_fut"]]
         open_signal = 0
         if not self.broker.cur_trade:
             # Maybe open a new order

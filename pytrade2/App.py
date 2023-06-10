@@ -149,7 +149,7 @@ class App:
     def watchdog_check(self):
         """ If not alive, reset websocket feed"""
         if not self.strategy.is_alive():
-            self._log.error(f"Strategy reports to be dead, exiting")
+            self._log.error(f"Strategy seems to be dead, exiting")
             os.kill(os.getpid(), signal.SIGINT)
         else:
             # Schedule next check
