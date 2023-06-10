@@ -231,11 +231,11 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             try:
                 self._log.debug(f"Updating current trade status")
                 # Closing order or stop loss order
-                close_order_id = self.cur_trade.close_order_id if self.cur_trade.close_order_id else self.cur_trade.stop_loss_order_id
-                close_order = self.trade_client.get_order(order_id=int(self.cur_trade.stop_loss_order_id))
+                close_order_id = int(self.cur_trade.close_order_id if self.cur_trade.close_order_id else self.cur_trade.stop_loss_order_id)
+                close_order = self.trade_client.get_order(order_id=close_order_id)
                 self._log.debug(f"Got closing order from exchange: {close_order.symbol}, {close_order.state}")
                 # If sl or close order filled, update
-                if close_order.state == OrderState.FILLED and not self.cur_trade.close_order_id:
+                if close_order.state == OrderState.FILLED:
                     # Close trade in db
                     self.cur_trade.close_order_id = str(close_order_id)
                     self.cur_trade.close_price = float(close_order.price)
