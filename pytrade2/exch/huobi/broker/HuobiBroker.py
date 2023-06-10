@@ -200,11 +200,11 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             base_trade.stop_loss_price = stop_loss_price
             return base_trade
 
-    def create_closing_order(self, trade: Trade):
+    def create_closing_order(self, trade: Trade, cancel_sl_tp=True):
         with self.trade_lock:
             trade.status = TradeStatus.closing
             # Closed stop loss order if not closed
-            if trade.stop_loss_order_id:
+            if trade.stop_loss_order_id and cancel_sl_tp:
                 try:
                     self.trade_client.cancel_order(symbol=trade.ticker, order_id=trade.stop_loss_order_id)
                 except Exception as e:
@@ -255,8 +255,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
                 trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
 
-                # Final closure will be not here when  on_order_update event triggered
-                # trade.status = TradeStatus.closed
+                # Final closure will be not here but when  on_order_update event triggered
             return trade
 
     def update_cur_trade_status(self):

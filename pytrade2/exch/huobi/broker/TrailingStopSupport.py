@@ -2,6 +2,7 @@ import logging
 from typing import Optional
 
 from huobi.client.market import MarketClient
+from huobi.client.trade import TradeClient
 from huobi.constant import TradeDirection
 from huobi.model.market import TradeDetail
 from huobi.model.market.trade_detail_event import TradeDetailEvent
@@ -18,6 +19,7 @@ class TrailingStopSupport:
         self._log = logging.getLogger(self.__class__.__name__)
         self.cur_trade: Optional[Trade] = None
         self.market_client: MarketClient = None
+        self.trade_client: TradeClient = None
         self.trade_lock = None
 
     def sub_events(self, symbol: str):
@@ -53,8 +55,14 @@ class TrailingStopSupport:
                             f"Triggering take profit of base {e.direction} order. "
                             f"Price: {e.price}, take profit price: {self.cur_trade.take_profit_price}, "
                             f"current trade: {self.cur_trade}")
-                        # Close
-                        self.close_cur_trade()
+
+                        # Cancel sl/tp
+                        self.trade_client.cancel_order(symbol=self.cur_trade.ticker,
+                                                       order_id=self.cur_trade.stop_loss_order_id)
+                        # Create order to close current trade
+                        self.create_closing_order(trade=self.cur_trade, cancel_sl_tp=False)
+
+                        # Final closure will be not here but when on_order_update event triggered
                         break
             except Exception as ex:
                 self._log.error(f"on_price_changed error: {ex}")
@@ -64,3 +72,6 @@ class TrailingStopSupport:
 
     def close_cur_trade(self):
         raise NotImplementedError("close_cur_trade not implemented")
+
+    def create_closing_order(self, trade: Trade, cancel_sl_tp):
+        raise NotImplementedError("create_closing_order not implemented")

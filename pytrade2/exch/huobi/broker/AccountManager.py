@@ -40,9 +40,12 @@ class AccountManager:
     def on_account_update(self, event: AccountUpdateEvent):
         self._log.debug(f"Got account update event")
         with self.account_lock:
-            record = self.event_to_dict(event.data)
-            self._log.debug(f"Converted account update event: {record}")
-            self._buffer.append(record)
+            try:
+                record = self.event_to_dict(event.data)
+                self._log.debug(f"Converted account update event: {record}")
+                self._buffer.append(record)
+            except Exception as e:
+                self._log.error(f"on_account_update error: {e}")
 
     def event_to_dict(self, au: AccountUpdate):
         """ Convert huobi model to dictionary for pd dataframe"""

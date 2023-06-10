@@ -267,5 +267,5 @@ class BrokerBase:
     def create_sl_tp_order(self, base_trade, stop_loss_price, stop_loss_limit_price, take_profit_price):
         raise NotImplementedError()
 
-    def create_closing_order(self, cur_trade):
+    def create_closing_order(self, cur_trade, cancel_sl_tp):
         raise NotImplementedError()
