@@ -127,9 +127,10 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         last_level2 = self.level2.index.max() if not self.level2.empty else None
         last_candle = self.last_candles_read_time
         dt = datetime.utcnow()
-        delta = max([dt - last_bid_ask, dt - last_level2, dt - last_candle])
+        delta = max([dt - last_bid_ask, dt - last_level2, dt - last_candle]) \
+            if last_bid_ask and last_level2 and last_candle else None
 
-        is_alive = delta < maxdelta
+        is_alive = delta and (delta < maxdelta)
         self._log.info(
             f"Strategy is_alive:{is_alive}. Time since last full data: {delta}, max allowed inactivity: {maxdelta}.")
         return is_alive
