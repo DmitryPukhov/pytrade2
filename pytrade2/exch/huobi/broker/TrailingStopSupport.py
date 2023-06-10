@@ -53,7 +53,7 @@ class TrailingStopSupport:
                             continue
 
                         self._log.info(
-                            f"Triggering take profit of base {e.direction} order. "
+                            f"Triggering take profit of base {self.cur_trade.side} order. "
                             f"Price: {e.price}, take profit price: {self.cur_trade.take_profit_price}, "
                             f"current trade: {self.cur_trade}")
                         # Close main order
