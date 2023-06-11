@@ -63,6 +63,10 @@ class BrokerBase:
         Buy or sell with take profit and stop loss
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
+        if not self.allow_trade:
+            self._log.debug("Trading is not allowed")
+            return None
+
         with self.trade_lock:
 
             if self.cur_trade:
@@ -137,6 +141,9 @@ class BrokerBase:
             return self.cur_trade
 
     def close_cur_trade(self):
+        if not self.allow_trade:
+            self._log.debug("Trading is not allowed")
+
         with self.trade_lock:
             try:
                 self._log.info(f"Closing current trade:{self.cur_trade}")
@@ -190,6 +197,7 @@ class BrokerBase:
         if not self.allow_trade:
             self._log.info("Trading in not allowed")
             return None
+
         with self.trade_lock:
             # Adjust stop loss, calc stop loss limit pric
             limit_ratio = 0.01  # 1# slippage to set stop loss limit
@@ -206,8 +214,9 @@ class BrokerBase:
 
     def create_sl_trade_part(self, base_trade: Trade, stop_loss_price: float) -> Optional[Trade]:
         if not self.allow_trade:
-            self._log.info("Trading in not allowed")
+            self._log.debug("Trading is not allowed")
             return None
+
         with self.trade_lock:
             # stop_loss_price = round(stop_loss_price, self.price_precision)
             stop_loss_limit_price = round(stop_loss_price - (base_trade.open_price - stop_loss_price),

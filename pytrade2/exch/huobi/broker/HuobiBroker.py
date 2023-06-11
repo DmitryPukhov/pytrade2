@@ -167,6 +167,9 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             return base_trade
 
     def create_closing_order(self, trade: Trade):
+        if not self.allow_trade:
+            return None
+
         with self.trade_lock:
             trade.status = TradeStatus.closing
             # Closed stop loss order if not closed
