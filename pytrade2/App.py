@@ -152,6 +152,7 @@ class App:
             self._log.error(f"Strategy seems to be dead, exiting")
             os.kill(os.getpid(), signal.SIGINT)
         else:
+            self._log.info(f"Strategy is alive")
             # Schedule next check
             threading.Timer(60, self.watchdog_check).start()
 

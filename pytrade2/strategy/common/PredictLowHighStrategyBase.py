@@ -1,5 +1,8 @@
 import logging
+import multiprocessing
+import time
 from datetime import datetime, timedelta
+from threading import Thread
 from typing import Dict, List
 
 import numpy as np
@@ -37,6 +40,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.candles_feed = None
         self.model = None
         self.broker = None
+        self.new_data_flag = False
+        self.data_lock = multiprocessing.RLock()
 
         CandlesStrategy.__init__(self, ticker=self.ticker, candles_feed=self.candles_feed)
         PeriodicalLearnStrategy.__init__(self, config)
@@ -45,8 +50,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
         self.min_history_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval.sec'])
 
+        # Price, level2 dataframes and their buffers
         self.bid_ask: pd.DataFrame = pd.DataFrame()
+        self.bid_ask_buf: pd.DataFrame = pd.DataFrame()  # Buffer
         self.level2: pd.DataFrame = pd.DataFrame()
+        self.level2_buf: pd.DataFrame = pd.DataFrame()  # Buffer
+
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
         self.last_learn_bidask_time = datetime(1970, 1, 1)
         self.min_xy_len = 2
@@ -111,13 +120,48 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         Attach to the feed and listen
         """
         exchange_name = self.config["pytrade2.exchange"]
+
+        # Create feed and broker
         self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
         self.websocket_feed.consumers.append(self)
-
         self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
         self.broker = self.exchange_provider.broker(exchange_name)
 
+        # Start main processing loop
+        Thread(target=self.processing_loop).start()
+
+        # Run the feed, listen events
         self.websocket_feed.run()
+
+    def processing_loop(self):
+        self._log.info("Starting processing loop")
+
+        # If alive is None, not started, so continue loop
+        is_alive = self.is_alive()
+        while is_alive or is_alive is None:
+            while not self.new_data_flag:
+                time.sleep(0.1)
+
+            # Copy new data from buffers to main data frames
+            with self.data_lock:
+                self.bid_ask = pd.concat([self.bid_ask, self.bid_ask_buf]).sort_index()
+                self.bid_ask_buf = pd.DataFrame()
+                self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
+                self.level2_buf = pd.DataFrame()
+                self.new_data_flag = False
+
+            #            if not self.is_data_gap():
+            # Learn and predict only if no gap between level2 and bidask
+            self.read_candles_or_skip()
+            self.learn_or_skip()
+            self.process_new_data()
+            # Purge
+            self.purge_or_skip(self.bid_ask, self.level2, self.fut_low_high)
+
+            # Refresh live status
+            is_alive = self.is_alive()
+
+        self._log.info("End main processing loop")
 
     def is_alive(self):
         maxdelta = pd.Timedelta("90s")
@@ -131,19 +175,9 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
             if last_bid_ask and last_level2 and last_candle else None
 
         is_alive = delta and (delta < maxdelta)
-        self._log.info(
-            f"Strategy is_alive:{is_alive}. Time since last full data: {delta}, max allowed inactivity: {maxdelta}.")
+        # self._log.info(
+        #     f"Strategy is_alive:{is_alive}. Time since last full data: {delta}, max allowed inactivity: {maxdelta}.")
         return is_alive
-
-    def is_data_gap(self):
-        """ Check the gap between last bidask and level2 """
-
-        # Calculate the gap
-
-        last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
-        last_level2 = self.level2.index.max() if not self.level2.empty else None
-        gap = abs(last_bid_ask - last_level2) if last_bid_ask and last_level2 else timedelta.min
-        return gap > self.data_gap_max
 
     def on_level2(self, level2: List[Dict]):
         """
@@ -153,23 +187,19 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
         # Add new data to df
         new_df = pd.DataFrame(level2, columns=bid_ask_columns).set_index("datetime", drop=False)
-        self.level2 = pd.concat([self.level2, new_df])
-        self.level2.sort_index(inplace=True)  # self.level2.append(new_df)
+        with self.data_lock:
+            self.level2_buf = pd.concat([self.level2_buf, new_df])
+        # self.level2.sort_index(inplace=True)  # self.level2.append(new_df)
+        self.new_data_flag = True
 
     def on_ticker(self, ticker: dict):
         # Add new data to df
+
         new_df = pd.DataFrame([ticker], columns=list(ticker.keys())).set_index("datetime")
-        self.bid_ask = pd.concat([self.bid_ask, new_df])
-        self.bid_ask.sort_index(inplace=True)
-
-        if not self.is_data_gap():
-            # Learn and predict only if no gap between level2 and bidask
-            self.read_candles_or_skip()
-            self.learn_or_skip()
-            self.process_new_data()
-
-            # Purge
-            self.purge_or_skip(self.bid_ask, self.level2, self.fut_low_high)
+        with self.data_lock:
+            self.bid_ask_buf = pd.concat([self.bid_ask_buf, new_df])
+        # self.bid_ask.sort_index(inplace=True)
+        self.new_data_flag = True
 
     def purge_all(self):
         """ Purge old data to reduce memory usage"""
