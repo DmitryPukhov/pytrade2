@@ -2,7 +2,7 @@ import logging
 import multiprocessing
 import time
 from datetime import datetime, timedelta
-from threading import Thread
+from threading import Thread, Event
 from typing import Dict, List
 
 import numpy as np
@@ -40,7 +40,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.candles_feed = None
         self.model = None
         self.broker = None
-        self.new_data_flag = False
+        self.new_data_event: Event = Event()
         self.data_lock = multiprocessing.RLock()
 
         CandlesStrategy.__init__(self, ticker=self.ticker, candles_feed=self.candles_feed)
@@ -139,8 +139,11 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         # If alive is None, not started, so continue loop
         is_alive = self.is_alive()
         while is_alive or is_alive is None:
-            while not self.new_data_flag:
-                time.sleep(0.1)
+
+            # Wait for new data received
+            while not self.new_data_event.is_set():
+                self.new_data_event.wait()
+            self.new_data_event.clear()
 
             # Copy new data from buffers to main data frames
             with self.data_lock:
@@ -148,13 +151,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
                 self.bid_ask_buf = pd.DataFrame()
                 self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
                 self.level2_buf = pd.DataFrame()
-                self.new_data_flag = False
 
-            #            if not self.is_data_gap():
             # Learn and predict only if no gap between level2 and bidask
             self.read_candles_or_skip()
             self.learn_or_skip()
             self.process_new_data()
+
             # Purge
             self.purge_or_skip(self.bid_ask, self.level2, self.fut_low_high)
 
@@ -189,8 +191,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         new_df = pd.DataFrame(level2, columns=bid_ask_columns).set_index("datetime", drop=False)
         with self.data_lock:
             self.level2_buf = pd.concat([self.level2_buf, new_df])
-        # self.level2.sort_index(inplace=True)  # self.level2.append(new_df)
-        self.new_data_flag = True
+
+        self.new_data_event.set()
 
     def on_ticker(self, ticker: dict):
         # Add new data to df
@@ -198,8 +200,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         new_df = pd.DataFrame([ticker], columns=list(ticker.keys())).set_index("datetime")
         with self.data_lock:
             self.bid_ask_buf = pd.concat([self.bid_ask_buf, new_df])
-        # self.bid_ask.sort_index(inplace=True)
-        self.new_data_flag = True
+
+        self.new_data_event.set()
 
     def purge_all(self):
         """ Purge old data to reduce memory usage"""
