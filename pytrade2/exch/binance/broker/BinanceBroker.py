@@ -86,7 +86,8 @@ class BinanceBroker(BrokerBase):
         base_trade.stop_loss_price = stop_loss_price
         return base_trade
 
-    def create_closing_order(self, trade: Trade):
+    def create_closing_order(self):
+        trade = self.cur_trade
         base_direction = Trade.order_side_codes[trade.side]
         res = self.client.new_order(
             symbol=trade.ticker,

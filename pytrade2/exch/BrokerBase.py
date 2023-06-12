@@ -150,7 +150,7 @@ class BrokerBase:
                 self.cur_trade.status = TradeStatus.closing
 
                 # Call exchange broker to close the order
-                self.cur_trade = self.create_closing_order(self.cur_trade)
+                self.create_closing_order()
                 self.db_session.commit()
                 if self.cur_trade.status == TradeStatus.closed:
                     self._log.info(f"Closed current trade:{self.cur_trade}")
@@ -276,5 +276,5 @@ class BrokerBase:
     def create_sl_tp_order(self, base_trade, stop_loss_price, stop_loss_limit_price, take_profit_price):
         raise NotImplementedError()
 
-    def create_closing_order(self, cur_trade):
+    def create_closing_order(self):
         raise NotImplementedError()

@@ -57,7 +57,7 @@ class TakeProfitSupport:
                             f"Price: {e.price}, take profit price: {self.cur_trade.take_profit_price}, "
                             f"current trade: {self.cur_trade}")
                         # Close main order
-                        self.cur_trade = self.create_closing_order(trade=self.cur_trade)
+                        self.create_closing_order()
 
                         # Final closure will be not here but when on_order_update event triggered
                         break
@@ -71,5 +71,5 @@ class TakeProfitSupport:
     def close_cur_trade(self):
         raise NotImplementedError("close_cur_trade not implemented")
 
-    def create_closing_order(self, trade: Trade):
+    def create_closing_order(self):
         raise NotImplementedError("create_closing_order not implemented")

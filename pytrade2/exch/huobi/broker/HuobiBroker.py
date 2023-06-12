@@ -166,11 +166,12 @@ class HuobiBroker(BrokerBase, TakeProfitSupport):
             base_trade.stop_loss_price = stop_loss_price
             return base_trade
 
-    def create_closing_order(self, trade: Trade):
+    def create_closing_order(self):
         if not self.allow_trade:
             return None
 
         with self.trade_lock:
+            trade = self.cur_trade
             trade.status = TradeStatus.closing
             # Closed stop loss order if not closed
             if trade.stop_loss_order_id:
@@ -220,6 +221,7 @@ class HuobiBroker(BrokerBase, TakeProfitSupport):
 
                 # Final closure will be not here but when  on_order_update event triggered
             self._log.info(f"Created closure order: {trade}")
+            self.db_session.commit()
             return trade
 
     def update_cur_trade_status(self):
