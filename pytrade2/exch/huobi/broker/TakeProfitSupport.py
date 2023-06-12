@@ -12,8 +12,8 @@ from model.Trade import Trade
 from model.TradeStatus import TradeStatus
 
 
-class TrailingStopSupport:
-    """ Programmatically support trailing stop because Huobi does not have oco orders???  for sl/tp"""
+class TakeProfitSupport:
+    """ Programmatically support take profit because Huobi does not have oco orders  for sl/tp"""
 
     def __init__(self):
         self._log = logging.getLogger(self.__class__.__name__)

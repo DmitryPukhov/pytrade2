@@ -15,12 +15,12 @@ from huobi.model.trade import OrderUpdateEvent
 from exch.BrokerBase import BrokerBase
 from exch.huobi.HuobiTools import HuobiTools
 from exch.huobi.broker.AccountManager import AccountManager
-from exch.huobi.broker.TrailingStopSupport import TrailingStopSupport
+from exch.huobi.broker.TakeProfitSupport import TakeProfitSupport
 from model.Trade import Trade
 from model.TradeStatus import TradeStatus
 
 
-class HuobiBroker(BrokerBase, TrailingStopSupport):
+class HuobiBroker(BrokerBase, TakeProfitSupport):
     """ Trading functions for Huobi """
 
     def __init__(self, config: Dict[str, str],
@@ -55,7 +55,7 @@ class HuobiBroker(BrokerBase, TrailingStopSupport):
             self.trade_client.sub_order_update(symbols=symbol,
                                                callback=self.on_order_update,
                                                error_handler=self.on_trade_client_error)
-            TrailingStopSupport._sub_events(self, symbol)
+            TakeProfitSupport._sub_events(self, symbol)
             self.account_manager.sub_events()
 
             self._log.debug(f"Subscribed to order update events for {symbol}")
