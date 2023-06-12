@@ -57,7 +57,8 @@ class TakeProfitSupport:
                             f"Price: {e.price}, take profit price: {self.cur_trade.take_profit_price}, "
                             f"current trade: {self.cur_trade}")
                         # Close main order
-                        self.create_closing_order(trade=self.cur_trade)
+                        self.cur_trade = self.create_closing_order(trade=self.cur_trade)
+
                         # Final closure will be not here but when on_order_update event triggered
                         break
             except Exception as ex:

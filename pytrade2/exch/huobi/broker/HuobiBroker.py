@@ -209,18 +209,17 @@ class HuobiBroker(BrokerBase, TakeProfitSupport):
                 source=OrderSource.API)
             #
             trade.close_order_id = str(close_order_id)
-            self._log.debug(f"Created closure order, id: {trade.close_order_id}")
 
             # Get closure order details
             close_order = self.trade_client.get_order(close_order_id)
             if close_order.state == OrderState.FILLED:
                 self._log.debug(f"Closure order {trade.close_order_id} at price {close_order.price} filled. "
                                 f"Filled amount: {close_order.filled_amount}, cache amount: {close_order.filled_cash_amount}")
-                trade.close_order_id = str(close_order_id)
                 trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
 
                 # Final closure will be not here but when  on_order_update event triggered
+            self._log.info(f"Created closure order: {trade}")
             return trade
 
     def update_cur_trade_status(self):
