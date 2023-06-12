@@ -18,6 +18,10 @@ prepare_tmp(){
   rm "$tmp_dir/pytrade2/pytrade2/cfg/log-dev.cfg"
   files=$(ls ./secret/*.yaml)
   for f in $files; do cp -v -f $f ./tmp/pytrade2/pytrade2/cfg/; done
+  files=$(ls ./secret/*.cfg)
+  for f in $files; do cp -v -f $f ./tmp/pytrade2/pytrade2/cfg/; done
+
+
 
   echo "Copying docker files"
   for file in  "Dockerfile" "requirements.txt" "docker-compose.yml"
