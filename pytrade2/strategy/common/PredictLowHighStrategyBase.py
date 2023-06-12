@@ -63,8 +63,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.is_learning = False
         self.is_processing = False
 
-        self.data_gap_max = timedelta(seconds=config.get("pytrade2.strategy.data.gap.max.sec", 2))
-
         # Expected profit/loss >= ratio means signal to trade
         self.profit_loss_ratio = config.get("pytrade2.strategy.profitloss.ratio", 1)
 
@@ -82,8 +80,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.X_pipe, self.y_pipe = None, None
         self._log.info(
             f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
-            f"min stop loss coeff: {self.stop_loss_min_coeff}, max stop loss coeff: {self.stop_loss_max_coeff},"
-            f"max allowed time gap between bidask and level2 data: {self.data_gap_max}")
+            f"min stop loss coeff: {self.stop_loss_min_coeff}, max stop loss coeff: {self.stop_loss_max_coeff}")
 
     def get_report(self):
         """ Short info for report """

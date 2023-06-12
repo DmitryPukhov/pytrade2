@@ -51,7 +51,6 @@ class TestPredictLowHighStrategyBase(TestCase):
         def __init__(self):
             conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
                     "pytrade2.data.dir": "tmp",
-                    "pytrade2.strategy.data.gap.max.sec": 10,
                     "pytrade2.strategy.predict.window": "10s",
                     "pytrade2.order.quantity": 0.001}
             super().__init__(conf, None)
