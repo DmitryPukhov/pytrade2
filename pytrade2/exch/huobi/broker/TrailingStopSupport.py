@@ -43,8 +43,8 @@ class TrailingStopSupport:
                 for element in event.data:
                     # Check take profit
                     e: TradeDetail = element
-                    is_buy_tp = e.direction == TradeDirection.BUY and e.price >= self.cur_trade.take_profit_price
-                    is_sell_tp = e.direction == TradeDirection.SELL and e.price <= self.cur_trade.take_profit_price
+                    is_buy_tp = self.cur_trade.direction() == 1 and e.price >= self.cur_trade.take_profit_price
+                    is_sell_tp = self.cur_trade.direction() == -1 and e.price <= self.cur_trade.take_profit_price
                     if is_buy_tp or is_sell_tp:
 
                         # Reread from stock exchange, maybe stop loss already triggered
