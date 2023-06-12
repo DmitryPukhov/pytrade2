@@ -78,7 +78,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.predict_window = config["pytrade2.strategy.predict.window"]
-        self.min_xy_len = 1
+        self.min_xy_len = 2
         self.X_pipe, self.y_pipe = None, None
         self._log.info(
             f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
