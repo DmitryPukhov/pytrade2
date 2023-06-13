@@ -2,7 +2,6 @@ import logging
 from datetime import datetime
 
 import pandas as pd
-from binance.spot import Spot as Client
 
 from strategy.common.features.CandlesFeatures import CandlesFeatures
 
@@ -10,15 +9,17 @@ from strategy.common.features.CandlesFeatures import CandlesFeatures
 class CandlesStrategy:
     """ Decorator for strategies. Reads candles from Binance """
 
-    def __init__(self, ticker: str, candles_feed):
+    def __init__(self, config, ticker: str, candles_feed):
         self.last_candles_read_time = datetime.min
         self._log = logging.getLogger(self.__class__.__name__)
         self.candles_feed = candles_feed
         self.ticker = ticker
         self.candles_features = pd.DataFrame()
         # Candles intervals
-        self.candles_fast_interval, self.candles_slow_interval = "1m", "5m"
-        self.candles_fast_window, self.candles_slow_window = 5, 5
+        self.candles_fast_interval = config["pytrade2.strategy.candles.fast.interval"]
+        self.candles_fast_window = config["pytrade2.strategy.candles.fast.window"]
+        self.candles_slow_interval = config["pytrade2.strategy.candles.slow.interval"]
+        self.candles_slow_window = config["pytrade2.strategy.candles.slow.window"]
         self._log.info(f"Candles fast interval:{self.candles_fast_interval}, window: {self.candles_fast_window}")
         self._log.info(f"Candles slow interval:{self.candles_slow_interval}, window: {self.candles_slow_window}")
 

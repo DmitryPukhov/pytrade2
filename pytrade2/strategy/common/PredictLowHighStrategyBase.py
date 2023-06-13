@@ -1,6 +1,5 @@
 import logging
 import multiprocessing
-import time
 from datetime import datetime, timedelta
 from threading import Thread, Event
 from typing import Dict, List
@@ -9,7 +8,6 @@ import numpy as np
 import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
-from pandas import Timedelta
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler
@@ -43,7 +41,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.new_data_event: Event = Event()
         self.data_lock = multiprocessing.RLock()
 
-        CandlesStrategy.__init__(self, ticker=self.ticker, candles_feed=self.candles_feed)
+        CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
         PeriodicalLearnStrategy.__init__(self, config)
         PersistableStateStrategy.__init__(self, config)
         DataPurger.__init__(self, config)

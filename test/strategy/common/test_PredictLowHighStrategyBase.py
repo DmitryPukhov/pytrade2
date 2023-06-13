@@ -52,6 +52,10 @@ class TestPredictLowHighStrategyBase(TestCase):
             conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
                     "pytrade2.data.dir": "tmp",
                     "pytrade2.strategy.predict.window": "10s",
+                    "pytrade2.strategy.candles.fast.interval": "5m",
+                    "pytrade2.strategy.candles.fast.window": 5,
+                    "pytrade2.strategy.candles.slow.interval": "15ms",
+                    "pytrade2.strategy.candles.slow.window": 5,
                     "pytrade2.order.quantity": 0.001}
             super().__init__(conf, None)
             self.profit_loss_ratio = 4
