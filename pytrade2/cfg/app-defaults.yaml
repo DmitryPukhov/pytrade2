@@ -8,6 +8,11 @@ pytrade2.exchange.huobi.account.client.url: "https://api.huobi.pro"
 pytrade2.strategy: SimpleKerasStrategy
 pytrade2.strategy.learn.interval.sec: 20
 pytrade2.strategy.purge.window: "120s"
+
+pytrade2.strategy.candles.fast.interval: "1m"
+pytrade2.strategy.candles.fast.window: 5
+pytrade2.strategy.candles.slow.interval: "1m"
+pytrade2.strategy.candles.slow.window: 5
 pytrade2.strategy.predict.window: "60s"
 
 # coeff 0.00005 for BTCUSDT 30000 means 1,5
