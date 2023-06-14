@@ -1,14 +1,18 @@
+import os
+import sys
 from datetime import datetime
 from unittest import TestCase
 import pandas as pd
-from strategy.common.DataPurger import DataPurger
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
+from StrategyStub import StrategyStub
 
 
-class TestBidAskFeatures(TestCase):
-    def purger_of(self, window):
-        dp = DataPurger({})
-        dp.purge_window = window
-        return dp
+class TestPredictLowHighStrategyBasePurge(TestCase):
+    def strategy_of(self, window):
+        strategy = StrategyStub()
+        strategy.history_max_window = window
+        return strategy
 
     def test_purge(self):
         df1 = pd.DataFrame([
@@ -17,16 +21,11 @@ class TestBidAskFeatures(TestCase):
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:12"), "col3": "val3"}
         ]).set_index("datetime", drop=False)
 
-        actual1 = self.purger_of("10s").purged(df1)
+        actual1 = self.strategy_of("10s").purged(df1, "df1")
         self.assertListEqual(["2023-03-17 15:56:02", "2023-03-17 15:56:12"], actual1.index.astype(str).values.tolist())
 
-    def test_purge_nowindow(self):
-        df1 = pd.DataFrame([{"i1": 1, "col1": "val1"}]).set_index("i1")
-        actual1 = self.purger_of(None).purged(df1)
-        self.assertListEqual([1], actual1.index.values.tolist())
-
     def test_purge_emptydf(self):
-        actual = self.purger_of("1s").purged(pd.DataFrame())
+        actual = self.strategy_of("1s").purged(pd.DataFrame(), "df1")
         self.assertTrue(actual.empty)
 
     def test_purge_nopurge(self):
@@ -36,7 +35,7 @@ class TestBidAskFeatures(TestCase):
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:12"), "col3": "val3"}
         ]).set_index("datetime", drop=False)
 
-        actual1= self.purger_of("11s").purged(df1)
+        actual1= self.strategy_of("11s").purged(df1, "df1")
         self.assertListEqual(["2023-03-17 15:56:01", "2023-03-17 15:56:02", "2023-03-17 15:56:12"],
                              actual1.index.astype(str).values.tolist())
 

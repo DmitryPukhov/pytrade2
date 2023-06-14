@@ -1,4 +1,6 @@
 import logging
+import os
+import sys
 from datetime import datetime, timedelta
 from typing import Optional
 from unittest import TestCase
@@ -8,68 +10,17 @@ import pandas as pd
 
 from exch.binance.broker.BinanceBroker import BinanceBroker
 from model.Trade import Trade
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
+from StrategyStub import StrategyStub
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
 class TestPredictLowHighStrategyBase(TestCase):
-    class ModelStub:
-        """ Model emulation for unit tests"""
 
-        def predict(self, X, verbose):
-            # Emulate some prediction: bid_min_fut_diff, bit_max_fut_diff, ask_min_fut_diff, ask_max_fut_diff
-            return np.array([1, 2, 3, 4])
-
-    class BrokerStub(BinanceBroker):
-        """ Broker emulation, don't trade """
-
-        def __init__(self):
-            self._log = logging.getLogger(self.__class__.__name__)
-            self.cur_trade: Trade = None
-
-        def update_trade_status(self, trade: Trade) -> Trade:
-            pass
-
-        def create_cur_trade(self, symbol: str, direction: int,
-                             quantity: float,
-                             price: Optional[float],
-                             stop_loss_price: Optional[float],
-                             take_profit_price: Optional[float]) -> Optional[Trade]:
-            """ Don't trade, just emulate """
-            self.cur_trade = Trade(ticker=symbol, side=Trade.order_side_names.get(direction),
-                                   open_time=datetime.utcnow(), open_price=price, open_order_id=None,
-                                   stop_loss_price=stop_loss_price, take_profit_price=take_profit_price,
-                                   stop_loss_order_id=None,
-                                   quantity=quantity)
-
-        def end_cur_trade(self):
-            self.cur_trade = None
-
-    class StrategyStub(PredictLowHighStrategyBase):
-        """ Strategy wrapper for tests """
-
-        def __init__(self):
-            conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
-                    "pytrade2.data.dir": "tmp",
-                    "pytrade2.strategy.predict.window": "10s",
-                    "pytrade2.strategy.candles.fast.interval": "5m",
-                    "pytrade2.strategy.candles.fast.window": 5,
-                    "pytrade2.strategy.candles.slow.interval": "15ms",
-                    "pytrade2.strategy.candles.slow.window": 5,
-                    "pytrade2.order.quantity": 0.001}
-            super().__init__(conf, None)
-            self.profit_loss_ratio = 4
-            self.close_profit_loss_ratio = 2
-            self.model = TestPredictLowHighStrategyBase.ModelStub()
-            self.broker = TestPredictLowHighStrategyBase.BrokerStub()
-            self.min_stop_loss = 0
-            self.max_stop_loss_coeff = float('inf')
-
-        def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
-            pass
 
     def test_process_new_data__should_set_fut_columns(self):
-        strategy = self.StrategyStub()
+        strategy = StrategyStub()
         # Set bidask and level2, received by strategy from broker
         strategy.bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",
@@ -102,7 +53,7 @@ class TestPredictLowHighStrategyBase(TestCase):
 
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
-        strategy = self.StrategyStub()
+        strategy = StrategyStub()
         # Set bidask and level2, received by strategy from broker
         strategy.bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",
@@ -129,7 +80,7 @@ class TestPredictLowHighStrategyBase(TestCase):
 
     def test_open_signal_buy(self):
         # Strategy with profit/loss ratio = 4
-        strategy = self.StrategyStub()
+        strategy = StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_max_fut=19,
                                                                                bid_min_fut=9, ask_min_fut=0,
@@ -140,7 +91,7 @@ class TestPredictLowHighStrategyBase(TestCase):
         self.assertEqual(19, actual_profit)
 
     def test_process_new_prediction__should_buy(self):
-        strategy = self.StrategyStub()
+        strategy = StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
         strategy.fut_low_high = pd.DataFrame(
             [{"bid_min_fut": 9, "bid_max_fut": 19, "ask_min_fut": 0, "ask_max_fut": 0}])
@@ -155,7 +106,7 @@ class TestPredictLowHighStrategyBase(TestCase):
 
     def test_open_signal_not_buy_low_ratio(self):
         # Strategy with profit/loss ratio = 4
-        strategy = self.StrategyStub()
+        strategy = StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=9,
                                                                                bid_max_fut=18.9, ask_min_fut=0,
@@ -166,7 +117,7 @@ class TestPredictLowHighStrategyBase(TestCase):
 
     def test_open_signal_sell(self):
         # Strategy with profit/loss ratio = 4
-        strategy = self.StrategyStub()
+        strategy = StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=0,
                                                                                bid_max_fut=0, ask_min_fut=2,
@@ -178,7 +129,7 @@ class TestPredictLowHighStrategyBase(TestCase):
         self.assertEqual(2, actual_profit)
 
     def test_process_new_prediction__should_sell(self):
-        strategy = self.StrategyStub()
+        strategy = StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
         strategy.fut_low_high = pd.DataFrame(
             [{"bid_min_fut": 0, "bid_max_fut": 0, "ask_min_fut": 2, "ask_max_fut": 12}])
@@ -192,7 +143,7 @@ class TestPredictLowHighStrategyBase(TestCase):
 
     def test_open_signal_not_sell_low_ratio(self):
         # Strategy with profit/loss ratio = 4
-        strategy = self.StrategyStub()
+        strategy = StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=0,
                                                                                bid_max_fut=0, ask_max_fut=12,

@@ -2,7 +2,7 @@ import logging
 import multiprocessing
 from datetime import datetime, timedelta
 from threading import Thread, Event, Timer
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -15,12 +15,11 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
-from strategy.common.DataPurger import DataPurger
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 
 
-class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy, DataPurger):
+class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -41,14 +40,18 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy, Data
 
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
         PersistableStateStrategy.__init__(self, config)
-        DataPurger.__init__(self, config)
         self.new_data_event: Event = Event()
         self.data_lock = multiprocessing.RLock()
 
+        # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
+        self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
+        self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
         self.learn_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval']) \
             if 'pytrade2.strategy.learn.interval' in config else None
-        self.min_history_interval = pd.Timedelta(self.predict_window)
+        # Purge params
+        self.purge_interval = pd.Timedelta(config['pytrade2.strategy.purge.interval']) \
+            if 'pytrade2.strategy.purge.interval' in config else None
 
         # Price, level2 dataframes and their buffers
         self.bid_ask: pd.DataFrame = pd.DataFrame()
@@ -124,8 +127,14 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy, Data
 
         # Start main processing loop
         Thread(target=self.processing_loop).start()
+
+        # Start periodical jobs
         if self.learn_interval:
+            self._log.info(f"Starting periodical learning, interval: {self.learn_interval}")
             Timer(self.learn_interval.seconds, self.learn).start()
+        if self.purge_interval:
+            self._log.info(f"Starting periodical purging, interval: {self.purge_interval}")
+            Timer(self.purge_interval.seconds, self.purge_all).start()
 
         # Run the feed, listen events
         self.websocket_feed.run()
@@ -152,9 +161,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy, Data
             # Learn and predict only if no gap between level2 and bidask
             self.read_candles_or_skip()
             self.process_new_data()
-
-            # Purge
-            self.purge_or_skip(self.bid_ask, self.level2, self.fut_low_high)
 
             # Refresh live status
             is_alive = self.is_alive()
@@ -201,9 +207,25 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy, Data
 
     def purge_all(self):
         """ Purge old data to reduce memory usage"""
-        self.bid_ask = self.purged(self.bid_ask)
-        self.level2 = self.purged(self.level2)
-        self.fut_low_high = self.purged(self.fut_low_high)
+        try:
+            with self.data_lock:
+                self.bid_ask = self.purged(self.bid_ask, "bid_ask")
+                self.level2 = self.purged(self.level2, "level2")
+                self.fut_low_high = self.purged(self.fut_low_high, "fut_low_high")
+        finally:
+            if self.purge_interval:
+                Timer(self.purge_interval.seconds, self.purge_all).start()
+
+    def purged(self, df: Optional[pd.DataFrame], tag: str) -> Optional[pd.DataFrame]:
+        """
+        Purge data frame
+        """
+        purge_window = self.history_max_window
+        self._log.debug(f"Purging old {tag} data using window {purge_window}")
+        if df is None or df.empty:
+            return df
+        left_bound = df.index.max() - pd.Timedelta(purge_window)
+        return df[df.index >= left_bound]
 
     def check_cur_trade(self, bid: float, ask: float):
         """ Update cur trade if sl or tp reached """
@@ -325,7 +347,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy, Data
             return False
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
-        if interval < self.min_history_interval:
+        if interval < self.history_min_window:
             self._log.debug(f"Can not learn because not enough history. We have {interval}, but we need {interval}")
             return False
         return True
