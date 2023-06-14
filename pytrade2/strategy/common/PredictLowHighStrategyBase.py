@@ -179,8 +179,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
             if last_bid_ask and last_level2 and last_candle else None
 
         is_alive = delta and (delta < maxdelta)
-        # self._log.info(
-        #     f"Strategy is_alive:{is_alive}. Time since last full data: {delta}, max allowed inactivity: {maxdelta}.")
         return is_alive
 
     def on_level2(self, level2: List[Dict]):
@@ -198,7 +196,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def on_ticker(self, ticker: dict):
         # Add new data to df
-
         new_df = pd.DataFrame([ticker], columns=list(ticker.keys())).set_index("datetime")
         with self.data_lock:
             self.bid_ask_buf = pd.concat([self.bid_ask_buf, new_df])
@@ -241,7 +238,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         # Timeout from last check passed
         interval_flag = datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval
 
-        # if interval_flag or (interval_flag and (buy_close_flag or sell_close_flag)):
         if interval_flag and is_closable:
             self.broker.update_cur_trade_status()
             self.last_trade_check_time = datetime.utcnow()

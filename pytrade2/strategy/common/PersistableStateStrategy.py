@@ -23,6 +23,7 @@ class PersistableStateStrategy:
             self.model_Xy_dir = str(Path(self.data_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.last_save_time = datetime.utcnow()
+        self.model=None
         # Save data each 10 seconds
         self.save_interval: timedelta = timedelta(seconds=60)
         self.X_buf = pd.DataFrame()
@@ -40,7 +41,6 @@ class PersistableStateStrategy:
 
     def save_model(self):
         # Save the model
-        #model: Model = self.model.regressor.named_steps["model"].model
         model = self.model
 
         model_path = str(Path(self.model_weights_dir, datetime.utcnow().isoformat()))
@@ -86,9 +86,6 @@ class PersistableStateStrategy:
         if not self.y_buf.empty:
             ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
             self._log.debug(f"Saving last y to {ypath}")
-            # y_pred_last_df = pd.DataFrame(index=X_last.index, data=y_pred_last,
-            #                               columns=["fut_delta_low", "fut_candle_size"])
-            # y_pred_last_df.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
             self.y_buf.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
             self.y_buf = pd.DataFrame()
         if not self.data_buf.empty:
