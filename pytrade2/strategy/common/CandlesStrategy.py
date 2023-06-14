@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 from datetime import datetime
 
 import pandas as pd
@@ -12,6 +13,8 @@ class CandlesStrategy:
     def __init__(self, config, ticker: str, candles_feed):
         self.last_candles_read_time = datetime.min
         self._log = logging.getLogger(self.__class__.__name__)
+
+        self.data_lock: multiprocessing.RLock() = None
         self.candles_feed = candles_feed
         self.ticker = ticker
         self.candles_features = pd.DataFrame()
@@ -34,7 +37,7 @@ class CandlesStrategy:
             candles_fast = self.candles_feed.read_candles(self.ticker, self.candles_fast_interval, self.candles_fast_window*2+3)
             candles_slow = self.candles_feed.read_candles(self.ticker, self.candles_slow_interval, self.candles_slow_window*2+3)
             # Prepare candles features
-            self.candles_features = CandlesFeatures.candles_combined_features_of(candles_fast, self.candles_fast_window,
-                                                                                 candles_slow, self.candles_slow_window)
-
-            self.last_candles_read_time = datetime.utcnow()
+            with self.data_lock:
+                self.candles_features = CandlesFeatures.candles_combined_features_of(candles_fast, self.candles_fast_window,
+                                                                                     candles_slow, self.candles_slow_window)
+                self.last_candles_read_time = datetime.utcnow()

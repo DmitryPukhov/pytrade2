@@ -1,11 +1,12 @@
 import logging
 import multiprocessing
 from datetime import datetime, timedelta
-from threading import Thread, Event
+from threading import Thread, Event, Timer
 from typing import Dict, List
 
 import numpy as np
 import pandas as pd
+import tensorflow.python.keras.backend
 from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
 from sklearn.compose import ColumnTransformer
@@ -15,12 +16,11 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.DataPurger import DataPurger
-from strategy.common.PeriodicalLearnStrategy import PeriodicalLearnStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 
 
-class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, PersistableStateStrategy, DataPurger):
+class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy, DataPurger):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -38,15 +38,17 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.candles_feed = None
         self.model = None
         self.broker = None
+
+        CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
+        PersistableStateStrategy.__init__(self, config)
+        DataPurger.__init__(self, config)
         self.new_data_event: Event = Event()
         self.data_lock = multiprocessing.RLock()
 
-        CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        PeriodicalLearnStrategy.__init__(self, config)
-        PersistableStateStrategy.__init__(self, config)
-        DataPurger.__init__(self, config)
-
-        self.min_history_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval.sec'])
+        self.predict_window = config["pytrade2.strategy.predict.window"]
+        self.learn_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval']) \
+            if 'pytrade2.strategy.learn.interval' in config else None
+        self.min_history_interval = pd.Timedelta(self.predict_window)
 
         # Price, level2 dataframes and their buffers
         self.bid_ask: pd.DataFrame = pd.DataFrame()
@@ -58,7 +60,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         self.last_learn_bidask_time = datetime(1970, 1, 1)
         self.min_xy_len = 2
 
-        self.is_learning = False
         self.is_processing = False
 
         # Expected profit/loss >= ratio means signal to trade
@@ -73,12 +74,11 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
                                               float('inf'))
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
-        self.predict_window = config["pytrade2.strategy.predict.window"]
         self.min_xy_len = 2
         self.X_pipe, self.y_pipe = None, None
-        self._log.info(
-            f"predict window: {self.predict_window}, profit loss ratio: {self.profit_loss_ratio}, "
-            f"min stop loss coeff: {self.stop_loss_min_coeff}, max stop loss coeff: {self.stop_loss_max_coeff}")
+
+        self._log.info("Strategy parameters:\n" + "\n".join(
+            [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
     def get_report(self):
         """ Short info for report """
@@ -124,6 +124,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
         # Start main processing loop
         Thread(target=self.processing_loop).start()
+        if self.learn_interval:
+            Timer(self.learn_interval.seconds, self.learn).start()
 
         # Run the feed, listen events
         self.websocket_feed.run()
@@ -140,7 +142,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
                 self.new_data_event.wait()
             self.new_data_event.clear()
 
-            # Copy new data from buffers to main data frames
+            # Append new data from buffers to main data frames
             with self.data_lock:
                 self.bid_ask = pd.concat([self.bid_ask, self.bid_ask_buf]).sort_index()
                 self.bid_ask_buf = pd.DataFrame()
@@ -149,7 +151,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
             # Learn and predict only if no gap between level2 and bidask
             self.read_candles_or_skip()
-            self.learn_or_skip()
             self.process_new_data()
 
             # Purge
@@ -316,11 +317,16 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
         # Check learn conditions
-        if self.is_learning or self.bid_ask.empty or self.level2.empty or self.candles_features.empty:
+        if self.bid_ask.empty or self.level2.empty or self.candles_features.empty:
+            self._log.debug(f"Can not learn because some datasets are empty. "
+                            f"bid_ask.empty: {self.bid_ask.empty}, "
+                            f"level2.empty: {self.level2.empty}, "
+                            f"candles features empty: {self.candles_features.empty}")
             return False
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
         if interval < self.min_history_interval:
+            self._log.debug(f"Can not learn because not enough history. We have {interval}, but we need {interval}")
             return False
         return True
 
@@ -334,21 +340,25 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
         return X, self.X_pipe.transform(X)
 
     def learn(self):
-        if self.is_learning:
-            return
-        self._log.debug("Learning")
-        self.is_learning = True
         try:
-            new_bid_ask = self.bid_ask[self.bid_ask.index > self.last_learn_bidask_time]
-            new_level2 = self.level2[self.level2.index > self.last_learn_bidask_time]
+            self._log.debug("Learning")
+            self.read_candles_or_skip()
+            if not self.can_learn():
+                return
+            with self.data_lock:
+                # Copy data for this thread only
+                bid_ask = self.bid_ask.copy()
+                level2 = self.level2.copy()
+                candles_features = self.candles_features.copy()
+
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
-                new_bid_ask, self.level2, self.candles_features, self.predict_window)
+                bid_ask, level2, candles_features, self.predict_window)
 
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, "
-                f"new bid_ask: {new_bid_ask.shape[0]}, new level2: {new_level2.shape[0]}, "
-                f"last bid_ask at: {self.bid_ask.index[-1]}, last level2 at: {self.level2.index[-1]}, "
-                f"last candle at: {self.candles_features.index[-1]}")
+                f"new bid_ask: {bid_ask.shape[0]}, new level2: {level2.shape[0]}, "
+                f"last bid_ask at: {bid_ask.index[-1]}, last level2 at: {level2.index[-1]}, "
+                f"last candle at: {candles_features.index[-1]}")
             if len(train_X.index) >= self.min_xy_len:
                 if not self.model:
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
@@ -364,8 +374,10 @@ class PredictLowHighStrategyBase(CandlesStrategy, PeriodicalLearnStrategy, Persi
 
                 # Save weights
                 self.save_model()
+                tensorflow.keras.backend.clear_session()  # To avoid OOM
+
             else:
                 self._log.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
-
         finally:
-            self.is_learning = False
+            if self.learn_interval:
+                Timer(self.learn_interval.seconds, self.learn).start()

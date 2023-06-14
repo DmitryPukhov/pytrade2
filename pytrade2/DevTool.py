@@ -1,10 +1,14 @@
 ##### For dev only #####
 from io import StringIO
 
+import requests
 import yaml
 from huobi.client.account import AccountClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
+import asyncio
+
+from websocket import WebSocket
 
 
 class DevTool():
@@ -36,8 +40,17 @@ class DevTool():
 
 
 if __name__ == "__main__":
-    tool = DevTool()
-    tool.print_balance("Before")
+
+    res= requests.get(url="https://api.hbdm.com/swap-ex/market/depth?contract_code=BTC-USD&type=step5")
+
+    wssurl="wss://api.hbdm.com/swap-ws"
+    ws=WebSocket()
+    ws.connect(url=wssurl)
+    print(ws.getstatus())
+    ws.close()
+
+
+
 
     # orderid1 = tool.trade_client.create_order(
     #     symbol="btcusdt",

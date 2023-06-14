@@ -12,7 +12,7 @@ class PeriodicalLearnStrategy:
 
     def __init__(self, config):
         self._log = logging.getLogger(self.__class__.__name__)
-        self.learn_interval: timedelta = timedelta(seconds=config['pytrade2.strategy.learn.interval.sec'])
+        self.learn_interval: timedelta = timedelta(seconds=config['pytrade2.strategy.learn.interval'])
         self.last_learn_time: datetime = datetime.min
 
     def learn_or_skip(self):

@@ -6,7 +6,7 @@ pytrade2.exchange.huobi.trade.client.url: "https://api.huobi.pro"
 pytrade2.exchange.huobi.account.client.url: "https://api.huobi.pro"
 
 pytrade2.strategy: SimpleKerasStrategy
-pytrade2.strategy.learn.interval.sec: 20
+pytrade2.strategy.learn.interval: "20s"
 pytrade2.strategy.purge.window: "120s"
 
 pytrade2.strategy.candles.fast.interval: "1m"
