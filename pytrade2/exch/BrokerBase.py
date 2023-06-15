@@ -143,6 +143,7 @@ class BrokerBase:
     def close_cur_trade(self):
         if not self.allow_trade:
             self._log.debug("Trading is not allowed")
+            return
 
         with self.trade_lock:
             try:
