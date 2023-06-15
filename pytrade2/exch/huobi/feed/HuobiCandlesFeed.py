@@ -41,7 +41,7 @@ class HuobiCandlesFeed:
         # Dataframe from dict data
         df = pd.DataFrame(data=data)
         df.set_index("close_time", inplace=True)
-        return df[["ticker", "interval", "open", "high", "low", "close", "vol"]]
+        return df[["ticker", "interval", "open", "high", "low", "close", "vol"]].sort_index()
 
     def raw_candle2dict(self, time, ticker, interval, raw_candle: Candlestick):
         """ Huobi Candlestick object to candle dict"""
