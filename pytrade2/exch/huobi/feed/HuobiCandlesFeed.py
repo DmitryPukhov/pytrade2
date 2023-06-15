@@ -34,7 +34,7 @@ class HuobiCandlesFeed:
 
         # Candles to list of dict as a data for df
         deltatime = pd.Timedelta(interval)
-        times = reversed([datetime.utcnow() - deltatime * i for i in range(len(raw_candles))])
+        times = [datetime.utcnow() - deltatime * i for i in range(len(raw_candles))]
         data = [self.raw_candle2dict(time, ticker, interval, raw_candle) for time, raw_candle in
                 zip(times, raw_candles)]
 
