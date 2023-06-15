@@ -10,6 +10,7 @@ import pandas as pd
 
 from exch.binance.broker.BinanceBroker import BinanceBroker
 from model.Trade import Trade
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 from StrategyStub import StrategyStub
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
@@ -17,7 +18,6 @@ from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBas
 
 
 class TestPredictLowHighStrategyBase(TestCase):
-
 
     def test_process_new_data__should_set_fut_columns(self):
         strategy = StrategyStub()
@@ -37,8 +37,9 @@ class TestPredictLowHighStrategyBase(TestCase):
         ]).set_index("datetime")
 
         # Init strategy pipeline
-        X = PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, strategy.candles_features)
-        y = PredictLowHighFeatures.targets_of(strategy.bid_ask, "0s")
+        X = PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, strategy.candles_features,
+                                               past_window="1s")
+        y = PredictLowHighFeatures.targets_of(strategy.bid_ask, "1s")
         strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
         strategy.X_pipe.fit(X)
         strategy.y_pipe.fit(y)
@@ -69,8 +70,9 @@ class TestPredictLowHighStrategyBase(TestCase):
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "doesntmatter": 1}
         ]).set_index("datetime")
 
-        X = PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, strategy.candles_features)
-        y = PredictLowHighFeatures.targets_of(strategy.bid_ask)
+        X = PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, strategy.candles_features,
+                                               past_window="1s")
+        y = PredictLowHighFeatures.targets_of(strategy.bid_ask, predict_window="10s")
         strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
         strategy.X_pipe.fit(X)
         strategy.y_pipe.fit(y)

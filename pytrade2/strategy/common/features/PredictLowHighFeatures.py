@@ -9,20 +9,20 @@ class PredictLowHighFeatures:
     """
     Feature engineering for PredictLowHighStrategy
     """
-    default_predict_window = "10s"
-    default_past_window = "10s"
+    # default_predict_window = "10s"
+    # default_past_window = "10s"
 
     @staticmethod
     def last_features_of(bid_ask: pd.DataFrame, n: int, level2: pd.DataFrame,
-                         candles_features: pd.DataFrame) -> pd.DataFrame:
+                         candles_features: pd.DataFrame, past_window: str) -> pd.DataFrame:
         # Need 2 last records because features contain diff.
         last_bid_ask = bid_ask.tail(n + 1)
         last_level2 = level2[level2.index <= last_bid_ask.index.max()]
-        return PredictLowHighFeatures.features_of(last_bid_ask, last_level2, candles_features)
+        return PredictLowHighFeatures.features_of(last_bid_ask, last_level2, candles_features, past_window=past_window)
 
     @staticmethod
     def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame,
-                            predict_window=default_predict_window, past_window=default_past_window) \
+                            predict_window: str, past_window: str) \
             -> (pd.DataFrame, pd.DataFrame):
         features = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features, past_window)
         targets = PredictLowHighFeatures.targets_of(bid_ask, predict_window)
@@ -34,7 +34,7 @@ class PredictLowHighFeatures:
 
     @staticmethod
     def features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame,
-                    past_window: str = default_past_window):
+                    past_window: str):
         if bid_ask.empty or level2.empty or candles_features.empty:
             return pd.DataFrame()
         l2_features = Level2Features().level2_buckets(level2)
@@ -47,7 +47,7 @@ class PredictLowHighFeatures:
         return features.dropna()
 
     @staticmethod
-    def targets_of(bid_ask: pd.DataFrame, predict_window: str = default_predict_window) -> pd.DataFrame:
+    def targets_of(bid_ask: pd.DataFrame, predict_window: str) -> pd.DataFrame:
         # Calculate <bid or ask>_<min or max>_fut
         rolling_max = bid_ask[["bid", "ask"]][::-1].rolling(predict_window, closed='right').max()[::-1] \
             .add_suffix("_max_fut")

@@ -53,6 +53,7 @@ class StrategyStub(PredictLowHighStrategyBase):
         conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
                 "pytrade2.data.dir": "tmp",
                 "pytrade2.strategy.predict.window": "10s",
+                "pytrade2.strategy.past.window": "1s",
                 "pytrade2.strategy.history.min.window": "10s",
                 "pytrade2.strategy.history.max.window": "10s",
 

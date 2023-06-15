@@ -45,6 +45,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
+        self.past_window = config["pytrade2.strategy.past.window"]
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
         self.learn_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval']) \
@@ -354,7 +355,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, self.candles_features)
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, self.candles_features, past_window=self.past_window)
         return X, self.X_pipe.transform(X)
 
     def learn(self):

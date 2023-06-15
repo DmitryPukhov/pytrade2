@@ -7,6 +7,7 @@ from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatur
 
 
 class TestPredictLowHighFeatures(TestCase):
+    past_window="10s"
 
     def test_last_features_of(self):
         bid_ask = pd.DataFrame([
@@ -31,7 +32,7 @@ class TestPredictLowHighFeatures(TestCase):
         ]).set_index("datetime", drop=False)
 
         # Call
-        actual = PredictLowHighFeatures.last_features_of(bid_ask, 1, level2, candles_features)
+        actual = PredictLowHighFeatures.last_features_of(bid_ask, 1, level2, candles_features, past_window="10s")
         # Assert
         self.assertListEqual(actual.index.to_pydatetime().tolist(),
                              [datetime.fromisoformat("2023-03-17 15:56:15")])
@@ -57,7 +58,7 @@ class TestPredictLowHighFeatures(TestCase):
 
         # Call
         actual_features, actual_targets = PredictLowHighFeatures.features_targets_of(bid_ask, level2, candles_features,
-                                                                                     "10s")
+                                                                                     "10s", "10s")
         self.assertListEqual(actual_features.index.values.tolist(), actual_targets.index.values.tolist())
 
     def test_features_of__merge_bidask_level2(self):
@@ -155,7 +156,7 @@ class TestPredictLowHighFeatures(TestCase):
         ]).set_index("datetime")
 
         # Call
-        actual = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features)
+        actual = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features, past_window=self.past_window)
 
         self.assertListEqual([6, 10], actual["spread"].dropna().values.tolist())
         self.assertListEqual([1, 2], actual["bid_diff"].dropna().values.tolist())
@@ -171,11 +172,11 @@ class TestPredictLowHighFeatures(TestCase):
         level2 = bid_ask  # columns does not matter here
         candles_features = bid_ask  # columns does not matter here
         # Empty level2 => empty features
-        self.assertTrue(PredictLowHighFeatures.features_of(bid_ask, pd.DataFrame(), candles_features).empty)
+        self.assertTrue(PredictLowHighFeatures.features_of(bid_ask, pd.DataFrame(), candles_features, past_window=self.past_window ).empty)
         # Empty bidask => empty features
-        self.assertTrue(PredictLowHighFeatures.features_of(pd.DataFrame(), level2, candles_features).empty)
+        self.assertTrue(PredictLowHighFeatures.features_of(pd.DataFrame(), level2, candles_features, past_window=self.past_window).empty)
         # Empty candles => empty features
-        self.assertTrue(PredictLowHighFeatures.features_of(bid_ask, level2, pd.DataFrame()).empty)
+        self.assertTrue(PredictLowHighFeatures.features_of(bid_ask, level2, pd.DataFrame(), past_window=self.past_window).empty)
 
     def test_features_of__should_be_empty_if_bidask_hasnot_prev_level2(self):
         bid_ask = pd.DataFrame([
@@ -188,5 +189,5 @@ class TestPredictLowHighFeatures(TestCase):
         ])
         candles_features = pd.DataFrame(
             [{"datetime": datetime.fromisoformat("2023-03-18 09:20:01"), "doesntmatter": 1}])
-        actual = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features)
+        actual = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features, past_window=self.past_window)
         self.assertTrue(actual.empty)
