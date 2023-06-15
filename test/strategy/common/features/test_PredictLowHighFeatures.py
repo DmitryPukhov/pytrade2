@@ -82,7 +82,7 @@ class TestPredictLowHighFeatures(TestCase):
         ]).set_index("datetime")
 
         # Call.
-        actual_features = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features)
+        actual_features = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features, "1s")
 
         # First level2 is at 15:56:03, so features with level2 will start from 15:56:03
         self.assertListEqual(actual_features.index.to_pydatetime().tolist(),

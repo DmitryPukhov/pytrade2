@@ -5,12 +5,13 @@ import pandas as pd
 class BidAskFeatures:
 
     @staticmethod
-    def bid_ask_features_of(bid_ask: pd.DataFrame) -> pd.DataFrame:
-        df = bid_ask[[]].copy()
-        df["spread"] = bid_ask["ask"] - bid_ask["bid"]
+    def bid_ask_features_of(bid_ask: pd.DataFrame, past_window: str) -> pd.DataFrame:
+        df = bid_ask[[]].copy()  # df without columns, just bidask index
+        agg = bid_ask.rolling(past_window).agg({"bid": "mean", "bid_vol": "sum", "ask": "mean", "ask_vol": "sum"})
         # Differences instead of absolute values
-        diff_cols = ["bid", "bid_vol", "ask", "ask_vol"]
-        df[[f"{c}_diff" for c in diff_cols]] = bid_ask[diff_cols].diff()
+        bidask_cols = ["bid", "bid_vol", "ask", "ask_vol"]
+        df[[f"{c}_diff" for c in bidask_cols]] = agg[bidask_cols].diff()
+        df["spread"] = agg["ask"] - bid_ask["bid"]
         return df
 
     @staticmethod

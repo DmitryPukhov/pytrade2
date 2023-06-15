@@ -10,18 +10,21 @@ class PredictLowHighFeatures:
     Feature engineering for PredictLowHighStrategy
     """
     default_predict_window = "10s"
+    default_past_window = "10s"
 
     @staticmethod
-    def last_features_of(bid_ask: pd.DataFrame,  n: int, level2: pd.DataFrame, candles_features: pd.DataFrame) -> pd.DataFrame:
+    def last_features_of(bid_ask: pd.DataFrame, n: int, level2: pd.DataFrame,
+                         candles_features: pd.DataFrame) -> pd.DataFrame:
         # Need 2 last records because features contain diff.
         last_bid_ask = bid_ask.tail(n + 1)
         last_level2 = level2[level2.index <= last_bid_ask.index.max()]
         return PredictLowHighFeatures.features_of(last_bid_ask, last_level2, candles_features)
 
     @staticmethod
-    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame, predict_window=default_predict_window) \
+    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame,
+                            predict_window=default_predict_window, past_window=default_past_window) \
             -> (pd.DataFrame, pd.DataFrame):
-        features = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features)
+        features = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features, past_window)
         targets = PredictLowHighFeatures.targets_of(bid_ask, predict_window)
         merged = pd.merge_asof(features, targets, left_index=True, right_index=True, direction="forward") \
             .dropna()
@@ -30,12 +33,13 @@ class PredictLowHighFeatures:
         return features, targets
 
     @staticmethod
-    def features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame):
+    def features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame,
+                    past_window: str = default_past_window):
         if bid_ask.empty or level2.empty or candles_features.empty:
             return pd.DataFrame()
         l2_features = Level2Features().level2_buckets(level2)
         bid_ask_features = pd.merge(BidAskFeatures.time_features_of(bid_ask),
-                                    BidAskFeatures.bid_ask_features_of(bid_ask),
+                                    BidAskFeatures.bid_ask_features_of(bid_ask, past_window),
                                     left_index=True, right_index=True, sort=True)
         features = pd.merge_asof(bid_ask_features, l2_features, left_index=True, right_index=True, direction="backward")
         # features.drop(["symbol", "datetime"], axis=1, inplace=True)

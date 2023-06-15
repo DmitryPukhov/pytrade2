@@ -16,7 +16,7 @@ class TestBidAskFeatures(TestCase):
              "bid": 2, "bid_vol": 4, "ask": 6, "ask_vol": 8}
         ]).set_index("datetime", drop=False)
         # Call
-        actual_features = BidAskFeatures.bid_ask_features_of(bid_ask).fillna(-1)
+        actual_features = BidAskFeatures.bid_ask_features_of(bid_ask, "1s").fillna(-1)
         #self.assertEqual([3, 6], actual_features["ask"].values.tolist())
         self.assertEqual([-1, 1.0], actual_features["bid_diff"].values.tolist())
         self.assertEqual([-1, 2.0], actual_features["bid_vol_diff"].values.tolist())
