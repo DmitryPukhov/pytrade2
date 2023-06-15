@@ -29,7 +29,7 @@ class CandlesStrategy:
     def read_candles_or_skip(self):
         """ If time elapsed, read candles from binance."""
 
-        read_interval = pd.Timedelta(self.candles_fast_interval)
+        read_interval = pd.Timedelta("60s")
         elapsed = datetime.utcnow() - self.last_candles_read_time
         if elapsed >= read_interval:
             self._log.debug(f"Reading last {self.ticker} candles from binance")
