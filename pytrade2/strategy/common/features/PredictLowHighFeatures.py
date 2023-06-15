@@ -37,7 +37,7 @@ class PredictLowHighFeatures:
                     past_window: str):
         if bid_ask.empty or level2.empty or candles_features.empty:
             return pd.DataFrame()
-        l2_features = Level2Features().level2_buckets(level2)
+        l2_features = Level2Features().level2_buckets(level2, past_window=past_window)
         bid_ask_features = pd.merge(BidAskFeatures.time_features_of(bid_ask),
                                     BidAskFeatures.bid_ask_features_of(bid_ask, past_window),
                                     left_index=True, right_index=True, sort=True)

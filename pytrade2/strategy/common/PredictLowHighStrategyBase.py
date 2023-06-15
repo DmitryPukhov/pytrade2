@@ -371,7 +371,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
                 candles_features = self.candles_features.copy()
 
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
-                bid_ask, level2, candles_features, self.predict_window)
+                bid_ask, level2, candles_features, self.predict_window, self.past_window)
 
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, "
