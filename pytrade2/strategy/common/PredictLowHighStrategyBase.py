@@ -38,6 +38,9 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         self.model = None
         self.broker = None
 
+        self.price_precision = config["pytrade2.price.precision"]
+        self.amount_precision = config["pytrade2.amount.precision"]
+
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
         PersistableStateStrategy.__init__(self, config)
         self.new_data_event: Event = Event()
@@ -326,10 +329,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         if is_buy:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
+            stop_loss_adj = min(stop_loss_adj, round(ask * (1-self.stop_loss_min_coeff), self.price_precision))
             return 1, ask, stop_loss_adj, ask + buy_profit
         elif is_sell:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
+            stop_loss_adj = max(stop_loss_adj, round(bid * (1+self.stop_loss_min_coeff), self.price_precision))
             return -1, bid, stop_loss_adj, bid - sell_profit
         else:
             # No action

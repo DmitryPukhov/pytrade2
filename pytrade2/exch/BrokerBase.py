@@ -19,8 +19,8 @@ class BrokerBase:
     def __init__(self, config: Dict[str, str]):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
-        self.price_precision = 2
-        self.amount_precision = 2
+        self.price_precision = config["pytrade2.price.precision"]
+        self.amount_precision = config["pytrade2.amount.precision"]
 
         self.min_trade_interval = timedelta(seconds=10)
         self.last_trade_time = datetime.utcnow() - self.min_trade_interval

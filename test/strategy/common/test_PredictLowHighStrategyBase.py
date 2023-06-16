@@ -121,6 +121,19 @@ class TestPredictLowHighStrategyBase(TestCase):
                                                                                ask_max_fut=100)
         self.assertEqual(1, actual_signal)
 
+    def test_open_signal_buy_should_adjust_stop_loss(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = StrategyStub()
+        strategy.profit_min_coeff = 0.5
+        strategy.stop_loss_min_coeff = 0.1
+
+        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=0, ask=100, bid_min_fut=100,
+                                                                               bid_max_fut=150, ask_min_fut=100,
+                                                                               ask_max_fut=100)
+        self.assertEqual(1, actual_signal)
+        self.assertEqual(90, actual_loss)
+
+
     def test_open_signal_sell(self):
         # Strategy with profit/loss ratio = 4
         strategy = StrategyStub()
@@ -180,3 +193,15 @@ class TestPredictLowHighStrategyBase(TestCase):
                                                                                bid_max_fut=100, ask_min_fut=50,
                                                                                ask_max_fut=100)
         self.assertEqual(-1, actual_signal)
+
+    def test_open_signal_sell_should_adjust_stop_loss(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = StrategyStub()
+        strategy.profit_min_coeff = 0.5
+        strategy.stop_loss_min_coeff = 0.1
+
+        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=100, ask=100, bid_min_fut=100,
+                                                                               bid_max_fut=100, ask_min_fut=50,
+                                                                               ask_max_fut=100)
+        self.assertEqual(-1, actual_signal)
+        self.assertEqual(110, actual_loss)
