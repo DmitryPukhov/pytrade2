@@ -16,20 +16,10 @@ class HuobiRestClient:
     https://huobiapi.github.io/docs/coin_margined_swap/v1/en/#introduction
     """
 
-    def __init__(self):
+    def __init__(self, access_key:str, secret_key: str):
         self._log = logging.getLogger(self.__class__.__name__)
-
-        # todo: rewrite to read normal config
-        strategy = "SimpleKerasStrategy"
-        cfgpath = f"../deploy/yandex_cloud/secret/{strategy.lower()}.yaml"
-        with open(cfgpath, "r") as file:
-            print(f"Reading config from {cfgpath}")
-            cfg = yaml.safe_load(file)
-        # Get keys from config
-        self.access_key = cfg["pytrade2.exchange.huobi.connector.key"]
-        self.secret_key = cfg["pytrade2.exchange.huobi.connector.secret"]
-        # coin-swap, futures
-        # self.host = "api.hbdm.com"
+        self.access_key, self.secret_key = access_key,secret_key
+        # Futures, coins url
         self.host = 'api.hbdm.vn'
 
     @staticmethod

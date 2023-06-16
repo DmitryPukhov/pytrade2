@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from huobi.client.account import AccountClient
 from huobi.client.algo import AlgoClient
@@ -7,6 +8,7 @@ from huobi.client.trade import TradeClient
 from huobi.connection.impl.websocket_manage import WebsocketManage
 from huobi.utils import PrintBasic
 
+from exch.huobi.HuobiRestClient import HuobiRestClient
 from exch.huobi.broker.spot.HuobiBrokerSpot import HuobiBrokerSpot
 from exch.huobi.feed.HuobiCandlesFeed import HuobiCandlesFeed
 from exch.huobi.feed.HuobiWebsocketFeed import HuobiWebsocketFeed
@@ -22,13 +24,14 @@ class HuobiExchange:
         self.config = config
 
         # Attrs for lazy initialization
-        self.__market_client: MarketClient = None
-        self.__trade_client: TradeClient = None
-        self.__algo_client: AlgoClient = None
-        self.__account_client: AccountClient = None
-        self.__broker: HuobiBrokerSpot = None
-        self.__websocket_feed: HuobiWebsocketFeed = None
-        self.__candles_feed: HuobiCandlesFeed = None
+        self.__rest_client: Optional[HuobiRestClient] = None
+        self.__market_client: Optional[MarketClient] = None
+        self.__trade_client: Optional[TradeClient] = None
+        self.__algo_client: Optional[AlgoClient] = None
+        self.__account_client: Optional[AccountClient] = None
+        self.__broker: Optional[HuobiBrokerSpot] = None
+        self.__websocket_feed: Optional[HuobiWebsocketFeed] = None
+        self.__candles_feed: Optional[HuobiCandlesFeed] = None
         # Supress rubbish logging
         logging.getLogger("huobi-client").setLevel("CRITICAL")
         logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
@@ -59,6 +62,11 @@ class HuobiExchange:
         key = self.config["pytrade2.exchange.huobi.connector.key"]
         secret = self.config["pytrade2.exchange.huobi.connector.secret"]
         return key, secret
+
+    def _rest_client(self):
+        if not self.__rest_client:
+            self.__rest_client = HuobiRestClient(*self._key_secret())
+        return self.__rest_client
 
     def _market_client(self):
         if not self.__market_client:
