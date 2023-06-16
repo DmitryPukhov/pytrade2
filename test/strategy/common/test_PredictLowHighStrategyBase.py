@@ -1,20 +1,13 @@
-import logging
 import os
 import sys
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import datetime
 from unittest import TestCase
 
-import numpy as np
 import pandas as pd
-
-from exch.binance.broker.BinanceBroker import BinanceBroker
-from model.Trade import Trade
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 from StrategyStub import StrategyStub
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
-from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
 class TestPredictLowHighStrategyBase(TestCase):
@@ -106,16 +99,27 @@ class TestPredictLowHighStrategyBase(TestCase):
         self.assertIsNotNone(strategy.broker.cur_trade)
         self.assertEqual(1, strategy.broker.cur_trade.direction())
 
-    def test_open_signal_not_buy_low_ratio(self):
+    def test_open_signal_should_not_buy_min_profit(self):
         # Strategy with profit/loss ratio = 4
         strategy = StrategyStub()
+        strategy.profit_min_coeff = 0.5
 
-        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_min_fut=9,
-                                                                               bid_max_fut=18.9, ask_min_fut=0,
-                                                                               ask_max_fut=0)
+        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=0, ask=100, bid_min_fut=100,
+                                                                               bid_max_fut=149, ask_min_fut=100,
+                                                                               ask_max_fut=100)
         self.assertEqual(0, actual_signal)
         self.assertIsNone(actual_loss)
         self.assertIsNone(actual_profit)
+
+    def test_open_signal_should_buy_gte_min_profit(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = StrategyStub()
+        strategy.profit_min_coeff = 0.5
+
+        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=0, ask=100, bid_min_fut=100,
+                                                                               bid_max_fut=150, ask_min_fut=100,
+                                                                               ask_max_fut=100)
+        self.assertEqual(1, actual_signal)
 
     def test_open_signal_sell(self):
         # Strategy with profit/loss ratio = 4
@@ -154,3 +158,25 @@ class TestPredictLowHighStrategyBase(TestCase):
         self.assertEqual(0, actual_signal)
         self.assertIsNone(actual_loss)
         self.assertIsNone(actual_profit)
+
+    def test_open_signal_should_not_sell_min_profit(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = StrategyStub()
+        strategy.profit_min_coeff = 0.5
+
+        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=100, ask=100, bid_min_fut=100,
+                                                                               bid_max_fut=149, ask_min_fut=51,
+                                                                               ask_max_fut=100)
+        self.assertEqual(0, actual_signal)
+        self.assertIsNone(actual_loss)
+        self.assertIsNone(actual_profit)
+
+    def test_open_signal_should_sell_le_min_profit(self):
+        # Strategy with profit/loss ratio = 4
+        strategy = StrategyStub()
+        strategy.profit_min_coeff = 0.5
+
+        actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=100, ask=100, bid_min_fut=100,
+                                                                               bid_max_fut=100, ask_min_fut=50,
+                                                                               ask_max_fut=100)
+        self.assertEqual(-1, actual_signal)

@@ -76,6 +76,9 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
         self.stop_loss_max_coeff = config.get("pytrade2.strategy.stoploss.max.coeff",
                                               float('inf'))
+        # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
+        self.profit_min_coeff = config.get("pytrade2.strategy.profit.min.coeff", 0)
+
         self.trade_check_interval = timedelta(seconds=10)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.min_xy_len = 2
@@ -302,13 +305,29 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         sell_profit = bid - ask_min_fut
         sell_loss = ask_max_fut - bid
 
-        if buy_profit / buy_loss >= self.profit_loss_ratio \
-                and self.stop_loss_max_coeff * ask >= abs(buy_loss) >= self.stop_loss_min_coeff * ask:
+        # Buy signal
+        # Not zeroes and ratio is ok and max/min are ok
+        is_buy_ratio = buy_profit > 0 and (buy_loss == 0 or buy_profit / buy_loss >= self.profit_loss_ratio)
+        is_buy_loss = abs(buy_loss) < self.stop_loss_max_coeff * ask
+        is_buy_profit = abs(buy_profit) >= self.profit_min_coeff * ask
+        is_buy = is_buy_ratio and is_buy_loss and is_buy_profit
+
+        # Sell signal
+        # Not zeroes and ratio is ok and max/min are ok
+        is_sell_ratio = sell_profit > 0 and (sell_loss == 0 or sell_profit / sell_loss >= self.profit_loss_ratio)
+        is_sell_loss = abs(sell_loss) < self.stop_loss_max_coeff * bid
+        is_sell_profit = abs(sell_profit) >= self.profit_min_coeff * bid
+        is_sell = is_sell_ratio and is_sell_loss and is_sell_profit
+
+        # This should not happen, but let's handle it and clear the flags
+        if is_buy and is_sell:
+            is_buy = is_sell = False
+
+        if is_buy:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
             return 1, ask, stop_loss_adj, ask + buy_profit
-        elif sell_profit / sell_loss >= self.profit_loss_ratio \
-                and self.stop_loss_max_coeff * bid >= abs(sell_loss) >= self.stop_loss_min_coeff * bid:
+        elif is_sell:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
             return -1, bid, stop_loss_adj, bid - sell_profit
@@ -355,7 +374,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, self.candles_features, past_window=self.past_window)
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, self.candles_features,
+                                                    past_window=self.past_window)
         return X, self.X_pipe.transform(X)
 
     def learn(self):

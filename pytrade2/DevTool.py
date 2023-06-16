@@ -8,6 +8,7 @@ from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 import asyncio
 
+from huobi.constant import OrderType, OrderSource
 from websocket import WebSocket
 
 
@@ -15,7 +16,8 @@ class DevTool():
     """"" For dev purpose only, don't call or run from the app """
     def __init__(self):
         # Read config
-        strategy = "SimpleKerasStrategy"
+        #strategy = "SimpleKerasStrategy"
+        strategy = "LSTMStrategy2"
         cfgpath = f"../deploy/yandex_cloud/secret/{strategy.lower()}.yaml"
         with open(cfgpath, "r") as file:
             print(f"Reading config from {cfgpath}")
@@ -41,15 +43,18 @@ class DevTool():
 
 if __name__ == "__main__":
 
-    res= requests.get(url="https://api.hbdm.com/swap-ex/market/depth?contract_code=BTC-USD&type=step5")
-
-    wssurl="wss://api.hbdm.com/swap-ws"
-    ws=WebSocket()
-    ws.connect(url=wssurl)
-    print(ws.getstatus())
-    ws.close()
-
-
+    tool = DevTool()
+    # tool.print_balance("Before")
+    # orderid1 = tool.trade_client.create_order(
+    #     symbol="btcusdt",
+    #     account_id=tool.account_id,
+    #     order_type=OrderType.BUY_MARKET,
+    #     amount=12, # For sell in USD, for buy in btc
+    #     price=0,
+    #     source=OrderSource.API)
+    # print(f"Order1 id: {orderid1}")
+    # tool.print_balance("After")
+#
 
 
     # orderid1 = tool.trade_client.create_order(
