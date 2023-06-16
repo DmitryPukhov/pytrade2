@@ -400,7 +400,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, "
-                f"new bid_ask: {bid_ask.shape[0]}, new level2: {level2.shape[0]}, "
+                f"bid_ask len: {bid_ask.shape[0]}, level2 len: {level2.shape[0]}, "
                 f"last bid_ask at: {bid_ask.index[-1]}, last level2 at: {level2.index[-1]}, "
                 f"last candle at: {candles_features.index[-1]}")
             if len(train_X.index) >= self.min_xy_len:
