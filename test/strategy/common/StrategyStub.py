@@ -6,7 +6,7 @@ from unittest import TestCase
 import numpy as np
 import pandas as pd
 
-from exch.binance.broker.BinanceBroker import BinanceBroker
+from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
 from model.Trade import Trade
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
@@ -20,7 +20,7 @@ class ModelStub:
         return np.array([1, 2, 3, 4])
 
 
-class BrokerStub(BinanceBroker):
+class BrokerStub(BinanceBrokerSpot):
     """ Broker emulation, don't trade """
 
     def __init__(self):

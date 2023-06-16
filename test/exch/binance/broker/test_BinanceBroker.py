@@ -4,20 +4,22 @@ from typing import Dict
 from unittest import mock
 from unittest.mock import Mock, MagicMock
 
-from exch.binance.broker.BinanceBroker import BinanceBroker
-from exch.BrokerBase import BrokerBase
+from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
+from exch.BrokerSpotBase import BrokerSpotBase
 
 
 class TestBinanceBroker(unittest.TestCase):
-    config: Dict[str, any] = {"pytrade2.broker.trade.allow": True}
+    config: Dict[str, any] = {"pytrade2.broker.trade.allow": True,
+                              "pytrade2.price.precision": 2,
+                              "pytrade2.amount.precision": 2}
 
     @staticmethod
     def __broker__init_db__(self, cfg):
         self.db_session = MagicMock()
 
     def setUp(self) -> None:
-        mock.patch.object(BrokerBase, '__init_db__', self.__broker__init_db__).start()
-        mock.patch.object(BrokerBase, "read_last_opened_trade", lambda self: None).start()
+        mock.patch.object(BrokerSpotBase, '__init_db__', self.__broker__init_db__).start()
+        mock.patch.object(BrokerSpotBase, "read_last_opened_trade", lambda self: None).start()
 
     def test_create_cur_trade__not_filled(self):
         # Binance client mock
@@ -27,7 +29,7 @@ class TestBinanceBroker(unittest.TestCase):
 
         # Class under test
 
-        broker = BinanceBroker(client, TestBinanceBroker.config)
+        broker = BinanceBrokerSpot(client, TestBinanceBroker.config)
 
         # Test call
         broker.create_cur_trade(symbol="BTCUSDT",
@@ -53,7 +55,7 @@ class TestBinanceBroker(unittest.TestCase):
                                                   "orders": [{"orderId": 3}, {"orderId": 4}]})
 
         # Class under test
-        broker = BinanceBroker(client, TestBinanceBroker.config)
+        broker = BinanceBrokerSpot(client, TestBinanceBroker.config)
 
         # Test call
         broker.create_cur_trade(symbol="BTCUSDT",

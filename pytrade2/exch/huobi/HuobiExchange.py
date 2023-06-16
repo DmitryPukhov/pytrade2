@@ -7,8 +7,7 @@ from huobi.client.trade import TradeClient
 from huobi.connection.impl.websocket_manage import WebsocketManage
 from huobi.utils import PrintBasic
 
-from exch.huobi.HuobiTools import HuobiTools
-from exch.huobi.broker.HuobiBroker import HuobiBroker
+from exch.huobi.broker.spot.HuobiBrokerSpot import HuobiBrokerSpot
 from exch.huobi.feed.HuobiCandlesFeed import HuobiCandlesFeed
 from exch.huobi.feed.HuobiWebsocketFeed import HuobiWebsocketFeed
 
@@ -27,7 +26,7 @@ class HuobiExchange:
         self.__trade_client: TradeClient = None
         self.__algo_client: AlgoClient = None
         self.__account_client: AccountClient = None
-        self.__broker: HuobiBroker = None
+        self.__broker: HuobiBrokerSpot = None
         self.__websocket_feed: HuobiWebsocketFeed = None
         self.__candles_feed: HuobiCandlesFeed = None
         # Supress rubbish logging
@@ -46,14 +45,14 @@ class HuobiExchange:
             self.__candles_feed = HuobiCandlesFeed(self._market_client())
         return self.__candles_feed
 
-    def broker(self) -> HuobiBroker:
+    def broker(self) -> HuobiBrokerSpot:
         """ Binance broker lazy creation """
         if not self.__broker:
-            self.__broker = HuobiBroker(config=self.config,
-                                        account_client=self._account_client(),
-                                        trade_client=self._trade_client(),
-                                        market_client=self._market_client(),
-                                        algo_client=self._algo_client())
+            self.__broker = HuobiBrokerSpot(config=self.config,
+                                            account_client=self._account_client(),
+                                            trade_client=self._trade_client(),
+                                            market_client=self._market_client(),
+                                            algo_client=self._algo_client())
         return self.__broker
 
     def _key_secret(self):

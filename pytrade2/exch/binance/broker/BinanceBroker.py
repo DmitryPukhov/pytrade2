@@ -5,12 +5,12 @@ from typing import Dict, Optional
 
 from binance.spot import Spot as Client
 
-from exch.BrokerBase import BrokerBase
+from exch.BrokerSpotBase import BrokerSpotBase
 from model.Trade import Trade
 from model.TradeStatus import TradeStatus
 
 
-class BinanceBroker(BrokerBase):
+class BinanceBrokerSpot(BrokerSpotBase):
     """ Trading functions for Binance """
 
     def __init__(self, client: Client, config: Dict[str, str]):

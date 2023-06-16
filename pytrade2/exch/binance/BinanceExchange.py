@@ -3,7 +3,7 @@ import logging
 from binance.spot import Spot
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
-from exch.binance.broker.BinanceBroker import BinanceBroker
+from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
 from exch.binance.feed.BinanceCandlesFeed import BinanceCandlesFeed
 from exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 
@@ -16,7 +16,7 @@ class BinanceExchange:
         # Attrs for lazy initialization
         self.__spot_client: Spot = None
         self.__websocket_client: SpotWebsocketClient = None
-        self.__broker: BinanceBroker = None
+        self.__broker: BinanceBrokerSpot = None
         self.__websocket_feed: BinanceWebsocketFeed = None
         self.__candles_feed: BinanceCandlesFeed = None
 
@@ -32,10 +32,10 @@ class BinanceExchange:
             self.__candles_feed = BinanceCandlesFeed(self._spot_client())
         return self.__candles_feed
 
-    def broker(self) -> BinanceBroker:
+    def broker(self) -> BinanceBrokerSpot:
         """ Binance broker lazy creation """
         if not self.__broker:
-            self.__broker = BinanceBroker(self._spot_client(), self.config)
+            self.__broker = BinanceBrokerSpot(self._spot_client(), self.config)
         return self.__broker
 
     def _websocket_client(self) -> SpotWebsocketClient:

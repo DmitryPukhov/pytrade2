@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from typing import Dict
 
-from exch.BrokerBase import BrokerBase
+from exch.BrokerSpotBase import BrokerSpotBase
 
 
 class Exchange:
@@ -30,7 +30,7 @@ class Exchange:
         # Get old or created exchange
         return self.exchanges[exch_name]
 
-    def broker(self, exch_name: str) -> BrokerBase:
+    def broker(self, exch_name: str) -> BrokerSpotBase:
         """ Get or create broker for given exchange"""
         return self.exchange(exch_name).broker()
 
