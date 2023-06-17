@@ -1,4 +1,5 @@
 import logging
+import re
 import traceback
 from datetime import datetime
 from typing import Dict
@@ -36,4 +37,27 @@ class HuobiWebSocketFeedHbdm:
             self._client.sub(sub_params)
 
     def on_socket_data(self, msg):
-        print(f"Got msg {msg}")
+        """ Got subscribed data from socket"""
+        try:
+            # Channel like "market.BTC-USDT.bbo"
+            ch = msg.get("ch")
+
+            # If bidask received
+            if ch and re.fullmatch("market\\..*\\.bbo", ch):
+                bidask = self.rawticker2model(msg["tick"])
+                for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
+                    consumer.on_ticker(bidask)
+        except Exception as e:
+            self._log.error(e)
+
+    @staticmethod
+    def rawticker2model(tick: dict) -> Dict:
+        dt = datetime.utcfromtimestamp(tick["ts"] / 1000)
+        ticker = re.match("market\\.(.*)\\.bbo", tick["ch"]).group(1)
+        return {"datetime": dt,
+                "symbol": ticker,
+                "bid": tick["bid"][0],
+                "bid_vol": tick["bid"][1],
+                "ask": tick["ask"][0],
+                "ask_vol": tick["ask"][1]
+                }
