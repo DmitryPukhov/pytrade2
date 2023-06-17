@@ -10,6 +10,7 @@ from huobi.client.trade import TradeClient
 
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
 
 
 class DevTool():
@@ -18,18 +19,23 @@ class DevTool():
     def __init__(self):
         # Read config
         strategy = "SimpleKerasStrategy"
-        cfgpath = f"../deploy/yandex_cloud/secret/{strategy.lower()}.yaml"
-        with open(cfgpath, "r") as file:
-            print(f"Reading config from {cfgpath}")
-            cfg = yaml.safe_load(file)
+        yccfgdir = "../deploy/yandex_cloud/secret"
+        devcfgdir = "../pytrade2/cfg"
+        cfgpaths = [f"{devcfgdir}/app-defaults.yaml", f"{yccfgdir}/{strategy.lower()}.yaml"]
+        self.config = {}
+        for cfgpath in cfgpaths:
+            with open(cfgpath, "r") as file:
+                print(f"Reading config from {cfgpath}")
+                curcfg = yaml.safe_load(file)
+                self.config.update(curcfg)
         # Get keys from config
-        key = cfg["pytrade2.exchange.huobi.connector.key"]
-        secret = cfg["pytrade2.exchange.huobi.connector.secret"]
+        key = self.config["pytrade2.exchange.huobi.connector.key"]
+        secret = self.config["pytrade2.exchange.huobi.connector.secret"]
 
         self.trade_client = TradeClient(api_key=key, secret_key=secret)
         self.market_client = MarketClient(api_key=key, secret_key=secret)
         self.account_client = AccountClient(api_key=key, secret_key=secret)
-        self.account_id = cfg["pytrade2.broker.huobi.account.id"]
+        self.account_id = self.config["pytrade2.broker.huobi.account.id"]
 
         self.key, self.secret = key, secret
 
@@ -88,12 +94,13 @@ class DevTool():
             # }
             sub_params = {
                 "sub": "market.BTC-USDT.trade.detail"
-                #"id": "123"
+                # "id": "123"
             }
             usdt_swap.sub(sub_params)
             time.sleep(100)
             # usdt_swap.close()
             print('end usdt-swap ws.\n')
+
     def test_ws_swap(self):
         access_key, secret_key = self.key, self.secret
 
@@ -117,7 +124,7 @@ class DevTool():
             # }
             sub_params = {
                 "sub": "market.BTC-USD.trade.detail"
-                #"id": "123"
+                # "id": "123"
             }
             usdt_swap.sub(sub_params)
             time.sleep(100)
@@ -125,7 +132,6 @@ class DevTool():
             print('end usdt-swap ws.\n')
 
     def test_ws_client(self):
-
         access_key, secret_key = self.key, self.secret
 
         ################# spot
@@ -133,7 +139,6 @@ class DevTool():
         host = 'api.huobi.de.com'
         path = '/ws/v2'
         with HuobiWebSocketClient(host, path, access_key, secret_key, True) as spot:
-
             # only sub interface
             sub_params = {
                 "action": "sub",
@@ -148,7 +153,6 @@ class DevTool():
         host = 'api.hbdm.vn'
         path = '/notification'
         with HuobiWebSocketClient(host, path, access_key, secret_key, False) as future:
-
             # only sub interface
             sub_params = {
                 "op": "sub",
@@ -163,7 +167,6 @@ class DevTool():
         host = 'api.hbdm.vn'
         path = '/swap-notification'
         with HuobiWebSocketClient(host, path, access_key, secret_key, False) as coin_swap:
-
             # only sub interface
             sub_params = {
                 "op": "sub",
@@ -177,7 +180,7 @@ class DevTool():
         print('*****************\nstart usdt-swap ws.\n')
         host = 'api.hbdm.vn'
         path = '/linear-swap-notification'
-        with HuobiWebSocketClient(host, path, access_key, secret_key, False) as         usdt_swap:
+        with HuobiWebSocketClient(host, path, access_key, secret_key, False) as usdt_swap:
             # only sub interface
             sub_params = {
                 "op": "sub",
@@ -187,12 +190,21 @@ class DevTool():
             time.sleep(10)
             print('end usdt-swap ws.\n')
 
+    def new_hbdm_broker(self):
+        rc = HuobiRestClient(access_key=self.key, secret_key=self.secret)
+        ws = HuobiWebSocketClient(host="api.hbdm.vn", path="'/linear-swap-notification", access_key=self.key,
+                                  secret_key=self.secret, be_spot=False)
+        return HuobiBrokerHbdm(conf=self.config, rest_client=rc, ws_client=ws)
+
 
 if __name__ == "__main__":
     dt = DevTool()
+    broker = dt.new_hbdm_broker()
+    # res = broker.rest_client.post("/linear-swap-api/v1/swap_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
+    # print(res)
+    broker.create_cur_trade(symbol="BTC-USDT", direction=1, quantity=1, price=26900, stop_loss_price=26000,
+                            take_profit_price=28000)
     # hrc = HuobiRestClient(access_key=dt.key, secret_key=dt.secret)
     # print(hrc.get("/swap-api/v1/swap_contract_info", {"contract_code": "BTC-USD"}))
     dt.test_usdt()
-    #dt.test_ws_swap()
-
-
+    # dt.test_ws_swap()
