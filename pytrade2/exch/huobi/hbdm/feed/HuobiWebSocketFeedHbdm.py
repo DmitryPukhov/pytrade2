@@ -33,27 +33,62 @@ class HuobiWebSocketFeedHbdm:
         self._client.open()
         for ticker in self.tickers:
             self._log.info(f"Subscribing to {ticker} feed")
-            sub_params = {"sub": f"market.{ticker}.bbo"}
-            self._client.sub(sub_params)
+
+            # Sub bid ask, level2
+            for sub_params in [{"sub": f"market.{ticker}.bbo"},
+                               {"sub": f"market.{ticker}.depth.step0"}]:
+                self._log.info(f"Subscribing to {sub_params}")
+                self._client.sub(sub_params)
+
+    @staticmethod
+    def is_bidask(ch):
+        """ If channel name is bidask like market.BTC-USDT.bbo """
+        return re.fullmatch("market\\..*\\.bbo", ch)
+
+    @staticmethod
+    def is_level2(ch):
+        """ Is channel name is level2 like market.BTC-USDT.depth.step1"""
+        return re.fullmatch("market\\..*\\.depth\\.step\\d+", ch)
+
+    @staticmethod
+    def ticker_of_ch(ch):
+        return re.match("market\\.([\\w\\-]*)\\..*", ch).group(1)
 
     def on_socket_data(self, msg):
         """ Got subscribed data from socket"""
         try:
             # Channel like "market.BTC-USDT.bbo"
             ch = msg.get("ch")
-
+            if not ch:
+                return
             # If bidask received
-            if ch and re.fullmatch("market\\..*\\.bbo", ch):
+
+            if self.is_bidask(ch):
                 bidask = self.rawticker2model(msg["tick"])
                 for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
                     consumer.on_ticker(bidask)
+            elif self.is_level2(ch):
+                l2 = self.rawlevel2model(msg["tick"])
+                for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
+                    consumer.on_level2(l2)
         except Exception as e:
             self._log.error(e)
 
     @staticmethod
+    def rawlevel2model(tick: dict) -> Dict:
+        dt = datetime.utcfromtimestamp(tick["ts"] / 1000)
+        ticker = HuobiWebSocketFeedHbdm.ticker_of_ch(tick["ch"])
+
+        out = [{"datetime": dt, "symbol": ticker,
+                "bid": float(price), "bid_vol": float(vol)} for price, vol in tick["bids"]] + \
+              [{"datetime": dt, "symbol": ticker,
+                "ask": float(price), "ask_vol": float(vol)} for price, vol in tick["asks"]]
+        return out
+
+    @staticmethod
     def rawticker2model(tick: dict) -> Dict:
         dt = datetime.utcfromtimestamp(tick["ts"] / 1000)
-        ticker = re.match("market\\.(.*)\\.bbo", tick["ch"]).group(1)
+        ticker = HuobiWebSocketFeedHbdm.ticker_of_ch(tick["ch"])
         return {"datetime": dt,
                 "symbol": ticker,
                 "bid": tick["bid"][0],
