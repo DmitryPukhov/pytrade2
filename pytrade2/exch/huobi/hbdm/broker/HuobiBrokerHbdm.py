@@ -1,9 +1,11 @@
 import logging
 import time
+from typing import Optional
 
 from exch.Broker import Broker
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from model.Trade import Trade
 
 
 class HuobiBrokerHbdm(Broker):
@@ -48,3 +50,27 @@ class HuobiBrokerHbdm(Broker):
             self._log.info(f"Got order event: {msg}")
         except Exception as e:
             self._log.error(e)
+
+    def create_cur_trade(self, symbol: str, direction: int,
+                         quantity: float,
+                         price: Optional[float],
+                         stop_loss_price: float,
+                         take_profit_price: Optional[float]) -> Optional[Trade]:
+        path = "/linear-swap-api/v1/swap_cross_order"
+        data = {"contract_code": symbol,
+                "contract_type": "swap",
+                "volume": quantity,
+                "direction": Trade.order_side_names[direction],
+                "price": price,
+                "order_price_type": "fok",
+                "tp_trigger_price": take_profit_price,
+                "tp_order_price_type": "market",
+                "sl_trigger_price": stop_loss_price,
+                "sl_order_price_type": "market"
+                }
+        res = self.rest_client.post(path=path, data=data)
+        if res["status"] == "ok":
+            order_id = res["order_id"]
+            self._log.info(f"Created {symbol} order, direction: {direction}, order_id: {order_id}")
+        else:
+            self._log.error(f"Error creating order: {res}")

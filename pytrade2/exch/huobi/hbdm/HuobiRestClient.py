@@ -16,9 +16,9 @@ class HuobiRestClient:
     https://huobiapi.github.io/docs/coin_margined_swap/v1/en/#introduction
     """
 
-    def __init__(self, access_key:str, secret_key: str):
+    def __init__(self, access_key: str, secret_key: str):
         self._log = logging.getLogger(self.__class__.__name__)
-        self.access_key, self.secret_key = access_key,secret_key
+        self.access_key, self.secret_key = access_key, secret_key
         # Futures, coins url
         self.host = 'api.hbdm.vn'
 
@@ -48,8 +48,10 @@ class HuobiRestClient:
         """ Make authorized GET request to given service with given parameters """
         try:
             # Compose url and headers
+            url = f'https://{self.host}{path}?'
+            self._log.debug(f"Doing get request to url: {url}..., params: {params}")
             url_suffix = self._auth_params_of('get', self.access_key, self.secret_key, self.host, path)
-            url = f'https://{self.host}{path}?{url_suffix}'
+            url = url + url_suffix
             headers = {'Content-type': 'application/x-www-form-urlencoded'}
             # Request
             res = requests.get(url, params=params, headers=headers)
@@ -63,8 +65,11 @@ class HuobiRestClient:
 
         try:
             # Compose url and headers
+            url = f'https://{self.host}{path}?'
+            self._log.debug(f"Doing post request to url: {url}..., data: {data}")
             url_suffix = self._auth_params_of('post', self.access_key, self.secret_key, self.host, path)
-            url = f'https://{self.host}{path}?{url_suffix}'
+            url = url + url_suffix
+            # url = f'https://{self.host}{path}?{url_suffix}'
             headers = {'Accept': 'application/json', 'Content-type': 'application/json'}
             # Post request to huobi rest service
             res = requests.post(url, json=data, headers=headers)

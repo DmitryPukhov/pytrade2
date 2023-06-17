@@ -18,23 +18,6 @@ class BrokerSpotBase(Broker):
     Orders management: buy, sell etc
     """
 
-    # def __init__(self, config: Dict[str, str]):
-    #     super().__init__(config)
-        # self._log.info(f"Allow trade: {self.allow_trade}")
-        #
-        # # Database
-        # self.__init_db__(config)
-        #
-        # # Load saved opened trade
-        # if self.allow_trade:
-        #     self.cur_trade = self.read_last_opened_trade()
-        #     if self.cur_trade:
-        #         self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
-        #         self.fix_cur_trade()
-        # else:
-        #     self._log.info("Opened trades not found")
-        # self._log.info(f"Completed init broker.")
-
     def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,
                          price: Optional[float],

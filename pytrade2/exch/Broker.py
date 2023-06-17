@@ -57,6 +57,13 @@ class Broker:
     def run(self):
         pass
 
+    def create_cur_trade(self, symbol: str, direction: int,
+                         quantity: float,
+                         price: Optional[float],
+                         stop_loss_price: float,
+                         take_profit_price: Optional[float]) -> Optional[Trade]:
+        raise NotImplementedError()
+
     def read_last_opened_trade(self) -> Trade:
         """ Returns current opened trade, stored in db or none """
         return self.db_session \
