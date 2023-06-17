@@ -39,7 +39,7 @@ class HuobiWebSocketClient:
         self._secret_key = secret_key
         self._be_spot = be_spot
         self._active_close = False
-        self._has_open = False
+        self.is_opened = False
         self._sub_str = None
         self._ws = None
         self.consumers = []
@@ -64,12 +64,11 @@ class HuobiWebSocketClient:
         t = threading.Thread(target=self._ws.run_forever, daemon=True)
         t.start()
 
-
     def _on_open(self, ws):
         print('ws open')
         signature_data = self._get_signature_data()  # signature data
         self._ws.send(json.dumps(signature_data))  # as json string to be send
-        self._has_open = True
+        self.is_opened = True
         for consumer in [c for c in self.consumers if hasattr(c, 'on_socket_open')]:
             consumer.on_socket_open()
 
@@ -146,13 +145,13 @@ class HuobiWebSocketClient:
                 pass
         else:
             pass
-        print(jdata)
+
         for consumer in self.consumers:
             consumer.on_socket_data(jdata)
 
     def _on_close(self, ws):
         print("ws close.")
-        self._has_open = False
+        self.is_opened = False
         if not self._active_close and self._sub_str is not None:
             self.open()
             self.sub(self._sub_str)
@@ -164,7 +163,7 @@ class HuobiWebSocketClient:
         if self._active_close:
             print('has close')
             return
-        while not self._has_open:
+        while not self.is_opened:
             time.sleep(1)
 
         self._sub_str = sub_str
@@ -174,5 +173,5 @@ class HuobiWebSocketClient:
     def close(self):
         self._active_close = True
         self._sub_str = None
-        self._has_open = False
+        self.is_opened = False
         self._ws.close()

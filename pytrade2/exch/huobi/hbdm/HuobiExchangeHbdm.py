@@ -15,8 +15,8 @@ class HuobiExchangeHbdm:
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.__rest_client: Optional[HuobiRestClient] = None
-        self.__websocket_client: Optional[HuobiWebSocketClient] = None
-
+        self.__websocket_client_market: Optional[HuobiWebSocketClient] = None
+        self.__websocket_client_broker: Optional[HuobiWebSocketClient] = None
 
         self.__websocket_feed: Optional[HuobiWebSocketFeedHbdm] = None
         self.__candles_feed: Optional[HuobiCandlesFeedHbdm] = None
@@ -29,8 +29,10 @@ class HuobiExchangeHbdm:
         return key, secret
 
     def broker(self):
+
         if not self.__broker:
-            self.__broker = HuobiBrokerHbdm(self.config, rest_client= self._rest_client(), ws_client= self._websocket_client())
+            self.__broker = HuobiBrokerHbdm(self.config, rest_client=self._rest_client(),
+                                            ws_client=self._websocket_client_broker())
         return self.__broker
 
     def candles_feed(self):
@@ -41,19 +43,29 @@ class HuobiExchangeHbdm:
     def websocket_feed(self) -> HuobiWebSocketFeedHbdm:
         """ Binance websocket feed lazy creation """
         if not self.__websocket_feed:
-            self.__websocket_feed = HuobiWebSocketFeedHbdm(config=self.config, client=self._websocket_client())
+            self.__websocket_feed = HuobiWebSocketFeedHbdm(config=self.config, client=self._websocket_client_market())
         return self.__websocket_feed
 
-    def _websocket_client(self) -> HuobiWebSocketClient:
-        if not self.__websocket_client:
+    def _websocket_client_market(self) -> HuobiWebSocketClient:
+        if not self.__websocket_client_market:
             # wss://api.hbdm.com/swap-ws
             key, secret = self._key_secret()
-            self.__websocket_client = HuobiWebSocketClient(host="api.hbdm.com",
-                                                           path="/linear-swap-ws",
-                                                           access_key=key,
-                                                           secret_key=secret,
-                                                           be_spot=False)
-        return self.__websocket_client
+            self.__websocket_client_market = HuobiWebSocketClient(host="api.hbdm.com",
+                                                                  path="/linear-swap-ws",
+                                                                  access_key=key,
+                                                                  secret_key=secret,
+                                                                  be_spot=False)
+        return self.__websocket_client_market
+
+    def _websocket_client_broker(self) -> HuobiWebSocketClient:
+        if not self.__websocket_client_broker:
+            key, secret = self._key_secret()
+            self.__websocket_client_broker = HuobiWebSocketClient(host="api.hbdm.com",
+                                                                  path="/linear-swap-notification",
+                                                                  access_key=key,
+                                                                  secret_key=secret,
+                                                                  be_spot=False)
+        return self.__websocket_client_broker
 
     def _rest_client(self):
         if not self.__rest_client:

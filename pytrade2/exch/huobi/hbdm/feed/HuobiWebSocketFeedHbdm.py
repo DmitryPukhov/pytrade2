@@ -42,8 +42,7 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
         """
         # Subscribe bid/ask
         self._client.open()
-        #self.sub_events()
-
+        self.sub_events()
 
     def sub_events(self):
         for ticker in self.tickers:

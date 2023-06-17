@@ -65,6 +65,35 @@ class DevTool():
         params = {'contract_code': 'btc-usdt'}
         print('usdt-swap:{}\n'.format(hc.post(path, params)))
 
+    def test_usdt(self):
+        access_key, secret_key = self.key, self.secret
+
+        ################# usdt-swap
+        print('*****************\nstart usdt-swap ws.\n')
+        # wss://api.hbdm.com/swap-ws
+        host = 'api.hbdm.com'
+        path = '/linear-swap-ws'
+        with HuobiWebSocketClient(host, path, access_key, secret_key, False) as usdt_swap:
+            # usdt_swap = HuobiWebSocketClient(host, path, access_key, secret_key, False)
+            # usdt_swap.open()
+
+            # sub depth: https://huobiapi.github.io/docs/coin_margined_swap/v1/en/#subscribe-market-depth-data
+            # sub_params = {
+            #     "sub": "market.BTC-USD.depth.step15"
+            #     #"id": "123"
+            # }
+            # sub_params = {
+            #     "sub": "market.BTC-USD.bbo"
+            #     #"id": "123"
+            # }
+            sub_params = {
+                "sub": "market.BTC-USDT.trade.detail"
+                #"id": "123"
+            }
+            usdt_swap.sub(sub_params)
+            time.sleep(100)
+            # usdt_swap.close()
+            print('end usdt-swap ws.\n')
     def test_ws_swap(self):
         access_key, secret_key = self.key, self.secret
 
@@ -163,7 +192,7 @@ if __name__ == "__main__":
     dt = DevTool()
     # hrc = HuobiRestClient(access_key=dt.key, secret_key=dt.secret)
     # print(hrc.get("/swap-api/v1/swap_contract_info", {"contract_code": "BTC-USD"}))
-    #dt.test_ws_client()
-    dt.test_ws_swap()
+    dt.test_usdt()
+    #dt.test_ws_swap()
 
 

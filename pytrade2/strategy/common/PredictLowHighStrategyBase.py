@@ -145,6 +145,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
         # Run the feed, listen events
         self.websocket_feed.run()
+        self.broker.run()
 
     def processing_loop(self):
         self._log.info("Starting processing loop")

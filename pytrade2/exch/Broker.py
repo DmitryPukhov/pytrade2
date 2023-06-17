@@ -54,6 +54,9 @@ class Broker:
                                       self.price_precision)
         return stop_loss_price_adj, take_profit_price_adj
 
+    def run(self):
+        pass
+
     def read_last_opened_trade(self) -> Trade:
         """ Returns current opened trade, stored in db or none """
         return self.db_session \
