@@ -14,8 +14,8 @@ from huobi.model.trade import OrderUpdateEvent
 
 from exch.BrokerSpotBase import BrokerSpotBase
 from exch.huobi.HuobiTools import HuobiTools
-from exch.huobi.broker.spot.AccountManager import AccountManager
-from exch.huobi.broker.spot.TakeProfitSupport import TakeProfitSupport
+from exch.huobi.spot.broker.AccountManager import AccountManager
+from exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
 from model.Trade import Trade
 from model.TradeStatus import TradeStatus
 

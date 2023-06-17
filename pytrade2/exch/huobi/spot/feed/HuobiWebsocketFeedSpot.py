@@ -11,7 +11,7 @@ from huobi.utils import PrintBasic
 from exch.huobi.HuobiTools import HuobiTools
 
 
-class HuobiWebsocketFeed:
+class HuobiWebsocketFeedSpot:
     """
     Huobi price socket streams.
     """

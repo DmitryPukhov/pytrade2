@@ -9,12 +9,12 @@ from huobi.connection.impl.websocket_manage import WebsocketManage
 from huobi.utils import PrintBasic
 
 from exch.huobi.HuobiRestClient import HuobiRestClient
-from exch.huobi.broker.spot.HuobiBrokerSpot import HuobiBrokerSpot
-from exch.huobi.feed.HuobiCandlesFeed import HuobiCandlesFeed
-from exch.huobi.feed.HuobiWebsocketFeed import HuobiWebsocketFeed
+from exch.huobi.spot.broker.HuobiBrokerSpot import HuobiBrokerSpot
+from exch.huobi.spot.feed.HuobiCandlesFeedSpot import HuobiCandlesFeedSpot
+from exch.huobi.spot.feed.HuobiWebsocketFeedSpot import HuobiWebsocketFeedSpot
 
 
-class HuobiExchange:
+class HuobiExchangeSpot:
     def __init__(self, config: dict):
         # Apply fixes to reduce rubbish in logs
         PrintBasic.print_basic = lambda data, name: None  # Supress hiobi api print response ts for each response
@@ -30,22 +30,22 @@ class HuobiExchange:
         self.__algo_client: Optional[AlgoClient] = None
         self.__account_client: Optional[AccountClient] = None
         self.__broker: Optional[HuobiBrokerSpot] = None
-        self.__websocket_feed: Optional[HuobiWebsocketFeed] = None
-        self.__candles_feed: Optional[HuobiCandlesFeed] = None
+        self.__websocket_feed: Optional[HuobiWebsocketFeedSpot] = None
+        self.__candles_feed: Optional[HuobiCandlesFeedSpot] = None
         # Supress rubbish logging
         logging.getLogger("huobi-client").setLevel("CRITICAL")
         logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
 
-    def websocket_feed(self) -> HuobiWebsocketFeed:
+    def websocket_feed(self) -> HuobiWebsocketFeedSpot:
         """ Binance websocket feed lazy creation """
         if not self.__websocket_feed:
-            self.__websocket_feed = HuobiWebsocketFeed(config=self.config, market_client=self._market_client())
+            self.__websocket_feed = HuobiWebsocketFeedSpot(config=self.config, market_client=self._market_client())
         return self.__websocket_feed
 
-    def candles_feed(self) -> HuobiCandlesFeed:
+    def candles_feed(self) -> HuobiCandlesFeedSpot:
         """ Binance candles feed lazy creation """
         if not self.__candles_feed:
-            self.__candles_feed = HuobiCandlesFeed(self._market_client())
+            self.__candles_feed = HuobiCandlesFeedSpot(self._market_client())
         return self.__candles_feed
 
     def broker(self) -> HuobiBrokerSpot:

@@ -6,7 +6,7 @@ from huobi.client.market import MarketClient
 from huobi.model.market.candlestick import Candlestick
 
 
-class HuobiCandlesFeed:
+class HuobiCandlesFeedSpot:
     """
     Huobi candles data feed. Read data from huobi, provide pandas dataframes with that data
     """

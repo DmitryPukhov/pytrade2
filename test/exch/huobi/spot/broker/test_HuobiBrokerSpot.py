@@ -11,8 +11,8 @@ from huobi.client.trade import TradeClient
 from huobi.constant import OrderState, OrderType
 from huobi.model.trade import Order, OrderUpdateEvent, OrderUpdate
 
-from exch.huobi.broker.spot.AccountManager import AccountManager
-from exch.huobi.broker.spot.HuobiBrokerSpot import HuobiBrokerSpot
+from exch.huobi.spot.broker.AccountManager import AccountManager
+from exch.huobi.spot.broker.HuobiBrokerSpot import HuobiBrokerSpot
 from exch.BrokerSpotBase import BrokerSpotBase
 
 

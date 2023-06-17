@@ -2,7 +2,7 @@ import unittest
 from threading import RLock
 from unittest.mock import Mock
 from huobi.model.market import TradeDetailEvent, TradeDetail
-from exch.huobi.broker.spot.TakeProfitSupport import TakeProfitSupport
+from exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
 from model.Trade import Trade
 
 
