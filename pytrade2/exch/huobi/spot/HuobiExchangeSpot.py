@@ -8,7 +8,7 @@ from huobi.client.trade import TradeClient
 from huobi.connection.impl.websocket_manage import WebsocketManage
 from huobi.utils import PrintBasic
 
-from exch.huobi.HuobiRestClient import HuobiRestClient
+from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.spot.broker.HuobiBrokerSpot import HuobiBrokerSpot
 from exch.huobi.spot.feed.HuobiCandlesFeedSpot import HuobiCandlesFeedSpot
 from exch.huobi.spot.feed.HuobiWebsocketFeedSpot import HuobiWebsocketFeedSpot
@@ -62,11 +62,6 @@ class HuobiExchangeSpot:
         key = self.config["pytrade2.exchange.huobi.connector.key"]
         secret = self.config["pytrade2.exchange.huobi.connector.secret"]
         return key, secret
-
-    def _rest_client(self):
-        if not self.__rest_client:
-            self.__rest_client = HuobiRestClient(*self._key_secret())
-        return self.__rest_client
 
     def _market_client(self):
         if not self.__market_client:

@@ -1,28 +1,15 @@
 ##### For dev only #####
-import logging
 from io import StringIO
 
-import requests
-from urllib import parse
-import json
 import time
-from datetime import datetime
-import hmac
-import base64
-from hashlib import sha256
 
-import requests
 import yaml
 from huobi.client.account import AccountClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
-import asyncio
 
-from huobi.constant import OrderType, OrderSource
-from websocket import WebSocket
-
-from exch.huobi.HuobiRestClient import HuobiRestClient
-from exch.huobi.HuobiWebSocketClient import HuobiWebSocketClient
+from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
 
 
 class DevTool():

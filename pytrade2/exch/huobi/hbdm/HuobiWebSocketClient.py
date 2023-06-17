@@ -42,6 +42,10 @@ class HuobiWebSocketClient:
         self._has_open = False
         self._sub_str = None
         self._ws = None
+        self.consumers = []
+
+    def __del__(self):
+        self.close()
 
     def __enter__(self):
         self.open()
@@ -139,7 +143,9 @@ class HuobiWebSocketClient:
                 pass
         else:
             pass
-        print(jdata)
+        #print(jdata)
+        for consumer in self.consumers:
+            consumer.on_socket_data(jdata)
 
     def _on_close(self, ws):
         print("ws close.")
