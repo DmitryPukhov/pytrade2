@@ -369,7 +369,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
         if interval < self.history_min_window:
-            self._log.debug(f"Can not learn because not enough history. We have {interval}, but we need {interval}")
+            self._log.debug(f"Can not learn because not enough history. We have {interval}, but we need {self.history_min_window}")
             return False
         return True
 
