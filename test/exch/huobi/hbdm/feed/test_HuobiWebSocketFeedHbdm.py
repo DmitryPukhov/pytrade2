@@ -6,10 +6,6 @@ from exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
 
 class TestHuobiWebSocketFeedHbdm(TestCase):
 
-    def test_ticker_of_ch(self):
-        self.assertEqual("BTC-USDT", HuobiWebSocketFeedHbdm.ticker_of_ch("market.BTC-USDT.bbo"))
-        self.assertEqual("BTC-USDT", HuobiWebSocketFeedHbdm.ticker_of_ch("market.BTC-USDT.depth.step0"))
-
     def test_is_level2(self):
         self.assertTrue(HuobiWebSocketFeedHbdm.is_level2("market.BTC-USDT.depth.step0"))
         self.assertTrue(HuobiWebSocketFeedHbdm.is_level2("market.BTC-USDT.depth.step15"))
