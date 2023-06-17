@@ -64,11 +64,14 @@ class HuobiWebSocketClient:
         t = threading.Thread(target=self._ws.run_forever, daemon=True)
         t.start()
 
+
     def _on_open(self, ws):
         print('ws open')
         signature_data = self._get_signature_data()  # signature data
         self._ws.send(json.dumps(signature_data))  # as json string to be send
         self._has_open = True
+        for consumer in [c for c in self.consumers if hasattr(c, 'on_socket_open')]:
+            consumer.on_socket_open()
 
     def _get_signature_data(self) -> dict:
         # it's utc time and an example is 2017-05-11T15:19:30
@@ -143,7 +146,7 @@ class HuobiWebSocketClient:
                 pass
         else:
             pass
-        #print(jdata)
+        print(jdata)
         for consumer in self.consumers:
             consumer.on_socket_data(jdata)
 

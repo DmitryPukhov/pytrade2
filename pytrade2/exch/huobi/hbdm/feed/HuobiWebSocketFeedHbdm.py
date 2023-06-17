@@ -42,6 +42,10 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
         """
         # Subscribe bid/ask
         self._client.open()
+        #self.sub_events()
+
+
+    def sub_events(self):
         for ticker in self.tickers:
             self._log.info(f"Subscribing to {ticker} feed")
 
@@ -50,7 +54,6 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
                                {"sub": f"market.{ticker}.depth.step0"}]:
                 self._log.info(f"Subscribing to {sub_params}")
                 self._client.sub(sub_params)
-
     def on_socket_data(self, msg):
         """ Got subscribed data from socket"""
         try:

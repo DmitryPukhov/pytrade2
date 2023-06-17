@@ -3,6 +3,7 @@ from typing import Optional
 
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
 from exch.huobi.hbdm.feed.HuobiCandlesFeedHbdm import HuobiCandlesFeedHbdm
 from exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
 
@@ -15,8 +16,12 @@ class HuobiExchangeHbdm:
         self.config = config
         self.__rest_client: Optional[HuobiRestClient] = None
         self.__websocket_client: Optional[HuobiWebSocketClient] = None
+
+
         self.__websocket_feed: Optional[HuobiWebSocketFeedHbdm] = None
         self.__candles_feed: Optional[HuobiCandlesFeedHbdm] = None
+
+        self.__broker: Optional[HuobiBrokerHbdm] = None
 
     def _key_secret(self):
         key = self.config["pytrade2.exchange.huobi.connector.key"]
@@ -24,7 +29,9 @@ class HuobiExchangeHbdm:
         return key, secret
 
     def broker(self):
-        return None
+        if not self.__broker:
+            self.__broker = HuobiBrokerHbdm(self.config, rest_client= self._rest_client(), ws_client= self._websocket_client())
+        return self.__broker
 
     def candles_feed(self):
         if not self.__candles_feed:
