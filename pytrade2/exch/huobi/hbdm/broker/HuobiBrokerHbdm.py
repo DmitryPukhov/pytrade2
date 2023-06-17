@@ -17,6 +17,13 @@ class HuobiBrokerHbdm(Broker):
         self._log = logging.getLogger(self.__class__.__name__)
         self.ws_client, self.rest_client = ws_client, rest_client
         self.ws_client.consumers.append(self)
+        self.set_one_way_mode()
+
+    def set_one_way_mode(self):
+        self._log.info(f"Setting one way trading mode (opposite trade will close current one)")
+        res = self.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode",
+                                    {"margin_account": "USDT", "position_mode": "single_side"})
+        self._log.debug(f"responce: f{res}")
 
     def run(self):
         """ Open socket and subscribe to events """
@@ -27,8 +34,6 @@ class HuobiBrokerHbdm(Broker):
         while not self.ws_client.is_opened:
             time.sleep(1)
 
-        res = self.rest_client.post("/linear-swap-api/v1/swap_switch_position_mode",
-                                    {"margin_account": "btc-usdt", "position_mode": "single_side"})
         self._log.info(f"Requested to set single side trade mode. Result: f{res}")
 
         # Subscribe
@@ -62,21 +67,24 @@ class HuobiBrokerHbdm(Broker):
                          price: Optional[float],
                          stop_loss_price: float,
                          take_profit_price: Optional[float]) -> Optional[Trade]:
-        path = "/linear-swap-api/v1/swap_order"
+        path = "/linear-swap-api/v1/swap_cross_order"
         client_order_id = int(datetime.datetime.utcnow().timestamp())
+        limit_ratio = 0.005 # 30 for bt
         data = {"contract_code": symbol,
                 "client_order_id": client_order_id,
                 #"contract_type": "swap",
-                "volume": 10,
+                "volume": quantity,
                 "direction": Trade.order_side_names[direction],
                 "price": price,
                 "lever_rate": 1,
-                "order_price_type": "fok",
+                "order_price_type": "limit",
                 "tp_trigger_price": take_profit_price,
-                "reduce_only": 1,
+                "tp_order_price": round(take_profit_price * (1+direction*limit_ratio), self.price_precision),
+                "reduce_only": 0,
                 "sl_trigger_price": stop_loss_price,
-                "tp_order_price_type": "market",
-                "sl_order_price_type": "market"
+                "sl_order_price": round(stop_loss_price * (1-direction*limit_ratio), self.price_precision),
+                "tp_order_price_type": "limit",
+                "sl_order_price_type": "limit"
                 }
         res = self.rest_client.post(path=path, data=data)
         if res["status"] == "ok":
@@ -91,7 +99,7 @@ class HuobiBrokerHbdm(Broker):
         return None
 
     def get_order_info(self, client_order_id: int, ticker: str):
-        path = "/linear-swap-api/v1/swap_order_info"
+        path = "/linear-swap-api/v1/swap_cross_order_info"
         data = {"client_order_id": client_order_id, "contract_code": ticker}
         res = self.rest_client.post(path, data)
         self._log.info(f"Got order {res}")

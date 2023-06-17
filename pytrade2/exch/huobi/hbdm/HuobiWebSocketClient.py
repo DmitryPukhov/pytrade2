@@ -174,4 +174,4 @@ class HuobiWebSocketClient:
         self._active_close = True
         self._sub_str = None
         self.is_opened = False
-        self._ws.close()
+        if self._ws: self._ws.close()

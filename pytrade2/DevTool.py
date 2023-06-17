@@ -200,11 +200,12 @@ class DevTool():
 if __name__ == "__main__":
     dt = DevTool()
     broker = dt.new_hbdm_broker()
-    # res = broker.rest_client.post("/linear-swap-api/v1/swap_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
+    res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
     # print(res)
-    broker.create_cur_trade(symbol="BTC-USDT", direction=1, quantity=1, price=26900, stop_loss_price=26000,
-                            take_profit_price=28000)
-    # hrc = HuobiRestClient(access_key=dt.key, secret_key=dt.secret)
-    # print(hrc.get("/swap-api/v1/swap_contract_info", {"contract_code": "BTC-USD"}))
-    dt.test_usdt()
+    broker.create_cur_trade(symbol="BTC-USDT", direction=1, quantity=1, price=26520, stop_loss_price=26000,
+                            take_profit_price=27000)
+
+
+    #print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_account_info", {"contract_code": "USDT"}))
+    #dt.test_usdt()
     # dt.test_ws_swap()
