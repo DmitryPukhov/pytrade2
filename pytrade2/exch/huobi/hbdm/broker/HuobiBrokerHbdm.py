@@ -125,23 +125,26 @@ class HuobiBrokerHbdm(Broker):
         with self.trade_lock:
             if self.cur_trade:
                 self._log.info(f"Can not create current trade because another exists:{self.cur_trade}")
-
+            side = Trade.order_side_names[direction]
+            self._log.info(
+                f"Creating current {symbol} {side} trade. price: {price}, sl: {stop_loss_price}, tp: {take_profit_price}")
             # Prepare create order command
             path = "/linear-swap-api/v1/swap_cross_order"
             client_order_id = int(datetime.utcnow().timestamp())
             limit_ratio = 0.01  # 15030 for bt
+
             data = {"contract_code": symbol,
                     "client_order_id": client_order_id,
                     # "contract_type": "swap",
                     "volume": quantity,
-                    "direction": Trade.order_side_names[direction],
-                    "price": price,
+                    "direction": side,
+                    "price": round(price, self.price_precision),
                     "lever_rate": 1,
                     "order_price_type": "limit",
-                    "tp_trigger_price": take_profit_price,
+                    "tp_trigger_price": round(take_profit_price, self.price_precision),
                     "tp_order_price": round(take_profit_price * (1 - direction * limit_ratio), self.price_precision),
                     "reduce_only": 0,  # 0 for opening order
-                    "sl_trigger_price": stop_loss_price,
+                    "sl_trigger_price": round(stop_loss_price, self.price_precision),
                     "sl_order_price": round(stop_loss_price * (1 - direction * limit_ratio), self.price_precision),
                     "tp_order_price_type": "limit",
                     "sl_order_price_type": "limit"
@@ -301,7 +304,8 @@ class HuobiBrokerHbdm(Broker):
         trade.open_time = dt
         trade.open_price = data["trade_avg_price"]
         # ??? Process status better
-        trade.status = TradeStatus.opened if data["status"] == HuobiBrokerHbdm.HuobiOrderStatus.filled else TradeStatus.opening
+        trade.status = TradeStatus.opened if data[
+                                                 "status"] == HuobiBrokerHbdm.HuobiOrderStatus.filled else TradeStatus.opening
         return trade
 
     def get_order_info(self, client_order_id: int, ticker: str):
