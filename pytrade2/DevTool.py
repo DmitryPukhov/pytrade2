@@ -1,4 +1,6 @@
 ##### For dev only #####
+import datetime
+import logging
 from io import StringIO
 
 import time
@@ -17,6 +19,7 @@ class DevTool():
     """"" For dev purpose only, don't call or run from the app """
 
     def __init__(self):
+        logging.basicConfig(level=logging.DEBUG)
         # Read config
         strategy = "SimpleKerasStrategy"
         yccfgdir = "../deploy/yandex_cloud/secret"
@@ -200,11 +203,28 @@ class DevTool():
 if __name__ == "__main__":
     dt = DevTool()
     broker = dt.new_hbdm_broker()
-    res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
-    # print(res)
-    broker.create_cur_trade(symbol="BTC-USDT", direction=1, quantity=1, price=26520, stop_loss_price=26000,
-                            take_profit_price=27000)
+    # Set one way ok
+    #res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
+    # Create order ok
+    # broker.create_cur_trade(symbol="BTC-USDT", direction=1, quantity=1, price=26520, stop_loss_price=26000,
+    #                         take_profit_price=27000)
 
+    # Request trade result ok
+    #res=broker.rest_client.get("/linear-swap-api/v1/swap_cross_trade_state", {"contract_code": "BTC-USDT"})
+    #print(res)
+    # Bad
+    #print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"contract_code": "BTC-USDT"}))
+    res = broker.get_order_info("1", "BTC-USDT")
+    #res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_open_orders",  {"contract_code": "BTC-USDT"})
+    #print(res)
+
+    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_trigger_openorders",  {"contract_code": "BTC-USDT"})
+    # print(res)
+
+    #print(broker.rest_client.get("/linear-swap-api/v1/swap_cross_trade_state", {"contract_code": "BTC-USDT"}))
+    #print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_detail", {"contract_code": "BTC-USDT"}))
+
+    #print(broker.rest_client.post("/linear-swap-api/v3/swap_cross_matchresults", {"contract": "BTC-USDT", "trade_type": 1}))
 
     #print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_account_info", {"contract_code": "USDT"}))
     #dt.test_usdt()

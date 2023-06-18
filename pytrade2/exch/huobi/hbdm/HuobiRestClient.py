@@ -49,7 +49,7 @@ class HuobiRestClient:
         try:
             # Compose url and headers
             url = f'https://{self.host}{path}?'
-            self._log.debug(f"Doing get request to url: {url}..., params: {params}")
+            self._log.debug(f"Doing get request to url: {url}, params: {params}")
             url_suffix = self._auth_params_of('get', self.access_key, self.secret_key, self.host, path)
             url = url + url_suffix
             headers = {'Content-type': 'application/x-www-form-urlencoded'}
@@ -66,7 +66,7 @@ class HuobiRestClient:
         try:
             # Compose url and headers
             url = f'https://{self.host}{path}?'
-            self._log.debug(f"Doing post request to url: {url}..., data: {data}")
+            self._log.debug(f"Doing post request to url: {url}, data: {data}")
             url_suffix = self._auth_params_of('post', self.access_key, self.secret_key, self.host, path)
             url = url + url_suffix
             # url = f'https://{self.host}{path}?{url_suffix}'

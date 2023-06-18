@@ -1,4 +1,5 @@
 import datetime
+from datetime import datetime
 import logging
 import time
 from typing import Optional
@@ -7,6 +8,7 @@ from exch.Broker import Broker
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
 from model.Trade import Trade
+from model.TradeStatus import TradeStatus
 
 
 class HuobiBrokerHbdm(Broker):
@@ -33,8 +35,6 @@ class HuobiBrokerHbdm(Broker):
             self.ws_client.open()
         while not self.ws_client.is_opened:
             time.sleep(1)
-
-        self._log.info(f"Requested to set single side trade mode. Result: f{res}")
 
         # Subscribe
         self.sub_events()
@@ -67,36 +67,61 @@ class HuobiBrokerHbdm(Broker):
                          price: Optional[float],
                          stop_loss_price: float,
                          take_profit_price: Optional[float]) -> Optional[Trade]:
+        if self.cur_trade:
+            self._log.info(f"Can not create current trade because another exists:{self.cur_trade}")
+
+        # Prepare create order command
         path = "/linear-swap-api/v1/swap_cross_order"
         client_order_id = int(datetime.datetime.utcnow().timestamp())
-        limit_ratio = 0.005 # 30 for bt
+        limit_ratio = 0.01  # 15030 for bt
         data = {"contract_code": symbol,
                 "client_order_id": client_order_id,
-                #"contract_type": "swap",
+                # "contract_type": "swap",
                 "volume": quantity,
                 "direction": Trade.order_side_names[direction],
                 "price": price,
                 "lever_rate": 1,
                 "order_price_type": "limit",
                 "tp_trigger_price": take_profit_price,
-                "tp_order_price": round(take_profit_price * (1+direction*limit_ratio), self.price_precision),
+                "tp_order_price": round(take_profit_price * (1 + direction * limit_ratio), self.price_precision),
                 "reduce_only": 0,
                 "sl_trigger_price": stop_loss_price,
-                "sl_order_price": round(stop_loss_price * (1-direction*limit_ratio), self.price_precision),
+                "sl_order_price": round(stop_loss_price * (1 - direction * limit_ratio), self.price_precision),
                 "tp_order_price_type": "limit",
                 "sl_order_price_type": "limit"
                 }
+        # Request to create a new order
         res = self.rest_client.post(path=path, data=data)
+
+        # Process result
+        print(f"Create order response: {res}")
         if res["status"] == "ok":
-            order_id = res["order_id"]
-            self._log.info(
-                f"Created {symbol} order, direction: {direction}, order_id: {order_id}, client_order_id: {client_order_id}")
+            self._log.debug(f"Create order response: {res}")
+
+            # Get order details, fill current trade
             info = self.get_order_info(client_order_id, ticker=symbol)
-            print(info)
+            self.cur_trade = self.res2trade(info)
+            self._log.info(f"Created order: {self.cur_trade}")
         else:
             self._log.error(f"Error creating order: {res}")
 
-        return None
+        return self.cur_trade
+
+    @staticmethod
+    def res2trade(self, res: dict):
+        """ Convert get order response to trade model"""
+        data = res["data"]
+        dt = datetime.utcfromtimestamp(data["created_at"] / 1000)
+
+        trade = Trade()
+        trade.ticker = data["contract_code"]
+        trade.side = data["direction"].upper()
+        trade.quantity = data["volume"]
+        trade.open_order_id = str(data["order_id"])
+        trade.open_time = dt
+        # ??? Process status better
+        trade.status = TradeStatus.opened if data["status"] == "filled" else TradeStatus.opened
+        return trade
 
     def get_order_info(self, client_order_id: int, ticker: str):
         path = "/linear-swap-api/v1/swap_cross_order_info"
