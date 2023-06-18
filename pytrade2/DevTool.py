@@ -99,7 +99,7 @@ class DevTool():
                 "sub": "market.BTC-USDT.trade.detail"
                 # "id": "123"
             }
-            usdt_swap.sub(sub_params)
+            usdt_swap.sub(sub_params, object())
             time.sleep(100)
             # usdt_swap.close()
             print('end usdt-swap ws.\n')
@@ -129,7 +129,7 @@ class DevTool():
                 "sub": "market.BTC-USD.trade.detail"
                 # "id": "123"
             }
-            usdt_swap.sub(sub_params)
+            usdt_swap.sub(sub_params, "")
             time.sleep(100)
             # usdt_swap.close()
             print('end usdt-swap ws.\n')
@@ -147,7 +147,7 @@ class DevTool():
                 "action": "sub",
                 "ch": "accounts.update"
             }
-            spot.sub(sub_params)
+            spot.sub(sub_params, "")
             time.sleep(10)
             print('end spot ws.\n')
 
@@ -161,7 +161,7 @@ class DevTool():
                 "op": "sub",
                 "topic": "accounts.trx"
             }
-            future.sub(sub_params)
+            future.sub(sub_params,"")
             time.sleep(10)
             print('end future ws.\n')
 
@@ -175,7 +175,7 @@ class DevTool():
                 "op": "sub",
                 "topic": "accounts.TRX-USD"
             }
-            coin_swap.sub(sub_params)
+            coin_swap.sub(sub_params,"")
             time.sleep(10)
             print('end coin-swap ws.\n')
 
@@ -189,7 +189,7 @@ class DevTool():
                 "op": "sub",
                 "topic": "accounts_cross.USDT"
             }
-            usdt_swap.sub(sub_params)
+            usdt_swap.sub(sub_params, "")
             time.sleep(10)
             print('end usdt-swap ws.\n')
 

@@ -14,7 +14,7 @@ from huobi.model.trade import OrderUpdateEvent
 
 from exch.BrokerSpotBase import BrokerSpotBase
 from exch.huobi.HuobiTools import HuobiTools
-from exch.huobi.spot.broker.AccountManager import AccountManager
+from exch.huobi.spot.broker.AccountManagerSpot import AccountManagerSpot
 from exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
 from model.Trade import Trade
 from model.TradeStatus import TradeStatus
@@ -38,7 +38,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
         self.account_client = account_client
         self.market_client = market_client
 
-        self.account_manager = AccountManager(account_client=account_client, config=config)
+        self.account_manager = AccountManagerSpot(account_client=account_client, config=config)
 
         self.account_id = int(config["pytrade2.broker.huobi.account.id"])
 

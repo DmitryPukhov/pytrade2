@@ -11,7 +11,7 @@ from huobi.client.trade import TradeClient
 from huobi.constant import OrderState, OrderType
 from huobi.model.trade import Order, OrderUpdateEvent, OrderUpdate
 
-from exch.huobi.spot.broker.AccountManager import AccountManager
+from exch.huobi.spot.broker.AccountManagerSpot import AccountManagerSpot
 from exch.huobi.spot.broker.HuobiBrokerSpot import HuobiBrokerSpot
 from exch.BrokerSpotBase import BrokerSpotBase
 
@@ -39,7 +39,7 @@ class TestHuobiBrokerSpot(unittest.TestCase):
         mock.patch.object(TradeClient, "sub_order_update", Mock()).start()
         mock.patch.object(MarketClient, "sub_trade_detail", Mock()).start()
 
-        mock.patch.object(AccountManager, "__init__", Mock(return_value=None)).start()
+        mock.patch.object(AccountManagerSpot, "__init__", Mock(return_value=None)).start()
 
 
     def test_create_cur_trade__main_order_not_filled(self):

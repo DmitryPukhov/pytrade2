@@ -7,6 +7,7 @@ from typing import Optional
 from exch.Broker import Broker
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from model.Trade import Trade
 from model.TradeStatus import TradeStatus
 
@@ -39,10 +40,12 @@ class HuobiBrokerHbdm(Broker):
 
     def __init__(self, conf: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
         super().__init__(conf)
+        self.tickers = conf["pytrade2.tickers"].lower().split(",")
         self._log = logging.getLogger(self.__class__.__name__)
         self.ws_client, self.rest_client = ws_client, rest_client
-        self.ws_client.consumers.append(self)
+        # This mode means that sell closes previous buy and vice versa
         self.set_one_way_mode()
+        self.account_manager = AccountManagerHbdm(conf, rest_client, ws_client)
 
     def set_one_way_mode(self):
         """ Set up exchange to set one way (no buy and sell opened simultaneously) """
@@ -67,19 +70,26 @@ class HuobiBrokerHbdm(Broker):
     def sub_events(self):
         """ Subscribe account and order events """
 
-        for ticker in self.config["pytrade2.tickers"].split(","):
+        # Subscribe to account events
+        self.account_manager.sub_events()
+
+        # Subscibe to order events
+        for ticker in self.tickers:
             # Subscribe to order events
             # params = [{"op": "sub", "topic": "orders.*"}, {"op": "sub", "topic": "accounts.*"}]
             params = [{"op": "sub", "topic": f"orders_cross.{ticker}"}, {"op": "sub", "topic": f"accounts_cross.*"}]
             for param in params:
                 self._log.info(f"Subscribing to {param}")
-                self.ws_client.sub(param)
+                self.ws_client.sub(param, self)
         self._log.info("Broker subscribed to all events needed.")
 
-    def on_socket_data(self, msg):
+    def on_socket_close(self):
+        """ Resubscribe to events if socket is closed"""
+        self.sub_events()
+
+    def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""
         try:
-            topic = msg.get("topic")
             status = msg.get("status")
 
             if not self.cur_trade \

@@ -1,15 +1,8 @@
 import logging
 import re
-import traceback
 from datetime import datetime
 from typing import Dict
 
-import pandas as pd
-from huobi.client.market import MarketClient
-from huobi.model.market import *
-from huobi.utils import PrintBasic
-
-from exch.huobi.HuobiTools import HuobiTools
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
 from exch.huobi.hbdm.feed.HuobiFeedBase import HuobiFeedBase
 
@@ -24,7 +17,6 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
         self._log = logging.getLogger(self.__class__.__name__)
         self.tickers = config["pytrade2.tickers"].lower().split(",")
         self._client = client
-        self._client.consumers.append(self)
 
     @staticmethod
     def is_bidask(ch):
@@ -52,10 +44,14 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
             for sub_params in [{"sub": f"market.{ticker}.bbo"},
                                {"sub": f"market.{ticker}.depth.step0"}]:
                 self._log.info(f"Subscribing to {sub_params}")
-                self._client.sub(sub_params)
+                self._client.sub(sub_params, self)
         self._log.info("Feed subscribed to all events needed")
 
-    def on_socket_data(self, msg):
+    def on_socket_close(self):
+        """ Resubscribe to events if socket is closed"""
+        self.sub_events()
+
+    def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""
         try:
             # Channel like "market.BTC-USDT.bbo"

@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 import websocket
 import threading
@@ -45,7 +46,7 @@ class HuobiWebSocketClient:
         self.is_opened = False
         self._sub_str = None
         self._ws = None
-        self.consumers = []
+        self._consumers = defaultdict(set)
 
     def __del__(self):
         self.close()
@@ -73,7 +74,7 @@ class HuobiWebSocketClient:
         signature_data = self._get_signature_data()  # signature data
         self._ws.send(json.dumps(signature_data))  # as json string to be send
         self.is_opened = True
-        for consumer in [c for c in self.consumers if hasattr(c, 'on_socket_open')]:
+        for consumer in [c for c in self._consumers.values() if hasattr(c, 'on_socket_open')]:
             consumer.on_socket_open()
 
     def _get_signature_data(self) -> dict:
@@ -147,32 +148,40 @@ class HuobiWebSocketClient:
                 return
             else:
                 pass
-        else:
-            pass
-
-        for consumer in self.consumers:
-            consumer.on_socket_data(jdata)
+        elif 'ch' in jdata:
+            # Pass the event to subscribers: broker, account, feed
+            topic = jdata['ch'].lower()
+            for consumer in [c for c in self._consumers[topic] if hasattr(c, 'on_socket_data')]:
+                consumer.on_socket_data(topic, jdata)
 
     def _on_close(self, ws):
         self._log.info("Socket closed")
         self.is_opened = False
         if not self._active_close and self._sub_str is not None:
             self.open()
-            self.sub(self._sub_str)
+            for consumer in [c for c in self._consumers.values() if hasattr(c, "on_socket_close")]:
+                consumer.on_socket_close()
 
     def _on_error(self, ws, error):
         self._log.error(f"Socket error: error")
 
-    def sub(self, sub_str: dict):
+    def sub(self, params: dict, consumer):
         if self._active_close:
             self._log.debug('Cannot subscribe. Socket is closed')
             return
+
+        self._log.debug(f"Subscribing to ws data: {params}")
+        # Send to socket
         while not self.is_opened:
             time.sleep(1)
+        self._ws.send(json.dumps(params))  # as json string to be send
 
-        self._sub_str = sub_str
-        self._ws.send(json.dumps(sub_str))  # as json string to be send
-        self._log.info(f"Subscribing to {sub_str}")
+        # Add callback to consumers
+        topic = params.get("topic", params.get("sub", None))
+        if topic:
+            self._consumers[topic].add(consumer)
+        else:
+            self._log.debug(f"Cannot find topic or sub key in params: {params}")
 
     def close(self):
         self._log.info("Closing socket")
