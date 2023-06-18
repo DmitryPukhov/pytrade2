@@ -1,3 +1,5 @@
+import logging
+
 import websocket
 import threading
 import time
@@ -33,6 +35,7 @@ class HuobiWebSocketClient:
     """
 
     def __init__(self, host: str, path: str, access_key: str, secret_key: str, be_spot: bool):
+        self._log = logging.getLogger(self.__class__.__name__)
         self._host = host
         self._path = path
         self._access_key = access_key
@@ -56,6 +59,7 @@ class HuobiWebSocketClient:
 
     def open(self):
         url = 'wss://{}{}'.format(self._host, self._path)
+        self._log.info(f"Opening socket: {url}")
         self._ws = websocket.WebSocketApp(url,
                                           on_open=self._on_open,
                                           on_message=self._on_msg,
@@ -65,7 +69,7 @@ class HuobiWebSocketClient:
         t.start()
 
     def _on_open(self, ws):
-        print('ws open')
+        self._log.info("Socket openeded")
         signature_data = self._get_signature_data()  # signature data
         self._ws.send(json.dumps(signature_data))  # as json string to be send
         self.is_opened = True
@@ -150,27 +154,28 @@ class HuobiWebSocketClient:
             consumer.on_socket_data(jdata)
 
     def _on_close(self, ws):
-        print("ws close.")
+        self._log.info("Socket closed")
         self.is_opened = False
         if not self._active_close and self._sub_str is not None:
             self.open()
             self.sub(self._sub_str)
 
     def _on_error(self, ws, error):
-        print(error)
+        self._log.error(f"Socket error: error")
 
     def sub(self, sub_str: dict):
         if self._active_close:
-            print('has close')
+            self._log.debug('Cannot subscribe. Socket is closed')
             return
         while not self.is_opened:
             time.sleep(1)
 
         self._sub_str = sub_str
         self._ws.send(json.dumps(sub_str))  # as json string to be send
-        print(sub_str)
+        self._log.info(f"Subscribing to {sub_str}")
 
     def close(self):
+        self._log.info("Closing socket")
         self._active_close = True
         self._sub_str = None
         self.is_opened = False

@@ -176,6 +176,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         self._log.info("End main processing loop")
 
     def is_alive(self):
+        self._log.debug()
         maxdelta = self.history_min_window + pd.Timedelta("60s")
 
         # Last received data
@@ -184,7 +185,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         last_candle = self.last_candles_read_time
         dt = datetime.utcnow()
         delta = max([dt - last_bid_ask, dt - last_level2, dt - last_candle]) \
-            if last_bid_ask and last_level2 and last_candle else None
+            if last_bid_ask and last_level2 and last_candle > datetime.min else None
 
         is_alive = delta and (delta < maxdelta)
         return is_alive
