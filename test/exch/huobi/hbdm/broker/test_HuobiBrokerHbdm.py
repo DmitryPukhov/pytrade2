@@ -1,5 +1,5 @@
 from unittest import TestCase
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -30,6 +30,16 @@ class TestHuobiBrokerHbdm(TestCase):
              'fail_reason': None, 'triggered_price': None, 'relation_order_id': '-1'}],
          'trade_partition': 'USDT'}, 'ts': 1687071763277}
 
+    def test_update_trade_closed_event(self):
+        dt = datetime(year=2023, month=6, day=12, hour=13, minute=16, second=1, tzinfo=timezone.utc)
+        msg = {"order_id": 1, "trade_avg_price": 2, "created_at": int(dt.timestamp()*1000)}
+        trade = Trade()
+        HuobiBrokerHbdm.update_trade_closed_event(msg, trade)
+
+        self.assertEqual("closed", trade.status)
+        self.assertEqual("1", trade.close_order_id)
+        self.assertEqual(datetime(year=2023, month=6, day=12, hour=13, minute=16, second=1), trade.close_time)
+
     def test_update_trade_sltp_buy(self):
         # sl/tp response example
         # Test buy trade
@@ -41,7 +51,7 @@ class TestHuobiBrokerHbdm(TestCase):
         self.assertEqual(25740.0, trade.stop_loss_price)
         self.assertEqual(27270.0, trade.take_profit_price)
 
-    def test_update_trade_sltp_buy(self):
+    def test_update_trade_sltp_sell(self):
         # sl/tp response example
         # Test buy trade
         trade = Trade()
@@ -66,7 +76,7 @@ class TestHuobiBrokerHbdm(TestCase):
         trade = Trade()
         HuobiBrokerHbdm.update_trade_closed(res, trade)
 
-        self.assertEqual(1120016247351635968, trade.close_order_id)
+        self.assertEqual("1120016247351635968", trade.close_order_id)
         self.assertEqual(26592.0, trade.close_price)
         self.assertEqual(datetime.utcfromtimestamp(1687074282782 / 1000), trade.close_time)
         self.assertEqual("closed", trade.status)

@@ -1,8 +1,7 @@
 import datetime
-from datetime import datetime
 import logging
 import time
-from sqlite3 import Timestamp
+from datetime import datetime
 from typing import Optional
 
 from exch.Broker import Broker
@@ -13,14 +12,28 @@ from model.TradeStatus import TradeStatus
 
 
 class HuobiBrokerHbdm(Broker):
+    """ Huobi derivatives market broker"""
+
     class HuobiOrderStatus:
+        """
+        Huobi rests response constants
+        https://www.huobi.com/en-us/opend/newApiPages/?id=8cb85ba1-77b5-11ed-9966-0242ac110003
+        """
         filled = 6
 
     class HuobiTradeType:
+        """
+        Huobi rests response constants
+        https://www.huobi.com/en-us/opend/newApiPages/?id=8cb85ba1-77b5-11ed-9966-0242ac110003
+        """
         buy = 17
         sell = 18
 
     class HuobiOrderType:
+        """
+        Huobi rests response constants
+        https://www.huobi.com/en-us/opend/newApiPages/?id=8cb85ba1-77b5-11ed-9966-0242ac110003
+        """
         all = 1
         finished = 2
 
@@ -32,6 +45,7 @@ class HuobiBrokerHbdm(Broker):
         self.set_one_way_mode()
 
     def set_one_way_mode(self):
+        """ Set up exchange to set one way (no buy and sell opened simultaneously) """
         self._log.info(f"Setting one way trading mode (opposite trade will close current one)")
         res = self.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode",
                                     {"margin_account": "USDT", "position_mode": "single_side"})
@@ -46,6 +60,7 @@ class HuobiBrokerHbdm(Broker):
         while not self.ws_client.is_opened:
             time.sleep(1)
 
+        self.update_cur_trade_status()
         # Subscribe
         self.sub_events()
 
@@ -55,7 +70,7 @@ class HuobiBrokerHbdm(Broker):
         for ticker in self.config["pytrade2.tickers"].split(","):
             # Subscribe to order events
             # params = [{"op": "sub", "topic": "orders.*"}, {"op": "sub", "topic": "accounts.*"}]
-            params = [{"op": "sub", "topic": f"orders.{ticker}"}, {"op": "sub", "topic": f"accounts.*"}]
+            params = [{"op": "sub", "topic": f"orders_cross.{ticker}"}, {"op": "sub", "topic": f"accounts_cross.*"}]
             for param in params:
                 self._log.info(f"Subscribing to {param}")
                 self.ws_client.sub(param)
@@ -66,17 +81,33 @@ class HuobiBrokerHbdm(Broker):
             topic = msg.get("topic")
             status = msg.get("status")
 
-            if not topic or not status == self.HuobiOrderStatus.filled or not topic.startswith("orders."):
+            if not self.cur_trade \
+                    or not status \
+                    or not status == self.HuobiOrderStatus.filled \
+                    or not topic \
+                    or not topic.startswith("orders_cross."):
                 return
-            self._log.info(f"Got order event: {msg}")
+            with self.trade_lock:
+                if self.cur_trade:
+                    self._log.info(f"Got order event: {msg}")
+                    order_direction = Trade.order_side_codes(msg["direction"].upper())
+                    if order_direction == - self.cur_trade.direction():
+                        # Close current trade
+                        self.update_trade_closed_event(msg, self.cur_trade)
+                        self.db_session.commit()
+                        self.cur_trade = None
+
         except Exception as e:
-            self._log.error(e)
+            self._log.error(f"Socket message processing error: {e}")
 
     def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,
                          price: Optional[float],
                          stop_loss_price: float,
                          take_profit_price: Optional[float]) -> Optional[Trade]:
+        if not self.allow_trade:
+            return None
+
         with self.trade_lock:
             if self.cur_trade:
                 self._log.info(f"Can not create current trade because another exists:{self.cur_trade}")
@@ -183,7 +214,7 @@ class HuobiBrokerHbdm(Broker):
             raw = res["data"][-1]
             # raw param is the last order in response["data"]
             trade.close_price = raw["trade_avg_price"]
-            trade.close_order_id = raw["order_id"]
+            trade.close_order_id = str(raw["order_id"])
             trade.close_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
             trade.status = TradeStatus.closed
 
@@ -192,6 +223,15 @@ class HuobiBrokerHbdm(Broker):
                                     {"contract_code": "BTC-USDT", "order_id": main_order_id})
         self._log.debug(f"Got sltp order info: f{res}")
         return res
+
+    @staticmethod
+    def update_trade_closed_event(raw, trade):
+        """ When close message came from socket"""
+        trade.close_order_id = str(raw["order_id"])
+        trade.close_price = float(raw["trade_avg_price"])
+        trade.close_time = datetime.utcfromtimestamp(raw["created_at"] / 1000)
+        trade.status = TradeStatus.closed
+        return trade
 
     @staticmethod
     def update_trade_sltp(sltp_res, trade):
