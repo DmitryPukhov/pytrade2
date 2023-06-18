@@ -176,7 +176,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         self._log.info("End main processing loop")
 
     def is_alive(self):
-        maxdelta = pd.Timedelta("90s")
+        maxdelta = self.history_min_window + pd.Timedelta("60s")
 
         # Last received data
         last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
