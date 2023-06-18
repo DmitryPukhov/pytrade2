@@ -301,10 +301,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
 
         # Form message string
         msg = StringIO()
-        msg.write(f"Allow trade: {self.allow_trade}\n")
-
-        # Opened trade
-        msg.write(f"Current trade: {self.cur_trade}\n")
+        msg.write(super().get_report())
 
         try:
             # Opened orders

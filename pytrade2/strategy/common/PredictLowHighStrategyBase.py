@@ -176,7 +176,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         self._log.info("End main processing loop")
 
     def is_alive(self):
-        self._log.debug()
         maxdelta = self.history_min_window + pd.Timedelta("60s")
 
         # Last received data
@@ -186,8 +185,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         dt = datetime.utcnow()
         delta = max([dt - last_bid_ask, dt - last_level2, dt - last_candle]) \
             if last_bid_ask and last_level2 and last_candle > datetime.min else None
-
         is_alive = delta and (delta < maxdelta)
+        self._log.debug(f"Strategy is_alive: {is_alive}. Inactivity time: {delta}, max allowed: {maxdelta}")
         return is_alive
 
     def on_level2(self, level2: List[Dict]):
@@ -331,12 +330,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         if is_buy:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
-            stop_loss_adj = min(stop_loss_adj, round(ask * (1-self.stop_loss_min_coeff), self.price_precision))
+            stop_loss_adj = min(stop_loss_adj, round(ask * (1 - self.stop_loss_min_coeff), self.price_precision))
             return 1, ask, stop_loss_adj, ask + buy_profit
         elif is_sell:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
-            stop_loss_adj = max(stop_loss_adj, round(bid * (1+self.stop_loss_min_coeff), self.price_precision))
+            stop_loss_adj = max(stop_loss_adj, round(bid * (1 + self.stop_loss_min_coeff), self.price_precision))
             return -1, bid, stop_loss_adj, bid - sell_profit
         else:
             # No action
@@ -371,7 +370,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
         if interval < self.history_min_window:
-            self._log.debug(f"Can not learn because not enough history. We have {interval}, but we need {self.history_min_window}")
+            self._log.debug(
+                f"Can not learn because not enough history. We have {interval}, but we need {self.history_min_window}")
             return False
         return True
 

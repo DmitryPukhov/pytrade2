@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from io import StringIO
 from pathlib import Path
 from threading import RLock
 from typing import Optional, Dict
@@ -57,12 +58,26 @@ class Broker:
     def run(self):
         pass
 
+    def get_report(self):
+        """ Short info for report """
+
+        # Form message string
+        msg = StringIO()
+        msg.write(f"Allow trade: {self.allow_trade}\n")
+
+        # Opened trade
+        msg.write(f"Current trade: {self.cur_trade}\n")
+        return msg.getvalue()
+
     def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,
                          price: Optional[float],
                          stop_loss_price: float,
                          take_profit_price: Optional[float]) -> Optional[Trade]:
         raise NotImplementedError()
+
+    def fix_cur_trade(self):
+        pass
 
     def read_last_opened_trade(self) -> Trade:
         """ Returns current opened trade, stored in db or none """

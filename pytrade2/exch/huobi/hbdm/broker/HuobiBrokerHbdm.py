@@ -74,6 +74,7 @@ class HuobiBrokerHbdm(Broker):
             for param in params:
                 self._log.info(f"Subscribing to {param}")
                 self.ws_client.sub(param)
+        self._log.info("Broker subscribed to all events needed.")
 
     def on_socket_data(self, msg):
         """ Got subscribed data from socket"""

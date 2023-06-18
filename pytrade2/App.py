@@ -144,7 +144,7 @@ class App:
         # Run and wait until the end
         self.strategy.run()
 
-        self._log.info("The end")
+        self._log.info("Started the app")
 
     def watchdog_check(self):
         """ If not alive, reset websocket feed"""
