@@ -206,15 +206,15 @@ if __name__ == "__main__":
     # Set one way ok
     #res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
     # Create order ok
-    # broker.create_cur_trade(symbol="BTC-USDT", direction=1, quantity=1, price=26520, stop_loss_price=26000,
-    #                         take_profit_price=27000)
+    broker.create_cur_trade(symbol="BTC-USDT", direction=1, quantity=1, price=26720, stop_loss_price=26000,
+                            take_profit_price=27000)
 
     # Request trade result ok
     #res=broker.rest_client.get("/linear-swap-api/v1/swap_cross_trade_state", {"contract_code": "BTC-USDT"})
     #print(res)
     # Bad
     #print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"contract_code": "BTC-USDT"}))
-    res = broker.get_order_info("1", "BTC-USDT")
+    res = broker.get_order_info("BTC-USDT")
     #res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_open_orders",  {"contract_code": "BTC-USDT"})
     #print(res)
 

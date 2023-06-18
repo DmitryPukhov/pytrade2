@@ -72,7 +72,7 @@ class HuobiBrokerHbdm(Broker):
 
         # Prepare create order command
         path = "/linear-swap-api/v1/swap_cross_order"
-        client_order_id = int(datetime.datetime.utcnow().timestamp())
+        client_order_id = int(datetime.utcnow().timestamp())
         limit_ratio = 0.01  # 15030 for bt
         data = {"contract_code": symbol,
                 "client_order_id": client_order_id,
@@ -108,9 +108,9 @@ class HuobiBrokerHbdm(Broker):
         return self.cur_trade
 
     @staticmethod
-    def res2trade(self, res: dict):
+    def res2trade(res: dict):
         """ Convert get order response to trade model"""
-        data = res["data"]
+        data = res["data"][0]
         dt = datetime.utcfromtimestamp(data["created_at"] / 1000)
 
         trade = Trade()
@@ -119,11 +119,14 @@ class HuobiBrokerHbdm(Broker):
         trade.quantity = data["volume"]
         trade.open_order_id = str(data["order_id"])
         trade.open_time = dt
+        trade.open_price = data["trade_avg_price"]
         # ??? Process status better
         trade.status = TradeStatus.opened if data["status"] == "filled" else TradeStatus.opened
         return trade
 
     def get_order_info(self, client_order_id: int, ticker: str):
+        """ Request order from exchange"""
+
         path = "/linear-swap-api/v1/swap_cross_order_info"
         data = {"client_order_id": client_order_id, "contract_code": ticker}
         res = self.rest_client.post(path, data)
