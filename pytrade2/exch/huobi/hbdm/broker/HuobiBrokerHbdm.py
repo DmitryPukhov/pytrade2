@@ -102,7 +102,10 @@ class HuobiBrokerHbdm(Broker):
                 if self.cur_trade:
                     self._log.info(f"Got order event: {msg}")
                     order_direction = Trade.order_side_codes(msg["direction"].upper())
-                    if order_direction == - self.cur_trade.direction():
+                    if order_direction == self.cur_trade.direction():
+                        self.cur_trade.status = TradeStatus.opened
+
+                    elif order_direction == - self.cur_trade.direction():
                         # Close current trade
                         self.update_trade_closed_event(msg, self.cur_trade)
                         self.db_session.commit()
@@ -137,7 +140,7 @@ class HuobiBrokerHbdm(Broker):
                     "order_price_type": "limit",
                     "tp_trigger_price": take_profit_price,
                     "tp_order_price": round(take_profit_price * (1 - direction * limit_ratio), self.price_precision),
-                    "reduce_only": 0,
+                    "reduce_only": 0,  # 0 for opening order
                     "sl_trigger_price": stop_loss_price,
                     "sl_order_price": round(stop_loss_price * (1 - direction * limit_ratio), self.price_precision),
                     "tp_order_price_type": "limit",
@@ -147,7 +150,7 @@ class HuobiBrokerHbdm(Broker):
             res = self.rest_client.post(path=path, data=data)
 
             # Process result
-            print(f"Create order response: {res}")
+            self._log.info(f"Create order response: {res}")
             if res["status"] == "ok":
                 self._log.debug(f"Create order response: {res}")
 
@@ -161,7 +164,7 @@ class HuobiBrokerHbdm(Broker):
                 # Save current trade to db
                 self.db_session.add(self.cur_trade)
                 self.db_session.commit()
-                self._log.info(f"Created order: {self.cur_trade}")
+                self._log.info(f"Opened trade: {self.cur_trade}")
             else:
                 self._log.error(f"Error creating order: {res}")
 
@@ -236,6 +239,11 @@ class HuobiBrokerHbdm(Broker):
         return res
 
     @staticmethod
+    def update_trade_opened_event(raw, trade):
+        trade.open_price = float(raw["trade_avg_price"])
+        trade.status = TradeStatus.opened
+
+    @staticmethod
     def update_trade_closed_event(raw, trade):
         """ When close message came from socket"""
         trade.close_order_id = str(raw["order_id"])
@@ -293,7 +301,7 @@ class HuobiBrokerHbdm(Broker):
         trade.open_time = dt
         trade.open_price = data["trade_avg_price"]
         # ??? Process status better
-        trade.status = TradeStatus.opened if data["status"] == "filled" else TradeStatus.opened
+        trade.status = TradeStatus.opened if data["status"] == HuobiBrokerHbdm.HuobiOrderStatus.filled else TradeStatus.opening
         return trade
 
     def get_order_info(self, client_order_id: int, ticker: str):

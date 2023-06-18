@@ -30,9 +30,18 @@ class TestHuobiBrokerHbdm(TestCase):
              'fail_reason': None, 'triggered_price': None, 'relation_order_id': '-1'}],
          'trade_partition': 'USDT'}, 'ts': 1687071763277}
 
+    def test_update_trade_opened(self):
+        dt = datetime(year=2023, month=6, day=12, hour=13, minute=16, second=1, tzinfo=timezone.utc)
+        msg = {"order_id": 1, "trade_avg_price": 2, "created_at": int(dt.timestamp() * 1000)}
+        trade = Trade()
+        HuobiBrokerHbdm.update_trade_opened_event(msg, trade)
+
+        self.assertEqual("opened", trade.status)
+        self.assertEqual(2, trade.open_price)
+
     def test_update_trade_closed_event(self):
         dt = datetime(year=2023, month=6, day=12, hour=13, minute=16, second=1, tzinfo=timezone.utc)
-        msg = {"order_id": 1, "trade_avg_price": 2, "created_at": int(dt.timestamp()*1000)}
+        msg = {"order_id": 1, "trade_avg_price": 2, "created_at": int(dt.timestamp() * 1000)}
         trade = Trade()
         HuobiBrokerHbdm.update_trade_closed_event(msg, trade)
 

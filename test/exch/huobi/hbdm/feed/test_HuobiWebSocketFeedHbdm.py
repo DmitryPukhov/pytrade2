@@ -51,7 +51,7 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
         feed.consumers.append(consumer)
 
         # Call
-        feed.on_socket_data(msg)
+        feed.on_socket_data('market.BTC-USDT.bbo', msg)
         consumer.on_ticker.assert_called_once()
         actual = consumer.on_ticker.call_args[0][0]
         self.assertEqual("BTC-USDT", actual["symbol"])
@@ -71,5 +71,5 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
         feed.consumers.append(consumer)
 
         # Call
-        feed.on_socket_data(msg)
+        feed.on_socket_data('notmarket.BTC-USDT.bbo', msg)
         consumer.on_ticker.assert_not_called()
