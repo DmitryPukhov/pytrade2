@@ -54,8 +54,9 @@ class HuobiRestClient:
             url = url + url_suffix
             headers = {'Content-type': 'application/x-www-form-urlencoded'}
             # Request
-            res = requests.get(url, params=params, headers=headers)
-            return res.json()
+            res_json = requests.get(url, params=params, headers=headers).json()
+            self._log.debug(f"Got response: {res_json}")
+            return res_json
         except Exception as e:
             self._log.error(e)
         return None
@@ -72,8 +73,9 @@ class HuobiRestClient:
             # url = f'https://{self.host}{path}?{url_suffix}'
             headers = {'Accept': 'application/json', 'Content-type': 'application/json'}
             # Post request to huobi rest service
-            res = requests.post(url, json=data, headers=headers)
-            return res.json()
+            res_json = requests.post(url, json=data, headers=headers).json()
+            self._log.debug(f"Got response: {res_json}")
+            return res_json
         except Exception as e:
             self._log.error(e)
         return None

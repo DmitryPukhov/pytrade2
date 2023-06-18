@@ -186,7 +186,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         delta = max([dt - last_bid_ask, dt - last_level2, dt - last_candle]) \
             if last_bid_ask and last_level2 and last_candle > datetime.min else None
         is_alive = delta and (delta < maxdelta)
-        self._log.debug(f"Strategy is_alive: {is_alive}. Inactivity time: {delta}, max allowed: {maxdelta}")
         return is_alive
 
     def on_level2(self, level2: List[Dict]):
