@@ -61,8 +61,8 @@ class HuobiBrokerHbdm(Broker):
         # Open and wait until opened
         if not self.ws_client.is_opened:
             self.ws_client.open()
-        while not self.ws_client.is_opened:
-            time.sleep(1)
+        # while not self.ws_client.is_opened:
+        #     time.sleep(1)
 
         self.update_cur_trade_status()
         # Subscribe
