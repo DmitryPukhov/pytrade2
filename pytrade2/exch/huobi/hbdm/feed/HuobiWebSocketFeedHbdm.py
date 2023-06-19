@@ -1,7 +1,7 @@
 import logging
 import re
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
 from exch.huobi.hbdm.feed.HuobiFeedBase import HuobiFeedBase
@@ -54,17 +54,15 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
     def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""
         try:
-            # Channel like "market.BTC-USDT.bbo"
-            ch = msg.get("ch")
-            if not ch:
+            # Topic is a channel like "market.BTC-USDT.bbo"
+            if not topic:
                 return
-            # If bidask received
-
-            if self.is_bidask(ch):
+            # If bidask or level2 received
+            if self.is_bidask(topic):
                 bidask = self.rawticker2model(msg["tick"])
                 for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
                     consumer.on_ticker(bidask)
-            elif self.is_level2(ch):
+            elif self.is_level2(topic):
                 l2 = self.rawlevel2model(msg["tick"])
                 for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
                     consumer.on_level2(l2)
@@ -72,16 +70,15 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
             self._log.error(e)
 
     @staticmethod
-    def rawlevel2model(tick: dict) -> Dict:
-
+    def rawlevel2model(tick: dict) -> [{}]:
         # dt = datetime.utcfromtimestamp(tick["ts"] / 1000)
         dt = datetime.utcnow()
         ticker = HuobiWebSocketFeedHbdm.ticker_of_ch(tick["ch"])
-        out = [{"datetime": dt, "symbol": ticker,
-                "bid": float(price), "bid_vol": float(vol)} for price, vol in tick["bids"]] + \
-              [{"datetime": dt, "symbol": ticker,
-                "ask": float(price), "ask_vol": float(vol)} for price, vol in tick["asks"]]
-        return out
+        bids: List[Dict] = [{"datetime": dt, "symbol": ticker, "bid": float(price), "bid_vol": float(vol)}
+                            for price, vol in tick["bids"]]
+        asks: List[Dict] = [{"datetime": dt, "symbol": ticker, "ask": float(price), "ask_vol": float(vol)}
+                            for price, vol in tick["asks"]]
+        return bids + asks
 
     @staticmethod
     def rawticker2model(tick: dict) -> Dict:

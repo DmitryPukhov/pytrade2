@@ -2,8 +2,6 @@ import logging
 from datetime import datetime
 
 import pandas as pd
-from huobi.client.market import MarketClient
-from huobi.model.market.candlestick import Candlestick
 
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.feed.HuobiFeedBase import HuobiFeedBase
