@@ -13,7 +13,7 @@ create_instance() {
     --cores 4 \
     --platform "standard-v3" \
     --network-interface subnet-name=default-ru-central1-a,nat-ip-version=ipv4,nat-address="$public_ip" \
-    --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2204-lts,type=network-hdd,size=32 \
+    --create-boot-disk image-folder-id=standard-images,image-family=ubuntu-2204-lts,type=network-ssd,size=32 \
     --ssh-key ./secret/id_rsa.pub
 }
 
