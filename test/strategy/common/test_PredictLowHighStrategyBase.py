@@ -78,8 +78,8 @@ class TestPredictLowHighStrategyBase(TestCase):
         strategy = StrategyStub()
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=10, ask=11, bid_max_fut=19,
-                                                                               bid_min_fut=9, ask_min_fut=0,
-                                                                               ask_max_fut=0)
+                                                                               bid_min_fut=9, ask_min_fut=11,
+                                                                               ask_max_fut=11)
         self.assertEqual(1, actual_signal)
         self.assertEqual(11, price)
         self.assertEqual(8.5, actual_loss)  # price - sl*1.25
@@ -89,7 +89,7 @@ class TestPredictLowHighStrategyBase(TestCase):
         strategy = StrategyStub()
         strategy.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
         strategy.fut_low_high = pd.DataFrame(
-            [{"bid_min_fut": 9, "bid_max_fut": 19, "ask_min_fut": 0, "ask_max_fut": 0}])
+            [{"bid_min_fut": 9, "bid_max_fut": 19, "ask_min_fut": 11, "ask_max_fut": 11}])
 
         # Process: buy or sell or nothing
         open_signal = strategy.process_new_prediction()
