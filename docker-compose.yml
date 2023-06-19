@@ -11,6 +11,10 @@ services:
       - ./pytrade2/cfg:/pytrade2/cfg
     command: python ./App.py --strategy None
     restart: always
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   simplekerasstrategy:
     container_name: simplekerasstrategy
