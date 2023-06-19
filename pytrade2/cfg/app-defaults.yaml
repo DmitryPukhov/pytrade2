@@ -5,8 +5,8 @@ pytrade2.exchange.huobi.market.client.url: "https://api.huobi.pro"
 pytrade2.exchange.huobi.trade.client.url: "https://api.huobi.pro"
 pytrade2.exchange.huobi.account.client.url: "https://api.huobi.pro"
 
-pytrade2.price.precision: 2
-pytrade2.amount.precision: 2
+pytrade2.price.precision: 1
+pytrade2.amount.precision: 1
 
 pytrade2.strategy: SimpleKerasStrategy
 pytrade2.strategy.learn.interval: "20s"
