@@ -39,7 +39,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         # 'data': [{'id': 1686981240, 'open': 26677.8, 'close': 26663.3, 'high': 26703.9, 'low': 26654.7,
         # 'amount': 33.826, 'vol': 33826, 'trade_turnover': 902606.0032, 'count': 228}], ...
         # Candles to list of dict as a data for df
-        if "data" not in raw_candles:
+        if not raw_candles or "data" not in raw_candles:
             return pd.DataFrame()
 
         ch = raw_candles["ch"]
