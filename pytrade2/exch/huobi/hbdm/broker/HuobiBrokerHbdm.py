@@ -222,11 +222,11 @@ class HuobiBrokerHbdm(Broker):
             res = self.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders",
                                         self.huobi_history_close_order_query_params(self.cur_trade))
 
-            if len(res["data"] > 1):
+            if len(res["data"]) > 1:
                 raise RuntimeError(
                     f"Error: got multiple closed orders from exchange. Cur trade: {self.cur_trade}, "
                     f"history query params: {params},  exchange response: {res} ")
-            if len(res["data"] == 1):
+            if len(res["data"]) == 1:
                 # Got closing order
                 self.update_trade_closed(res, self.cur_trade)
                 self._log.info(f"Current trade found closed, probably by sl or tp: {self.cur_trade}")

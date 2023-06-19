@@ -26,10 +26,10 @@ class Broker:
         self.__init_db__(config)
 
         # Load saved opened trade
-        if self.allow_trade:
-            self.cur_trade = self.read_last_opened_trade()
-            if self.cur_trade:
-                self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
+        self.cur_trade = self.read_last_opened_trade()
+        if self.cur_trade:
+            self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
+            if self.allow_trade:
                 self.fix_cur_trade()
         else:
             self._log.info("Opened trades not found")
