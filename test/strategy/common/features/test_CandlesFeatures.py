@@ -42,6 +42,10 @@ class TestCandlesFeatures(TestCase):
              "open": 16, "high": 7.0000, "low": 7.0000, "close": 7000, "vol": 70000}]) \
             .set_index("close_time")
 
+    def test_candles_combined_features_of_empty(self):
+        features = CandlesFeatures.candles_combined_features_of(pd.DataFrame(), 2, pd.DataFrame(), 2)
+        self.assertEqual(True, features.empty)
+
     def test_candles_combined_features_of(self):
         features = CandlesFeatures.candles_combined_features_of(self.candles_1m_5(), 2, self.candles_5m_5(), 2)
 

@@ -250,7 +250,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
             self.last_trade_check_time = datetime.utcnow()
 
     def process_new_data(self):
-        if not self.bid_ask.empty and not self.level2.empty and self.model and not self.is_processing \
+        if not self.bid_ask.empty and not self.level2.empty and not self.candles_features.empty and self.model and not self.is_processing \
                 and self.X_pipe and self.y_pipe:
             try:
                 self.is_processing = True
