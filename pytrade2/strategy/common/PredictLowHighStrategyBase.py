@@ -1,3 +1,4 @@
+import gc
 import logging
 import multiprocessing
 from datetime import datetime, timedelta
@@ -419,7 +420,9 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
                 # Save weights
                 self.save_model()
-                tensorflow.keras.backend.clear_session()  # To avoid OOM
+                # to avoid OOM
+                tensorflow.keras.backend.clear_session()
+                gc.collect()
 
             else:
                 self._log.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
