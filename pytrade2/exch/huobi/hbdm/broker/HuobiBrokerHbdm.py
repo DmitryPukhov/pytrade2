@@ -115,6 +115,18 @@ class HuobiBrokerHbdm(Broker):
         except Exception as e:
             self._log.error(f"Socket message processing error: {e}")
 
+    @staticmethod
+    def adjust_prices(direction, price: float, stop_loss_price: float, take_profit_price: float, price_precision: int,
+                      limit_ratio: float) -> \
+            (float, float, float, float, float):
+        """ Calc trigger and order prices, adjust precision """
+        price = float(round(price, price_precision))
+        tp_trigger_price = float(round(take_profit_price, price_precision))
+        tp_order_price = float(round(take_profit_price * (1 - direction * limit_ratio), price_precision))
+        sl_trigger_price = float(round(stop_loss_price, price_precision))
+        sl_order_price = float(round(stop_loss_price * (1 - direction * limit_ratio), price_precision))
+        return price, sl_trigger_price, sl_order_price, tp_trigger_price, tp_order_price
+
     def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,
                          price: Optional[float],
@@ -127,27 +139,32 @@ class HuobiBrokerHbdm(Broker):
             if self.cur_trade:
                 self._log.info(f"Can not create current trade because another exists:{self.cur_trade}")
             side = Trade.order_side_names[direction]
+            # Adjust prices to precision
+            limit_ratio = 0.01
+            price, sl_trigger_price, sl_order_price, tp_trigger_price, tp_order_price = self.adjust_prices(
+                direction, price, stop_loss_price, take_profit_price, self.price_precision, limit_ratio)
             self._log.info(
-                f"Creating current {symbol} {side} trade. "
-                f"price: {price}, sl: {stop_loss_price}, tp: {take_profit_price}")
+                f"Creating current {symbol} {side} trade. price: {price}, "
+                f"sl trigger: {sl_trigger_price}, sl order: {sl_order_price},"
+                f" tp trigger: {tp_trigger_price}, tp order: {tp_order_price},"
+                f"price precision: {self.price_precision}, limit ratio: {limit_ratio}")
             # Prepare create order command
             path = "/linear-swap-api/v1/swap_cross_order"
             client_order_id = int(datetime.utcnow().timestamp())
-            limit_ratio = 0.01  # 15030 for bt
 
             data = {"contract_code": symbol,
                     "client_order_id": client_order_id,
                     # "contract_type": "swap",
                     "volume": quantity,
                     "direction": side,
-                    "price": round(price, self.price_precision),
+                    "price": price,
                     "lever_rate": 1,
                     "order_price_type": "limit",
-                    "tp_trigger_price": round(take_profit_price, self.price_precision),
-                    "tp_order_price": round(take_profit_price * (1 - direction * limit_ratio), self.price_precision),
+                    "tp_trigger_price": tp_trigger_price,
+                    "tp_order_price": tp_order_price,
                     "reduce_only": 0,  # 0 for opening order
-                    "sl_trigger_price": round(stop_loss_price, self.price_precision),
-                    "sl_order_price": round(stop_loss_price * (1 - direction * limit_ratio), self.price_precision),
+                    "sl_trigger_price": sl_trigger_price,
+                    "sl_order_price": sl_order_price,
                     "tp_order_price_type": "limit",
                     "sl_order_price_type": "limit"
                     }

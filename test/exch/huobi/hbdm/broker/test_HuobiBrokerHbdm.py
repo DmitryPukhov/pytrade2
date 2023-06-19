@@ -119,3 +119,14 @@ class TestHuobiBrokerHbdm(TestCase):
         self.assertEqual(datetime.utcfromtimestamp(1687069745272 / 1000), actual.open_time)
         self.assertEqual(26542, actual.open_price)
         self.assertEqual("1119997217854570496", actual.open_order_id)
+
+    def test_adjust_prices(self):
+        price, sl_trigger, sl_order, tp_trigger, tp_order = HuobiBrokerHbdm.adjust_prices(1, 100, 90, 110, 2, 0.1)
+        self.assertEqual(100.0, price)
+        self.assertEqual(81.0, sl_order)
+        self.assertEqual(110.0, tp_trigger)
+        self.assertEqual(99.0, tp_order)  # 110*(1-0.1)
+
+    def test_adjust_prices_precisions(self):
+        price, _, _, _, _ = HuobiBrokerHbdm.adjust_prices(1, 100, 90, 110, 2, 0.1)
+        self.assertEqual(100.0, price)
