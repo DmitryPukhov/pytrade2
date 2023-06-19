@@ -2,6 +2,7 @@ import datetime
 import logging
 import time
 from datetime import datetime
+from io import StringIO
 from typing import Optional
 
 from exch.Broker import Broker
@@ -127,7 +128,8 @@ class HuobiBrokerHbdm(Broker):
                 self._log.info(f"Can not create current trade because another exists:{self.cur_trade}")
             side = Trade.order_side_names[direction]
             self._log.info(
-                f"Creating current {symbol} {side} trade. price: {price}, sl: {stop_loss_price}, tp: {take_profit_price}")
+                f"Creating current {symbol} {side} trade. "
+                f"price: {price}, sl: {stop_loss_price}, tp: {take_profit_price}")
             # Prepare create order command
             path = "/linear-swap-api/v1/swap_cross_order"
             client_order_id = int(datetime.utcnow().timestamp())
@@ -316,3 +318,27 @@ class HuobiBrokerHbdm(Broker):
         res = self.rest_client.post(path, data)
         self._log.debug(f"Got order {res}")
         return res
+
+    def get_report(self):
+        """ Short info for report """
+
+        # Form message string
+        msg = StringIO()
+        msg.write(super().get_report())
+        try:
+            # Report balance
+            res = self.rest_client.post("/linear-swap-api/v1/swap_balance_valuation", {"valuation_asset": "USDT"})
+            msg.writelines([f'Balance {b["valuation_asset"]}: {b["balance"]}\n' for b in res["data"]])
+
+            # Report positions
+            res = self.rest_client.post("/linear-swap-api/v1/swap_cross_account_info", {"margin_account": "USDT"})
+            data = res["data"]
+            for dataitem in data:
+                for c in [c for c in dataitem["futures_contract_detail"] if c["margin_position"] != 0]:
+                    currency = c['trade_partition']
+                    msg.write(f"Position {c['contract_code']}: {c['margin_position']} {currency}, "
+                              f"frozen:{c['margin_frozen']} {currency}, available: {c['margin_available']} {currency}\n")
+        except Exception as e:
+            self._log.error(f"Error reporting broker info: {e}")
+
+        return msg.getvalue()

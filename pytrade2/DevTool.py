@@ -12,6 +12,7 @@ from huobi.client.trade import TradeClient
 
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
 
 
@@ -20,6 +21,9 @@ class DevTool():
 
     def __init__(self):
         logging.basicConfig(level=logging.DEBUG)
+        AccountManagerHbdm.sub_events = None
+        HuobiBrokerHbdm.sub_events = None
+
         # Read config
         strategy = "SimpleKerasStrategy"
         yccfgdir = "../deploy/yandex_cloud/secret"
@@ -35,11 +39,8 @@ class DevTool():
         key = self.config["pytrade2.exchange.huobi.connector.key"]
         secret = self.config["pytrade2.exchange.huobi.connector.secret"]
 
-        self.trade_client = TradeClient(api_key=key, secret_key=secret)
-        self.market_client = MarketClient(api_key=key, secret_key=secret)
-        self.account_client = AccountClient(api_key=key, secret_key=secret)
-        self.account_id = self.config["pytrade2.broker.huobi.account.id"]
-
+        AccountManagerHbdm.sub_events = None
+        HuobiBrokerHbdm.sub_events = None
         self.key, self.secret = key, secret
 
     def print_balance(self, header: str):
@@ -201,8 +202,10 @@ class DevTool():
 
 
 if __name__ == "__main__":
+
     dt = DevTool()
     broker = dt.new_hbdm_broker()
+    print(broker.get_report())
     # Set one way ok
     # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
     # Create order ok
@@ -214,8 +217,8 @@ if __name__ == "__main__":
 
     # Order + sltp
     # Ok get order info by client id from broker
-    res = broker.get_order_info(client_order_id=1687058944, ticker="BTC-USDT")
-    print(f"Got {len(res['data'])} orders: {res}")
+    #res = broker.get_order_info(client_order_id=1687058944, ticker="BTC-USDT")
+    #print(f"Got {len(res['data'])} orders: {res}")
 
     # Opened sl/tp orders by main order id
     # print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
