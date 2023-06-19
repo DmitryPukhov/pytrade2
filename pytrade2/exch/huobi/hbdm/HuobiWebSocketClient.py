@@ -123,36 +123,39 @@ class HuobiWebSocketClient:
         return data
 
     def _on_msg(self, ws, message):
-        plain = message
-        if not self._be_spot:
-            plain = gzip.decompress(message).decode()
+        try:
+            plain = message
+            if not self._be_spot:
+                plain = gzip.decompress(message).decode()
 
-        jdata = json.loads(plain)
-        if 'ping' in jdata:
-            sdata = plain.replace('ping', 'pong')
-            self._ws.send(sdata)
-            return
-        elif 'op' in jdata:
-            opdata = jdata['op']
-            if opdata == 'ping':
+            jdata = json.loads(plain)
+            if 'ping' in jdata:
                 sdata = plain.replace('ping', 'pong')
                 self._ws.send(sdata)
                 return
-            else:
-                pass
-        elif 'action' in jdata:
-            opdata = jdata['action']
-            if opdata == 'ping':
-                sdata = plain.replace('ping', 'pong')
-                self._ws.send(sdata)
-                return
-            else:
-                pass
-        elif 'ch' in jdata:
-            # Pass the event to subscribers: broker, account, feed
-            topic = jdata['ch'].lower()
-            for consumer in [c for c in self._consumers[topic] if hasattr(c, 'on_socket_data')]:
-                consumer.on_socket_data(topic, jdata)
+            elif 'op' in jdata:
+                opdata = jdata['op']
+                if opdata == 'ping':
+                    sdata = plain.replace('ping', 'pong')
+                    self._ws.send(sdata)
+                    return
+                else:
+                    pass
+            elif 'action' in jdata:
+                opdata = jdata['action']
+                if opdata == 'ping':
+                    sdata = plain.replace('ping', 'pong')
+                    self._ws.send(sdata)
+                    return
+                else:
+                    pass
+            elif 'ch' in jdata:
+                # Pass the event to subscribers: broker, account, feed
+                topic = jdata['ch'].lower()
+                for consumer in [c for c in self._consumers[topic] if hasattr(c, 'on_socket_data')]:
+                    consumer.on_socket_data(topic, jdata)
+        except Exception as e:
+            self._log.error(e)
 
     def _on_close(self, ws):
         self._log.info("Socket closed")
