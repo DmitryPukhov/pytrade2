@@ -1,6 +1,7 @@
 ##### For dev only #####
 import datetime
 import logging
+import os
 from io import StringIO
 
 import time
@@ -25,7 +26,7 @@ class DevTool():
         HuobiBrokerHbdm.sub_events = None
 
         # Read config
-        strategy = "LSTMStrategy"
+        strategy = "SimpleKerasStrategy"
         yccfgdir = "../deploy/yandex_cloud/secret"
         devcfgdir = "../pytrade2/cfg"
         cfgpaths = [f"{devcfgdir}/app-defaults.yaml", f"{yccfgdir}/{strategy.lower()}.yaml"]
@@ -44,178 +45,13 @@ class DevTool():
         HuobiBrokerHbdm.sub_events = None
         self.key, self.secret = key, secret
 
-    def print_balance(self, header: str):
-        # Account balance
-        msg = StringIO(header)
-        balance = self.account_client.get_balance(account_id=self.account_id)
-        actual_balance = "\n".join(
-            [f"{b.currency} amount: {b.balance}, type: {b.type}" for b in balance if float(b.balance) > 0])
-        msg.write(actual_balance)
-        print(msg.getvalue())
-
-    def test_rest_client(self):
-        hc = HuobiRestClient(access_key=self.key, secret_key=self.secret)
-
-        print(hc.get("/swap-api/v1/swap_api_trading_status"))
-        print(hc.post("/swap-api/v1/swap_account_info"))
-        # future
-        # host = 'api.hbdm.vn'
-        path = '/api/v1/contract_position_info'
-        params = {'symbol': 'btc'}
-        print('future:{}\n'.format(hc.post(path, params)))
-
-        # coin-swap
-        # host = 'api.hbdm.vn'
-        path = '/swap-api/v1/swap_position_info'
-        params = {'contract_code': 'btc-usd'}
-        print('coin-swap:{}\n'.format(hc.post(path, params)))
-
-        # usdt-swap
-        # host = 'api.hbdm.vn'
-        path = '/linear-swap-api/v1/swap_cross_position_info'
-        params = {'contract_code': 'btc-usdt'}
-        print('usdt-swap:{}\n'.format(hc.post(path, params)))
-
-    def test_usdt(self):
-        access_key, secret_key = self.key, self.secret
-
-        ################# usdt-swap
-        print('*****************\nstart usdt-swap ws.\n')
-        # wss://api.hbdm.com/swap-ws
-        host = 'api.hbdm.com'
-        path = '/linear-swap-ws'
-        with HuobiWebSocketClient(host, path, access_key, secret_key, False) as usdt_swap:
-            # usdt_swap = HuobiWebSocketClient(host, path, access_key, secret_key, False)
-            # usdt_swap.open()
-
-            # sub depth: https://huobiapi.github.io/docs/coin_margined_swap/v1/en/#subscribe-market-depth-data
-            # sub_params = {
-            #     "sub": "market.BTC-USD.depth.step15"
-            #     #"id": "123"
-            # }
-            # sub_params = {
-            #     "sub": "market.BTC-USD.bbo"
-            #     #"id": "123"
-            # }
-            sub_params = {
-                "sub": "market.BTC-USDT.trade.detail"
-                # "id": "123"
-            }
-            usdt_swap.sub(sub_params, object())
-            time.sleep(100)
-            # usdt_swap.close()
-            print('end usdt-swap ws.\n')
-
-    def test_ws_swap(self):
-        access_key, secret_key = self.key, self.secret
-
-        ################# usdt-swap
-        print('*****************\nstart usdt-swap ws.\n')
-        # wss://api.hbdm.com/swap-ws
-        host = 'api.hbdm.com'
-        path = '/swap-ws'
-        with HuobiWebSocketClient(host, path, access_key, secret_key, False) as usdt_swap:
-            # usdt_swap = HuobiWebSocketClient(host, path, access_key, secret_key, False)
-            # usdt_swap.open()
-
-            # sub depth: https://huobiapi.github.io/docs/coin_margined_swap/v1/en/#subscribe-market-depth-data
-            # sub_params = {
-            #     "sub": "market.BTC-USD.depth.step15"
-            #     #"id": "123"
-            # }
-            # sub_params = {
-            #     "sub": "market.BTC-USD.bbo"
-            #     #"id": "123"
-            # }
-            sub_params = {
-                "sub": "market.BTC-USD.trade.detail"
-                # "id": "123"
-            }
-            usdt_swap.sub(sub_params, "")
-            time.sleep(100)
-            # usdt_swap.close()
-            print('end usdt-swap ws.\n')
-
-    def test_ws_client(self):
-        access_key, secret_key = self.key, self.secret
-
-        ################# spot
-        print('*****************\nstart spot ws.\n')
-        host = 'api.huobi.de.com'
-        path = '/ws/v2'
-        with HuobiWebSocketClient(host, path, access_key, secret_key, True) as spot:
-            # only sub interface
-            sub_params = {
-                "action": "sub",
-                "ch": "accounts.update"
-            }
-            spot.sub(sub_params, "")
-            time.sleep(10)
-            print('end spot ws.\n')
-
-        ################# future
-        print('*****************\nstart future ws.\n')
-        host = 'api.hbdm.vn'
-        path = '/notification'
-        with HuobiWebSocketClient(host, path, access_key, secret_key, False) as future:
-            # only sub interface
-            sub_params = {
-                "op": "sub",
-                "topic": "accounts.trx"
-            }
-            future.sub(sub_params, "")
-            time.sleep(10)
-            print('end future ws.\n')
-
-        ################# coin-swap
-        print('*****************\nstart coin-swap ws.\n')
-        host = 'api.hbdm.vn'
-        path = '/swap-notification'
-        with HuobiWebSocketClient(host, path, access_key, secret_key, False) as coin_swap:
-            # only sub interface
-            sub_params = {
-                "op": "sub",
-                "topic": "accounts.TRX-USD"
-            }
-            coin_swap.sub(sub_params, "")
-            time.sleep(10)
-            print('end coin-swap ws.\n')
-
-        ################# usdt-swap
-        print('*****************\nstart usdt-swap ws.\n')
-        host = 'api.hbdm.vn'
-        path = '/linear-swap-notification'
-        with HuobiWebSocketClient(host, path, access_key, secret_key, False) as usdt_swap:
-            # only sub interface
-            sub_params = {
-                "op": "sub",
-                "topic": "accounts_cross.USDT"
-            }
-            usdt_swap.sub(sub_params, "")
-            time.sleep(10)
-            print('end usdt-swap ws.\n')
-
     def new_hbdm_broker(self):
         rc = HuobiRestClient(access_key=self.key, secret_key=self.secret)
         ws = HuobiWebSocketClient(host="api.hbdm.vn", path="'/linear-swap-notification", access_key=self.key,
                                   secret_key=self.secret, be_spot=False)
         return HuobiBrokerHbdm(conf=self.config, rest_client=rc, ws_client=ws)
 
-
-if __name__ == "__main__":
-
-    dt = DevTool()
-    broker = dt.new_hbdm_broker()
-
-
-    # Inquiry error. Please try again later
-    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
-    #                             {"pair": "BTC-USDT", "order_id": 1120523720633106435})
-
-    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_openorders", {"pair": "BTC-USDT"});
-    def is_my_order(order_id, source_order_id):
-        return order_id in {'1120523720679243778,1120523720679243777'} or source_order_id == '1120523720633106435'
-
+    @staticmethod
     def print_sltp_orders(res):
         orders = res["data"]["orders"]
         print("sltp orders:")
@@ -227,6 +63,7 @@ if __name__ == "__main__":
             print(f"Order id: {o['order_id']}, source id: {o['source_order_id']}, direction: {o['direction']}, "
                   f"status: {o['status']}, created:{cdt},  updated: {udt}, relation_order_id: {o['relation_order_id']}")
 
+    @staticmethod
     def print_orders(res):
         orders = res["data"]
         print("orders:")
@@ -235,24 +72,49 @@ if __name__ == "__main__":
             udt = datetime.datetime.fromtimestamp(uts / 1000)
             cts = o["create_date"]
             cdt = datetime.datetime.fromtimestamp(cts / 1000)
-            print(f"Order id: {o['order_id']}, direction: {o['direction']}, status: {o['status']}, created:{cdt},  updated: {udt}, is_tpsl: {o['is_tpsl']}, price: {o['trade_avg_price']}")
+            print(
+                f"Order id: {o['order_id']}, direction: {o['direction']}, status: {o['status']}, created:{cdt},  updated: {udt}, is_tpsl: {o['is_tpsl']}, price: {o['trade_avg_price']}")
+
+
+if __name__ == "__main__":
+    os.environ['TZ'] = 'UTC'
+    time.tzset()
+    dt = DevTool()
+    broker = dt.new_hbdm_broker()
+
+    def is_my_order(order_id, source_order_id):
+        return order_id in {'1120523720679243778,1120523720679243777'} or source_order_id == '1120523720633106435'
+
+
 
     #
     # open '1120523720633106435'
     # sl '1120523720679243778,1120523720679243777'
     #
     # closed at 21:53: 1120512647122935809, 1120512647122935808
-    #res=broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"pair": "BTC-USDT", "order_id": 1120523720633106435})
+    # res=broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"pair": "BTC-USDT", "order_id": 1120523720633106435})
 
-    dt = datetime.datetime(year=2023, month=6, day=19, hour=20, minute=21, second=13)
-    ts = int(dt.timestamp() *1000)
-    #res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"order_id": 1120512647106158594})
-    res=broker.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders", {"contract": "BTC-USDT", "trade_type":17,
-                                                                             "type":2, "status": 6})
-    print_orders(res)
-    res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_hisorders",
-                                  {"pair": "BTC-USDT", "status": 0,  "create_date": ts})
-    print_sltp_orders(res)
+    # ???
+    # ? Open order Order id: 1120709961248485376, direction: buy, status: 6, created:2023-06-20 05:41:16.536000,  updated: 2023-06-20 05:41:18.695000, is_tpsl: 1, price: 26871.2
+    # ? Closing order Order id: 1120706425254203392, direction: sell, status: 6, created:2023-06-20 05:27:13.492000,  updated: 2023-06-20 12:07:41.780000, is_tpsl: 1, price: 26938.7
+
+    dt = datetime.datetime(year=2023, month=6, day=20, hour=2, minute=41, second=00)
+    ts = int(dt.timestamp() * 1000)
+    # res = broker.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders",
+    #                               {'contract': 'BTC-USDT', 'trade_type': 18, 'type': 2, 'status': 6,
+    #                                'start_time': 1687239676536})
+    # type2 - finished,
+    #
+    # trade_type 0:All; 1: Open long; 2: Open short; 3: Close short; 4: Close long;
+    # 5: Liquidate long positions; 6: Liquidate short positions, 17:buy(one-way mode), 18:sell(one-way mode)
+
+    res = broker.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders",
+                                  {'contract': 'BTC-USDT', 'trade_type': 18, 'type': 2, 'status': 6, "start_time":ts})
+
+    DevTool.print_orders(res)
+    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
+    #                               {"pair": "BTC-USDT", "order_id": 1120709961248485376})
+    # DevTool.print_sltp_orders(res)
 
     # Works only for main order, not for sl/tp
     # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"order_id": 1120523720679243777})
@@ -281,8 +143,8 @@ if __name__ == "__main__":
     # print(f"Got {len(res['data'])} orders: {res}")
 
     # Opened sl/tp orders by main order id
-    # print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
-    #                               {"contract_code": "BTC-USDT", "order_id": 1119997217854570496}))
+    print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
+                                  {"contract_code": "BTC-USDT", "order_id": 1120709961248485376}))
 
     # Get opened orders - do I need this?
     # print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_trigger_openorders",  {"contract_code": "BTC-USDT"}))

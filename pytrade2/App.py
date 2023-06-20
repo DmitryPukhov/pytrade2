@@ -6,6 +6,7 @@ import signal
 import sys
 import threading
 from collections import defaultdict
+import time
 from pprint import pprint
 from typing import Dict
 
@@ -23,6 +24,9 @@ class App:
     def __init__(self):
         # Suppress tensorflow log rubbish
         os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "1")
+
+        os.environ['TZ'] = 'UTC'
+        time.tzset()
         self._init_logger()
         self._log = logging.getLogger(self.__class__.__name__)
 

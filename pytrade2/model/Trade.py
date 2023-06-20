@@ -1,8 +1,5 @@
-from typing import Optional
-
-from sqlalchemy import DateTime, Column, Float, String, INT, BigInteger, Integer
+from sqlalchemy import DateTime, Column, Float, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import func, cast
 
 
 class Base(DeclarativeBase):

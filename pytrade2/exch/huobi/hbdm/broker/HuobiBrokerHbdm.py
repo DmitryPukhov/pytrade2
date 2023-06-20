@@ -1,7 +1,7 @@
 import datetime
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from io import StringIO
 from typing import Optional
 
@@ -197,9 +197,14 @@ class HuobiBrokerHbdm(Broker):
         # Closing trade type - opposite for main order
         close_trade_type = [HuobiBrokerHbdm.HuobiTradeType.buy, None, HuobiBrokerHbdm.HuobiTradeType.sell][
             trade.direction() + 1]
+        # Temporary hack, search from an hour before start time to get orders, not executed immediately
+        start_ts = trade.open_time_epoch_millis() - 1000 * 60 * 60
+        # return {"contract": "BTC-USDT", "trade_type": close_trade_type,
+        #         "type": HuobiBrokerHbdm.HuobiOrderType.finished, "status": HuobiBrokerHbdm.HuobiOrderStatus.filled}
+
         return {"contract": "BTC-USDT", "trade_type": close_trade_type,
                 "type": HuobiBrokerHbdm.HuobiOrderType.finished, "status": HuobiBrokerHbdm.HuobiOrderStatus.filled,
-                "start_time": trade.open_time_epoch_millis()}
+                "start_time": start_ts}
 
     def update_cur_trade_status(self):
         with self.trade_lock:
@@ -218,14 +223,20 @@ class HuobiBrokerHbdm(Broker):
             #      'reduce_only': 1, 'contract_type': 'swap', 'business_type': 'swap'}], 'ts': 1687077630615}
 
             # Call history
+            self._log.debug(f"Updating current trade status:: {self.cur_trade}")
             params = self.huobi_history_close_order_query_params(self.cur_trade)
+            self._log.debug(
+                f"Order history query start_time: {datetime.utcfromtimestamp(params['start_time'] / 1000)}, tz:{time.tzname}, params: {params}")
             res = self.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders", params)
+            self._log.debug(f"Got history orders result, params:{params}, result: {res}")
 
             # Handle situation when server time zone is not UTC and it can return several previous orders
             if len(res["data"]) >= 1:
                 # Get last order
                 raw = sorted(res["data"], key=lambda o: o["update_time"])[-1]
                 raw_update_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
+                self._log.debug(
+                    f"Last order in history:: update time: {raw_update_time}, cur trade open time: {self.cur_trade.open_time}, order:{raw}")
                 if raw_update_time > self.cur_trade.open_time:
                     # Got closing order - after cur trade
                     self.update_trade_closed(raw, self.cur_trade)
