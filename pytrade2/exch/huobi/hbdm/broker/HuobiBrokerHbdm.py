@@ -253,8 +253,6 @@ class HuobiBrokerHbdm(Broker):
                 # Get last order
                 raw = sorted(res["data"], key=lambda o: o["update_time"])[-1]
                 raw_update_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
-                self._log.debug(
-                    f"Last order in history: update time: {raw_update_time}, cur trade open time: {self.cur_trade.open_time}, order:{raw}")
                 if raw_update_time > self.cur_trade.open_time:
                     # Got closing order - after cur trade
                     self.update_trade_closed(raw, self.cur_trade)
@@ -262,9 +260,11 @@ class HuobiBrokerHbdm(Broker):
                     self.db_session.commit()
                     self.cur_trade = None
                 else:
-                    self._log.debug("Current trade is opened, closing orders are not found among last.")
+                    self._log.debug(
+                        f"Current trade is still opened. open time: {self.cur_trade.open_time}, last order in history: {raw_update_time}")
             else:
-                self._log.debug(f"Current trade is opened, last orders are empty.")
+                self._log.debug(
+                    f"Current trade is still opened. open time: {self.cur_trade.open_time}, last orders are empty.")
 
     @staticmethod
     def update_trade_closed(raw, trade):
