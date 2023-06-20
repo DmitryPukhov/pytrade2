@@ -25,7 +25,7 @@ class DevTool():
         HuobiBrokerHbdm.sub_events = None
 
         # Read config
-        strategy = "SimpleKerasStrategy"
+        strategy = "LSTMStrategy"
         yccfgdir = "../deploy/yandex_cloud/secret"
         devcfgdir = "../pytrade2/cfg"
         cfgpaths = [f"{devcfgdir}/app-defaults.yaml", f"{yccfgdir}/{strategy.lower()}.yaml"]
@@ -38,6 +38,7 @@ class DevTool():
         # Get keys from config
         key = self.config["pytrade2.exchange.huobi.connector.key"]
         secret = self.config["pytrade2.exchange.huobi.connector.secret"]
+        print(f"Key: {key[-3:]}, secret: {secret[-3:]}")
 
         AccountManagerHbdm.sub_events = None
         HuobiBrokerHbdm.sub_events = None
@@ -162,7 +163,7 @@ class DevTool():
                 "op": "sub",
                 "topic": "accounts.trx"
             }
-            future.sub(sub_params,"")
+            future.sub(sub_params, "")
             time.sleep(10)
             print('end future ws.\n')
 
@@ -176,7 +177,7 @@ class DevTool():
                 "op": "sub",
                 "topic": "accounts.TRX-USD"
             }
-            coin_swap.sub(sub_params,"")
+            coin_swap.sub(sub_params, "")
             time.sleep(10)
             print('end coin-swap ws.\n')
 
@@ -205,7 +206,66 @@ if __name__ == "__main__":
 
     dt = DevTool()
     broker = dt.new_hbdm_broker()
-    print(broker.get_report())
+
+
+    # Inquiry error. Please try again later
+    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
+    #                             {"pair": "BTC-USDT", "order_id": 1120523720633106435})
+
+    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_openorders", {"pair": "BTC-USDT"});
+    def is_my_order(order_id, source_order_id):
+        return order_id in {'1120523720679243778,1120523720679243777'} or source_order_id == '1120523720633106435'
+
+    def print_sltp_orders(res):
+        orders = res["data"]["orders"]
+        print("sltp orders:")
+        for o in sorted(orders, key=lambda o: -o["update_time"]):
+            uts = o["update_time"]
+            udt = datetime.datetime.fromtimestamp(uts / 1000)
+            cts = o["created_at"]
+            cdt = datetime.datetime.fromtimestamp(cts / 1000)
+            print(f"Order id: {o['order_id']}, source id: {o['source_order_id']}, direction: {o['direction']}, "
+                  f"status: {o['status']}, created:{cdt},  updated: {udt}, relation_order_id: {o['relation_order_id']}")
+
+    def print_orders(res):
+        orders = res["data"]
+        print("orders:")
+        for o in sorted(orders, key=lambda o: -o["update_time"]):
+            uts = o["update_time"]
+            udt = datetime.datetime.fromtimestamp(uts / 1000)
+            cts = o["create_date"]
+            cdt = datetime.datetime.fromtimestamp(cts / 1000)
+            print(f"Order id: {o['order_id']}, direction: {o['direction']}, status: {o['status']}, created:{cdt},  updated: {udt}, is_tpsl: {o['is_tpsl']}, price: {o['trade_avg_price']}")
+
+    #
+    # open '1120523720633106435'
+    # sl '1120523720679243778,1120523720679243777'
+    #
+    # closed at 21:53: 1120512647122935809, 1120512647122935808
+    #res=broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"pair": "BTC-USDT", "order_id": 1120523720633106435})
+
+    dt = datetime.datetime(year=2023, month=6, day=19, hour=20, minute=21, second=13)
+    ts = int(dt.timestamp() *1000)
+    #res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"order_id": 1120512647106158594})
+    res=broker.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders", {"contract": "BTC-USDT", "trade_type":17,
+                                                                             "type":2, "status": 6})
+    print_orders(res)
+    res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_hisorders",
+                                  {"pair": "BTC-USDT", "status": 0,  "create_date": ts})
+    print_sltp_orders(res)
+
+    # Works only for main order, not for sl/tp
+    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"order_id": 1120523720679243777})
+    # Error: the interface is offline
+    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_hisorders", {"pair": "BTC-USDT", "create_date": ts, "status":0});
+    # print(res)
+    #
+    # def is_my_order(order_id, source_order_id):
+    #     return order_id in {'1120523720679243778,1120523720679243777'} or source_order_id == '1120523720633106435'
+    #
+    # my_orders = [o for o in res["data"]["orders"] if is_my_order(o["order_id"], o["source_order_id"])]
+    # print(my_orders)
+    # print(broker.get_report())
     # Set one way ok
     # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
     # Create order ok
@@ -217,8 +277,8 @@ if __name__ == "__main__":
 
     # Order + sltp
     # Ok get order info by client id from broker
-    #res = broker.get_order_info(client_order_id=1687058944, ticker="BTC-USDT")
-    #print(f"Got {len(res['data'])} orders: {res}")
+    # res = broker.get_order_info(client_order_id=1687058944, ticker="BTC-USDT")
+    # print(f"Got {len(res['data'])} orders: {res}")
 
     # Opened sl/tp orders by main order id
     # print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",

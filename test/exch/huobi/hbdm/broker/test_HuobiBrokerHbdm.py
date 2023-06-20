@@ -72,18 +72,19 @@ class TestHuobiBrokerHbdm(TestCase):
         self.assertEqual(27270.0, trade.stop_loss_price)
 
     def test_update_trade_closed(self):
-        res = {'code': 200, 'msg': 'ok', 'data': [
-            {'direction': 'sell', 'offset': 'both', 'volume': 1.0, 'price': 26583.0, 'profit': 0.05, 'pair': 'BTC-USDT',
-             'query_id': 69592538249, 'order_id': 1120016247351635968, 'contract_code': 'BTC-USDT', 'symbol': 'BTC',
-             'lever_rate': 1, 'create_date': 1687074282253, 'order_source': 'web', 'canceled_source': '',
-             'order_price_type': 4, 'order_type': 1, 'margin_frozen': 0.0, 'trade_volume': 1.0,
-             'trade_turnover': 26.592, 'fee': -0.0106368, 'trade_avg_price': 26592.0, 'status': 6,
-             'order_id_str': '1120016247351635968', 'fee_asset': 'USDT', 'fee_amount': 0, 'fee_quote_amount': 0.0106368,
-             'liquidation_type': '0', 'margin_asset': 'USDT', 'margin_mode': 'cross', 'margin_account': 'USDT',
-             'update_time': 1687074282782, 'is_tpsl': 0, 'real_profit': 0.05, 'trade_partition': 'USDT',
-             'reduce_only': 1, 'contract_type': 'swap', 'business_type': 'swap'}], 'ts': 1687077630615}
+        raw = {'direction': 'sell', 'offset': 'both', 'volume': 1.0, 'price': 26583.0, 'profit': 0.05,
+               'pair': 'BTC-USDT',
+               'query_id': 69592538249, 'order_id': 1120016247351635968, 'contract_code': 'BTC-USDT', 'symbol': 'BTC',
+               'lever_rate': 1, 'create_date': 1687074282253, 'order_source': 'web', 'canceled_source': '',
+               'order_price_type': 4, 'order_type': 1, 'margin_frozen': 0.0, 'trade_volume': 1.0,
+               'trade_turnover': 26.592, 'fee': -0.0106368, 'trade_avg_price': 26592.0, 'status': 6,
+               'order_id_str': '1120016247351635968', 'fee_asset': 'USDT', 'fee_amount': 0,
+               'fee_quote_amount': 0.0106368,
+               'liquidation_type': '0', 'margin_asset': 'USDT', 'margin_mode': 'cross', 'margin_account': 'USDT',
+               'update_time': 1687074282782, 'is_tpsl': 0, 'real_profit': 0.05, 'trade_partition': 'USDT',
+               'reduce_only': 1, 'contract_type': 'swap', 'business_type': 'swap'}
         trade = Trade()
-        HuobiBrokerHbdm.update_trade_closed(res, trade)
+        HuobiBrokerHbdm.update_trade_closed(raw, trade)
 
         self.assertEqual("1120016247351635968", trade.close_order_id)
         self.assertEqual(26592.0, trade.close_price)

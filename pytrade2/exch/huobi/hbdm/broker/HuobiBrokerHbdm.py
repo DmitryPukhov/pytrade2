@@ -219,22 +219,22 @@ class HuobiBrokerHbdm(Broker):
 
             # Call history
             params = self.huobi_history_close_order_query_params(self.cur_trade)
-            res = self.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders",
-                                        self.huobi_history_close_order_query_params(self.cur_trade))
+            res = self.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders", params)
 
-            if len(res["data"]) > 1:
-                raise RuntimeError(
-                    f"Error: got multiple closed orders from exchange. Cur trade: {self.cur_trade}, "
-                    f"history query params: {params},  exchange response: {res} ")
-            if len(res["data"]) == 1:
-                # Got closing order
-                self.update_trade_closed(res, self.cur_trade)
-                self._log.info(f"Current trade found closed, probably by sl or tp: {self.cur_trade}")
-                self.db_session.commit()
-                self.cur_trade = None
+            # Handle situation when server time zone is not UTC and it can return several previous orders
+            if len(res["data"]) >= 1:
+                # Get last order
+                raw = sorted(res["data"], key=lambda o: o["update_time"])[-1]
+                raw_update_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
+                if raw_update_time > self.cur_trade.open_time:
+                    # Got closing order - after cur trade
+                    self.update_trade_closed(raw, self.cur_trade)
+                    self._log.info(f"Current trade found closed, probably by sl or tp: {self.cur_trade}")
+                    self.db_session.commit()
+                    self.cur_trade = None
 
     @staticmethod
-    def update_trade_closed(res, trade):
+    def update_trade_closed(raw, trade):
         # Response example:
         # {'code': 200, 'msg': 'ok', 'data': [
         #     {'direction': 'sell', 'offset': 'both', 'volume': 1.0, 'price': 26583.0, 'profit': 0.05, 'pair': 'BTC-USDT',
@@ -246,13 +246,12 @@ class HuobiBrokerHbdm(Broker):
         #      'liquidation_type': '0', 'margin_asset': 'USDT', 'margin_mode': 'cross', 'margin_account': 'USDT',
         #      'update_time': 1687074282782, 'is_tpsl': 0, 'real_profit': 0.05, 'trade_partition': 'USDT',
         #      'reduce_only': 1, 'contract_type': 'swap', 'business_type': 'swap'}], 'ts': 1687077630615}
-        if len(res["data"]) == 1:
-            raw = res["data"][-1]
-            # raw param is the last order in response["data"]
-            trade.close_price = raw["trade_avg_price"]
-            trade.close_order_id = str(raw["order_id"])
-            trade.close_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
-            trade.status = TradeStatus.closed
+
+        # raw param is the last order in response["data"]
+        trade.close_price = raw["trade_avg_price"]
+        trade.close_order_id = str(raw["order_id"])
+        trade.close_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
+        trade.status = TradeStatus.closed
 
     def get_sltp_orders_info(self, main_order_id):
         res = self.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",

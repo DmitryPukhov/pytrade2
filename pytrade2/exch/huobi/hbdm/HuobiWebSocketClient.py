@@ -47,6 +47,7 @@ class HuobiWebSocketClient:
         self._sub_str = None
         self._ws = None
         self._consumers = defaultdict(set)
+        self._log.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
 
     def __del__(self):
         self.close()
