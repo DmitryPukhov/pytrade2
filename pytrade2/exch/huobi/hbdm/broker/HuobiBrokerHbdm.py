@@ -178,13 +178,13 @@ class HuobiBrokerHbdm(Broker):
                     "price": price,
                     "lever_rate": 1,
                     "order_price_type": "optimal_5_fok",
-                    "tp_trigger_price": take_profit_price,
-                    # "tp_order_price": tp_order_price,
+                    "tp_trigger_price": tp_trigger_price,
+                    "tp_order_price": tp_order_price,
                     "reduce_only": 0,  # 0 for opening order
-                    "sl_trigger_price": stop_loss_price,
-                    # "sl_order_price": sl_order_price,
-                    "tp_order_price_type": "market",
-                    "sl_order_price_type": "market"
+                    "sl_trigger_price": sl_trigger_price,
+                    "sl_order_price": sl_order_price,
+                    "tp_order_price_type": "limit",
+                    "sl_order_price_type": "limit"
                     }
             self._log.debug(f"Create order params: {data}")
             # Request to create a new order
