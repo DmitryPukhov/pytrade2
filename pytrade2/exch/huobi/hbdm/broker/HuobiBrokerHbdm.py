@@ -152,6 +152,24 @@ class HuobiBrokerHbdm(Broker):
             path = "/linear-swap-api/v1/swap_cross_order"
             client_order_id = int(datetime.utcnow().timestamp())
 
+            # Works, but order types are limit => risk that price would fly out
+            # data = {"contract_code": symbol,
+            #         "client_order_id": client_order_id,
+            #         # "contract_type": "swap",
+            #         "volume": quantity,
+            #         "direction": side,
+            #         "price": price,
+            #         "lever_rate": 1,
+            #         "order_price_type": "limit",
+            #         "tp_trigger_price": tp_trigger_price,
+            #         "tp_order_price": tp_order_price,
+            #         "reduce_only": 0,  # 0 for opening order
+            #         "sl_trigger_price": sl_trigger_price,
+            #         "sl_order_price": sl_order_price,
+            #         "tp_order_price_type": "limit",
+            #         "sl_order_price_type": "limit"
+            #         }
+            # Try market sl/tp params
             data = {"contract_code": symbol,
                     "client_order_id": client_order_id,
                     # "contract_type": "swap",
@@ -159,15 +177,16 @@ class HuobiBrokerHbdm(Broker):
                     "direction": side,
                     "price": price,
                     "lever_rate": 1,
-                    "order_price_type": "limit",
-                    "tp_trigger_price": tp_trigger_price,
-                    "tp_order_price": tp_order_price,
+                    "order_price_type": "optimal_5_fok",
+                    "tp_trigger_price": take_profit_price,
+                    # "tp_order_price": tp_order_price,
                     "reduce_only": 0,  # 0 for opening order
-                    "sl_trigger_price": sl_trigger_price,
-                    "sl_order_price": sl_order_price,
-                    "tp_order_price_type": "limit",
-                    "sl_order_price_type": "limit"
+                    "sl_trigger_price": stop_loss_price,
+                    # "sl_order_price": sl_order_price,
+                    "tp_order_price_type": "market",
+                    "sl_order_price_type": "market"
                     }
+            self._log.debug(f"Create order params: {data}")
             # Request to create a new order
             res = self.rest_client.post(path=path, data=data)
 
@@ -228,7 +247,6 @@ class HuobiBrokerHbdm(Broker):
             self._log.debug(
                 f"Order history query start_time: {datetime.utcfromtimestamp(params['start_time'] / 1000)}, tz:{time.tzname}, params: {params}")
             res = self.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders", params)
-            self._log.debug(f"Got history orders result, params:{params}, result: {res}")
 
             # Handle situation when server time zone is not UTC and it can return several previous orders
             if len(res["data"]) >= 1:
@@ -236,13 +254,17 @@ class HuobiBrokerHbdm(Broker):
                 raw = sorted(res["data"], key=lambda o: o["update_time"])[-1]
                 raw_update_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
                 self._log.debug(
-                    f"Last order in history:: update time: {raw_update_time}, cur trade open time: {self.cur_trade.open_time}, order:{raw}")
+                    f"Last order in history: update time: {raw_update_time}, cur trade open time: {self.cur_trade.open_time}, order:{raw}")
                 if raw_update_time > self.cur_trade.open_time:
                     # Got closing order - after cur trade
                     self.update_trade_closed(raw, self.cur_trade)
                     self._log.info(f"Current trade found closed, probably by sl or tp: {self.cur_trade}")
                     self.db_session.commit()
                     self.cur_trade = None
+                else:
+                    self._log.debug("Current trade is opened, closing orders are not found among last.")
+            else:
+                self._log.debug(f"Current trade is opened, last orders are empty.")
 
     @staticmethod
     def update_trade_closed(raw, trade):
