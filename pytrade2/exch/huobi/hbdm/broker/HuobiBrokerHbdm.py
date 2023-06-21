@@ -61,12 +61,13 @@ class HuobiBrokerHbdm(Broker):
         # Open and wait until opened
         if not self.ws_client.is_opened:
             self.ws_client.open()
-        # while not self.ws_client.is_opened:
-        #     time.sleep(1)
+
+        self.account_manager.refresh_balance()
 
         self.update_cur_trade_status()
         # Subscribe
         self.sub_events()
+
 
     def sub_events(self):
         """ Subscribe account and order events """
