@@ -40,3 +40,21 @@ class AccountManagerHbdm(AccountManagerBase):
         data = msg["data"]
         return {"time": time, "account_id": msg["uid"], "asset": data["margin_asset"], "account_type": "cross",
                 "change_type": None, "balance": data["margin_balance"], "available": "margin_static"}
+
+    def refresh_balance(self):
+        """ Read new balance from huobi, write to output directory """
+        try:
+            res = self._rest_client.post("/linear-swap-api/v1/swap_balance_valuation", {"valuation_asset": "USDT"})
+            self._log.debug(f"Got new balance: {res}")
+            self._buffer.extend(self.response_to_list(res))
+            # Write and clean the buffer
+            self.write()
+        except Exception as e:
+            self._log.error(e)
+
+    @staticmethod
+    def response_to_list(response: dict) -> [{}]:
+        """ Huobi balance response to model dictionary """
+        dt = datetime.utcnow()
+        for item in response.get("data", {}):
+            yield {"time": dt, "asset": item["valuation_asset"], "balance": float(item["balance"])}

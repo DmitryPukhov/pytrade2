@@ -1,7 +1,7 @@
 import datetime
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from io import StringIO
 from typing import Optional
 
@@ -109,11 +109,18 @@ class HuobiBrokerHbdm(Broker):
                     elif order_direction == - self.cur_trade.direction():
                         # Close current trade
                         self.update_trade_closed_event(msg, self.cur_trade)
-                        self.db_session.commit()
-                        self.cur_trade = None
+                        self.finalize_closed_trade()
 
         except Exception as e:
             self._log.error(f"Socket message processing error: {e}")
+
+    def finalize_closed_trade(self):
+        """ When current trade was closed, do final routine and clear current trade"""
+        # Save and clear current trade
+        self.db_session.commit()
+        self.cur_trade = None
+        # Ask account manager to read changed balance from the server
+        self.account_manager.refresh_balance()
 
     @staticmethod
     def adjust_prices(direction, price: float, stop_loss_price: float, take_profit_price: float, price_precision: int,
@@ -257,11 +264,11 @@ class HuobiBrokerHbdm(Broker):
                     # Got closing order - after cur trade
                     self.update_trade_closed(raw, self.cur_trade)
                     self._log.info(f"Current trade found closed, probably by sl or tp: {self.cur_trade}")
-                    self.db_session.commit()
-                    self.cur_trade = None
+                    self.finalize_closed_trade()
                 else:
                     self._log.debug(
-                        f"Current trade is still opened. open time: {self.cur_trade.open_time}, last order in history: {raw_update_time}")
+                        f"Current trade is still opened. open time: {self.cur_trade.open_time},"
+                        f" last order in history: {raw_update_time}")
             else:
                 self._log.debug(
                     f"Current trade is still opened. open time: {self.cur_trade.open_time}, last orders are empty.")
@@ -355,8 +362,8 @@ class HuobiBrokerHbdm(Broker):
         trade.open_time = dt
         trade.open_price = data["trade_avg_price"]
         # ??? Process status better
-        trade.status = TradeStatus.opened if data[
-                                                 "status"] == HuobiBrokerHbdm.HuobiOrderStatus.filled else TradeStatus.opening
+        trade.status = TradeStatus.opened if data["status"] == HuobiBrokerHbdm.HuobiOrderStatus.filled \
+            else TradeStatus.opening
         return trade
 
     def get_order_info(self, client_order_id: int, ticker: str):
@@ -386,7 +393,8 @@ class HuobiBrokerHbdm(Broker):
                 for c in [c for c in dataitem["futures_contract_detail"] if c["margin_position"] != 0]:
                     currency = c['trade_partition']
                     msg.write(f"Position {c['contract_code']}: {c['margin_position']} {currency}, "
-                              f"frozen:{c['margin_frozen']} {currency}, available: {c['margin_available']} {currency}\n")
+                              f"frozen:{c['margin_frozen']} {currency}, "
+                              f"available: {c['margin_available']} {currency}\n")
         except Exception as e:
             self._log.error(f"Error reporting broker info: {e}")
 
