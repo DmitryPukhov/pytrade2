@@ -167,7 +167,7 @@ class HuobiWebSocketClient:
                 consumer.on_socket_close()
 
     def _on_error(self, ws, error):
-        self._log.error(f"Socket error: error")
+        self._log.error(f"Socket error: {error}")
 
     def sub(self, params: dict, consumer):
         if self._active_close:
