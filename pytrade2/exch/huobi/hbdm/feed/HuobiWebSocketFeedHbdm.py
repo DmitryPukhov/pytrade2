@@ -41,15 +41,10 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
             self._log.info(f"Subscribing to {ticker} feed")
 
             # Sub bid ask, level2
-            for sub_params in [{"sub": f"market.{ticker}.bbo"},
-                               {"sub": f"market.{ticker}.depth.step0"}]:
-                self._log.info(f"Subscribing to {sub_params}")
-                self._client.sub(sub_params, self)
-        self._log.info("Feed subscribed to all events needed")
+            for topic in [f"market.{ticker}.bbo", f"market.{ticker}.depth.step0"]:
+                self._client.add_consumer(topic, {"sub": topic}, self)
 
-    def on_socket_close(self):
-        """ Resubscribe to events if socket is closed"""
-        self.sub_events()
+        self._log.info("Feed subscribed to all events needed")
 
     def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""

@@ -1,5 +1,5 @@
 from unittest import TestCase
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import pandas as pd
 
@@ -99,7 +99,8 @@ class TestHuobiBrokerHbdm(TestCase):
         actual = HuobiBrokerHbdm.huobi_history_close_order_query_params(trade)
         self.assertEqual(18, actual["trade_type"])  # sell
         self.assertEqual(2, actual["type"])  # finished
-        self.assertEqual(dt.timestamp() * 1000, actual["start_time"])
+        expected_ts = (dt-timedelta(hours=1)).timestamp()*1000
+        self.assertEqual(expected_ts, actual["start_time"])
 
     def test_res2trade(self):
         # Get order response

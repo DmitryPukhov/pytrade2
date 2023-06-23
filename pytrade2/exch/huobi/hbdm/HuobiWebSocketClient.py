@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from typing import Dict, Set
 
 import websocket
 import threading
@@ -46,7 +47,7 @@ class HuobiWebSocketClient:
         self.is_opened = False
         self._sub_str = None
         self._ws = None
-        self._consumers = defaultdict(set)
+        self._consumers = {}
         self._log.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
 
     def __del__(self):
@@ -71,12 +72,15 @@ class HuobiWebSocketClient:
         t.start()
 
     def _on_open(self, ws):
-        self._log.info("Socket openeded")
+        self._log.info("Socket opened")
         signature_data = self._get_signature_data()  # signature data
         self._ws.send(json.dumps(signature_data))  # as json string to be send
         self.is_opened = True
-        for consumer in [c for c in self._consumers.values() if hasattr(c, 'on_socket_open')]:
-            consumer.on_socket_open()
+
+        # Subscribe to messages for consumers
+        for params, consumer in self._consumers.values():
+            self._log.info(f"Subscribing to socket data, params: {params}, consumer: {consumer}")
+            self._ws.send(json.dumps(params))  # as json string to be send
 
     def _get_signature_data(self) -> dict:
         # it's utc time and an example is 2017-05-11T15:19:30
@@ -155,6 +159,8 @@ class HuobiWebSocketClient:
                 topic = jdata['ch'].lower()
                 for consumer in [c for c in self._consumers[topic] if hasattr(c, 'on_socket_data')]:
                     consumer.on_socket_data(topic, jdata)
+            elif jdata.get('status') == 'error':
+                self._log.error(f"Got message with error: {jdata}")
         except Exception as e:
             self._log.error(e)
 
@@ -169,23 +175,11 @@ class HuobiWebSocketClient:
     def _on_error(self, ws, error):
         self._log.error(f"Socket error: {error}")
 
-    def sub(self, params: dict, consumer):
-        if self._active_close:
-            self._log.debug('Cannot subscribe. Socket is closed')
-            return
-
-        self._log.debug(f"Subscribing to ws data: {params}")
-        # Send to socket
-        while not self.is_opened:
-            time.sleep(1)
-        self._ws.send(json.dumps(params))  # as json string to be send
-
-        # Add callback to consumers
-        topic = params.get("topic", params.get("sub", None))
-        if topic:
-            self._consumers[topic].add(consumer)
-        else:
-            self._log.debug(f"Cannot find topic or sub key in params: {params}")
+    def add_consumer(self, topic, params: dict, consumer):
+        """ Registering consumer for the topic """
+        self._log.debug(f"Adding consumer, topic: {topic}, params: {params}, consumer: {consumer}")
+        # topic -> (params, consumer obj)
+        self._consumers.setdefault(topic, (params, consumer))
 
     def close(self):
         self._log.info("Closing socket")

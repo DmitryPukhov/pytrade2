@@ -17,13 +17,10 @@ class AccountManagerHbdm(AccountManagerBase):
 
     def sub_events(self):
         """ Subscribe to web socket balance events """
+        topic = f"accounts_cross.usdt"
         params = {"op": "sub", "topic": f"accounts_cross.usdt"}
-        self._ws_client.sub(params, self)
+        self._ws_client.add_consumer(topic, params, self)
         self._log.info(f"Account manager subscribed to all events needed")
-
-    def on_socket_close(self):
-        """ Resubscribe to events if socket is closed"""
-        self.sub_events()
 
     def on_socket_data(self, topic, msg: {}):
         """ Got subscribed data from socket"""

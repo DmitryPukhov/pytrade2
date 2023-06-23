@@ -68,7 +68,6 @@ class HuobiBrokerHbdm(Broker):
         # Subscribe
         self.sub_events()
 
-
     def sub_events(self):
         """ Subscribe account and order events """
 
@@ -78,16 +77,11 @@ class HuobiBrokerHbdm(Broker):
         # Subscibe to order events
         for ticker in self.tickers:
             # Subscribe to order events
-            # params = [{"op": "sub", "topic": "orders.*"}, {"op": "sub", "topic": "accounts.*"}]
-            params = [{"op": "sub", "topic": f"orders_cross.{ticker}"}, {"op": "sub", "topic": f"accounts_cross.*"}]
-            for param in params:
-                self._log.info(f"Subscribing to {param}")
-                self.ws_client.sub(param, self)
-        self._log.info("Broker subscribed to all events needed.")
+            topic = f"orders_cross.{ticker}"
+            params = {"op": "sub", "topic": f"orders_cross.{ticker}"}
+            self.ws_client.add_consumer(topic,  params, self)
 
-    def on_socket_close(self):
-        """ Resubscribe to events if socket is closed"""
-        self.sub_events()
+        self._log.info("Broker subscribed to all events needed.")
 
     def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""
