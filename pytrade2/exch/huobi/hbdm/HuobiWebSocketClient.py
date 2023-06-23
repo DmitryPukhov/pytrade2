@@ -72,8 +72,9 @@ class HuobiWebSocketClient:
 
     def _on_open(self, ws):
         self._log.info("Socket opened")
-        #signature_data = self._get_signature_data()  # signature data
-        #self._ws.send(json.dumps(signature_data))  # as json string to be send
+        # Some endpoints requires this signature data, others just returns invalid command error and continue to work.
+        signature_data = self._get_signature_data()  # signature data
+        self._ws.send(json.dumps(signature_data))  # as json string to be send
         self.is_opened = True
 
         # Subscribe to messages for consumers
