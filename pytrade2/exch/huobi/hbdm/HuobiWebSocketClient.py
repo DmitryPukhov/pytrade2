@@ -45,7 +45,6 @@ class HuobiWebSocketClient:
         self._be_spot = be_spot
         self._active_close = False
         self.is_opened = False
-        self._sub_str = None
         self._ws = None
         self._consumers = {}
         self._log.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
@@ -73,8 +72,8 @@ class HuobiWebSocketClient:
 
     def _on_open(self, ws):
         self._log.info("Socket opened")
-        signature_data = self._get_signature_data()  # signature data
-        self._ws.send(json.dumps(signature_data))  # as json string to be send
+        #signature_data = self._get_signature_data()  # signature data
+        #self._ws.send(json.dumps(signature_data))  # as json string to be send
         self.is_opened = True
 
         # Subscribe to messages for consumers
@@ -167,10 +166,8 @@ class HuobiWebSocketClient:
     def _on_close(self, ws):
         self._log.info("Socket closed")
         self.is_opened = False
-        if not self._active_close and self._sub_str is not None:
+        if not self._active_close:
             self.open()
-            for consumer in [c for c in self._consumers.values() if hasattr(c, "on_socket_close")]:
-                consumer.on_socket_close()
 
     def _on_error(self, ws, error):
         self._log.error(f"Socket error: {error}")
@@ -184,6 +181,5 @@ class HuobiWebSocketClient:
     def close(self):
         self._log.info("Closing socket")
         self._active_close = True
-        self._sub_str = None
         self.is_opened = False
         if self._ws: self._ws.close()
