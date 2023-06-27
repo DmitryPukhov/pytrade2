@@ -17,7 +17,7 @@ class Trade(Base):
     ticker: Mapped[str] = mapped_column(String)
     side: Mapped[str] = mapped_column(String)
     open_time: Mapped[DateTime] = Column(DateTime)
-    open_price: Mapped[float] = mapped_column(Float)
+    open_price: Mapped[float] = mapped_column(Float, nullable=True)
     open_order_id: Mapped[str] = mapped_column(String)
     stop_loss_price: Mapped[float] = mapped_column(nullable=True)
     take_profit_price: Mapped[float] = mapped_column(nullable=True)

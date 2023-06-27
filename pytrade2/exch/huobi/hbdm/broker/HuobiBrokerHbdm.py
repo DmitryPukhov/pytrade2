@@ -79,7 +79,7 @@ class HuobiBrokerHbdm(Broker):
             # Subscribe to order events
             topic = f"orders_cross.{ticker}"
             params = {"op": "sub", "topic": f"orders_cross.{ticker}"}
-            self.ws_client.add_consumer(topic,  params, self)
+            self.ws_client.add_consumer(topic, params, self)
 
         self._log.info("Broker subscribed to all events needed.")
 
@@ -99,7 +99,8 @@ class HuobiBrokerHbdm(Broker):
                     self._log.info(f"Got order event: {msg}")
                     order_direction = Trade.order_side_codes(msg["direction"].upper())
                     if order_direction == self.cur_trade.direction():
-                        self.cur_trade.status = TradeStatus.opened
+                        self.update_trade_opened_event(msg, self.cur_trade)
+                        self.db_session.commit()
 
                     elif order_direction == - self.cur_trade.direction():
                         # Close current trade
