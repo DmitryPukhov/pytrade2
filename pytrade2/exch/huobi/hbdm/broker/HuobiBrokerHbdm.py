@@ -172,7 +172,23 @@ class HuobiBrokerHbdm(Broker):
             #         "tp_order_price_type": "limit",
             #         "sl_order_price_type": "limit"
             #         }
-            # Try market sl/tp params
+            # Works, but tp is limit => bad exec price, no profit
+            # data = {"contract_code": symbol,
+            #         "client_order_id": client_order_id,
+            #         # "contract_type": "swap",
+            #         "volume": quantity,
+            #         "direction": side,
+            #         "price": price,
+            #         "lever_rate": 1,
+            #         "order_price_type": "optimal_5_fok",
+            #         "tp_trigger_price": tp_trigger_price,
+            #         "tp_order_price": tp_order_price,
+            #         "reduce_only": 0,  # 0 for opening order
+            #         "sl_trigger_price": sl_trigger_price,
+            #         "sl_order_price": sl_order_price,
+            #         "tp_order_price_type": "limit",
+            #         "sl_order_price_type": "limit"
+            #         }
             data = {"contract_code": symbol,
                     "client_order_id": client_order_id,
                     # "contract_type": "swap",
@@ -182,11 +198,11 @@ class HuobiBrokerHbdm(Broker):
                     "lever_rate": 1,
                     "order_price_type": "optimal_5_fok",
                     "tp_trigger_price": tp_trigger_price,
-                    "tp_order_price": tp_order_price,
+                    #"tp_order_price": tp_order_price,
                     "reduce_only": 0,  # 0 for opening order
                     "sl_trigger_price": sl_trigger_price,
                     "sl_order_price": sl_order_price,
-                    "tp_order_price_type": "limit",
+                    "tp_order_price_type": "optimal_5",
                     "sl_order_price_type": "limit"
                     }
             self._log.debug(f"Create order params: {data}")
