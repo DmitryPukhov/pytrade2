@@ -43,23 +43,25 @@ class TestCandlesFeatures(TestCase):
             .set_index("close_time")
 
     def test_candles_combined_features_of_empty(self):
-        features = CandlesFeatures.candles_combined_features_of(pd.DataFrame(), 2, pd.DataFrame(), 2)
+        features = CandlesFeatures.candles_combined_features_of({}, {"1min":2, "5min":2})
         self.assertEqual(True, features.empty)
 
     def test_candles_combined_features_of(self):
-        features = CandlesFeatures.candles_combined_features_of(self.candles_1m_5(), 2, self.candles_5m_5(), 2)
+        features = CandlesFeatures.candles_combined_features_of(
+            {"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
+            {"1min": 2, "5min": 2})
 
         self.assertSequenceEqual([
-            "1m_open", "1m_high", "1m_low", "1m_close", "1m_vol",
-            "1m_-1_open", "1m_-1_high", "1m_-1_low", "1m_-1_close", "1m_-1_vol",
-            "5m_open", "5m_high", "5m_low", "5m_close", "5m_vol",
-            "5m_-1_open", "5m_-1_high", "5m_-1_low", "5m_-1_close", "5m_-1_vol"],
+            "1min_open", "1min_high", "1min_low", "1min_close", "1min_vol",
+            "1min_-1_open", "1min_-1_high", "1min_-1_low", "1min_-1_close", "1min_-1_vol",
+            "5min_open", "5min_high", "5min_low", "5min_close", "5min_vol",
+            "5min_-1_open", "5min_-1_high", "5min_-1_low", "5min_-1_close", "5min_-1_vol"],
             features.columns.tolist())
-        self.assertSequenceEqual([1, 1, 1], features["1m_open"].tolist())
-        self.assertSequenceEqual([10, 10, 10], features["1m_high"].tolist())
-        self.assertSequenceEqual([100, 100, 100], features["1m_low"].tolist())
-        self.assertSequenceEqual([1000, 1000, 1000], features["1m_close"].tolist())
-        self.assertSequenceEqual([10000, 10000, 10000], features["1m_vol"].tolist())
+        self.assertSequenceEqual([1, 1, 1], features["1min_open"].tolist())
+        self.assertSequenceEqual([10, 10, 10], features["1min_high"].tolist())
+        self.assertSequenceEqual([100, 100, 100], features["1min_low"].tolist())
+        self.assertSequenceEqual([1000, 1000, 1000], features["1min_close"].tolist())
+        self.assertSequenceEqual([10000, 10000, 10000], features["1min_vol"].tolist())
         #
         # self.assertSequenceEqual([2, 3, 4, 5], features["1m_open"].tolist())
         # self.assertSequenceEqual([20, 30, 40, 50], features["1m_high"].tolist())
@@ -67,14 +69,14 @@ class TestCandlesFeatures(TestCase):
         # self.assertSequenceEqual([2000, 3000, 4000, 5000], features["1m_close"].tolist())
         # self.assertSequenceEqual([20000, 30000, 40000, 50000], features["1m_vol"].tolist())
 
-        self.assertSequenceEqual([1, 1, 1], features["1m_-1_open"].tolist())
-        self.assertSequenceEqual([10, 10, 10], features["1m_-1_high"].tolist())
-        self.assertSequenceEqual([100, 100, 100], features["1m_-1_low"].tolist())
-        self.assertSequenceEqual([1000, 1000, 1000], features["1m_-1_close"].tolist())
-        self.assertSequenceEqual([10000, 10000, 10000], features["1m_-1_vol"].tolist())
+        self.assertSequenceEqual([1, 1, 1], features["1min_-1_open"].tolist())
+        self.assertSequenceEqual([10, 10, 10], features["1min_-1_high"].tolist())
+        self.assertSequenceEqual([100, 100, 100], features["1min_-1_low"].tolist())
+        self.assertSequenceEqual([1000, 1000, 1000], features["1min_-1_close"].tolist())
+        self.assertSequenceEqual([10000, 10000, 10000], features["1min_-1_vol"].tolist())
 
         # Slow should be merged backward
-        self.assertSequenceEqual([3, 3, 4], features["5m_open"].tolist())
+        self.assertSequenceEqual([3, 3, 4], features["5min_open"].tolist())
 
     def test_candles_features_of(self):
         candles = self.candles_1m_5()

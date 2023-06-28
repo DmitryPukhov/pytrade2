@@ -27,7 +27,7 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
         self.assertListEqual([1.1, 1.2], sorted([a["bid_vol"] for a in actual if "bid_vol" in a]))
         self.assertListEqual([2.01, 2.02], sorted([a["ask"] for a in actual if "ask" in a]))
         self.assertListEqual([2.1, 2.2], sorted([a["ask_vol"] for a in actual if "ask_vol" in a]))
-        self.assertListEqual(["BTC-USDT"]*4, [a["symbol"] for a in actual])
+        self.assertListEqual(["BTC-USDT"] * 4, [a["symbol"] for a in actual])
 
     def test_rawticker2model(self):
         msg = {'mrid': 100010776952278, 'id': 1686966700, 'bid': [26216.3, 5633], 'ask': [26216.4, 2],
@@ -46,7 +46,8 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
                'tick': {'mrid': 100010776952278, 'id': 1686966700, 'bid': [26216.3, 5633], 'ask': [26216.4, 2],
                         'ts': 1686966700177, 'version': 100010776952278, 'ch': 'market.BTC-USDT.bbo'}}
 
-        feed = HuobiWebSocketFeedHbdm(config={"pytrade2.tickers": "BTC-USDT"}, client=MagicMock())
+        feed = HuobiWebSocketFeedHbdm(config={"pytrade2.tickers": "BTC-USDT"}, rest_client=MagicMock(),
+                                      ws_client=MagicMock())
         consumer = MagicMock()
         feed.consumers.append(consumer)
 
@@ -66,7 +67,8 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
                'tick': {'mrid': 100010776952278, 'id': 1686966700, 'bid': [26216.3, 5633], 'ask': [26216.4, 2],
                         'ts': 1686966700177, 'version': 100010776952278, 'ch': 'market.BTC-USDT.bbo'}}
 
-        feed = HuobiWebSocketFeedHbdm(config={"pytrade2.tickers": "BTC-USDT"}, client=MagicMock())
+        feed = HuobiWebSocketFeedHbdm(config={"pytrade2.tickers": "BTC-USDT"}, rest_client=MagicMock(),
+                                      ws_client=MagicMock())
         consumer = MagicMock()
         feed.consumers.append(consumer)
 

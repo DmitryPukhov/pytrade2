@@ -1,44 +1,57 @@
 import logging
 import multiprocessing
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Dict, Optional
 
 import pandas as pd
-
-from strategy.common.features.CandlesFeatures import CandlesFeatures
 
 
 class CandlesStrategy:
     """ Decorator for strategies. Reads candles from Binance """
 
     def __init__(self, config, ticker: str, candles_feed):
-        self.last_candles_read_time = datetime.min
+        #self.last_candles_read_time = datetime.min
         self._log = logging.getLogger(self.__class__.__name__)
 
         self.data_lock: multiprocessing.RLock() = None
         self.candles_feed = candles_feed
         self.ticker = ticker
-        self.candles_features = pd.DataFrame()
-        # Candles intervals
-        self.candles_fast_interval = config["pytrade2.strategy.candles.fast.interval"]
-        self.candles_fast_window = config["pytrade2.strategy.candles.fast.window"]
-        self.candles_slow_interval = config["pytrade2.strategy.candles.slow.interval"]
-        self.candles_slow_window = config["pytrade2.strategy.candles.slow.window"]
-        self._log.info(f"Candles fast interval:{self.candles_fast_interval}, window: {self.candles_fast_window}")
-        self._log.info(f"Candles slow interval:{self.candles_slow_interval}, window: {self.candles_slow_window}")
+        self.candles_by_period: Dict[str, pd.DataFrame] = dict()
+        self.data_lock: multiprocessing.RLock() = None
 
-    def read_candles_or_skip(self):
-        """ If time elapsed, read candles from binance."""
+        periods = [s.strip() for s in str(config["pytrade2.feed.candles.periods"]).split(",")]
+        counts = [int(s) for s in config["pytrade2.feed.candles.counts"].split(",")]
+        self.candles_cnt_by_period = dict(zip(periods, counts))
 
-        read_interval = pd.Timedelta("60s")
-        elapsed = datetime.utcnow() - self.last_candles_read_time
-        if elapsed >= read_interval:
-            self._log.debug(f"Reading last {self.ticker} candles from exchange")
-            # Read fast, clow candles from binance +1 for last candle in progress, +1 for diff, +1 for prediction window
-            candles_fast = self.candles_feed.read_candles(self.ticker, self.candles_fast_interval, self.candles_fast_window*2+3)
-            candles_slow = self.candles_feed.read_candles(self.ticker, self.candles_slow_interval, self.candles_slow_window*2+3)
-            # Prepare candles features
-            with self.data_lock:
-                self.candles_features = CandlesFeatures.candles_combined_features_of(candles_fast, self.candles_fast_window,
-                                                                                     candles_slow, self.candles_slow_window)
-                self._log.debug(f"Have read {len(self.candles_features.index)} candles")
-                self.last_candles_read_time = datetime.utcnow()
+    def on_candle(self, candle: {}):
+        with self.data_lock:
+            # candles_buf = self.candles_buf_all.get(candle["period"])
+            period = candle["interval"]
+            if period in self.candles_by_period:
+                candles_buf = self.candles_by_period.get(candle["interval"])
+                last_open_time = candles_buf.iloc[-1]["open_time"]
+                new_candle_time = candle["close_time"]
+                period = pd.Timedelta(candle["interval"])
+                if new_candle_time - last_open_time < period:
+                    # New candle is update of last candle in buffer
+                    candle["open_time"] = last_open_time
+                    candles_buf.iloc[-1] = candle
+                else:
+                    candle["open_time"] = candles_buf.iloc[-1]["close_time"]
+                    # New candle is a new candle because period is passed
+                    candles_buf.loc[candle["close_time"]] = candle
+            else:
+                candle["open_time"] = candle["close_time"]
+                # self.candles_buf_all[candle["period"]] = [candle]
+                self.candles_by_period[period] = pd.DataFrame([candle]).set_index("close_time", drop=False)
+
+    def has_all_candles(self):
+        """ If gathered required history """
+        for period, min_count in self.candles_cnt_by_period.items():
+            if period not in self.candles_by_period or len(self.candles_by_period[period]) < min_count:
+                return False
+        return True
+
+    def last_candle_min_time(self)->Optional[datetime]:
+        """ Minimal time of all last time of all candles. """
+        return min([candles.index[-1] for candles in self.candles_by_period.values()]) if self.candles_by_period else None

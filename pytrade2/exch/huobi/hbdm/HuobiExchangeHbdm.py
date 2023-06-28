@@ -31,19 +31,24 @@ class HuobiExchangeHbdm:
     def broker(self):
 
         if not self.__broker:
-            self.__broker = HuobiBrokerHbdm(self.config, rest_client=self._rest_client(),
+            self.__broker = HuobiBrokerHbdm(self.config,
+                                            rest_client=self._rest_client(),
                                             ws_client=self._websocket_client_broker())
         return self.__broker
 
     def candles_feed(self):
         if not self.__candles_feed:
-            self.__candles_feed = HuobiCandlesFeedHbdm(self.config, self._rest_client())
+            self.__candles_feed = HuobiCandlesFeedHbdm(self.config,
+                                                       self._rest_client(),
+                                                       self._websocket_client_market())
         return self.__candles_feed
 
     def websocket_feed(self) -> HuobiWebSocketFeedHbdm:
         """ Binance websocket feed lazy creation """
         if not self.__websocket_feed:
-            self.__websocket_feed = HuobiWebSocketFeedHbdm(config=self.config, client=self._websocket_client_market())
+            self.__websocket_feed = HuobiWebSocketFeedHbdm(config=self.config,
+                                                           rest_client=self._rest_client(),
+                                                           ws_client=self._websocket_client_market())
         return self.__websocket_feed
 
     def _websocket_client_market(self) -> HuobiWebSocketClient:

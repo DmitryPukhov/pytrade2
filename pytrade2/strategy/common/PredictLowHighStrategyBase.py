@@ -1,7 +1,7 @@
 import gc
 import logging
 import multiprocessing
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from threading import Thread, Event, Timer
 from typing import Dict, List, Optional
 
@@ -17,6 +17,7 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
+from strategy.common.features.CandlesFeatures import CandlesFeatures
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 
 
@@ -97,7 +98,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         broker_report = self.broker.get_report() if hasattr(self.broker, "get_report") else "Not provided"
         last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
         last_level2 = self.level2.index.max() if not self.level2.empty else None
-        last_candle = self.last_candles_read_time
+        last_candle = self.last_candle_min_time()
 
         broker_report += f"\nLast bid ask: {last_bid_ask}" \
                          f"\nLast level2: {last_level2}" \
@@ -131,6 +132,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
         self.websocket_feed.consumers.append(self)
         self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
+        self.candles_feed.consumers.append(self)
         self.broker = self.exchange_provider.broker(exchange_name)
 
         # Start main processing loop
@@ -146,6 +148,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
         # Run the feed, listen events
         self.websocket_feed.run()
+        self.candles_feed.run()
         self.broker.run()
 
     def processing_loop(self):
@@ -168,7 +171,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
                 self.level2_buf = pd.DataFrame()
 
             # Learn and predict only if no gap between level2 and bidask
-            self.read_candles_or_skip()
             self.process_new_data()
 
             # Refresh live status
@@ -182,11 +184,17 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         # Last received data
         last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
         last_level2 = self.level2.index.max() if not self.level2.empty else None
-        last_candle = self.last_candles_read_time
+        last_candle = self.last_candle_min_time()
         dt = datetime.utcnow()
+        if last_bid_ask:
+            dbidask = dt - last_bid_ask
+        if last_level2:
+            dl2 = dt - last_level2
+        if last_candle:
+            dc = dt - last_candle
         delta = max([dt - last_bid_ask, dt - last_level2, dt - last_candle]) \
-            if last_bid_ask and last_level2 and last_candle > datetime.min else None
-        is_alive = delta and (delta < maxdelta)
+            if last_bid_ask and last_level2 and last_candle else None
+        is_alive = (delta < maxdelta) if delta else None
         return is_alive
 
     def on_level2(self, level2: List[Dict]):
@@ -251,8 +259,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
             self.last_trade_check_time = datetime.utcnow()
 
     def process_new_data(self):
-        if not self.bid_ask.empty and not self.level2.empty and not self.candles_features.empty and self.model and not self.is_processing \
-                and self.X_pipe and self.y_pipe:
+        if not self.bid_ask.empty and not self.level2.empty and self.model \
+                and not self.is_processing and self.X_pipe and self.y_pipe:
             try:
                 self.is_processing = True
                 # Predict
@@ -360,12 +368,13 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
+        is_enough_candles = self.has_all_candles()
         # Check learn conditions
-        if self.bid_ask.empty or self.level2.empty or self.candles_features.empty:
+        if self.bid_ask.empty or self.level2.empty or not is_enough_candles:
             self._log.debug(f"Can not learn because some datasets are empty. "
                             f"bid_ask.empty: {self.bid_ask.empty}, "
                             f"level2.empty: {self.level2.empty}, "
-                            f"candles features empty: {self.candles_features.empty}")
+                            f"not all candles: {not is_enough_candles}")
             return False
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
@@ -388,15 +397,14 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
     def learn(self):
         try:
             self._log.debug("Learning")
-            self.read_candles_or_skip()
             if not self.can_learn():
                 return
             with self.data_lock:
                 # Copy data for this thread only
                 bid_ask = self.bid_ask.copy()
                 level2 = self.level2.copy()
-                candles_features = self.candles_features.copy()
-
+                candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_period,
+                                                                                self.candles_cnt_by_period)
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
                 bid_ask, level2, candles_features, self.predict_window, self.past_window)
 

@@ -12,12 +12,6 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
     Huobi derivatives market web socket.
     """
 
-    def __init__(self, config: dict, client: HuobiWebSocketClient):
-        self.consumers = []
-        self._log = logging.getLogger(self.__class__.__name__)
-        self.tickers = config["pytrade2.tickers"].lower().split(",")
-        self._client = client
-
     @staticmethod
     def is_bidask(ch):
         """ If channel name is bidask like market.BTC-USDT.bbo """
@@ -27,14 +21,6 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
     def is_level2(ch):
         """ Is channel name is level2 like market.BTC-USDT.depth.step1"""
         return re.fullmatch("market\\..*\\.depth\\.step\\d+", ch)
-
-    def run(self):
-        """
-        Read data from web socket
-        """
-        # Subscribe bid/ask
-        self._client.open()
-        self.sub_events()
 
     def sub_events(self):
         for ticker in self.tickers:

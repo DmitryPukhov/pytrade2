@@ -1,14 +1,12 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
-from unittest import TestCase
 
 import numpy as np
 import pandas as pd
 
 from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
 from model.Trade import Trade
-from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
 from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
 
 
@@ -59,10 +57,8 @@ class StrategyStub(PredictLowHighStrategyBase):
                 "pytrade2.strategy.history.min.window": "10s",
                 "pytrade2.strategy.history.max.window": "10s",
 
-                "pytrade2.strategy.candles.fast.interval": "5m",
-                "pytrade2.strategy.candles.fast.window": 5,
-                "pytrade2.strategy.candles.slow.interval": "15ms",
-                "pytrade2.strategy.candles.slow.window": 5,
+                "pytrade2.feed.candles.periods": "1min,5min",
+                "pytrade2.feed.candles.counts": "5,5",
                 "pytrade2.order.quantity": 0.001}
         super().__init__(conf, None)
         self.profit_loss_ratio = 4
