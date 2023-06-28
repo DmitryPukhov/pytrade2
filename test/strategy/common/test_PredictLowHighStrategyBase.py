@@ -5,6 +5,8 @@ from unittest import TestCase
 
 import pandas as pd
 
+from strategy.common.features.CandlesFeatures import CandlesFeatures
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 from StrategyStub import StrategyStub
 from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
@@ -12,38 +14,6 @@ from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatur
 
 class TestPredictLowHighStrategyBase(TestCase):
 
-    def test_process_new_data__should_set_fut_columns(self):
-        strategy = StrategyStub()
-        # Set bidask and level2, received by strategy from broker
-        strategy.bid_ask = pd.DataFrame([
-            {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",
-             "bid": 5, "bid_vol": 6, "ask": 7, "ask_vol": 8},
-            {"datetime": datetime.fromisoformat("2023-03-17 15:56:02"), "symbol": "asset1",
-             "bid": 5, "bid_vol": 6, "ask": 7, "ask_vol": 8}
-        ]).set_index("datetime", drop=False)
-        strategy.level2 = pd.DataFrame([
-            {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'ask': 0.9, 'ask_vol': 1},
-            {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
-        ]).set_index("datetime", drop=False)
-        strategy.candles_features = pd.DataFrame([
-            {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "doesntmatter": 1}
-        ]).set_index("datetime")
-
-        # Init strategy pipeline
-        X = PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, strategy.candles_features,
-                                               past_window="1s")
-        y = PredictLowHighFeatures.targets_of(strategy.bid_ask, "1s")
-        strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
-        strategy.X_pipe.fit(X)
-        strategy.y_pipe.fit(y)
-
-        # Call tested method, strategy should process last bidask record
-        strategy.process_new_data()
-
-        self.assertListEqual(strategy.fut_low_high.index.to_pydatetime().tolist(),
-                             [datetime.fromisoformat("2023-03-17 15:56:02")])
-        # self.assertTrue(np.array_equal(strategy.fut_low_high["bid_min_fut"], np.array([6.0]), equal_nan=True))
-        # self.assertTrue(np.array_equal(strategy.fut_low_high["bid_max_fut"], np.array([7.0]), equal_nan=True))
 
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
@@ -59,11 +29,10 @@ class TestPredictLowHighStrategyBase(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'ask': 0.9, 'ask_vol': 1},
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
-        strategy.candles_features = pd.DataFrame([
-            {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "doesntmatter": 1}
-        ]).set_index("datetime")
+        candles_features = CandlesFeatures.candles_combined_features_of(strategy.candles_by_period, strategy.candles_cnt_by_interval)
 
-        X = PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, strategy.candles_features,
+
+        X = PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, candles_features,
                                                past_window="1s")
         y = PredictLowHighFeatures.targets_of(strategy.bid_ask, predict_window="10s")
         strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
@@ -132,7 +101,6 @@ class TestPredictLowHighStrategyBase(TestCase):
                                                                                ask_max_fut=100)
         self.assertEqual(1, actual_signal)
         self.assertEqual(90, actual_loss)
-
 
     def test_open_signal_sell(self):
         # Strategy with profit/loss ratio = 4

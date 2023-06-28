@@ -5,6 +5,8 @@ from unittest import TestCase
 
 import pandas as pd
 
+from strategy.common.CandlesStrategy import CandlesStrategy
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 from StrategyStub import StrategyStub
 
@@ -12,6 +14,7 @@ from StrategyStub import StrategyStub
 class TestCandlesStrategy(TestCase):
     def test_on_candle(self):
         strategy = StrategyStub()
+        strategy.candles_by_period = {}
 
         # Candle 1 received
         dt1 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=52)
@@ -47,14 +50,14 @@ class TestCandlesStrategy(TestCase):
 
     def test_has_history_empty(self):
         strategy = StrategyStub()
-        strategy.candles_cnt_by_period = {"1min": 2, "5min": 3}
+        strategy.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         strategy.candles_by_period = {}
 
         self.assertFalse(strategy.has_all_candles())
 
     def test_has_all_candles_enough_history(self):
         strategy = StrategyStub()
-        strategy.candles_cnt_by_period = {"1min": 2, "5min": 3}
+        strategy.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         strategy.candles_by_period = {"1min": [{}, {}],
                                       "5min": [{}, {}, {}]}
 
@@ -62,7 +65,7 @@ class TestCandlesStrategy(TestCase):
 
     def test_has_all_candles_not_enough_history(self):
         strategy = StrategyStub()
-        strategy.candles_cnt_by_period = {"1min": 2, "5min": 3}
+        strategy.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         strategy.candles_by_period = {"1min": [{}, {}],
                                       "5min": [{}, {}]}
 
@@ -70,13 +73,12 @@ class TestCandlesStrategy(TestCase):
 
     def test_has_all_candles_not_all_periods(self):
         strategy = StrategyStub()
-        strategy.candles_cnt_by_period = {"1min": 2, "5min": 3}
+        strategy.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         strategy.candles_by_period = {"1min": [{}, {}]}
 
         self.assertFalse(strategy.has_all_candles())
 
     def test_last_candle_min_time(self):
-
         # Prepare the data
         strategy = StrategyStub()
         dt1 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=1)
@@ -95,12 +97,28 @@ class TestCandlesStrategy(TestCase):
         self.assertEqual(dt2, actual)
 
     def test_last_candle_min_time__empty(self):
-
         # Prepare the data
         strategy = StrategyStub()
+        strategy.candles_by_period={}
 
         # Call
         actual = strategy.last_candle_min_time()
 
         # Assert
-        self.assertEqual(datetime.datetime.min, actual)
+        self.assertIsNone(actual)
+
+    def test_candles_history_counts(self):
+        periods = ["1min", "5min"]
+        counts = [2, 2]
+        history_window = "10min"
+        predict_window = "1min"
+        actual = CandlesStrategy.candles_history_counts(periods, counts, history_window, predict_window)
+        self.assertEqual({"1min": 14, "5min": 5}, actual)
+
+    def test_candles_history_counts__small_history(self):
+        periods = ["1min", "5min"]
+        counts = [2, 2]
+        history_window = "10s"
+        predict_window = "1s"
+        actual = CandlesStrategy.candles_history_counts(periods, counts, history_window, predict_window)
+        self.assertEqual({"1min": 3, "5min": 3}, actual)

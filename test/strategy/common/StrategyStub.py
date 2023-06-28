@@ -58,7 +58,7 @@ class StrategyStub(PredictLowHighStrategyBase):
                 "pytrade2.strategy.history.max.window": "10s",
 
                 "pytrade2.feed.candles.periods": "1min,5min",
-                "pytrade2.feed.candles.counts": "5,5",
+                "pytrade2.feed.candles.counts": "1,1",
                 "pytrade2.order.quantity": 0.001}
         super().__init__(conf, None)
         self.profit_loss_ratio = 4
@@ -67,6 +67,32 @@ class StrategyStub(PredictLowHighStrategyBase):
         self.broker = BrokerStub()
         self.min_stop_loss = 0
         self.max_stop_loss_coeff = float('inf')
+        self.candles_by_period = {"1min":
+            pd.DataFrame([
+                {
+                    "close_time": datetime.fromisoformat("2023-03-17 15:56:01"),
+                    "open_time": datetime.fromisoformat("2023-03-17 15:56:01"),
+                    "open": 1, "high": 2, "low": 3, "close": 4, "vol": 5},
+                {
+                    "close_time": datetime.fromisoformat("2023-03-17 15:56:01"),
+                    "open_time": datetime.fromisoformat("2023-03-17 15:56:01"),
+                    "open": 1.1, "high": 2.2, "low": 3.3, "close": 4.4, "vol": 5.5}
+            ]),
+            "5min":
+                pd.DataFrame([
+                    {
+                        "close_time": datetime.fromisoformat("2023-03-17 15:56:01"),
+                        "open_time": datetime.fromisoformat("2023-03-17 15:56:01"),
+                        "open": 1, "high": 2, "low": 3, "close": 4, "vol": 5
+                    },
+                    {
+                        "close_time": datetime.fromisoformat("2023-03-17 15:56:01"),
+                        "open_time": datetime.fromisoformat("2023-03-17 15:56:01"),
+                        "open": 1.1, "high": 2.2, "low": 3.3, "close": 4.4, "vol": 5.5
+                    },
+                ])
+                .set_index("close_time", drop=False)}
+        self.candles_cnt_by_interval={"1min":1, "5min":1}
 
     def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
         pass

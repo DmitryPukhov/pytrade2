@@ -9,8 +9,7 @@ from exch.huobi.hbdm.feed.HuobiCandlesFeedHbdm import HuobiCandlesFeedHbdm
 class TestHuobiCandlesFeedHbdm(TestCase):
     def test_rawcandles2list(self):
         # Prepare 2 candles
-        ts = pd.Timestamp(year=2023, month=6, day=17, hour=10, minute=19, tzinfo=datetime.timezone.utc)
-
+        ts = datetime.datetime(year=2023, month=6, day=17, hour=10, minute=19)
         raw = {'ch': 'market.BTC-USDT.kline.1min', 'ts': ts.timestamp() * 1000, 'status': 'ok',
                "data": [
                    {'id': 1686981240, 'open': 10, 'close': 40, 'high': 20, 'low': 30, 'amount': 33.826,

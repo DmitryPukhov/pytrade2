@@ -46,18 +46,17 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         return HuobiCandlesFeedHbdm.rawcandle2model(dt, ticker, period, msg["tick"])
 
     def run(self):
-        self.produce_initial_candles()
         super().run()
 
-    def produce_initial_candles(self):
-        for ticker in self.tickers:
-            for period, count in zip(self.periods, self.counts):
-                # Read candles from Huobi
-                candles = self.read_candles(ticker, period, count)
-                for consumer in self.consumers:
-                    for candle in candles:
-                        # Produce the candle to the consumer
-                        consumer.on_candle(candle)
+    # def produce_initial_candles(self):
+    #     for ticker in self.tickers:
+    #         for period, count in zip(self.periods, self.counts):
+    #             # Read candles from Huobi
+    #             candles = self.read_candles(ticker, period, count)
+    #             for consumer in self.consumers:
+    #                 for candle in candles:
+    #                     # Produce the candle to the consumer
+    #                     consumer.on_candle(candle)
 
     def read_candles(self, ticker, interval, limit):
         """ Read candles from Huobi """
@@ -98,11 +97,13 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         return data
 
     @staticmethod
-    def rawcandle2model(time: datetime, ticker: str, interval: {}, raw_candle: {}):
+    def rawcandle2model(time: datetime, ticker: str, interval: str, raw_candle: {}):
         """ Huobi raw responce dictionary to model dictionary """
         # Example of raw candle: {'id': 1686981240, 'open': 26677.8, 'close': 26663.3, 'high': 26703.9, 'low': 26654.7,
         # 'amount': 33.826, 'vol': 33826, 'trade_turnover': 902606.0032, 'count': 228}
+        open_time = time - pd.Timedelta(interval)
         return {
+            "open_time": open_time,
             "close_time": time,
             "ticker": ticker,
             "interval": interval,

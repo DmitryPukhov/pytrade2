@@ -22,7 +22,7 @@ class TestCandlesFeatures(TestCase):
 
             {"close_time": datetime.fromisoformat("2023-05-21 07:05:00"), "symbol": "asset1", "interval": "1m",
              "open": 5, "high": 50, "low": 500, "close": 5000, "vol": 50000}]) \
-            .set_index("close_time")
+            .set_index("close_time", drop=False)
 
     def candles_5m_5(self):
         return pd.DataFrame([
@@ -40,7 +40,7 @@ class TestCandlesFeatures(TestCase):
 
             {"close_time": datetime.fromisoformat("2023-05-21 07:05:00"), "symbol": "asset1", "interval": "5m",
              "open": 16, "high": 7.0000, "low": 7.0000, "close": 7000, "vol": 70000}]) \
-            .set_index("close_time")
+            .set_index("close_time", drop=False)
 
     def test_candles_combined_features_of_empty(self):
         features = CandlesFeatures.candles_combined_features_of({}, {"1min":2, "5min":2})

@@ -135,6 +135,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         self.candles_feed.consumers.append(self)
         self.broker = self.exchange_provider.broker(exchange_name)
 
+        self.read_initial_candles()
+
         # Start main processing loop
         Thread(target=self.processing_loop).start()
 
@@ -150,6 +152,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         self.websocket_feed.run()
         self.candles_feed.run()
         self.broker.run()
+
 
     def processing_loop(self):
         self._log.info("Starting processing loop")
@@ -390,7 +393,9 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, self.candles_features,
+
+        candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_period, self.candles_cnt_by_interval)
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, candles_features,
                                                     past_window=self.past_window)
         return X, self.X_pipe.transform(X)
 
@@ -404,7 +409,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
                 bid_ask = self.bid_ask.copy()
                 level2 = self.level2.copy()
                 candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_period,
-                                                                                self.candles_cnt_by_period)
+                                                                                self.candles_cnt_by_interval)
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
                 bid_ask, level2, candles_features, self.predict_window, self.past_window)
 

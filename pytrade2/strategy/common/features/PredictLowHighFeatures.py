@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from strategy.common.features.BidAskFeatures import BidAskFeatures
+from strategy.common.features.CandlesFeatures import CandlesFeatures
 from strategy.common.features.Level2Features import Level2Features
 
 
