@@ -84,7 +84,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
         self.profit_min_coeff = config.get("pytrade2.strategy.profit.min.coeff", 0)
 
-        self.trade_check_interval = timedelta(seconds=10)
+        self.trade_check_interval = timedelta(seconds=30)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.min_xy_len = 2
         self.X_pipe, self.y_pipe = None, None
@@ -152,7 +152,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         self.websocket_feed.run()
         self.candles_feed.run()
         self.broker.run()
-
 
     def processing_loop(self):
         self._log.info("Starting processing loop")
@@ -247,17 +246,15 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         """ Update cur trade if sl or tp reached """
         if not self.broker.cur_trade:
             return
-        is_closable = False
-        sl, tp = self.broker.cur_trade.stop_loss_price, self.broker.cur_trade.take_profit_price
-        if self.broker.cur_trade.direction() == 1:
-            is_closable = not sl or sl >= bid or (tp and tp <= bid)
-        elif self.broker.cur_trade.direction() == -1:
-            is_closable = not sl or sl <= ask or (tp and tp >= ask)
+        # is_closable = False
+        # sl, tp = self.broker.cur_trade.stop_loss_price, self.brokuper.cur_trade.take_profit_price
+        # if self.broker.cur_trade.direction() == 1:
+        #     is_closable = not sl or sl >= bid or (tp and tp <= bid)
+        # elif self.broker.cur_trade.direction() == -1:
+        #     is_closable = not sl or sl <= ask or (tp and tp >= ask)
 
         # Timeout from last check passed
-        interval_flag = datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval
-
-        if interval_flag and is_closable:
+        if datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval:
             self.broker.update_cur_trade_status()
             self.last_trade_check_time = datetime.utcnow()
 
@@ -394,7 +391,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
 
-        candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_period, self.candles_cnt_by_interval)
+        candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_period,
+                                                                        self.candles_cnt_by_interval)
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, candles_features,
                                                     past_window=self.past_window)
         return X, self.X_pipe.transform(X)
