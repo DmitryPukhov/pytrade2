@@ -19,9 +19,7 @@ class HuobiFeedBase:
         """
         Read data from web socket
         """
-        # Subscribe bid/ask
         self._client.open()
-        self.sub_events()
 
     @staticmethod
     def ticker_of_ch(ch):

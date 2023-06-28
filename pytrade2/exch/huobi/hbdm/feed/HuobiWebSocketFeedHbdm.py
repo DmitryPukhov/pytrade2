@@ -3,6 +3,7 @@ import re
 from datetime import datetime
 from typing import Dict, List
 
+from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
 from exch.huobi.hbdm.feed.HuobiFeedBase import HuobiFeedBase
 
@@ -11,6 +12,11 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
     """
     Huobi derivatives market web socket.
     """
+
+    def __init__(self, config: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
+        super().__init__(config, rest_client, ws_client)
+        self.sub_events()
+
 
     @staticmethod
     def is_bidask(ch):

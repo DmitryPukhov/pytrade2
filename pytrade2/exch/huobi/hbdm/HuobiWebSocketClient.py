@@ -36,14 +36,16 @@ class HuobiWebSocketClient:
     System status updates subscription ：wss://api.btcgateway.pro/center-notification
     """
 
-    def __init__(self, host: str, path: str, access_key: str, secret_key: str, be_spot: bool):
+    def __init__(self, host: str, path: str, access_key: str, secret_key: str, be_spot: bool, is_broker: bool):
         self._log = logging.getLogger(self.__class__.__name__)
         self._host = host
         self._path = path
         self._access_key = access_key
         self._secret_key = secret_key
         self._be_spot = be_spot
+        self._is_broker = is_broker
         self._active_close = False
+        self._is_opening = False
         self.is_opened = False
         self._ws = None
         self._consumers = {}
@@ -60,6 +62,9 @@ class HuobiWebSocketClient:
         self.close()
 
     def open(self):
+        if self._is_opening or self.is_opened: return
+
+        self._is_opening = True
         url = 'wss://{}{}'.format(self._host, self._path)
         self._log.info(f"Opening socket: {url}")
         self._ws = websocket.WebSocketApp(url,
@@ -72,10 +77,12 @@ class HuobiWebSocketClient:
 
     def _on_open(self, ws):
         self._log.info("Socket opened")
-        # Some endpoints requires this signature data, others just returns invalid command error and continue to work.
-        signature_data = self._get_signature_data()  # signature data
-        self._ws.send(json.dumps(signature_data))  # as json string to be send
+        if self._is_broker:
+            # Some endpoints requires this signature data, others just returns invalid command error and continue to work.
+            signature_data = self._get_signature_data()  # signature data
+            self._ws.send(json.dumps(signature_data))  # as json string to be send
         self.is_opened = True
+        self._is_opening = False
 
         # Subscribe to messages for consumers
         for params, consumer in self._consumers.values():

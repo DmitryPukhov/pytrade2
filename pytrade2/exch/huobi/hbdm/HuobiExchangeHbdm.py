@@ -59,7 +59,7 @@ class HuobiExchangeHbdm:
                                                                   path="/linear-swap-ws",
                                                                   access_key=key,
                                                                   secret_key=secret,
-                                                                  be_spot=False)
+                                                                  be_spot=False, is_broker=False)
         return self.__websocket_client_market
 
     def _websocket_client_broker(self) -> HuobiWebSocketClient:
@@ -69,7 +69,7 @@ class HuobiExchangeHbdm:
                                                                   path="/linear-swap-notification",
                                                                   access_key=key,
                                                                   secret_key=secret,
-                                                                  be_spot=False)
+                                                                  be_spot=False, is_broker=True)
         return self.__websocket_client_broker
 
     def _rest_client(self):

@@ -18,6 +18,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         self.periods = [s.strip() for s in str(self.config["pytrade2.feed.candles.periods"]).split(",")]
         self.counts = [int(s) for s in self.config["pytrade2.feed.candles.counts"].split(",")]
         self.candles = {}
+        self.sub_events()
 
     def sub_events(self):
         self._log.info(f"Subscribing to {','.join(self.periods)} candles of {','.join(self.tickers)}")
