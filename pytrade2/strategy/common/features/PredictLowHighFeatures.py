@@ -44,7 +44,7 @@ class PredictLowHighFeatures:
                                                       candles_cnt_by_interval,
                                                       past_window)
         targets = PredictLowHighFeatures.targets_of(bid_ask, predict_window)
-        merged = pd.merge_asof(features, targets, left_index=True, right_index=True, direction="forward") \
+        merged = pd.merge_asof(features, targets, left_index=True, right_index=True) \
             .dropna()
         features = merged[features.columns]
         targets = merged[targets.columns]
