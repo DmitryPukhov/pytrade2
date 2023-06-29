@@ -1,9 +1,8 @@
 import gc
 import logging
 import multiprocessing
-import sys
 import traceback
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from io import StringIO
 from threading import Thread, Event, Timer
 from typing import Dict, List, Optional
@@ -20,11 +19,10 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
-from strategy.common.features.CandlesFeatures import CandlesFeatures
-from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
+class PredictBidAskStrategyBase(CandlesStrategy, PersistableStateStrategy):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -249,12 +247,6 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         """ Update cur trade if sl or tp reached """
         if not self.broker.cur_trade:
             return
-        # is_closable = False
-        # sl, tp = self.broker.cur_trade.stop_loss_price, self.brokuper.cur_trade.take_profit_price
-        # if self.broker.cur_trade.direction() == 1:
-        #     is_closable = not sl or sl >= bid or (tp and tp <= bid)
-        # elif self.broker.cur_trade.direction() == -1:
-        #     is_closable = not sl or sl <= ask or (tp and tp >= ask)
 
         # Timeout from last check passed
         if datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval:
@@ -402,12 +394,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask,
-                                                    1,  # For diff
-                                                    self.level2,
-                                                    self.candles_by_interval,
-                                                    self.candles_cnt_by_interval,
-                                                    past_window=self.past_window)
+        X = PredictBidAskFeatures.last_features_of(self.bid_ask,
+                                                   1,  # For diff
+                                                   self.level2,
+                                                   self.candles_by_interval,
+                                                   self.candles_cnt_by_interval,
+                                                   past_window=self.past_window)
         return X, (self.X_pipe.transform(X) if X.shape[0] else pd.DataFrame())
 
     def learn(self):
@@ -419,7 +411,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
                 # Copy data for this thread only
                 bid_ask = self.bid_ask.copy()
                 level2 = self.level2.copy()
-            train_X, train_y = PredictLowHighFeatures.features_targets_of(
+            train_X, train_y = PredictBidAskFeatures.features_targets_of(
                 bid_ask,
                 level2,
                 self.candles_by_interval,

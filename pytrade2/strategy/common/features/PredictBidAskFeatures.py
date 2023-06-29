@@ -8,9 +8,9 @@ from strategy.common.features.CandlesFeatures import CandlesFeatures
 from strategy.common.features.Level2Features import Level2Features
 
 
-class PredictLowHighFeatures:
+class PredictBidAskFeatures:
     """
-    Feature engineering for PredictLowHighStrategy
+    Feature engineering for bid/ask prediction strategies
     """
 
     # default_predict_window = "10s"
@@ -25,11 +25,11 @@ class PredictLowHighFeatures:
         # Need 2 last records because features contain diff.
         last_bid_ask = bid_ask.tail(n + 1)
         last_level2 = level2[level2.index <= last_bid_ask.index.max()]
-        return PredictLowHighFeatures.features_of(last_bid_ask,
-                                                  last_level2,
-                                                  candles_by_interval,
-                                                  candles_cnt_by_interval,
-                                                  past_window=past_window)
+        return PredictBidAskFeatures.features_of(last_bid_ask,
+                                                 last_level2,
+                                                 candles_by_interval,
+                                                 candles_cnt_by_interval,
+                                                 past_window=past_window)
 
     @staticmethod
     def features_targets_of(bid_ask: pd.DataFrame,
@@ -38,12 +38,12 @@ class PredictLowHighFeatures:
                             candles_cnt_by_interval: Dict[str, int],
                             predict_window: str, past_window: str) \
             -> (pd.DataFrame, pd.DataFrame):
-        features = PredictLowHighFeatures.features_of(bid_ask,
-                                                      level2,
-                                                      candles_by_interval,
-                                                      candles_cnt_by_interval,
-                                                      past_window)
-        targets = PredictLowHighFeatures.targets_of(bid_ask, predict_window)
+        features = PredictBidAskFeatures.features_of(bid_ask,
+                                                     level2,
+                                                     candles_by_interval,
+                                                     candles_cnt_by_interval,
+                                                     past_window)
+        targets = PredictBidAskFeatures.targets_of(bid_ask, predict_window)
         merged = pd.merge_asof(features, targets, left_index=True, right_index=True) \
             .dropna()
         features = merged[features.columns]

@@ -3,10 +3,10 @@ from datetime import datetime
 import pandas as pd
 from unittest import TestCase
 
-from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class TestPredictLowHighFeatures(TestCase):
+class TestPredictBidAskFeatures(TestCase):
     past_window = "10s"
     candles_by_interval = {
         "1min": pd.DataFrame([
@@ -52,8 +52,8 @@ class TestPredictLowHighFeatures(TestCase):
         # ]).set_index("datetime", drop=False)
 
         # Call
-        actual = PredictLowHighFeatures.last_features_of(bid_ask, 1, level2, self.candles_by_interval,
-                                                         self.candles_cnt_by_interval, past_window="10s")
+        actual = PredictBidAskFeatures.last_features_of(bid_ask, 1, level2, self.candles_by_interval,
+                                                        self.candles_cnt_by_interval, past_window="10s")
         # Assert
         self.assertListEqual(actual.index.to_pydatetime().tolist(),
                              [datetime.fromisoformat("2023-03-17 15:56:15")])
@@ -78,7 +78,7 @@ class TestPredictLowHighFeatures(TestCase):
         # ]).set_index("datetime", drop=False)
 
         # Call
-        actual_features, actual_targets = PredictLowHighFeatures.features_targets_of(
+        actual_features, actual_targets = PredictBidAskFeatures.features_targets_of(
             bid_ask, level2, self.candles_by_interval, self.candles_cnt_by_interval, "10s", "10s")
         self.assertListEqual(actual_features.index.values.tolist(), actual_targets.index.values.tolist())
 
@@ -104,7 +104,7 @@ class TestPredictLowHighFeatures(TestCase):
         # ]).set_index("datetime")
 
         # Call.
-        actual_features = PredictLowHighFeatures.features_of(
+        actual_features = PredictBidAskFeatures.features_of(
             bid_ask, level2, self.candles_by_interval, self.candles_cnt_by_interval, "1s")
 
         # First level2 is at 15:56:03, so features with level2 will start from 15:56:03
@@ -139,7 +139,7 @@ class TestPredictLowHighFeatures(TestCase):
              "bid": 13, "bid_vol": 10, "ask": 213, "ask_vol": 12}
 
         ]).set_index("datetime", drop=False)
-        actual = PredictLowHighFeatures().targets_of(df, predict_window="10s")
+        actual = PredictBidAskFeatures().targets_of(df, predict_window="10s")
 
         # Future values should be predicted only if future window completed
         self.assertListEqual(actual["bid_max_fut_diff"].values.tolist(), [3, 2, 9, 9])
@@ -178,7 +178,7 @@ class TestPredictLowHighFeatures(TestCase):
         # ]).set_index("datetime")
 
         # Call
-        actual = PredictLowHighFeatures.features_of(
+        actual = PredictBidAskFeatures.features_of(
             bid_ask, level2, self.candles_by_interval, self.candles_cnt_by_interval, past_window=self.past_window)
 
         self.assertListEqual([6, 10], actual["spread"].dropna().values.tolist())
@@ -194,16 +194,16 @@ class TestPredictLowHighFeatures(TestCase):
         ]).set_index("datetime", drop=False)
         level2 = bid_ask  # columns does not matter here
         # Empty level2 => empty features
-        self.assertTrue(PredictLowHighFeatures.features_of(
+        self.assertTrue(PredictBidAskFeatures.features_of(
             bid_ask, pd.DataFrame(), self.candles_by_interval, self.candles_cnt_by_interval,
             past_window=self.past_window).empty)
         # Empty bidask => empty features
-        self.assertTrue(PredictLowHighFeatures.features_of(
+        self.assertTrue(PredictBidAskFeatures.features_of(
             pd.DataFrame(), level2, self.candles_by_interval, self.candles_cnt_by_interval,
             past_window=self.past_window).empty)
         # Empty candles => empty features
         self.assertTrue(
-            PredictLowHighFeatures.features_of(
+            PredictBidAskFeatures.features_of(
                 bid_ask, level2, self.candles_by_interval, self.candles_cnt_by_interval,
                 past_window=self.past_window).empty)
 
@@ -218,7 +218,7 @@ class TestPredictLowHighFeatures(TestCase):
         ])
         # candles_features = pd.DataFrame(
         #     [{"datetime": datetime.fromisoformat("2023-03-18 09:20:01"), "doesntmatter": 1}])
-        actual = PredictLowHighFeatures.features_of(
+        actual = PredictBidAskFeatures.features_of(
             bid_ask, level2, self.candles_by_interval, self.candles_cnt_by_interval, past_window=self.past_window)
         self.assertTrue(actual.empty)
 
@@ -269,7 +269,7 @@ class TestPredictLowHighFeatures(TestCase):
         candles_cnt_by_interval = {"1min": 1}
 
         # Call
-        actual_features = PredictLowHighFeatures.features_of(
+        actual_features = PredictBidAskFeatures.features_of(
             bid_ask, level2, candles_by_interval, candles_cnt_by_interval, "1s")
 
         # First level2 is at 15:56:03, so features with level2 will start from 15:56:03

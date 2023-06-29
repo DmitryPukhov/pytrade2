@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
 from StrategyStub import StrategyStub
 
 
-class TestPredictLowHighStrategyBasePurge(TestCase):
+class TestPredictBidAskStrategyBasePurge(TestCase):
     def strategy_of(self, window):
         strategy = StrategyStub()
         strategy.history_max_window = window

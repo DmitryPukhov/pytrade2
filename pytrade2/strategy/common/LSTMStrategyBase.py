@@ -6,16 +6,16 @@ from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
 
 from exch.Exchange import Exchange
-from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
+from strategy.common.PredictBidAskStrategyBase import PredictBidAskStrategyBase
 from strategy.common.features.CandlesFeatures import CandlesFeatures
-from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class LSTMStrategyBase(PredictLowHighStrategyBase):
+class LSTMStrategyBase(PredictBidAskStrategyBase):
     """ LSTM Strategies base class with lstm window support"""
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-        PredictLowHighStrategyBase.__init__(self, config=config, exchange_provider=exchange_provider)
+        PredictBidAskStrategyBase.__init__(self, config=config, exchange_provider=exchange_provider)
         # lstm window
         self.lstm_window_size = config["pytrade2.strategy.lstm.window.size"]
         self.min_xy_len = self.lstm_window_size + 1
@@ -23,12 +23,12 @@ class LSTMStrategyBase(PredictLowHighStrategyBase):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Reshape last features to lstm window"""
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask,
-                                                    self.lstm_window_size,
-                                                    self.level2,
-                                                    self.candles_by_interval,
-                                                    self.candles_cnt_by_interval,
-                                                    past_window=self.past_window)
+        X = PredictBidAskFeatures.last_features_of(self.bid_ask,
+                                                   self.lstm_window_size,
+                                                   self.level2,
+                                                   self.candles_by_interval,
+                                                   self.candles_cnt_by_interval,
+                                                   past_window=self.past_window)
         X_trans = self.X_pipe.transform(X)
         X_reshaped = np.reshape(X_trans, (-1, self.lstm_window_size, X_trans.shape[1]))
         return X, X_reshaped

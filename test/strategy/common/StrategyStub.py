@@ -7,7 +7,7 @@ import pandas as pd
 
 from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
 from model.Trade import Trade
-from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
+from strategy.common.PredictBidAskStrategyBase import PredictBidAskStrategyBase
 
 
 class ModelStub:
@@ -44,7 +44,7 @@ class BrokerStub(BinanceBrokerSpot):
         self.cur_trade = None
 
 
-class StrategyStub(PredictLowHighStrategyBase):
+class StrategyStub(PredictBidAskStrategyBase):
     """ Strategy wrapper for tests """
 
     def __init__(self):

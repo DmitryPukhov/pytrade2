@@ -3,10 +3,10 @@ from typing import Dict
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
 
-from strategy.common.PredictLowHighStrategyBase import PredictLowHighStrategyBase
+from strategy.common.PredictBidAskStrategyBase import PredictBidAskStrategyBase
 
 
-class SimpleKerasStrategy(PredictLowHighStrategyBase):
+class SimpleKerasStrategy(PredictBidAskStrategyBase):
     """
     Keras simple NN
     """

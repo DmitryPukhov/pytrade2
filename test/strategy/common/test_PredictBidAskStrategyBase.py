@@ -9,10 +9,10 @@ from strategy.common.features.CandlesFeatures import CandlesFeatures
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 from StrategyStub import StrategyStub
-from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatures
+from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class TestPredictLowHighStrategyBase(TestCase):
+class TestPredictBidAskStrategyBase(TestCase):
 
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
@@ -29,10 +29,10 @@ class TestPredictLowHighStrategyBase(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
 
-        X = PredictLowHighFeatures.features_of(
+        X = PredictBidAskFeatures.features_of(
             strategy.bid_ask, strategy.level2, strategy.candles_by_interval, strategy.candles_cnt_by_interval,
             past_window="1s")
-        y = PredictLowHighFeatures.targets_of(strategy.bid_ask, predict_window="10s")
+        y = PredictBidAskFeatures.targets_of(strategy.bid_ask, predict_window="10s")
         strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
         strategy.X_pipe.fit(X)
         strategy.y_pipe.fit(y)
