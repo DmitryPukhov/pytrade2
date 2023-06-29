@@ -10,6 +10,13 @@ class TestPredictLowHighFeatures(TestCase):
     past_window = "10s"
     candles_by_interval = {
         "1min": pd.DataFrame([
+            {"close_time": datetime.fromisoformat("2021-12-08 07:00"),
+             "symbol": "asset1", "open": 1, "high": 2, "low": 3, "close": 4, "vol": 5},
+            {"close_time": datetime.fromisoformat("2021-12-08 07:01"),
+             "symbol": "asset1", "open": 1, "high": 2, "low": 3, "close": 4, "vol": 5},
+            {"close_time": datetime.fromisoformat("2021-12-08 07:02"),
+             "symbol": "asset1", "open": 1, "high": 2, "low": 3, "close": 4, "vol": 5},
+
             {"close_time": datetime.fromisoformat("2023-03-17 15:55:00"),
              "symbol": "asset1", "open": 1, "high": 2, "low": 3, "close": 4, "vol": 5},
 
