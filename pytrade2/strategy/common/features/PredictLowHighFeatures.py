@@ -63,7 +63,7 @@ class PredictLowHighFeatures:
         bid_ask_features = pd.merge(BidAskFeatures.time_features_of(bid_ask),
                                     BidAskFeatures.bid_ask_features_of(bid_ask, past_window),
                                     left_index=True, right_index=True, sort=True)
-        features = pd.merge_asof(bid_ask_features, l2_features, left_index=True, right_index=True, direction="backward")
+        features = pd.merge_asof(bid_ask_features, l2_features, left_index=True, right_index=True)
         # features.drop(["symbol", "datetime"], axis=1, inplace=True)
         features = pd.merge_asof(features, candles_features, left_index=True, right_index=True)
         return features.dropna()

@@ -360,7 +360,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
         # Get prediction result
         y = self.y_pipe.inverse_transform(y)
-        (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1] if y.shape[0] < 2 else y
+        (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1] #if y.shape[0] < 2 else y
         y_df = self.bid_ask.loc[X.index][["bid", "ask"]]
         y_df["bid_max_fut"] = y_df["bid"] + bid_max_fut_diff
         y_df["bid_min_fut"] = y_df["bid_max_fut"] - bid_spread_fut
@@ -393,7 +393,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
         X = PredictLowHighFeatures.last_features_of(self.bid_ask,
-                                                    1,
+                                                    1, # For diff
                                                     self.level2,
                                                     self.candles_by_interval,
                                                     self.candles_cnt_by_interval,
