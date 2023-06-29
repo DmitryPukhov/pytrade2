@@ -221,3 +221,65 @@ class TestPredictLowHighFeatures(TestCase):
         actual = PredictLowHighFeatures.features_of(
             bid_ask, level2, self.candles_by_interval, self.candles_cnt_by_interval, past_window=self.past_window)
         self.assertTrue(actual.empty)
+
+    def test_features_of__merge_bidask_candles(self):
+        """ Bidask should be enriched with latest level2 before bidask"""
+
+        bid_ask = pd.DataFrame([
+            {"datetime": datetime.fromisoformat("2023-06-29 09:00:00"),
+             "symbol": "asset1", "bid": 1, "bid_vol": 2, "ask": 3, "ask_vol": 4},
+            {"datetime": datetime.fromisoformat("2023-06-29 09:01:00"),
+             "symbol": "asset1", "bid": 5, "bid_vol": 6, "ask": 7, "ask_vol": 8},
+            {"datetime": datetime.fromisoformat("2023-06-29 09:02:00"),
+             "symbol": "asset1", "bid": 9, "bid_vol": 10, "ask": 11, "ask_vol": 12},
+            {"datetime": datetime.fromisoformat("2023-06-29 09:03:00"),
+             "symbol": "asset1", "bid": 13, "bid_vol": 14, "ask": 15, "ask_vol": 16}
+        ]).set_index("datetime", drop=False)
+
+        level2 = pd.DataFrame([
+            {"datetime": datetime.fromisoformat("2023-06-29 09:00:00"),
+             'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            {"datetime": datetime.fromisoformat("2023-06-29 09:00:00"),
+              'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
+            # {"datetime": datetime.fromisoformat("2023-06-29 09:01:00"),
+            #  'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            # {"datetime": datetime.fromisoformat("2023-06-29 09:01:00"),
+            #  'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
+            # {"datetime": datetime.fromisoformat("2023-06-29 09:02:00"),
+            #  'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            # {"datetime": datetime.fromisoformat("2023-06-29 09:02:00"),
+            #  'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
+            # {"datetime": datetime.fromisoformat("2023-06-29 09:03:00"),
+            #  'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            # {"datetime": datetime.fromisoformat("2023-06-29 09:03:00"),
+            #  'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
+        ])
+
+        candles_by_interval = {
+            "1min": pd.DataFrame([
+                {"close_time": datetime.fromisoformat("2023-06-29 09:00:00"),
+                 "symbol": "asset1", "open": 1, "high": 2, "low": 3, "close": 4, "vol": 5},
+                {"close_time": datetime.fromisoformat("2023-06-29 09:01:00"),
+                 "symbol": "asset1", "open": 1.1, "high": 2.2, "low": 3.3, "close": 4.4, "vol": 5.5},
+                # {"close_time": datetime.fromisoformat("2023-06-29 09:02:00"),
+                #  "symbol": "asset1", "open": 1.1, "high": 2.2, "low": 3.3, "close": 4.4, "vol": 5.5},
+                # {"close_time": datetime.fromisoformat("2023-06-29 09:03:00"),
+                #  "symbol": "asset1", "open": 1.1, "high": 2.2, "low": 3.3, "close": 4.4, "vol": 5.5},
+            ]).set_index("close_time", drop=False)}
+        candles_cnt_by_interval = {"1min": 1}
+
+        # Call
+        actual_features = PredictLowHighFeatures.features_of(
+            bid_ask, level2, candles_by_interval, candles_cnt_by_interval, "1s")
+
+        # First level2 is at 15:56:03, so features with level2 will start from 15:56:03
+        self.assertListEqual(actual_features.index.to_pydatetime().tolist(),
+                             [datetime.fromisoformat("2023-06-29 09:01:00"),
+                              datetime.fromisoformat("2023-06-29 09:02:00"),
+                              datetime.fromisoformat("2023-06-29 09:03:00")])
+        # bid_ask should present
+        self.assertListEqual([4, 4, 4], actual_features.bid_diff.values.tolist())
+        self.assertListEqual([4, 4, 4], actual_features.bid_vol_diff.values.tolist())
+        self.assertListEqual([4, 4, 4], actual_features.ask_diff.values.tolist())
+        self.assertListEqual([4, 4, 4], actual_features.ask_vol_diff.values.tolist())
+        self.assertListEqual([2, 2, 2], actual_features.spread.values.tolist())

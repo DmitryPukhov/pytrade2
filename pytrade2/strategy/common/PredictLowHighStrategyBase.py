@@ -1,7 +1,10 @@
 import gc
 import logging
 import multiprocessing
+import sys
+import traceback
 from datetime import datetime, timedelta, timezone
+from io import StringIO
 from threading import Thread, Event, Timer
 from typing import Dict, List, Optional
 
@@ -95,15 +98,24 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
     def get_report(self):
         """ Short info for report """
 
-        broker_report = self.broker.get_report() if hasattr(self.broker, "get_report") else "Not provided"
-        last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
-        last_level2 = self.level2.index.max() if not self.level2.empty else None
-        last_candle = self.last_candle_min_time()
+        msg = StringIO()
+        # Broker report
+        if hasattr(self.broker, "get_report"):
+            msg.write(self.broker.get_report())
+        # Bid ask report
+        msg.write(f"\nBid ask ")
+        msg.write(
+            f"cnt:{self.bid_ask.index.size}, last: {self.bid_ask.index.max()}" if not self.bid_ask.empty else "is empty")
 
-        broker_report += f"\nLast bid ask: {last_bid_ask}" \
-                         f"\nLast level2: {last_level2}" \
-                         f"\nLast candle: {last_candle}"
-        return broker_report
+        # Level2 report
+        msg.write(f"\nLevel2 ")
+        msg.write(
+            f"cnt:{self.level2.index.size}, last: {self.level2.index.max()}" if not self.level2.empty else "is empty")
+
+        # Candles report
+        for i, t in self.last_candles_info().items():
+            msg.write(f"\nLast {i} candle: {t}")
+        return msg.getvalue()
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
@@ -182,22 +194,13 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def is_alive(self):
         maxdelta = self.history_min_window + pd.Timedelta("60s")
-
-        # Last received data
-        last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
-        last_level2 = self.level2.index.max() if not self.level2.empty else None
-        last_candle = self.last_candle_min_time()
         dt = datetime.utcnow()
-        if last_bid_ask:
-            dbidask = dt - last_bid_ask
-        if last_level2:
-            dl2 = dt - last_level2
-        if last_candle:
-            dc = dt - last_candle
-        delta = max([dt - last_bid_ask, dt - last_level2, dt - last_candle]) \
-            if last_bid_ask and last_level2 and last_candle else None
-        is_alive = (delta < maxdelta) if delta else None
-        return is_alive
+        if not self.bid_ask.empty and dt - self.bid_ask.index.max() > maxdelta:
+            return False
+        elif not self.level2.empty and dt - self.bid_ask.index.max() > maxdelta:
+            return False
+        else:
+            return CandlesStrategy.is_alive(self)
 
     def on_level2(self, level2: List[Dict]):
         """
@@ -275,9 +278,8 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
                 # Save to historical data
                 self.save_lastXy(X.tail(1), y.tail(1), self.bid_ask.tail(1))
-
             except Exception as e:
-                self._log.error(e)
+                self._log.error(f"{e}. Traceback: {traceback.format_exc()}")
             finally:
                 self.is_processing = False
 
@@ -396,6 +398,7 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
                                                     self.candles_by_interval,
                                                     self.candles_cnt_by_interval,
                                                     past_window=self.past_window)
+        # print(f"X shape={X.shape}")
         return X, self.X_pipe.transform(X)
 
     def learn(self):
@@ -414,12 +417,9 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
                 self.candles_cnt_by_interval,
                 self.predict_window,
                 self.past_window)
-            self.last_candle_min_time()
+
             self._log.info(
-                f"Learning on last data. Train data len: {train_X.shape[0]}, "
-                f"bid_ask len: {bid_ask.shape[0]}, level2 len: {level2.shape[0]}, "
-                f"last bid_ask at: {bid_ask.index[-1]}, last level2 at: {level2.index[-1]}, "
-                f"last candle at: {self.last_candle_min_time()}")
+                f"Learning on last data. Train data len: {train_X.shape[0]}")
             if len(train_X.index) >= self.min_xy_len:
                 if not self.model:
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])

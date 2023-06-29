@@ -40,6 +40,7 @@ class HuobiWebSocketClient:
         self._log = logging.getLogger(self.__class__.__name__)
         self._host = host
         self._path = path
+        self.url = 'wss://{}{}'.format(self._host, self._path)
         self._access_key = access_key
         self._secret_key = secret_key
         self._be_spot = be_spot
@@ -65,9 +66,8 @@ class HuobiWebSocketClient:
         if self._is_opening or self.is_opened: return
 
         self._is_opening = True
-        url = 'wss://{}{}'.format(self._host, self._path)
-        self._log.info(f"Opening socket: {url}")
-        self._ws = websocket.WebSocketApp(url,
+        self._log.info(f"Opening socket: {self.url}")
+        self._ws = websocket.WebSocketApp(self.url,
                                           on_open=self._on_open,
                                           on_message=self._on_msg,
                                           on_close=self._on_close,
@@ -76,7 +76,7 @@ class HuobiWebSocketClient:
         t.start()
 
     def _on_open(self, ws):
-        self._log.info("Socket opened")
+        self._log.info(f"Socket opened: {self.url}")
         if self._is_broker:
             # Some endpoints requires this signature data, others just returns invalid command error and continue to work.
             signature_data = self._get_signature_data()  # signature data

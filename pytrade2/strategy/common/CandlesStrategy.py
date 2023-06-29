@@ -76,7 +76,16 @@ class CandlesStrategy:
                 return False
         return True
 
-    def last_candle_min_time(self) -> Optional[datetime]:
-        """ Minimal time of all last time of all candles. """
-        return min(
-            [candles.index[-1] for candles in self.candles_by_interval.values()]) if self.candles_by_interval else None
+    def last_candles_info(self) -> dict:
+        """ interval: last candle time"""
+
+        return dict([(i, c.index[-1]) for i, c in self.candles_by_interval.items()])
+
+    def is_alive(self):
+        dt = datetime.now()
+        for i, c in self.candles_by_interval.items():
+            candle_max_delta = pd.Timedelta(i)
+            if dt - c.index.max() > candle_max_delta * 2:
+                # If double candle interval passed and we did not get a new candle, we are dead
+                return False
+        return True
