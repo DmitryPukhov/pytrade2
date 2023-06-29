@@ -29,9 +29,9 @@ class App:
         time.tzset()
         self._init_logger()
         self._log = logging.getLogger(self.__class__.__name__)
-        self._log.info(f"--------------------------------------------------------------"
-                       f"--------------   Starting pytrade2 App   ---------------------"
-                       f"--------------------------------------------------------------")
+        self._log.info(f"\n--------------------------------------------------------------"
+                       f"\n--------------   Starting pytrade2 App   ---------------------"
+                       f"\n--------------------------------------------------------------")
         # For pandas printing to log
         pd.set_option('display.max_colwidth', None)
         pd.set_option('display.max_columns', None)
