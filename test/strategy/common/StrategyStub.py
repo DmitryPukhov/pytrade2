@@ -67,7 +67,7 @@ class StrategyStub(PredictLowHighStrategyBase):
         self.broker = BrokerStub()
         self.min_stop_loss = 0
         self.max_stop_loss_coeff = float('inf')
-        self.candles_by_period = {"1min":
+        self.candles_by_interval = {"1min":
             pd.DataFrame([
                 {
                     "close_time": datetime.fromisoformat("2023-03-17 15:56:01"),

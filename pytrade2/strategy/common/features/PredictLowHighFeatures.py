@@ -1,3 +1,5 @@
+from typing import Dict
+
 import numpy as np
 import pandas as pd
 
@@ -10,22 +12,37 @@ class PredictLowHighFeatures:
     """
     Feature engineering for PredictLowHighStrategy
     """
+
     # default_predict_window = "10s"
     # default_past_window = "10s"
 
     @staticmethod
-    def last_features_of(bid_ask: pd.DataFrame, n: int, level2: pd.DataFrame,
-                         candles_features: pd.DataFrame, past_window: str) -> pd.DataFrame:
+    def last_features_of(bid_ask: pd.DataFrame, n: int,
+                         level2: pd.DataFrame,
+                         candles_by_interval: Dict[str, pd.DataFrame],
+                         candles_cnt_by_interval: Dict[str, int],
+                         past_window: str) -> pd.DataFrame:
         # Need 2 last records because features contain diff.
         last_bid_ask = bid_ask.tail(n + 1)
         last_level2 = level2[level2.index <= last_bid_ask.index.max()]
-        return PredictLowHighFeatures.features_of(last_bid_ask, last_level2, candles_features, past_window=past_window)
+        return PredictLowHighFeatures.features_of(last_bid_ask,
+                                                  last_level2,
+                                                  candles_by_interval,
+                                                  candles_cnt_by_interval,
+                                                  past_window=past_window)
 
     @staticmethod
-    def features_targets_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame,
+    def features_targets_of(bid_ask: pd.DataFrame,
+                            level2: pd.DataFrame,
+                            candles_by_interval: Dict[str, pd.DataFrame],
+                            candles_cnt_by_interval: Dict[str, int],
                             predict_window: str, past_window: str) \
             -> (pd.DataFrame, pd.DataFrame):
-        features = PredictLowHighFeatures.features_of(bid_ask, level2, candles_features, past_window)
+        features = PredictLowHighFeatures.features_of(bid_ask,
+                                                      level2,
+                                                      candles_by_interval,
+                                                      candles_cnt_by_interval,
+                                                      past_window)
         targets = PredictLowHighFeatures.targets_of(bid_ask, predict_window)
         merged = pd.merge_asof(features, targets, left_index=True, right_index=True, direction="forward") \
             .dropna()
@@ -34,10 +51,14 @@ class PredictLowHighFeatures:
         return features, targets
 
     @staticmethod
-    def features_of(bid_ask: pd.DataFrame, level2: pd.DataFrame, candles_features: pd.DataFrame,
+    def features_of(bid_ask: pd.DataFrame,
+                    level2: pd.DataFrame,
+                    candles_by_interval: Dict[str, pd.DataFrame],
+                    candles_cnt_by_interval: Dict[str, int],
                     past_window: str):
-        if bid_ask.empty or level2.empty or candles_features.empty:
+        if bid_ask.empty or level2.empty or not candles_by_interval:
             return pd.DataFrame()
+        candles_features = CandlesFeatures.candles_combined_features_of(candles_by_interval, candles_cnt_by_interval)
         l2_features = Level2Features().level2_buckets(level2, past_window=past_window)
         bid_ask_features = pd.merge(BidAskFeatures.time_features_of(bid_ask),
                                     BidAskFeatures.bid_ask_features_of(bid_ask, past_window),

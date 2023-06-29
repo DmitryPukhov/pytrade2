@@ -14,7 +14,6 @@ from strategy.common.features.PredictLowHighFeatures import PredictLowHighFeatur
 
 class TestPredictLowHighStrategyBase(TestCase):
 
-
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
         strategy = StrategyStub()
@@ -29,11 +28,10 @@ class TestPredictLowHighStrategyBase(TestCase):
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'ask': 0.9, 'ask_vol': 1},
             {'datetime': datetime.fromisoformat('2023-03-17 15:56:02'), 'bid': -0.9, 'bid_vol': 1}
         ]).set_index("datetime", drop=False)
-        candles_features = CandlesFeatures.candles_combined_features_of(strategy.candles_by_period, strategy.candles_cnt_by_interval)
 
-
-        X = PredictLowHighFeatures.features_of(strategy.bid_ask, strategy.level2, candles_features,
-                                               past_window="1s")
+        X = PredictLowHighFeatures.features_of(
+            strategy.bid_ask, strategy.level2, strategy.candles_by_interval, strategy.candles_cnt_by_interval,
+            past_window="1s")
         y = PredictLowHighFeatures.targets_of(strategy.bid_ask, predict_window="10s")
         strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
         strategy.X_pipe.fit(X)

@@ -390,10 +390,11 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-
-        candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_period,
-                                                                        self.candles_cnt_by_interval)
-        X = PredictLowHighFeatures.last_features_of(self.bid_ask, 1, self.level2, candles_features,
+        X = PredictLowHighFeatures.last_features_of(self.bid_ask,
+                                                    1,
+                                                    self.level2,
+                                                    self.candles_by_interval,
+                                                    self.candles_cnt_by_interval,
                                                     past_window=self.past_window)
         return X, self.X_pipe.transform(X)
 
@@ -406,16 +407,19 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
                 # Copy data for this thread only
                 bid_ask = self.bid_ask.copy()
                 level2 = self.level2.copy()
-                candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_period,
-                                                                                self.candles_cnt_by_interval)
             train_X, train_y = PredictLowHighFeatures.features_targets_of(
-                bid_ask, level2, candles_features, self.predict_window, self.past_window)
-
+                bid_ask,
+                level2,
+                self.candles_by_interval,
+                self.candles_cnt_by_interval,
+                self.predict_window,
+                self.past_window)
+            self.last_candle_min_time()
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}, "
                 f"bid_ask len: {bid_ask.shape[0]}, level2 len: {level2.shape[0]}, "
                 f"last bid_ask at: {bid_ask.index[-1]}, last level2 at: {level2.index[-1]}, "
-                f"last candle at: {candles_features.index[-1]}")
+                f"last candle at: {self.last_candle_min_time()}")
             if len(train_X.index) >= self.min_xy_len:
                 if not self.model:
                     self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])

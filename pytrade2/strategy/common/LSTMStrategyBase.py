@@ -23,7 +23,7 @@ class LSTMStrategyBase(PredictLowHighStrategyBase):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Reshape last features to lstm window"""
-        candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_period,
+        candles_features = CandlesFeatures.candles_combined_features_of(self.candles_by_interval,
                                                                         self.candles_cnt_by_interval)
         X = PredictLowHighFeatures.last_features_of(self.bid_ask, self.lstm_window_size, self.level2,
                                                     candles_features, past_window=self.past_window)
