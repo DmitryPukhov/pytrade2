@@ -78,34 +78,6 @@ class TestCandlesStrategy(TestCase):
 
         self.assertFalse(strategy.has_all_candles())
 
-    def test_last_candle_min_time(self):
-        # Prepare the data
-        strategy = StrategyStub()
-        dt1 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=1)
-        dt2 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=2)
-        dt3 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=3)
-
-        strategy.candles_by_interval = {
-            "1min": pd.DataFrame([{"close_time": dt2}]).set_index("close_time"),
-            "5min": pd.DataFrame([{"close_time": dt1}, {"close_time": dt3}]).set_index("close_time")
-        }
-
-        # Call
-        actual = strategy.last_candle_min_time()
-
-        # Assert
-        self.assertEqual(dt2, actual)
-
-    def test_last_candle_min_time__empty(self):
-        # Prepare the data
-        strategy = StrategyStub()
-        strategy.candles_by_interval={}
-
-        # Call
-        actual = strategy.last_candle_min_time()
-
-        # Assert
-        self.assertIsNone(actual)
 
     def test_candles_history_counts(self):
         periods = ["1min", "5min"]

@@ -14,7 +14,7 @@ pytrade2.strategy.history.min.window: "60s"
 pytrade2.strategy.history.max.window: "60m"
 pytrade2.strategy.purge.interval: "60s"
 pytrade2.strategy.predict.window: "60s"
-pytrade2.strategy.past.window: "60s"
+pytrade2.strategy.past.window: "10s"
 
 pytrade2.feed.candles.periods: 1min, 5min
 pytrade2.feed.candles.counts: 2, 2

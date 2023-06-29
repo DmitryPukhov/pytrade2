@@ -33,7 +33,7 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
             self._log.info(f"Subscribing to {ticker} feed")
 
             # Sub bid ask, level2
-            for topic in [f"market.{ticker}.bbo", f"market.{ticker}.depth.step0"]:
+            for topic in [f"market.{ticker}.bbo", f"market.{ticker}.depth.step2"]:
                 self._client.add_consumer(topic, {"sub": topic}, self)
 
         self._log.info("Feed subscribed to all events needed")
