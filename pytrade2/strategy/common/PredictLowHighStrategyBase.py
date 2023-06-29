@@ -262,12 +262,15 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
             self.last_trade_check_time = datetime.utcnow()
 
     def process_new_data(self):
+
         if not self.bid_ask.empty and not self.level2.empty and self.model \
                 and not self.is_processing and self.X_pipe and self.y_pipe:
             try:
                 self.is_processing = True
                 # Predict
                 X, y = self.predict_low_high()
+                if X.empty:
+                    return
                 self.fut_low_high = y
 
                 # Open or close or do nothing
@@ -355,12 +358,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
         X, X_prepared = self.prepare_last_X()
         # Predict
-        y = self.model.predict(X_prepared, verbose=0) if not X.empty else np.ndarray[np.nan, np.nan, np.nan, np.nan]
+        y = self.model.predict(X_prepared, verbose=0) if not X.empty else np.array([np.nan, np.nan, np.nan, np.nan])
         y = y.reshape((-1, 4))
 
         # Get prediction result
         y = self.y_pipe.inverse_transform(y)
-        (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1] #if y.shape[0] < 2 else y
+        (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1]  # if y.shape[0] < 2 else y
         y_df = self.bid_ask.loc[X.index][["bid", "ask"]]
         y_df["bid_max_fut"] = y_df["bid"] + bid_max_fut_diff
         y_df["bid_min_fut"] = y_df["bid_max_fut"] - bid_spread_fut
@@ -370,14 +373,21 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
-        is_enough_candles = self.has_all_candles()
-        # Check learn conditions
-        if self.bid_ask.empty or self.level2.empty or not is_enough_candles:
+
+        no_bidask = self.bid_ask.empty
+        no_candles = not self.has_all_candles()
+        no_level2 = self.level2.empty
+        no_level2_bid = "bid" not in self.level2.columns or self.level2["bid"].empty
+        no_level2_ask = "ask" not in self.level2.columns or self.level2["ask"].empty
+
+        if no_bidask or no_candles or no_level2 or no_level2_bid or no_level2_ask:
             self._log.debug(f"Can not learn because some datasets are empty. "
-                            f"bid_ask.empty: {self.bid_ask.empty}, "
-                            f"level2.empty: {self.level2.empty}, "
-                            f"not all candles: {not is_enough_candles}")
+                            f"level2.empty: {no_level2}, "
+                            f"level2.bid.empty: {no_level2_bid}, "
+                            f"level2.ask.empty: {no_level2_ask}, "
+                            f"candles.empty: {no_candles}")
             return False
+
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
         if interval < self.history_min_window:
@@ -393,13 +403,12 @@ class PredictLowHighStrategyBase(CandlesStrategy, PersistableStateStrategy):
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
         X = PredictLowHighFeatures.last_features_of(self.bid_ask,
-                                                    1, # For diff
+                                                    1,  # For diff
                                                     self.level2,
                                                     self.candles_by_interval,
                                                     self.candles_cnt_by_interval,
                                                     past_window=self.past_window)
-        # print(f"X shape={X.shape}")
-        return X, self.X_pipe.transform(X)
+        return X, (self.X_pipe.transform(X) if X.shape[0] else pd.DataFrame())
 
     def learn(self):
         try:
