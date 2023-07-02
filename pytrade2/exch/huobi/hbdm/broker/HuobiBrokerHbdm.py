@@ -356,7 +356,7 @@ class HuobiBrokerHbdm(Broker):
                                           reverse=trade.direction() == -1)
             trade.stop_loss_order_id = ",".join([sl_order["order_id_str"], tp_order["order_id_str"]])
             trade.stop_loss_price = sl_order["order_price"]
-            trade.take_profit_price = tp_order["order_price"]
+            trade.take_profit_price = tp_order["order_price"] if tp_order["order_price"] else tp_order["trigger_price"]
 
         return trade
 
