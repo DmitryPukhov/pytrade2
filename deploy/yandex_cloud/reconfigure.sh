@@ -37,4 +37,4 @@ echo "Starting remote dockers"
 ssh $user@"$public_ip" "cd $pytrade2_vm_dir ; sudo docker-compose start $bot_names &"
 
 ## Follow logs
-ssh $user@"$public_ip" "cd $pytrade2_vm_dir ; sudo docker-compose logs -f"
+ssh $user@"$public_ip" "cd $pytrade2_vm_dir ; sudo docker-compose logs -n100 -f"
