@@ -49,7 +49,7 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
         feed = HuobiWebSocketFeedHbdm(config={"pytrade2.tickers": "BTC-USDT"}, rest_client=MagicMock(),
                                       ws_client=MagicMock())
         consumer = MagicMock()
-        feed.consumers.append(consumer)
+        feed.consumers.add(consumer)
 
         # Call
         feed.on_socket_data('market.BTC-USDT.bbo', msg)
@@ -70,7 +70,7 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
         feed = HuobiWebSocketFeedHbdm(config={"pytrade2.tickers": "BTC-USDT"}, rest_client=MagicMock(),
                                       ws_client=MagicMock())
         consumer = MagicMock()
-        feed.consumers.append(consumer)
+        feed.consumers.add(consumer)
 
         # Call
         feed.on_socket_data('notmarket.BTC-USDT.bbo', msg)

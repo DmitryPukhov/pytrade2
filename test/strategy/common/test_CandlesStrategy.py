@@ -18,7 +18,7 @@ class TestCandlesStrategy(TestCase):
 
         # Candle 1 received
         dt1 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=52)
-        candle1 = {"close_time": dt1, "interval": "1min", "close": 1}
+        candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "close": 1}
         strategy.on_candle(candle1)
         self.assertEqual(1, len(strategy.candles_by_interval))
         self.assertEqual([dt1], strategy.candles_by_interval["1min"].index.tolist())
@@ -28,7 +28,7 @@ class TestCandlesStrategy(TestCase):
 
         # Candle2 received in 59 sec - update of candle1
         dt2 = dt1 + datetime.timedelta(seconds=59)
-        candle2 = {"close_time": dt2, "interval": "1min", "close": 2}
+        candle2 = {"open_time": dt1, "close_time": dt2, "interval": "1min", "close": 2}
         strategy.on_candle(candle2)
         self.assertEqual(1, len(strategy.candles_by_interval["1min"]))
         self.assertEqual([pd.Timestamp(dt1)],
@@ -39,7 +39,7 @@ class TestCandlesStrategy(TestCase):
 
         # Candle2 received in 1 min - new candle
         dt3 = dt2 + datetime.timedelta(minutes=1)
-        candle3 = {"close_time": dt3, "interval": "1min", "close": 3}
+        candle3 = {"open_time": dt2, "close_time": dt3, "interval": "1min", "close": 3}
         strategy.on_candle(candle3)
         self.assertEqual(2, len(strategy.candles_by_interval["1min"]))
         self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt2)],

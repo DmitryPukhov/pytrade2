@@ -60,7 +60,7 @@ class StrategyStub(PredictBidAskStrategyBase):
                 "pytrade2.feed.candles.periods": "1min,5min",
                 "pytrade2.feed.candles.counts": "1,1",
                 "pytrade2.order.quantity": 0.001}
-        super().__init__(conf, None)
+        PredictBidAskStrategyBase.__init__(self, conf, None)
         self.profit_loss_ratio = 4
         self.close_profit_loss_ratio = 2
         self.model = ModelStub()

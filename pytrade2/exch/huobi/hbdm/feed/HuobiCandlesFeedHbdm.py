@@ -16,7 +16,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
     def __init__(self, config: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
         super().__init__(config, rest_client, ws_client)
         self.periods = [s.strip() for s in str(self.config["pytrade2.feed.candles.periods"]).split(",")]
-        self.counts = [int(s) for s in self.config["pytrade2.feed.candles.counts"].split(",")]
+        self.counts = [int(s) for s in str(self.config["pytrade2.feed.candles.counts"]).split(",")]
         self.candles = {}
         self.sub_events()
 
@@ -89,6 +89,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
 
         #dt = datetime.fromtimestamp(raw_candles["ts"] / 1000, tz=timezone.utc)
         dt = datetime.fromtimestamp(raw_candles["ts"] / 1000)
+        #dt = datetime.utcnow()
 
         deltatime = pd.Timedelta(interval)
         times = [dt - deltatime * i for i in range(len(raw_candles["data"]))]

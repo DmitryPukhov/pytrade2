@@ -1,8 +1,7 @@
 import gc
-import logging
 import multiprocessing
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import StringIO
 from threading import Thread, Event, Timer
 from typing import Dict, List, Optional
@@ -19,43 +18,34 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
+from strategy.common.StrategyBase import StrategyBase
 from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class PredictBidAskStrategyBase(CandlesStrategy, PersistableStateStrategy):
+class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateStrategy):
     """
     Listen price data from web socket, predict future low/high
     """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-        self._log = logging.getLogger(self.__class__.__name__)
-        self.config = config
-        self.tickers = self.config["pytrade2.tickers"].split(",")
-        self.ticker = self.tickers[-1]
-        self.order_quantity = config["pytrade2.order.quantity"]
-        self._log.info(f"Order quantity: {self.order_quantity}")
-        self.exchange_provider = exchange_provider
-        self.exchange = None
+
         self.websocket_feed = None
         self.candles_feed = None
         self.model = None
         self.broker = None
 
-        self.price_precision = config["pytrade2.price.precision"]
-        self.amount_precision = config["pytrade2.amount.precision"]
-
+        StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
         PersistableStateStrategy.__init__(self, config)
-        self.new_data_event: Event = Event()
         self.data_lock = multiprocessing.RLock()
+        self.new_data_event: Event = Event()
 
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
         self.past_window = config["pytrade2.strategy.past.window"]
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
-        self.learn_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval']) \
-            if 'pytrade2.strategy.learn.interval' in config else None
+
         # Purge params
         self.purge_interval = pd.Timedelta(config['pytrade2.strategy.purge.interval']) \
             if 'pytrade2.strategy.purge.interval' in config else None
@@ -68,27 +58,6 @@ class PredictBidAskStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
         self.last_learn_bidask_time = datetime(1970, 1, 1)
-        self.min_xy_len = 2
-
-        self.is_processing = False
-
-        # Expected profit/loss >= ratio means signal to trade
-        self.profit_loss_ratio = config.get("pytrade2.strategy.profitloss.ratio", 1)
-
-        # stop loss should be above price * min_stop_loss_coeff
-        # 0.00005 for BTCUSDT 30000 means 1,5
-        self.stop_loss_min_coeff = config.get("pytrade2.strategy.stoploss.min.coeff", 0)
-
-        # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
-        self.stop_loss_max_coeff = config.get("pytrade2.strategy.stoploss.max.coeff",
-                                              float('inf'))
-        # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
-        self.profit_min_coeff = config.get("pytrade2.strategy.profit.min.coeff", 0)
-
-        self.trade_check_interval = timedelta(seconds=30)
-        self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
-        self.min_xy_len = 2
-        self.X_pipe, self.y_pipe = None, None
 
         self._log.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
@@ -140,9 +109,10 @@ class PredictBidAskStrategyBase(CandlesStrategy, PersistableStateStrategy):
 
         # Create feed and broker
         self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
-        self.websocket_feed.consumers.append(self)
+        self.websocket_feed.consumers.add(self)
         self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
-        self.candles_feed.consumers.append(self)
+        self.candles_feed.consumers.add(self)
+
         self.broker = self.exchange_provider.broker(exchange_name)
 
         self.read_initial_candles()
@@ -171,8 +141,8 @@ class PredictBidAskStrategyBase(CandlesStrategy, PersistableStateStrategy):
         while is_alive or is_alive is None:
 
             # Wait for new data received
-            while not self.new_data_event.is_set():
-                self.new_data_event.wait()
+            #while not self.new_data_event.is_set():
+            self.new_data_event.wait()
             self.new_data_event.clear()
 
             # Append new data from buffers to main data frames
@@ -193,12 +163,21 @@ class PredictBidAskStrategyBase(CandlesStrategy, PersistableStateStrategy):
     def is_alive(self):
         maxdelta = self.history_min_window + pd.Timedelta("60s")
         dt = datetime.utcnow()
+        is_alive = True
         if not self.bid_ask.empty and dt - self.bid_ask.index.max() > maxdelta:
-            return False
-        elif not self.level2.empty and dt - self.bid_ask.index.max() > maxdelta:
-            return False
+            is_alive = False
+        elif not self.level2.empty and dt - self.level2.index.max() > maxdelta:
+            is_alive = False
         else:
-            return CandlesStrategy.is_alive(self)
+            is_alive = CandlesStrategy.is_alive(self)
+        if not is_alive:
+            last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
+            last_level2 = self.level2.index.max() if not self.level2.empty else None
+            last_candles = [(i, c.index.max()) for i, c in self.candles_by_interval.items()]
+            self._log.info(f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
+                           f"last candles: {last_candles}")
+        return is_alive
+
 
     def on_level2(self, level2: List[Dict]):
         """
