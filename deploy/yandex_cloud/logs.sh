@@ -1,8 +1,8 @@
 #!/bin/bash
 
 bot_name=$1
-user="yc-user"
-public_ip="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
+. deploy_lib.sh
+
 
 # Ssh to cloud and follow logs
-ssh $user@"$public_ip" "cd /home/$user/pytrade2/ ; sudo docker-compose logs -n 100 --follow $bot_name &"
+ssh "$VM_USER"@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker-compose logs -n 100 --follow $bot_name &"

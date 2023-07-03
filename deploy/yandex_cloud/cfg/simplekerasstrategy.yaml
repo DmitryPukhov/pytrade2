@@ -1,0 +1,8 @@
+pytrade2.strategy: SimpleKerasStrategy
+
+#pytrade2.exchange.huobi.market.client.url: "https://api.huobi.pro/v2"
+#pytrade2.exchange.huobi.market.client.url: "https://api.huobi.pro"
+#pytrade2.exchange.huobi.trade.client.url: "https://api.huobi.pro"
+#pytrade2.exchange.huobi.account.client.url: "https://api.huobi.pro"
+
+pytrade2.broker.trade.allow: false

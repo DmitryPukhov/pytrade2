@@ -1,0 +1,46 @@
+pytrade2.tickers: "BTC-USDT"
+
+
+#pytrade2.exchange: binance.BinanceExchange
+#pytrade2.exchange.binance.spot.url: 'https://testnet.binance.vision'
+
+pytrade2.exchange: "huobi.hbdm.HuobiExchangeHbdm"
+#pytrade2.exchange.huobi.market.client.url: "https://api.huobi.pro"
+#pytrade2.exchange.huobi.trade.client.url: "https://api.huobi.pro"
+#pytrade2.exchange.huobi.account.client.url: "https://api.huobi.pro"
+
+pytrade2.data.dir: '/data'
+
+# Predict next X min
+pytrade2.strategy.learn.interval: "30s"
+pytrade2.strategy.history.min.window: "5min"
+pytrade2.strategy.history.max.window: "10min"
+pytrade2.strategy.predict.window: "5min"
+pytrade2.strategy.past.window: "5min"
+
+
+pytrade2.feed.candles.periods: 5min, 15min
+pytrade2.feed.candles.counts: 5, 5
+
+pytrade2.strategy.profitloss.ratio: 2
+
+
+# My buy/sell spot fee 0.12%*2=0.24% = 0.0024, for 30000 means 72
+# My fut market fee 0.012% = 0.00012, 30K*0.00012*2=7.2 USDT
+# 30K*0.0001=3 USDT
+# 0.0003 ~=9USDT
+
+# 30K*0.002=60 USDT
+pytrade2.strategy.profit.min.coeff: 0.002
+
+# 30K*0.001=30 USDT
+pytrade2.strategy.stoploss.min.coeff: 0.001
+
+# 30K*0.02 = 600 USDT
+pytrade2.strategy.stoploss.max.coeff: 0.02
+
+
+# 0.001 of 30000 = 30
+pytrade2.order.quantity: 1
+
+pytrade2.broker.trade.allow: false
