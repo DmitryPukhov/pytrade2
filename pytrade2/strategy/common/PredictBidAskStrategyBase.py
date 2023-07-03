@@ -1,28 +1,21 @@
-import gc
 import multiprocessing
 import traceback
 from datetime import datetime
 from io import StringIO
-from threading import Thread, Event, Timer
+from threading import Event, Timer
 from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-import tensorflow.python.keras.backend
-from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
-from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.StrategyBase import StrategyBase
 from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateStrategy):
+class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -31,12 +24,9 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
 
         self.websocket_feed = None
         self.candles_feed = None
-        self.model = None
-        self.broker = None
 
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        PersistableStateStrategy.__init__(self, config)
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
 
@@ -46,9 +36,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
 
-        # Purge params
-        self.purge_interval = pd.Timedelta(config['pytrade2.strategy.purge.interval']) \
-            if 'pytrade2.strategy.purge.interval' in config else None
+
 
         # Price, level2 dataframes and their buffers
         self.bid_ask: pd.DataFrame = pd.DataFrame()
@@ -72,34 +60,17 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
         # Bid ask report
         msg.write(f"\nBid ask ")
         msg.write(
-            f"cnt:{self.bid_ask.index.size}, last: {self.bid_ask.index.max()}" if not self.bid_ask.empty else "is empty")
+            f"cnt:{self.bid_ask.index.size}, first:{self.bid_ask.index.min()}, last: {self.bid_ask.index.max()}" if not self.bid_ask.empty else "is empty")
 
         # Level2 report
         msg.write(f"\nLevel2 ")
         msg.write(
-            f"cnt:{self.level2.index.size}, last: {self.level2.index.max()}" if not self.level2.empty else "is empty")
+            f"cnt:{self.level2.index.size}, first: {self.level2.index.min()}, last: {self.level2.index.max()}" if not self.level2.empty else "is empty")
 
         # Candles report
         for i, t in self.last_candles_info().items():
             msg.write(f"\nLast {i} candle: {t}")
         return msg.getvalue()
-
-    def create_pipe(self, X, y) -> (Pipeline, Pipeline):
-        """ Create feature and target pipelines to use for transform and inverse transform """
-
-        time_cols = [col for col in X.columns if col.startswith("time")]
-        float_cols = list(set(X.columns) - set(time_cols))
-
-        x_pipe = Pipeline(
-            [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
-             ("xmms", MinMaxScaler())])
-        x_pipe.fit(X)
-
-        y_pipe = Pipeline(
-            [("yrs", RobustScaler()),
-             ("ymms", MinMaxScaler())])
-        y_pipe.fit(y)
-        return x_pipe, y_pipe
 
     def run(self):
         """
@@ -117,53 +88,20 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
 
         self.read_initial_candles()
 
-        # Start main processing loop
-        Thread(target=self.processing_loop).start()
+        StrategyBase.run(self)
 
-        # Start periodical jobs
-        if self.learn_interval:
-            self._log.info(f"Starting periodical learning, interval: {self.learn_interval}")
-            Timer(self.learn_interval.seconds, self.learn).start()
         if self.purge_interval:
             self._log.info(f"Starting periodical purging, interval: {self.purge_interval}")
             Timer(self.purge_interval.seconds, self.purge_all).start()
-
         # Run the feed, listen events
         self.websocket_feed.run()
         self.candles_feed.run()
         self.broker.run()
 
-    def processing_loop(self):
-        self._log.info("Starting processing loop")
-
-        # If alive is None, not started, so continue loop
-        is_alive = self.is_alive()
-        while is_alive or is_alive is None:
-
-            # Wait for new data received
-            #while not self.new_data_event.is_set():
-            self.new_data_event.wait()
-            self.new_data_event.clear()
-
-            # Append new data from buffers to main data frames
-            with self.data_lock:
-                self.bid_ask = pd.concat([self.bid_ask, self.bid_ask_buf]).sort_index()
-                self.bid_ask_buf = pd.DataFrame()
-                self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
-                self.level2_buf = pd.DataFrame()
-
-            # Learn and predict only if no gap between level2 and bidask
-            self.process_new_data()
-
-            # Refresh live status
-            is_alive = self.is_alive()
-
-        self._log.info("End main processing loop")
-
     def is_alive(self):
         maxdelta = self.history_min_window + pd.Timedelta("60s")
         dt = datetime.utcnow()
-        is_alive = True
+
         if not self.bid_ask.empty and dt - self.bid_ask.index.max() > maxdelta:
             is_alive = False
         elif not self.level2.empty and dt - self.level2.index.max() > maxdelta:
@@ -177,7 +115,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
             self._log.info(f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
                            f"last candles: {last_candles}")
         return is_alive
-
 
     def on_level2(self, level2: List[Dict]):
         """
@@ -222,17 +159,14 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
         left_bound = df.index.max() - pd.Timedelta(purge_window)
         return df[df.index >= left_bound]
 
-    def check_cur_trade(self, bid: float, ask: float):
-        """ Update cur trade if sl or tp reached """
-        if not self.broker.cur_trade:
-            return
-
-        # Timeout from last check passed
-        if datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval:
-            self.broker.update_cur_trade_status()
-            self.last_trade_check_time = datetime.utcnow()
-
     def process_new_data(self):
+
+        # Append new data from buffers to main data frames
+        with self.data_lock:
+            self.bid_ask = pd.concat([self.bid_ask, self.bid_ask_buf]).sort_index()
+            self.bid_ask_buf = pd.DataFrame()
+            self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
+            self.level2_buf = pd.DataFrame()
 
         if not self.bid_ask.empty and not self.level2.empty and self.model \
                 and not self.is_processing and self.X_pipe and self.y_pipe:
@@ -265,7 +199,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
         ask = self.bid_ask.loc[self.bid_ask.index[-1], "ask"]
 
         # Update current trade status
-        self.check_cur_trade(bid, ask)
+        self.check_cur_trade()
 
         bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = self.fut_low_high.loc[self.fut_low_high.index[-1], \
             ["bid_min_fut", "bid_max_fut",
@@ -367,10 +301,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
             return False
         return True
 
-    def generator_of(self, train_X, train_y):
-        """ Data generator for learning """
-        return TimeseriesGenerator(train_X, train_y, length=1)
-
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
         X = PredictBidAskFeatures.last_features_of(self.bid_ask,
@@ -381,46 +311,19 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, PersistableStateS
                                                    past_window=self.past_window)
         return X, (self.X_pipe.transform(X) if X.shape[0] else pd.DataFrame())
 
-    def learn(self):
-        try:
-            self._log.debug("Learning")
-            if not self.can_learn():
-                return
-            with self.data_lock:
-                # Copy data for this thread only
-                bid_ask = self.bid_ask.copy()
-                level2 = self.level2.copy()
-            train_X, train_y = PredictBidAskFeatures.features_targets_of(
-                bid_ask,
-                level2,
-                self.candles_by_interval,
-                self.candles_cnt_by_interval,
-                self.predict_window,
-                self.past_window)
+    def prepare_Xy(self)->(pd.DataFrame, pd.DataFrame):
+        """ Prepare train data """
+        with self.data_lock:
+            # Copy data for this thread only
+            bid_ask = self.bid_ask.copy()
+            level2 = self.level2.copy()
 
-            self._log.info(
-                f"Learning on last data. Train data len: {train_X.shape[0]}")
-            if len(train_X.index) >= self.min_xy_len:
-                if not self.model:
-                    self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
-                self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
-                if not (self.X_pipe and self.y_pipe):
-                    self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
-                # Final scaling and normalization
-                self.X_pipe.fit(train_X)
-                self.y_pipe.fit(train_y)
-                gen = self.generator_of(self.X_pipe.transform(train_X), self.y_pipe.transform(train_y))
-                # Train
-                self.model.fit(gen)
+        return PredictBidAskFeatures.features_targets_of(
+            bid_ask,
+            level2,
+            self.candles_by_interval,
+            self.candles_cnt_by_interval,
+            self.predict_window,
+            self.past_window)
 
-                # Save weights
-                self.save_model()
-                # to avoid OOM
-                tensorflow.keras.backend.clear_session()
-                gc.collect()
 
-            else:
-                self._log.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
-        finally:
-            if self.learn_interval:
-                Timer(self.learn_interval.seconds, self.learn).start()
