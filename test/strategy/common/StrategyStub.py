@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 from typing import Optional
+from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
@@ -56,6 +57,7 @@ class StrategyStub(PredictBidAskStrategyBase):
                 "pytrade2.strategy.past.window": "1s",
                 "pytrade2.strategy.history.min.window": "10s",
                 "pytrade2.strategy.history.max.window": "10s",
+                "pytrade2.strategy.riskmanager.wait_after_loss": "0s",
 
                 "pytrade2.feed.candles.periods": "1min,5min",
                 "pytrade2.feed.candles.counts": "1,1",
@@ -65,6 +67,7 @@ class StrategyStub(PredictBidAskStrategyBase):
         self.close_profit_loss_ratio = 2
         self.model = ModelStub()
         self.broker = BrokerStub()
+        self.risk_manager = MagicMock()
         self.min_stop_loss = 0
         self.max_stop_loss_coeff = float('inf')
         self.candles_by_interval = {"1min":
