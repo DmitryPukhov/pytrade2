@@ -32,7 +32,7 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
                                                    past_window=self.past_window)
         X_trans = self.X_pipe.transform(X)
 
-        if math.prod(X_trans.shape) >= self.lstm_window_size:
+        if math.prod(X_trans.shape) >= self.lstm_window_size*X+X_trans.shape[1]:
             X_reshaped = np.reshape(X_trans, (-1, self.lstm_window_size, X_trans.shape[1]))
         else:
             X_reshaped = np.empty((-1, self.lstm_window_size, X_trans.shape[1]))
