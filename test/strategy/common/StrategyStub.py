@@ -41,7 +41,7 @@ class BrokerStub(BinanceBrokerSpot):
                                quantity=quantity)
 
     def end_cur_trade(self):
-        self.cur_trade = None
+        self.cur_trade, self.prev_trade = None, self.cur_trade
 
 
 class StrategyStub(PredictBidAskStrategyBase):

@@ -125,7 +125,7 @@ class BinanceBrokerSpot(BrokerSpotBase):
                 self.db_session.commit()
 
         if self.cur_trade.status == TradeStatus.closed:
-                self.cur_trade = None
+                self.cur_trade, self.prev_trade = None, self.cur_trade
 
     def get_report(self):
         """ Short info for report """

@@ -250,7 +250,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                     self._log.info(f"Current trade is closed: {self.cur_trade}")
 
                     self.db_session.commit()
-                    self.cur_trade = None
+                    self.cur_trade, self.prev_trade = None, self.cur_trade
 
             except Exception as e:
                 self._log.error(f"Error updating status of the trade: {self.cur_trade}. Error: {e}")

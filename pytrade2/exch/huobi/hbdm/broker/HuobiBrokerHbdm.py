@@ -114,7 +114,7 @@ class HuobiBrokerHbdm(Broker):
         """ When current trade was closed, do final routine and clear current trade"""
         # Save and clear current trade
         self.db_session.commit()
-        self.cur_trade = None
+        self.cur_trade, self.prev_trade = None, self.cur_trade
         # Ask account manager to read changed balance from the server
         self.account_manager.refresh_balance()
 

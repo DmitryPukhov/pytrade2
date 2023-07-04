@@ -119,7 +119,7 @@ class BrokerSpotBase(Broker):
                 self.db_session.commit()
                 if self.cur_trade.status == TradeStatus.closed:
                     self._log.info(f"Closed current trade:{self.cur_trade}")
-                    self.cur_trade = None
+                    self.cur_trade, self.prev_trade = None, self.cur_trade
                 else:
                     self._log.debug(f"Current trade not closed immediately: {self.cur_trade}")
 
@@ -200,7 +200,7 @@ class BrokerSpotBase(Broker):
                                        f"Just set closed status to the order.")
                         self.cur_trade.status = TradeStatus.closed
                         self.db_session.commit()
-                        self.cur_trade = None
+                        self.cur_trade, self.prev_trade = None, self.cur_trade
                     else:
                         self._log.info(f"Bad trade will be closed: {self.cur_trade}")
                         self.close_cur_trade()
