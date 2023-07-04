@@ -263,7 +263,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
         X, X_prepared = self.prepare_last_X()
         # Predict
-        y = self.model.predict(X_prepared, verbose=0) if not X.empty else np.array([np.nan, np.nan, np.nan, np.nan])
+        y = self.model.predict(X_prepared, verbose=0) if not X.empty and X_prepared.size > 0 else np.array([np.nan, np.nan, np.nan, np.nan])
         y = y.reshape((-1, 4))
 
         # Get prediction result

@@ -1,3 +1,4 @@
+import math
 from typing import Dict
 
 import numpy as np
@@ -30,7 +31,12 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
                                                    self.candles_cnt_by_interval,
                                                    past_window=self.past_window)
         X_trans = self.X_pipe.transform(X)
-        X_reshaped = np.reshape(X_trans, (-1, self.lstm_window_size, X_trans.shape[1]))
+
+        if math.prod(X_trans.shape) >= self.lstm_window_size:
+            X_reshaped = np.reshape(X_trans, (-1, self.lstm_window_size, X_trans.shape[1]))
+        else:
+            X_reshaped = np.empty((-1, self.lstm_window_size, X_trans.shape[1]))
+
         return X, X_reshaped
 
     def generator_of(self, train_X, train_y):
