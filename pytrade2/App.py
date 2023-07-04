@@ -114,7 +114,23 @@ class App:
         config.update(extra_config)
         config.update(os.environ)
         config["pytrade2.strategy"] = final_strategy
+
+        self._log.info(self._config_msg(config))
+
         return config
+    @staticmethod
+    def _config_msg(config):
+        """ Pring config parameters to log
+        """
+        def secured_key_val(key, value):
+            if key.endswith(".secret") or key.endswith(".key"):
+                value = value[-3:]
+            return (key, value)
+
+        secured_conf = [secured_key_val(key, config[key]) for key in sorted(config) if key.startswith("pytrade2")]
+        msg = "\n" + "\n".join([f"{key}: {val}" for key, val in secured_conf])
+        return msg
+
 
     @staticmethod
     def _parse_args() -> Dict[str, str]:
@@ -165,4 +181,3 @@ class App:
 
 if __name__ == "__main__":
     App().run()
-

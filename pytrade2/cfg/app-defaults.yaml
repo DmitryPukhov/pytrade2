@@ -4,7 +4,8 @@ pytrade2.exchange.binance.spot.url: 'https://testnet.binance.vision'
 pytrade2.exchange.huobi.market.client.url: "https://api.huobi.pro"
 pytrade2.exchange.huobi.trade.client.url: "https://api.huobi.pro"
 pytrade2.exchange.huobi.account.client.url: "https://api.huobi.pro"
-
+pytrade2.exchange.huobi.hbdm.fee: 0.0012
+pytrade2.strategy.riskmanager.wait_after_loss: 5m
 pytrade2.price.precision: 1
 pytrade2.amount.precision: 1
 

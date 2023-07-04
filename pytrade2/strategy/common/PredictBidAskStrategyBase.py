@@ -205,7 +205,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
             ["bid_min_fut", "bid_max_fut",
              "ask_min_fut", "ask_max_fut"]]
         open_signal = 0
-        if not self.broker.cur_trade:
+        if not self.broker.cur_trade and self.risk_manager.can_trade():
             # Maybe open a new order
             open_signal, open_price, stop_loss, take_profit = self.get_signal(bid, ask, bid_min_fut, bid_max_fut,
                                                                               ask_min_fut,

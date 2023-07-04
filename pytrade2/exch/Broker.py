@@ -15,6 +15,7 @@ from model.TradeStatus import TradeStatus
 class Broker:
     def __init__(self, config: dict):
         self.price_precision = config["pytrade2.price.precision"]
+        self.fee: float = 0
         self.cur_trade: Optional[Trade] = None
         self.prev_trade: Optional[Trade] = None
         self.trade_lock: RLock = RLock()

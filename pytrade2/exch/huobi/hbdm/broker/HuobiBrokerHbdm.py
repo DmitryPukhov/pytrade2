@@ -42,8 +42,10 @@ class HuobiBrokerHbdm(Broker):
     def __init__(self, conf: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
         super().__init__(conf)
         self.tickers = conf["pytrade2.tickers"].lower().split(",")
+        self.fee = float(conf["pytrade2.exchange.huobi.hbdm.fee"])
         self._log = logging.getLogger(self.__class__.__name__)
         self.ws_client, self.rest_client = ws_client, rest_client
+
         # This mode means that sell closes previous buy and vice versa
         self.set_one_way_mode()
         self.account_manager = AccountManagerHbdm(conf, rest_client, ws_client)

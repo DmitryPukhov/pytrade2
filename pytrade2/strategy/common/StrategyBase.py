@@ -14,6 +14,7 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
 from exch.Exchange import Exchange
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
+from strategy.common.RiskManager import RiskManager
 
 
 class StrategyBase(PersistableStateStrategy):
@@ -32,6 +33,7 @@ class StrategyBase(PersistableStateStrategy):
         # Purge params
         self.purge_interval = pd.Timedelta(config['pytrade2.strategy.purge.interval']) \
             if 'pytrade2.strategy.purge.interval' in config else None
+        self._wait_after_loss = pd.Timedelta(config["pytrade2.strategy.riskmanager.wait_after_loss"])
         self.exchange_provider = exchange_provider
         self.model = None
         self.broker = None
@@ -154,6 +156,8 @@ class StrategyBase(PersistableStateStrategy):
         self._log.info("End main processing loop")
 
     def run(self):
+        self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
+
         # Start main processing loop
         Thread(target=self.processing_loop).start()
 
