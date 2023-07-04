@@ -30,6 +30,10 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
                                                    self.candles_by_interval,
                                                    self.candles_cnt_by_interval,
                                                    past_window=self.past_window)
+
+        if X.shape[0] <=0:
+            return X, np.empty((0, self.lstm_window_size, X.shape[1]))
+
         X_trans = self.X_pipe.transform(X)
 
         if math.prod(X_trans.shape) >= self.lstm_window_size * X_trans.shape[1]:
