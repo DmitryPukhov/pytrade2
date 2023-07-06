@@ -159,3 +159,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+Pipfile.lock
+
+_trial_temp.lock
