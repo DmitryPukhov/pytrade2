@@ -136,6 +136,12 @@ class OrderManager:
 
                 # Get order details, fill in current trade
                 info = self.get_order_info(client_order_id, ticker=symbol)
+                trade = self.res2trade()
+
+                if trade.status != TradeStatus.opened:
+                    self._log.info(f"Order not filled, that's ok.")
+                    return None
+
                 self.cur_trade = self.res2trade(info)
                 # Fill in sltp info
                 sltp_info = self.get_sltp_orders_info(self.cur_trade.open_order_id)
@@ -218,7 +224,7 @@ class OrderManager:
         trade.open_price = data["trade_avg_price"]
         # ??? Process status better
         trade.status = TradeStatus.opened if data["status"] == OrderManager.HuobiOrderStatus.filled \
-            else TradeStatus.opening
+            else str(data["status"])
         return trade
 
     def get_order_info(self, client_order_id: int, ticker: str):
