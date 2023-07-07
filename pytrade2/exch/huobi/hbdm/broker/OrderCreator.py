@@ -142,7 +142,8 @@ class OrderCreator:
             client_order_id = int(datetime.utcnow().timestamp())
             params = self.cur_trade_params(symbol=symbol,
                                            client_order_id=client_order_id,
-                                           side=side, price=price,
+                                           side=side,
+                                           price=price,
                                            quantity=quantity,
                                            sl_trigger_price=sl_trigger_price,
                                            sl_order_price=sl_order_price,
