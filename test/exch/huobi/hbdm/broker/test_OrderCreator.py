@@ -42,7 +42,7 @@ class TestOrderCreator(TestCase):
 
         # Should fill stop loss only
         self.assertEqual("1119997217904902144", trade.stop_loss_order_id)
-        self.assertEqual(27270.0, trade.stop_loss_price)
+        self.assertEqual(27000.0, trade.stop_loss_price)
         self.assertIsNone(trade.take_profit_price)
 
     def test_update_trade_sltp_buy(self):
@@ -53,8 +53,8 @@ class TestOrderCreator(TestCase):
         OrderCreator.update_trade_sltp(self.sltp_res, trade)
 
         self.assertEqual("1119997217909096448,1119997217904902144", trade.stop_loss_order_id)
-        self.assertEqual(25740.0, trade.stop_loss_price)
-        self.assertEqual(27270.0, trade.take_profit_price)
+        self.assertEqual(26000, trade.stop_loss_price)
+        self.assertEqual(27000.0, trade.take_profit_price)
 
     def test_update_trade_sltp_sell(self):
         # sl/tp response example
@@ -64,8 +64,8 @@ class TestOrderCreator(TestCase):
         OrderCreator.update_trade_sltp(self.sltp_res, trade)
 
         self.assertEqual("1119997217904902144,1119997217909096448", trade.stop_loss_order_id)
-        self.assertEqual(25740.0, trade.take_profit_price)
-        self.assertEqual(27270.0, trade.stop_loss_price)
+        self.assertEqual(26000.0, trade.take_profit_price)
+        self.assertEqual(27000.0, trade.stop_loss_price)
 
     def test_res2trade(self):
         # Get order response

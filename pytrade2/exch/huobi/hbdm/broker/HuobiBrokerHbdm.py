@@ -61,7 +61,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
         for ticker in self.tickers:
             # Subscribe to order events
             topic = f"orders_cross.{ticker}"
-            params = {"op": "sub", "topic": f"orders_cross.{ticker}"}
+            params = {"op": "sub", "topic": topic}
             self.ws_client.add_consumer(topic, params, self)
 
         self._log.info("Broker subscribed to all events needed.")

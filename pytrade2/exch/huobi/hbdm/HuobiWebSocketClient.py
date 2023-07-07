@@ -166,6 +166,11 @@ class HuobiWebSocketClient:
                 topic = jdata['ch'].lower()
                 for consumer in [c for c in self._consumers[topic] if hasattr(c, 'on_socket_data')]:
                     consumer.on_socket_data(topic, jdata)
+            elif 'topic' in jdata:
+                # Pass the event to subscribers: broker, account, feed
+                topic = jdata['topic'].lower()
+                for consumer in [c for c in self._consumers[topic] if hasattr(c, 'on_socket_data')]:
+                    consumer.on_socket_data(topic, jdata)
             elif jdata.get('status') == 'error':
                 self._log.error(f"Got message with error: {jdata}")
         except Exception as e:
