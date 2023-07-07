@@ -6,23 +6,26 @@ from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
 from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from exch.huobi.hbdm.broker.OrderFollower import OrderFollower
-from exch.huobi.hbdm.broker.OrderManager import OrderManager
+from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
+from exch.huobi.hbdm.broker.TrailingStopSupport import TrailingStopSupport
+from exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
 from model.Trade import Trade
 
 
-class HuobiBrokerHbdm(OrderManager, OrderFollower, Broker):
+class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
     """ Huobi derivatives market broker"""
 
-    def __init__(self, conf: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
+    def __init__(self, conf: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient, ws_feed: HuobiWebSocketFeedHbdm):
 
-        OrderManager.__init__(self)
+        OrderCreator.__init__(self, conf)
         OrderFollower.__init__(self)
+        TrailingStopSupport.__init__(self, conf=conf, ws_feed=ws_feed, rest_client=rest_client)
         Broker.__init__(self, conf)
 
         self.tickers = conf["pytrade2.tickers"].lower().split(",")
         self.fee = float(conf["pytrade2.exchange.huobi.hbdm.fee"])
         self._log = logging.getLogger(self.__class__.__name__)
-        self.ws_client, self.rest_client = ws_client, rest_client
+        self.ws_client, self.ws_feed, self.rest_client = ws_client, ws_feed, rest_client
 
         # This mode means that sell closes previous buy and vice versa
         self.set_one_way_mode()

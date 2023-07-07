@@ -33,7 +33,8 @@ class HuobiExchangeHbdm:
         if not self.__broker:
             self.__broker = HuobiBrokerHbdm(self.config,
                                             rest_client=self._rest_client(),
-                                            ws_client=self._websocket_client_broker())
+                                            ws_client=self._websocket_client_broker(),
+                                            ws_feed=self.websocket_feed())
         return self.__broker
 
     def candles_feed(self):

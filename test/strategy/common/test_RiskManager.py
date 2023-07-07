@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
+from deploy.yandex_cloud.tmp.pytrade2.pytrade2.exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
 from model.Trade import Trade
 from strategy.common.RiskManager import RiskManager
 

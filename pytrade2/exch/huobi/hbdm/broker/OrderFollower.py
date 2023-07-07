@@ -9,7 +9,7 @@ from sqlalchemy.orm.session import Session
 
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
-from exch.huobi.hbdm.broker.OrderManager import OrderManager
+from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
 from model.Trade import Trade
 from model.TradeStatus import TradeStatus
 
@@ -115,7 +115,7 @@ class OrderFollower:
     @staticmethod
     def huobi_history_close_order_query_params(trade: Trade):
         # Closing trade type - opposite for main order
-        close_trade_type = [OrderManager.HuobiTradeType.buy, None, OrderManager.HuobiTradeType.sell][
+        close_trade_type = [OrderCreator.HuobiTradeType.buy, None, OrderCreator.HuobiTradeType.sell][
             trade.direction() + 1]
         # Temporary hack, search from an hour before start time to get orders, not executed immediately
         start_ts = trade.open_time_epoch_millis() - 1000 * 60 * 60
@@ -123,5 +123,5 @@ class OrderFollower:
         #         "type": HuobiBrokerHbdm.HuobiOrderType.finished, "status": HuobiBrokerHbdm.HuobiOrderStatus.filled}
 
         return {"contract": "BTC-USDT", "trade_type": close_trade_type,
-                "type": OrderManager.HuobiOrderType.finished, "status": OrderManager.HuobiOrderStatus.filled,
+                "type": OrderCreator.HuobiOrderType.finished, "status": OrderCreator.HuobiOrderStatus.filled,
                 "start_time": start_ts}
