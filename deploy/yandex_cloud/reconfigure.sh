@@ -7,7 +7,7 @@ bot_names=${*:-"$default_bot_names"}
 
 
 
-echo "Reconfiguring $bot_name at $VM_PUBLIC_IP machine."
+echo "Reconfiguring $bot_names at $VM_PUBLIC_IP machine."
 
 ####### main #######
 echo "Stopping remote dockers"
