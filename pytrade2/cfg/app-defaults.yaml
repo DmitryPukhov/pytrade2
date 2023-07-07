@@ -28,7 +28,7 @@ pytrade2.strategy.stoploss.min.coeff: 0.00005
 pytrade2.strategy.stoploss.max.coeff: 0.005
 
 # Buy/sell only if profit above price*(1+ coeff) to cover fees and slippage
-pytrade2.strategy.profit.min.coeff: 0
+pytrade2.strategy.profit.min.coeff: 0.01
 
 pytrade2.strategy.profitloss.ratio: 4
 
