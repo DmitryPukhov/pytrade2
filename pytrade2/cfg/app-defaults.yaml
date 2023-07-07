@@ -37,5 +37,5 @@ pytrade2.data.dir: './data'
 pytrade2.tickers: "BTC-USDT"
 pytrade2.broker.trade.allow: true
 pytrade2.strategy.lstm.window.size: 10
-pytrade2.order.quantity: 0.0005
+pytrade2.order.quantity: 1
 pytrade2.order.trailingstop: false
