@@ -47,6 +47,11 @@ copy_to_remote() {
   echo "Copy pytrade2 to $VM_PUBLIC_IP"
   rsync -v -r "$TMP_DIR/pytrade2" $VM_USER@"$VM_PUBLIC_IP":/home/$VM_USER/
 }
+copy_to_remote_config() {
+  echo "Copy pytrade2 config to $VM_PUBLIC_IP"
+  rsync -v -r "$TMP_DIR/pytrade2/pytrade2/cfg/" $VM_USER@"$VM_PUBLIC_IP":/home/$VM_USER/pytrade2/pytrade2/cfg
+}
+
 
 build_docker() {
   echo "Building pytrade2 at $VM_PUBLIC_IP"

@@ -14,6 +14,7 @@ echo "Stopping remote dockers"
 ssh "$VM_USER@$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker-compose stop $bot_names"
 
 prepare_tmp_config
+copy_to_remote_config
 
 echo "Starting remote dockers"
 ssh "$VM_USER@$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker-compose start $bot_names &"
