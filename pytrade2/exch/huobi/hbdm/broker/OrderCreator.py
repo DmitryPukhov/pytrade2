@@ -230,7 +230,8 @@ class OrderCreator:
             # Stop loss order is always exists
             sl_order = sltp_orders[0]
             trade.stop_loss_order_id = sl_order["order_id_str"]
-            trade.stop_loss_price = sl_order["order_price"]
+            trade.stop_loss_price = sl_order["order_price"] \
+                    if sl_order["order_price"] else sl_order["trigger_price"]
             if len(sltp_orders) > 1:
                 # If tp order
                 tp_order = sltp_orders[1]
