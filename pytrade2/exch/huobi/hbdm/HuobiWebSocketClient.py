@@ -49,7 +49,7 @@ class HuobiWebSocketClient:
         self._is_opening = False
         self.is_opened = False
         self._ws = None
-        self._consumers = {}
+        self._consumers = defaultdict(set)
         self._log.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
 
     def __del__(self):
@@ -85,9 +85,10 @@ class HuobiWebSocketClient:
         self._is_opening = False
 
         # Subscribe to messages for consumers
-        for params, consumer in self._consumers.values():
-            self._log.info(f"Subscribing to socket data, params: {params}, consumer: {consumer}")
-            self._ws.send(json.dumps(params))  # as json string to be send
+        for topic_consumers in self._consumers.values():
+            for params, consumer in topic_consumers:
+                self._log.info(f"Subscribing to socket data, params: {params}, consumer: {consumer}")
+                self._ws.send(params)  # as json string to be send
 
     def _get_signature_data(self) -> dict:
         # it's utc time and an example is 2017-05-11T15:19:30
@@ -164,12 +165,14 @@ class HuobiWebSocketClient:
             elif 'ch' in jdata:
                 # Pass the event to subscribers: broker, account, feed
                 topic = jdata['ch'].lower()
-                for consumer in [c for c in self._consumers[topic] if hasattr(c, 'on_socket_data')]:
+                for params, consumer in [(params, consumer) for (params, consumer) in self._consumers[topic]
+                                         if hasattr(consumer, 'on_socket_data')]:
                     consumer.on_socket_data(topic, jdata)
             elif 'topic' in jdata:
                 # Pass the event to subscribers: broker, account, feed
                 topic = jdata['topic'].lower()
-                for consumer in [c for c in self._consumers[topic] if hasattr(c, 'on_socket_data')]:
+                for params, consumer in [(params, consumer) for (params, consumer) in self._consumers[topic]
+                                         if hasattr(consumer, 'on_socket_data')]:
                     consumer.on_socket_data(topic, jdata)
             elif jdata.get('status') == 'error':
                 self._log.error(f"Got message with error: {jdata}")
@@ -189,7 +192,7 @@ class HuobiWebSocketClient:
         """ Registering consumer for the topic """
         self._log.debug(f"Adding consumer, topic: {topic}, params: {params}, consumer: {consumer}")
         # topic -> (params, consumer obj)
-        self._consumers.setdefault(topic, (params, consumer))
+        self._consumers[topic].add((json.dumps(params), consumer))
 
     def close(self):
         self._log.info("Closing socket")
