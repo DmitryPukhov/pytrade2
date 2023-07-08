@@ -186,6 +186,15 @@ class BrokerSpotBase(Broker):
                                         stop_loss_price=stop_loss_price,
                                         stop_loss_limit_price=stop_loss_limit_price)
 
+    def adjusted_sl_tp(self, direction, orig_price: float, orig_sl_price: float, orig_tp_price: float,
+                       filled_price: float):
+        """ Main order filled price can differ from original, so change original sl/tp to filled base price"""
+        stop_loss_price_adj = round(float(filled_price - direction * abs(orig_price - orig_sl_price)),
+                                    self.price_precision)
+        take_profit_price_adj = round(float(filled_price + direction * abs(orig_tp_price - orig_price)),
+                                      self.price_precision)
+        return stop_loss_price_adj, take_profit_price_adj
+
     def fix_cur_trade(self):
         """ Fix hung trade, cancel suborders, close the trade"""
         if not self.cur_trade:
