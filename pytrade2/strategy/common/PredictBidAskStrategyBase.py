@@ -228,14 +228,16 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         # Buy signal
         # Not zeroes and ratio is ok and max/min are ok
         is_buy_ratio = buy_profit > 0 and (buy_loss <= 0 or buy_profit / buy_loss >= self.profit_loss_ratio)
-        is_buy_loss = abs(buy_loss) < self.stop_loss_max_coeff * ask
+        # is_buy_loss = abs(buy_loss) < self.stop_loss_max_coeff * ask
+        is_buy_loss = self.stop_loss_min_coeff * ask <= abs(buy_loss) < self.stop_loss_max_coeff * ask
         is_buy_profit = abs(buy_profit) >= self.profit_min_coeff * ask
         is_buy = is_buy_ratio and is_buy_loss and is_buy_profit
 
         # Sell signal
         # Not zeroes and ratio is ok and max/min are ok
         is_sell_ratio = sell_profit > 0 and (sell_loss <= 0 or sell_profit / sell_loss >= self.profit_loss_ratio)
-        is_sell_loss = abs(sell_loss) < self.stop_loss_max_coeff * bid
+        #is_sell_loss = abs(sell_loss) < self.stop_loss_max_coeff * bid
+        is_sell_loss = self.stop_loss_min_coeff * bid <= abs(sell_loss) < self.stop_loss_max_coeff * bid
         is_sell_profit = abs(sell_profit) >= self.profit_min_coeff * bid
         is_sell = is_sell_ratio and is_sell_loss and is_sell_profit
 
@@ -246,12 +248,12 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         if is_buy:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
-            stop_loss_adj = min(stop_loss_adj, round(ask * (1 - self.stop_loss_min_coeff), self.price_precision))
+            #stop_loss_adj = min(stop_loss_adj, round(ask * (1 - self.stop_loss_min_coeff), self.price_precision))
             return 1, ask, stop_loss_adj, ask + buy_profit
         elif is_sell:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
-            stop_loss_adj = max(stop_loss_adj, round(bid * (1 + self.stop_loss_min_coeff), self.price_precision))
+            #stop_loss_adj = max(stop_loss_adj, round(bid * (1 + self.stop_loss_min_coeff), self.price_precision))
             return -1, bid, stop_loss_adj, bid - sell_profit
         else:
             # No action

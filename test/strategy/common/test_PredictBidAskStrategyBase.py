@@ -5,8 +5,6 @@ from unittest import TestCase
 
 import pandas as pd
 
-from strategy.common.features.CandlesFeatures import CandlesFeatures
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 from StrategyStub import StrategyStub
 from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
@@ -82,13 +80,14 @@ class TestPredictBidAskStrategyBase(TestCase):
         # Strategy with profit/loss ratio = 4
         strategy = StrategyStub()
         strategy.profit_min_coeff = 0.5
+        strategy.stop_loss_min_coeff = 0
 
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=0, ask=100, bid_min_fut=100,
                                                                                bid_max_fut=150, ask_min_fut=100,
                                                                                ask_max_fut=100)
         self.assertEqual(1, actual_signal)
 
-    def test_open_signal_buy_should_adjust_stop_loss(self):
+    def test_open_signal_buy_should_not_buy_min_loss(self):
         # Strategy with profit/loss ratio = 4
         strategy = StrategyStub()
         strategy.profit_min_coeff = 0.5
@@ -97,8 +96,7 @@ class TestPredictBidAskStrategyBase(TestCase):
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=0, ask=100, bid_min_fut=100,
                                                                                bid_max_fut=150, ask_min_fut=100,
                                                                                ask_max_fut=100)
-        self.assertEqual(1, actual_signal)
-        self.assertEqual(90, actual_loss)
+        self.assertEqual(0, actual_signal)
 
     def test_open_signal_sell(self):
         # Strategy with profit/loss ratio = 4
@@ -160,7 +158,7 @@ class TestPredictBidAskStrategyBase(TestCase):
                                                                                ask_max_fut=100)
         self.assertEqual(-1, actual_signal)
 
-    def test_open_signal_sell_should_adjust_stop_loss(self):
+    def test_open_signal_sell_should_not_sell_min_loss(self):
         # Strategy with profit/loss ratio = 4
         strategy = StrategyStub()
         strategy.profit_min_coeff = 0.5
@@ -169,5 +167,5 @@ class TestPredictBidAskStrategyBase(TestCase):
         actual_signal, price, actual_loss, actual_profit = strategy.get_signal(bid=100, ask=100, bid_min_fut=100,
                                                                                bid_max_fut=100, ask_min_fut=50,
                                                                                ask_max_fut=100)
-        self.assertEqual(-1, actual_signal)
-        self.assertEqual(110, actual_loss)
+        self.assertEqual(0, actual_signal)
+        #self.assertEqual(110, actual_loss)
