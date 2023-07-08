@@ -35,7 +35,7 @@ class AccountManagerHbdm(AccountManagerBase):
                     # If balance changed, append to the buffer
                     balance_data = list(self.event_to_list(msg))
                     self._buffer.extend(balance_data)
-                    self.cur_balance = balance_data[-1]["available"]
+                    self.cur_balance = balance_data[-1]["balance"]
         except Exception as e:
             self._log.error(e)
 
@@ -43,8 +43,7 @@ class AccountManagerHbdm(AccountManagerBase):
         """ Convert huobi model to dictionary for pd dataframe"""
         time = datetime.utcnow()
         for item in msg["data"]:
-            yield {"time": time, "account_id": msg["uid"], "asset": item["margin_asset"], "account_type": "cross",
-                   "change_type": None, "balance": item["margin_balance"], "available": item["margin_static"]}
+            yield {"time": time, "asset": item["margin_asset"], "balance": item["margin_static"]}
 
     def refresh_balance(self):
         """ Read new balance from huobi, write to output directory """
