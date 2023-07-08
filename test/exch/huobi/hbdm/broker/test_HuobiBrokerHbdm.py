@@ -1,7 +1,14 @@
 import copy
+import os
+import sys
 from datetime import datetime
-from unittest import TestCase
+from multiprocessing import RLock
+from unittest import TestCase, skip
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
+from BrokerMocks import BrokerMocks
+
+from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
 from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
 
 from model.Trade import Trade
@@ -149,3 +156,30 @@ class TestHuobiBrokerHbdm(TestCase):
                     "sl_order_price_type": "limit"
                     }
         self.assertDictEqual(expected, actual)
+
+    def test_on_socket_data(self):
+        # Socket order message
+        msg = {'contract_type': 'swap', 'pair': 'BTC-USDT', 'business_type': 'swap', 'op': 'notify',
+               'topic': 'orders_cross.btc-usdt', 'ts': 1688816846369, 'symbol': 'BTC', 'contract_code': 'BTC-USDT',
+               'volume': 1, 'price': 30462.5, 'order_price_type': 'limit', 'direction': 'buy', 'offset': 'both',
+               'status': 6, 'lever_rate': 1, 'order_id': 1127325090859466752, 'order_id_str': '1127325090859466752',
+               'client_order_id': 1127324473901215747, 'order_source': 'tpsl', 'order_type': 1,
+               'created_at': 1688816846338, 'trade_volume': 1, 'trade_turnover': 30.1774, 'fee': -0.01207096,
+               'trade_avg_price': 30177.4, 'margin_frozen': 0, 'profit': -0.0262, 'trade': [
+                {'trade_fee': -0.01207096, 'fee_asset': 'USDT', 'real_profit': -0.0262, 'ht_price': None,
+                 'profit': -0.0262, 'trade_id': 100012572201452, 'id': '100012572201452-1127325090859466752-1',
+                 'trade_volume': 1, 'trade_price': 30177.4, 'trade_turnover': 30.1774, 'created_at': 1688816846351,
+                 'role': 'taker'}], 'canceled_at': 0, 'fee_asset': 'USDT', 'margin_asset': 'USDT', 'uid': '450694896',
+               'liquidation_type': '0', 'margin_mode': 'cross', 'margin_account': 'USDT', 'is_tpsl': 0,
+               'real_profit': -0.0262, 'trade_partition': 'USDT', 'reduce_only': 1}
+        # Current trade
+        trade = Trade()
+        trade.side = "SELL"
+
+        broker: HuobiBrokerHbdm = BrokerMocks.broker_mock()
+        broker.cur_trade = trade
+
+        broker.on_socket_data("orders_cross.btc-usdt", msg)
+        self.assertIsNone(broker.cur_trade)
+
+

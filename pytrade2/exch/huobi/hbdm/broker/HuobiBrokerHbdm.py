@@ -80,7 +80,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
                 return
             with self.trade_lock:
                 if self.cur_trade:
-                    order_direction = Trade.order_side_codes(msg["direction"].upper())
+                    order_direction = Trade.order_side_codes[msg["direction"].upper()]
                     if order_direction == self.cur_trade.direction():
                         # Current trade is opened
                         self.update_trade_opened_event(msg, self.cur_trade)

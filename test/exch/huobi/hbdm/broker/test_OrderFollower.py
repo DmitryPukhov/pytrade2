@@ -4,6 +4,7 @@ from unittest import TestCase
 import pandas as pd
 
 from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
+from exch.huobi.hbdm.broker.OrderFollower import OrderFollower
 from model.Trade import Trade
 
 
@@ -56,5 +57,7 @@ class TestOrderManager(TestCase):
         actual = HuobiBrokerHbdm.huobi_history_close_order_query_params(trade)
         self.assertEqual(18, actual["trade_type"])  # sell
         self.assertEqual(2, actual["type"])  # finished
-        expected_ts = (dt-timedelta(hours=1)).timestamp()*1000
+        expected_ts = (dt - timedelta(hours=1)).timestamp() * 1000
         self.assertEqual(expected_ts, actual["start_time"])
+
+
