@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import Optional
 
 from exch.AccountManagerBase import AccountManagerBase
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
@@ -14,29 +15,36 @@ class AccountManagerHbdm(AccountManagerBase):
         super().__init__(conf)
         self._rest_client = rest_client
         self._ws_client = ws_client
+        self.cur_balance: Optional[float] = None
 
     def sub_events(self):
         """ Subscribe to web socket balance events """
         topic = f"accounts_cross.usdt"
         params = {"op": "sub", "topic": f"accounts_cross.usdt"}
-        self._ws_client.add_consumer(topic, params, self)
+        # For accounts_cross.usdt topic will be just accounts_cross
+        self._ws_client.add_consumer("accounts_cross", params, self)
         self._log.info(f"Account manager subscribed to all events needed")
 
     def on_socket_data(self, topic, msg: {}):
         """ Got subscribed data from socket"""
         try:
             with self.account_lock:
-                self._log.debug(f"Got websocket message, topic: {topic}, msg: {msg}")
-                self._buffer.append(self.event_to_dict(msg))
+
+                if self.cur_balance != msg["data"][-1]["margin_static"]:
+                    self._log.debug(f"Got websocket message, topic: {topic}, msg: {msg}")
+                    # If balance changed, append to the buffer
+                    balance_data = list(self.event_to_list(msg))
+                    self._buffer.extend(balance_data)
+                    self.cur_balance = balance_data[-1]["available"]
         except Exception as e:
             self._log.error(e)
 
-    def event_to_dict(self, msg: {}):
+    def event_to_list(self, msg: {}) -> [{}]:
         """ Convert huobi model to dictionary for pd dataframe"""
         time = datetime.utcnow()
-        data = msg["data"]
-        return {"time": time, "account_id": msg["uid"], "asset": data["margin_asset"], "account_type": "cross",
-                "change_type": None, "balance": data["margin_balance"], "available": "margin_static"}
+        for item in msg["data"]:
+            yield {"time": time, "account_id": msg["uid"], "asset": item["margin_asset"], "account_type": "cross",
+                   "change_type": None, "balance": item["margin_balance"], "available": item["margin_static"]}
 
     def refresh_balance(self):
         """ Read new balance from huobi, write to output directory """

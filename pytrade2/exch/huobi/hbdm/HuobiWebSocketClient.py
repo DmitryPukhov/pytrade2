@@ -147,11 +147,17 @@ class HuobiWebSocketClient:
                 self._ws.send(sdata)
                 return
             elif 'op' in jdata:
+                # Order and accounts notifications like {op: "notify", topic: "orders_cross@btc-usdt", data: []}
                 opdata = jdata['op']
-                if opdata == 'ping':
+                if opdata == 'notify' and 'topic' in jdata:
+                    # Pass the event to subscribers: broker, account, feed
+                    topic = jdata['topic'].lower()
+                    for params, consumer in [(params, consumer) for (params, consumer) in self._consumers[topic]
+                                             if hasattr(consumer, 'on_socket_data')]:
+                        consumer.on_socket_data(topic, jdata)
+                elif opdata == 'ping':
                     sdata = plain.replace('ping', 'pong')
                     self._ws.send(sdata)
-                    return
                 else:
                     pass
             elif 'action' in jdata:
@@ -165,12 +171,6 @@ class HuobiWebSocketClient:
             elif 'ch' in jdata:
                 # Pass the event to subscribers: broker, account, feed
                 topic = jdata['ch'].lower()
-                for params, consumer in [(params, consumer) for (params, consumer) in self._consumers[topic]
-                                         if hasattr(consumer, 'on_socket_data')]:
-                    consumer.on_socket_data(topic, jdata)
-            elif 'topic' in jdata:
-                # Pass the event to subscribers: broker, account, feed
-                topic = jdata['topic'].lower()
                 for params, consumer in [(params, consumer) for (params, consumer) in self._consumers[topic]
                                          if hasattr(consumer, 'on_socket_data')]:
                     consumer.on_socket_data(topic, jdata)

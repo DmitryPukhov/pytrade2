@@ -70,6 +70,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
         """ Got subscribed data from socket"""
         try:
             status = msg.get("status")
+            self._log.info(f"Got order event: {msg}")
 
             if not self.cur_trade \
                     or not status \
@@ -79,7 +80,6 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
                 return
             with self.trade_lock:
                 if self.cur_trade:
-                    self._log.info(f"Got order event: {msg}")
                     order_direction = Trade.order_side_codes(msg["direction"].upper())
                     if order_direction == self.cur_trade.direction():
                         # Current trade is opened
