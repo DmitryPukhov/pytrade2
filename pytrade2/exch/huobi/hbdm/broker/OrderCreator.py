@@ -170,7 +170,9 @@ class OrderCreator:
                 # Fill in sltp info
                 sltp_info = self.get_sltp_orders_info(self.cur_trade.open_order_id)
                 self.update_trade_sltp(sltp_info, self.cur_trade)
-                self.cur_trade.take_profit_price = tp_trigger_price
+                # Take profit order not set => take profit is manual => set it's price here
+                if not self.cur_trade.take_profit_price:
+                    self.cur_trade.take_profit_price = tp_trigger_price
 
                 # Save current trade to db
                 self.db_session.add(self.cur_trade)
@@ -226,7 +228,7 @@ class OrderCreator:
         if "status" in sltp_res and sltp_res["status"] == "ok":
             if not 1 <= len(sltp_res["data"]["tpsl_order_info"]) <= 2:
                 raise RuntimeError(f"Error: sl/tp order count is not 1 or 2: {sltp_res}")
-            sltp_orders = sorted(sltp_res["data"]["tpsl_order_info"], key=lambda item: item["order_price"],
+            sltp_orders = sorted(sltp_res["data"]["tpsl_order_info"], key=lambda item: item["trigger_price"],
                                  reverse=trade.direction() == -1)
             # Stop loss order is always exists
             sl_order = sltp_orders[0]
@@ -236,6 +238,7 @@ class OrderCreator:
             if len(sltp_orders) > 1:
                 # If tp order
                 tp_order = sltp_orders[1]
+                # sl order id format: stoploss id, take profit id
                 trade.stop_loss_order_id += f",{tp_order['order_id_str']}"
                 trade.take_profit_price = tp_order["trigger_price"] \
                     if tp_order["trigger_price"] else tp_order["order_price"]
