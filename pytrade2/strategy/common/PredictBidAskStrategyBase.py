@@ -286,7 +286,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         no_level2_ask = "ask" not in self.level2.columns or self.level2["ask"].empty
 
         if no_bidask or no_candles or no_level2 or no_level2_bid or no_level2_ask:
-            self._log.debug(f"Can not learn because some datasets are empty. "
+            self._log.info(f"Can not learn because some datasets are empty. "
                             f"level2.empty: {no_level2}, "
                             f"level2.bid.empty: {no_level2_bid}, "
                             f"level2.ask.empty: {no_level2_ask}, "
@@ -296,7 +296,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
         if interval < self.history_min_window:
-            self._log.debug(
+            self._log.info(
                 f"Can not learn because not enough history. We have {interval}, but we need {self.history_min_window}")
             return False
         return True
