@@ -14,7 +14,7 @@ pytrade2.data.dir: '/data'
 # Predict next X min
 pytrade2.strategy.learn.interval: "30s"
 pytrade2.strategy.history.min.window: "5min"
-pytrade2.strategy.history.max.window: "10min"
+pytrade2.strategy.history.max.window: "15min"
 pytrade2.strategy.predict.window: "5min"
 pytrade2.strategy.past.window: "5min"
 pytrade2.strategy.riskmanager.wait_after_loss: 5m
@@ -30,19 +30,17 @@ pytrade2.strategy.profitloss.ratio: 2
 # 30K*0.0001=3 USDT
 # 0.0003 ~=9USDT
 
-# 30K*0.002=60 USDT
-pytrade2.strategy.profit.min.coeff: 0.002
-
 # 30K*0.001=30 USDT
-pytrade2.strategy.stoploss.min.coeff: 0.001
+pytrade2.strategy.profit.min.coeff: 0.001
+
+# 30K*0.0005=15 USDT
+pytrade2.strategy.stoploss.min.coeff: 0.0005
 
 # 30K*0.02 = 600 USDT
 pytrade2.strategy.stoploss.max.coeff: 0.02
 
-
 # 0.001 of 30000 = 30
 pytrade2.order.quantity: 1
-
 
 pytrade2.order.trailingstop: false
 
