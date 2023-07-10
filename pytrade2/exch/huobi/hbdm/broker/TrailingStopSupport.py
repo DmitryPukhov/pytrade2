@@ -36,10 +36,10 @@ class TrailingStopSupport:
             return
 
         if self.cur_trade.direction() == 1 and self.cur_trade.take_profit_price >= ticker["bid"]:
-            # Got buy take profit
+            # Move buy trailing stop
             pass
         elif self.cur_trade.direction() == -1 and self.cur_trade.take_profit_price <= ticker["ask"]:
-            # Got sell take profit
+            # Move sell trailing stop
             pass
 
     def change_sltp_order(self, direction: int, new_sl, new_tp):
