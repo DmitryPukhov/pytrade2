@@ -22,7 +22,7 @@ pytrade2.strategy.riskmanager.wait_after_loss: 5m
 pytrade2.feed.candles.periods: 5min, 15min
 pytrade2.feed.candles.counts: 5, 5
 
-pytrade2.strategy.profitloss.ratio: 2
+pytrade2.strategy.profitloss.ratio: 3
 
 
 # My buy/sell spot fee 0.12%*2=0.24% = 0.0024, for 30000 means 72
