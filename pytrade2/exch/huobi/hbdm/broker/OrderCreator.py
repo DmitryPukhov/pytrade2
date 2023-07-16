@@ -1,4 +1,5 @@
 import datetime
+import time
 from datetime import datetime
 from logging import Logger
 from multiprocessing import RLock
@@ -139,7 +140,8 @@ class OrderCreator:
                 f"price precision: {self.price_precision}, limit ratio: {limit_ratio}")
             # Prepare create order command
             path = "/linear-swap-api/v1/swap_cross_order"
-            client_order_id = int(datetime.utcnow().timestamp())
+            client_order_id = round(time.time() * 1000)
+            # client_order_id = int(datetime.utcnow().timestamp())
             params = self.cur_trade_params(symbol=symbol,
                                            client_order_id=client_order_id,
                                            side=side,
