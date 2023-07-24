@@ -124,7 +124,7 @@ class App:
         """
         def secured_key_val(key, value):
             if key.endswith(".secret") or key.endswith(".key"):
-                value = value[-3:]
+                value = "***" + value[-3:]
             return (key, value)
 
         secured_conf = [secured_key_val(key, config[key]) for key in sorted(config) if key.startswith("pytrade2")]
