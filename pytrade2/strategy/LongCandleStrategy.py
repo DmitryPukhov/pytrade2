@@ -1,5 +1,30 @@
+from keras import Sequential, Input
+from keras.layers import Dense, Dropout
+
 from strategy.common.PredictMovementStrategyBase import PredictMovementStrategyBase
+from strategy.common.features.CandlesFeatures import CandlesFeatures
 
 
 class LongCandleStrategy(PredictMovementStrategyBase):
-    pass
+    def prepare_Xy(self):
+        return CandlesFeatures.features_targets_of(self.candles_by_interval, self.candles_cnt_by_interval,
+                                                   min(self.candles_by_interval.keys()))
+
+    def create_model(self, X_size, y_size):
+        model = Sequential()
+        model.add(Input(shape=(X_size,)))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dropout(0.1))
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(128, activation='relu'))
+        model.add(Dropout(0.1))
+        model.add(Dense(32, activation='relu'))
+        # model.add(Dropout(0.1))
+        model.add(Dense(y_size, activation='softmax'))
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+        # Load weights
+        self.load_last_model(model)
+        model.summary()
+        return model

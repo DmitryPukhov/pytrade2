@@ -101,7 +101,7 @@ class StrategyBase(PersistableStateStrategy):
         raise NotImplementedError
 
     def prepare_Xy(self):
-        raise NotImplementedError
+        raise NotImplementedError("prepare_Xy")
 
     def learn(self):
         try:
