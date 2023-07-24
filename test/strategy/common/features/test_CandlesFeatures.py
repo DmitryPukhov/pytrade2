@@ -43,7 +43,7 @@ class TestCandlesFeatures(TestCase):
             .set_index("close_time", drop=False)
 
     def test_candles_combined_features_of_empty(self):
-        features = CandlesFeatures.candles_combined_features_of({}, {"1min":2, "5min":2})
+        features = CandlesFeatures.candles_combined_features_of({}, {"1min": 2, "5min": 2})
         self.assertEqual(True, features.empty)
 
     def test_candles_combined_features_of(self):
@@ -117,3 +117,51 @@ class TestCandlesFeatures(TestCase):
         self.assertSequenceEqual([10000], features["1m_-1_vol"].tolist())
         self.assertSequenceEqual([10000], features["1m_-2_vol"].tolist())
         self.assertSequenceEqual([10000], features["1m_-3_vol"].tolist())
+
+    def test_candles_targets_of_buy(self):
+        # Go up
+        candles = pd.DataFrame(
+            [{"close_time": datetime.fromisoformat("2023-05-21 07:01:00"), "symbol": "asset1", "interval": "1m",
+              "open": 10, "high": 12, "low": 9, "close": 11, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:02:00"), "symbol": "asset1", "interval": "1m",
+              "open": 13, "high": 15, "low": 12, "close": 14, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:03:00"), "symbol": "asset1", "interval": "1m",
+              "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1}]) \
+            .set_index("close_time", drop=False)
+
+        actual = CandlesFeatures.targets_of(candles)
+        self.assertSequenceEqual(actual["buy"].tolist(), [True, False, False])
+        self.assertSequenceEqual(actual["sell"].tolist(), [False, False, False])
+        self.assertSequenceEqual(actual["none"].tolist(), [False, True, True])
+
+    def test_candles_targets_of_sell(self):
+        # Go up
+        candles = pd.DataFrame(
+            [{"close_time": datetime.fromisoformat("2023-05-21 07:01:00"), "symbol": "asset1", "interval": "1m",
+              "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:02:00"), "symbol": "asset1", "interval": "1m",
+              "open": 13, "high": 15, "low": 12, "close": 14, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:03:00"), "symbol": "asset1", "interval": "1m",
+              "open": 10, "high": 12, "low": 9, "close": 11, "vol": 1}]) \
+            .set_index("close_time", drop=False)
+
+        actual = CandlesFeatures.targets_of(candles)
+        self.assertSequenceEqual(actual["buy"].tolist(), [False, False, False])
+        self.assertSequenceEqual(actual["sell"].tolist(), [True, False, False])
+        self.assertSequenceEqual(actual["none"].tolist(), [False, True, True])
+
+    def test_candles_features_targets_of_buy(self):
+        # Go up
+        candles_1m_3 = pd.DataFrame(
+            [{"close_time": datetime.fromisoformat("2023-05-21 07:01:00"), "symbol": "asset1", "interval": "1m",
+              "open": 10, "high": 12, "low": 9, "close": 11, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:02:00"), "symbol": "asset1", "interval": "1m",
+              "open": 13, "high": 15, "low": 12, "close": 14, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:03:00"), "symbol": "asset1", "interval": "1m",
+              "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1}]) \
+            .set_index("close_time", drop=False)
+
+        actual_features, actual_targets = CandlesFeatures.features_targets_of({"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
+                                                     {"1min": 2, "5min": 2}, target_period="1min")
+
+        self.assertSequenceEqual(actual_features.index.tolist(), actual_targets.index.tolist())

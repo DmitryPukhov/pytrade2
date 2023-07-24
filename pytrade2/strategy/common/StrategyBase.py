@@ -62,6 +62,9 @@ class StrategyBase(PersistableStateStrategy):
 
         PersistableStateStrategy.__init__(self, config)
 
+        self._log.info("Strategy parameters:\n" + "\n".join(
+            [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
+
 
     def check_cur_trade(self):
         """ Update cur trade if sl or tp reached """

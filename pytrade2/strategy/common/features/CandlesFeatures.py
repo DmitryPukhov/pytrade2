@@ -1,9 +1,47 @@
 from typing import Dict
 
+import numpy as np
 import pandas as pd
 
 
 class CandlesFeatures:
+
+    @staticmethod
+    def features_targets_of(candles_by_periods: Dict[str, pd.DataFrame],
+                            cnt_by_period: Dict[str, int], target_period: str) -> (pd.DataFrame, pd.DataFrame):
+
+        # Candles features -
+        features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period)
+
+        # Get targets - movements
+        targets_src = candles_by_periods[target_period]
+        targets = CandlesFeatures.targets_of(targets_src)
+
+        common_index = features.index.intersection(targets.index)
+
+        return features.loc[common_index], targets.loc[common_index]
+
+    @staticmethod
+    def targets_of(candles: pd.DataFrame):
+        """ One hot encoded signal: buy signal if next 2 candles moves up, sell if down, none if not buy and not sell"""
+
+        # Next 2 candles
+        next1 = candles.shift(-1)
+        next2 = candles.shift(-2)
+
+        targets = pd.DataFrame(index=candles.index)
+        # Up move
+        next1up = next1["low"] > (candles["low"] + (candles["high"] - candles["low"]) / 2)
+        next2up = next2["low"] > (next1["low"] + (next1["high"] - next1["low"]) / 2)
+        targets["buy"] = next1up & next2up
+
+        # Down move
+        next1down = next1["high"] < (candles["high"] - (candles["high"] - candles["low"]) / 2)
+        next2down = next2["high"] < (next1["high"] - (next1["high"] - next1["low"]) / 2)
+        targets["sell"] = next1down & next2down
+
+        targets["none"] = ~ targets["buy"] & ~ targets["sell"]
+        return targets
 
     @staticmethod
     def candles_combined_features_of(candles_by_periods: Dict[str, pd.DataFrame],
@@ -18,28 +56,10 @@ class CandlesFeatures:
             merged = pd.merge_asof(merged, features, left_index=True, right_index=True) \
                 if merged is not None else features
         return merged
-        #
-        # fast_features = CandlesFeatures.candles_features_of(fast_candles, fast_interval, fast_window_size)
-        # slow_features = CandlesFeatures.candles_features_of(slow_candles, slow_interval, slow_window_size)
-        # return pd.merge_asof(fast_features, slow_features, left_index=True, right_index=True)
-
-    # @staticmethod
-    # def candles_combined_features_of(fast_candles: pd.DataFrame, fast_window_size, slow_candles: pd.DataFrame,
-    #                                  slow_window_size) -> pd.DataFrame:
-    #     """ Combine feature columns from fast and slow candles to single dataframe """
-    #     if fast_candles.empty or slow_candles.empty:
-    #         return pd.DataFrame()
-    #     fast_interval = fast_candles["interval"][-1]
-    #     slow_interval = slow_candles["interval"][-1]
-    #
-    #     fast_features = CandlesFeatures.candles_features_of(fast_candles, fast_interval, fast_window_size)
-    #     slow_features = CandlesFeatures.candles_features_of(slow_candles, slow_interval, slow_window_size)
-    #     return pd.merge_asof(fast_features, slow_features, left_index=True, right_index=True)
 
     @staticmethod
     def candles_features_of(candles: pd.DataFrame, interval: str, window_size: int):
         cols = ["open", "high", "low", "close", "vol"]
-        #features = candles.copy().reset_index(drop=False)[cols + ["close_time"]]
         features = candles.copy().reset_index(drop=True)[cols + ["close_time"]]
 
         # Add previous window candles to columns
