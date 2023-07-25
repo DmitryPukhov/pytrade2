@@ -6,9 +6,7 @@ from strategy.common.features.CandlesFeatures import CandlesFeatures
 
 
 class LongCandleStrategy(PredictMovementStrategyBase):
-    def prepare_Xy(self):
-        return CandlesFeatures.features_targets_of(self.candles_by_interval, self.candles_cnt_by_interval,
-                                                   min(self.candles_by_interval.keys()))
+
 
     def create_model(self, X_size, y_size):
         model = Sequential()

@@ -42,7 +42,13 @@ class CandlesFeatures:
 
         #targets["none"] = ~ targets["buy"] & ~ targets["sell"]
         targets["signal"] = targets["buy"].astype(int) - targets["sell"].astype(int)
-        return targets[["signal"]]
+        return targets[["signal"]].iloc[:-2]
+
+    @staticmethod
+    def candles_last_combined_features_of(candles_by_periods: Dict[str, pd.DataFrame],
+                                     cnt_by_period: Dict[str, int]) -> pd.DataFrame:
+        # todo: optimize
+        return CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).tail(1)
 
     @staticmethod
     def candles_combined_features_of(candles_by_periods: Dict[str, pd.DataFrame],

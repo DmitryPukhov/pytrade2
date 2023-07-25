@@ -42,7 +42,7 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
         if hasattr(self.broker, "get_report"):
             msg.write(self.broker.get_report())
 
-       # Candles report
+        # Candles report
         for i, t in self.last_candles_info().items():
             msg.write(f"\nLast {i} candle: {t}")
         return msg.getvalue()
@@ -83,8 +83,12 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
         return True
 
     def process_new_data(self):
-        print("Processing new data")
-        pass
+        if self.model:
+            with self.data_lock:
+                x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval, self.candles_cnt_by_interval)
+                y = self.model.predict(x)
+                signal = y[0][0] if y else 0
+                print(f"Signal: {signal}")
 
     def is_alive(self):
         return CandlesStrategy.is_alive(self)
@@ -93,7 +97,8 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
         pass
 
     def prepare_Xy(self):
-        CandlesFeatures.candles_combined_features_of(self.candles_by_interval, self.candles_cnt_by_interval)
+        return CandlesFeatures.features_targets_of(self.candles_by_interval, self.candles_cnt_by_interval,
+                                                   min(self.candles_by_interval.keys()))
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """

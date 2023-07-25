@@ -18,6 +18,8 @@ class CandlesStrategy:
         self.ticker = ticker
         self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
         self.data_lock: multiprocessing.RLock() = None
+        self.new_data_event: multiprocessing.Event = None
+
 
         periods = [s.strip() for s in str(config["pytrade2.feed.candles.periods"]).split(",")]
         counts = [int(s) for s in str(config["pytrade2.feed.candles.counts"]).split(",")]
@@ -67,6 +69,8 @@ class CandlesStrategy:
                 candle["open_time"] = candle["close_time"]
                 # self.candles_buf_all[candle["period"]] = [candle]
                 self.candles_by_interval[period] = pd.DataFrame([candle]).set_index("open_time", drop=False)
+        self.new_data_event.set()
+
 
     def has_all_candles(self):
         """ If gathered required history """

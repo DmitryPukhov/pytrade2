@@ -130,7 +130,7 @@ class TestCandlesFeatures(TestCase):
             .set_index("close_time", drop=False)
 
         actual = CandlesFeatures.targets_of(candles)
-        self.assertSequenceEqual(actual["signal"].tolist(), [1,0,0])
+        self.assertSequenceEqual(actual["signal"].tolist(), [1])
 
     def test_candles_targets_of_sell(self):
         # Go up
@@ -144,7 +144,7 @@ class TestCandlesFeatures(TestCase):
             .set_index("close_time", drop=False)
 
         actual = CandlesFeatures.targets_of(candles)
-        self.assertSequenceEqual(actual["signal"].tolist(), [-1,0,0])
+        self.assertSequenceEqual(actual["signal"].tolist(), [-1])
 
     def test_candles_features_targets_of_buy(self):
         # Go up
