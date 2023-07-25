@@ -8,6 +8,9 @@ from typing import Dict, List, Optional
 import numpy as np
 import pandas as pd
 from numpy import ndarray
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
@@ -92,3 +95,18 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
     def prepare_Xy(self):
         CandlesFeatures.candles_combined_features_of(self.candles_by_interval, self.candles_cnt_by_interval)
 
+    def create_pipe(self, X, y) -> (Pipeline, Pipeline):
+        """ Create feature and target pipelines to use for transform and inverse transform """
+
+        time_cols = [col for col in X.columns if col.startswith("time")]
+        float_cols = list(set(X.columns) - set(time_cols))
+
+        x_pipe = Pipeline(
+            [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
+             ("xmms", MinMaxScaler())])
+        x_pipe.fit(X)
+
+        y_pipe = Pipeline(
+            [("cat", OneHotEncoder(categories=[[-1, 0, 1]], sparse=False))])
+        y_pipe.fit(y)
+        return x_pipe, y_pipe

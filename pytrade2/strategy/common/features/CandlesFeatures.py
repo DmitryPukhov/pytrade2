@@ -40,8 +40,9 @@ class CandlesFeatures:
         next2down = next2["high"] < (next1["high"] - (next1["high"] - next1["low"]) / 2)
         targets["sell"] = next1down & next2down
 
-        targets["none"] = ~ targets["buy"] & ~ targets["sell"]
-        return targets
+        #targets["none"] = ~ targets["buy"] & ~ targets["sell"]
+        targets["signal"] = targets["buy"].astype(int) - targets["sell"].astype(int)
+        return targets[["signal"]]
 
     @staticmethod
     def candles_combined_features_of(candles_by_periods: Dict[str, pd.DataFrame],
