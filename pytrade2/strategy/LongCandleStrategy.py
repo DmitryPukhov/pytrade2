@@ -18,7 +18,7 @@ class LongCandleStrategy(PredictMovementStrategyBase):
         model.add(Dense(128, activation='relu'))
         model.add(Dropout(0.1))
         model.add(Dense(32, activation='relu'))
-        # model.add(Dropout(0.1))
+        model.add(Dropout(0.1))
         model.add(Dense(y_size, activation='softmax'))
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
