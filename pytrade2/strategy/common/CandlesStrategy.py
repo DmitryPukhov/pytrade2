@@ -50,6 +50,7 @@ class CandlesStrategy:
             self.candles_by_interval[period] = candles
 
     def on_candle(self, candle: {}):
+
         with self.data_lock:
             # candles_buf = self.candles_buf_all.get(candle["period"])
             period = str(candle["interval"])

@@ -92,7 +92,7 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
                 x_trans = self.X_pipe.transform(x)
                 y = self.model.predict(x_trans)
                 y_trans = self.y_pipe.inverse_transform(y)
-                signal = y_trans[0][0] if y else 0
+                signal = y_trans[0][0] if y_trans else 0
                 print(f"Signal: {signal}")
 
     def is_alive(self):
