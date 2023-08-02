@@ -114,16 +114,20 @@ class StrategyBase(PersistableStateStrategy):
             self._log.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}")
             if len(train_X.index) >= self.min_xy_len:
-                if not self.model:
-                    self.model = self.create_model(train_X.values.shape[1], train_y.values.shape[1])
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
                 if not (self.X_pipe and self.y_pipe):
                     self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
+
                 # Final scaling and normalization
                 self.X_pipe.fit(train_X)
                 self.y_pipe.fit(train_y)
-                gen = self.generator_of(self.X_pipe.transform(train_X), self.y_pipe.transform(train_y))
+
+                X_trans, y_trans = self.X_pipe.transform(train_X), self.y_pipe.transform(train_y)
+                gen = self.generator_of(X_trans, y_trans)
+
                 # Train
+                if not self.model:
+                    self.model = self.create_model(X_trans.shape[1], y_trans.shape[1])
                 self.model.fit(gen)
 
                 # Save weights
@@ -144,9 +148,8 @@ class StrategyBase(PersistableStateStrategy):
         # If alive is None, not started, so continue loop
         is_alive = self.is_alive()
         while is_alive or is_alive is None:
-
             # Wait for new data received
-            #while not self.new_data_event.is_set():
+            # while not self.new_data_event.is_set():
             self.new_data_event.wait()
             self.new_data_event.clear()
 
@@ -176,4 +179,4 @@ class StrategyBase(PersistableStateStrategy):
         raise NotImplementedError()
 
     def process_new_data(self):
-        raise  NotImplementedError()
+        raise NotImplementedError()
