@@ -85,9 +85,14 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
     def process_new_data(self):
         if self.model:
             with self.data_lock:
+                x = CandlesFeatures.candles_combined_features_of(self.candles_by_interval, self.candles_cnt_by_interval)
+                print(x)
+
                 x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval, self.candles_cnt_by_interval)
-                y = self.model.predict(x)
-                signal = y[0][0] if y else 0
+                x_trans = self.X_pipe.transform(x)
+                y = self.model.predict(x_trans)
+                y_trans = self.y_pipe.inverse_transform(y)
+                signal = y_trans[0][0] if y else 0
                 print(f"Signal: {signal}")
 
     def is_alive(self):

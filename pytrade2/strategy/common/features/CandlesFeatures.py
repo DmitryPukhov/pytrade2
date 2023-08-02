@@ -11,11 +11,11 @@ class CandlesFeatures:
                             cnt_by_period: Dict[str, int], target_period: str) -> (pd.DataFrame, pd.DataFrame):
 
         # Candles features -
-        features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period)
+        features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).dropna()
 
         # Get targets - movements
         targets_src = candles_by_periods[target_period]
-        targets = CandlesFeatures.targets_of(targets_src)
+        targets = CandlesFeatures.targets_of(targets_src).dropna()
 
         common_index = features.index.intersection(targets.index)
 
@@ -62,7 +62,7 @@ class CandlesFeatures:
             features = CandlesFeatures.candles_features_of(candles_by_periods[period], period, cnt_by_period[period])
             merged = pd.merge_asof(merged, features, left_index=True, right_index=True) \
                 if merged is not None else features
-        return merged
+        return merged.dropna()
 
     @staticmethod
     def candles_features_of(candles: pd.DataFrame, interval: str, window_size: int):
