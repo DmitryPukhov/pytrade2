@@ -19,8 +19,8 @@ class LongCandleStrategy(PredictMovementStrategyBase):
         model.add(Dropout(0.1))
         model.add(Dense(32, activation='relu'))
         model.add(Dropout(0.1))
-        model.add(Dense(y_size, activation='softmax'))
-        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.add(Dense(3, activation='softmax'))
+        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['sparse_categorical_accuracy'])
 
         # Load weights
         self.load_last_model(model)

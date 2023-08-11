@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 import traceback
 from datetime import datetime
@@ -7,16 +8,18 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
+from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder, LabelEncoder, FunctionTransformer
 
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.StrategyBase import StrategyBase
 from strategy.common.features.CandlesFeatures import CandlesFeatures
 from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
+from strategy.common.features.SignalLabelTransformer import SignalLabelTransformer
 
 
 class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
@@ -85,7 +88,8 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
     def process_new_data(self):
         if self.model:
             with self.data_lock:
-                x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval, self.candles_cnt_by_interval)
+                x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval,
+                                                                      self.candles_cnt_by_interval)
                 x_trans = self.X_pipe.transform(x)
                 y = self.model.predict(x_trans)
                 y_trans = self.y_pipe.inverse_transform(y)
@@ -112,8 +116,8 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
             [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
              ("xmms", MinMaxScaler())])
         x_pipe.fit(X)
+        y_pipe = Pipeline([
+            ('adjust_labels', SignalLabelTransformer())  # Adjust labels
+        ])
 
-        y_pipe = Pipeline(
-            [("cat", OneHotEncoder(categories=[[-1, 0, 1]], sparse=False))])
-        y_pipe.fit(y)
         return x_pipe, y_pipe
