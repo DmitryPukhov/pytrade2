@@ -1,28 +1,20 @@
-import logging
 import multiprocessing
-import traceback
-from datetime import datetime
 from io import StringIO
 from threading import Event, Timer
-from typing import Dict, List, Optional
+from typing import Dict
 
-import numpy as np
-import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
-from numpy import ndarray
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder, LabelEncoder, FunctionTransformer
+from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.StrategyBase import StrategyBase
 from strategy.common.features.CandlesFeatures import CandlesFeatures
-from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
-from strategy.common.features.SignalLabelTransformer import SignalLabelTransformer
 
 
-class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
+class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -117,13 +109,12 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
         time_cols = [col for col in X.columns if col.startswith("time")]
         float_cols = list(set(X.columns) - set(time_cols))
 
+        # Scale x
         x_pipe = Pipeline(
             [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
              ("xmms", MinMaxScaler())])
         x_pipe.fit(X)
-        y_pipe = Pipeline([
-            ('adjust_labels', OneHotEncoder(categories=[[-1,0,1]], sparse=True, drop=None))  # Adjust labels
-        ])
-        #y_pipe.fit()
 
+        # One hot encode y
+        y_pipe = Pipeline([('adjust_labels', OneHotEncoder(categories=[[-1, 0, 1]], sparse=True, drop=None))])
         return x_pipe, y_pipe

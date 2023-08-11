@@ -1,12 +1,10 @@
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
-
-from strategy.common.PredictMovementStrategyBase import PredictMovementStrategyBase
-from strategy.common.features.CandlesFeatures import CandlesFeatures
+from strategy.common.LongCandleStrategyBase import LongCandleStrategyBase
 
 
-class LongCandleStrategy(PredictMovementStrategyBase):
-
+class LongCandleDenseStrategy(LongCandleStrategyBase):
+    """ Predict long candle, NN with dense layers mainly """
 
     def create_model(self, X_size, y_size):
         model = Sequential()
