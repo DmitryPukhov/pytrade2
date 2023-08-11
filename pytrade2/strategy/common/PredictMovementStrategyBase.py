@@ -106,6 +106,11 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
         return CandlesFeatures.features_targets_of(self.candles_by_interval, self.candles_cnt_by_interval,
                                                    min(self.candles_by_interval.keys()))
 
+    def generator_of(self, train_X, train_y):
+        """ Data generator for learning """
+
+        return TimeseriesGenerator(train_X, train_y.data, length=1)
+
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
 
@@ -117,7 +122,8 @@ class PredictMovementStrategyBase(StrategyBase, CandlesStrategy):
              ("xmms", MinMaxScaler())])
         x_pipe.fit(X)
         y_pipe = Pipeline([
-            ('adjust_labels', SignalLabelTransformer())  # Adjust labels
+            ('adjust_labels', OneHotEncoder(categories=[[-1,0,1]], sparse=True, drop=None))  # Adjust labels
         ])
+        #y_pipe.fit()
 
         return x_pipe, y_pipe
