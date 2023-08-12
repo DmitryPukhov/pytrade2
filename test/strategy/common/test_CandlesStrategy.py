@@ -20,32 +20,35 @@ class TestCandlesStrategy(TestCase):
         dt1 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=52)
         candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "close": 1}
         strategy.on_candle(candle1)
-        self.assertEqual(1, len(strategy.candles_by_interval))
-        self.assertEqual([dt1], strategy.candles_by_interval["1min"].index.tolist())
+        candles = strategy.candles_by_interval["1min"]
+        self.assertEqual(1, len(candles))
+        self.assertEqual([dt1], candles.index.tolist())
         self.assertEqual([pd.Timestamp(dt1)],
-                         [pd.Timestamp(dt) for dt in strategy.candles_by_interval["1min"]["close_time"].values.tolist()])
-        self.assertEqual([1], strategy.candles_by_interval["1min"]["close"].values.tolist())
+                         [pd.Timestamp(dt) for dt in candles.index.values.tolist()])
+        self.assertEqual([1], candles["close"].values.tolist())
 
         # Candle2 received in 59 sec - update of candle1
         dt2 = dt1 + datetime.timedelta(seconds=59)
         candle2 = {"open_time": dt1, "close_time": dt2, "interval": "1min", "close": 2}
         strategy.on_candle(candle2)
-        self.assertEqual(1, len(strategy.candles_by_interval["1min"]))
+        self.assertEqual(1, len(candles))
         self.assertEqual([pd.Timestamp(dt1)],
-                         [pd.Timestamp(dt) for dt in strategy.candles_by_interval["1min"]["open_time"].values.tolist()])
+                         [pd.Timestamp(dt) for dt in candles["open_time"].values.tolist()])
         self.assertEqual([pd.Timestamp(dt2)],
-                         [pd.Timestamp(dt) for dt in strategy.candles_by_interval["1min"]["close_time"].values.tolist()])
-        self.assertEqual([2], strategy.candles_by_interval["1min"]["close"].values.tolist())
+                         [pd.Timestamp(dt) for dt in
+                          candles["close_time"].values.tolist()])
+        self.assertEqual([2], candles["close"].values.tolist())
 
         # Candle2 received in 1 min - new candle
-        dt3 = dt2 + datetime.timedelta(minutes=1)
+        dt3 = dt1 + datetime.timedelta(minutes=1)
         candle3 = {"open_time": dt2, "close_time": dt3, "interval": "1min", "close": 3}
         strategy.on_candle(candle3)
         self.assertEqual(2, len(strategy.candles_by_interval["1min"]))
-        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt2)],
+        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt1) + pd.Timedelta("1min")],
                          [pd.Timestamp(dt) for dt in strategy.candles_by_interval["1min"]["open_time"].values.tolist()])
-        self.assertEqual([pd.Timestamp(dt2), pd.Timestamp(dt3)],
-                         [pd.Timestamp(dt) for dt in strategy.candles_by_interval["1min"]["close_time"].values.tolist()])
+        self.assertEqual([pd.Timestamp(dt1) + pd.Timedelta("1min"), pd.Timestamp(dt3)],
+                         [pd.Timestamp(dt) for dt in
+                          strategy.candles_by_interval["1min"]["close_time"].values.tolist()])
         self.assertEqual([2, 3], strategy.candles_by_interval["1min"]["close"].values.tolist())
 
     def test_has_history_empty(self):
@@ -59,7 +62,7 @@ class TestCandlesStrategy(TestCase):
         strategy = StrategyStub()
         strategy.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         strategy.candles_by_interval = {"1min": [{}, {}],
-                                      "5min": [{}, {}, {}]}
+                                        "5min": [{}, {}, {}]}
 
         self.assertTrue(strategy.has_all_candles())
 
@@ -67,7 +70,7 @@ class TestCandlesStrategy(TestCase):
         strategy = StrategyStub()
         strategy.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         strategy.candles_by_interval = {"1min": [{}, {}],
-                                      "5min": [{}, {}]}
+                                        "5min": [{}, {}]}
 
         self.assertFalse(strategy.has_all_candles())
 
@@ -77,7 +80,6 @@ class TestCandlesStrategy(TestCase):
         strategy.candles_by_interval = {"1min": [{}, {}]}
 
         self.assertFalse(strategy.has_all_candles())
-
 
     def test_candles_history_counts(self):
         periods = ["1min", "5min"]

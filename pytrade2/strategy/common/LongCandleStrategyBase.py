@@ -37,9 +37,10 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         if hasattr(self.broker, "get_report"):
             msg.write(self.broker.get_report())
 
-        # Candles report
-        for i, t in self.last_candles_info().items():
-            msg.write(f"\nLast {i} candle: {t}")
+        msg.write(CandlesStrategy.get_report(self))
+        # # Candles report
+        # for i, t in self.last_candles_info().items():
+        #     msg.write(f"\nLast {i} candle: {t}")
         return msg.getvalue()
 
     def run(self):

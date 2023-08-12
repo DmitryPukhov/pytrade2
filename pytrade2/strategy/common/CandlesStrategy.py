@@ -1,6 +1,7 @@
 import logging
 import multiprocessing
 from datetime import datetime
+from io import StringIO
 from typing import Dict
 
 import pandas as pd
@@ -19,7 +20,6 @@ class CandlesStrategy:
         self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
         self.data_lock: multiprocessing.RLock() = None
         self.new_data_event: multiprocessing.Event = None
-
 
         periods = [s.strip() for s in str(config["pytrade2.feed.candles.periods"]).split(",")]
         counts = [int(s) for s in str(config["pytrade2.feed.candles.counts"]).split(",")]
@@ -49,29 +49,39 @@ class CandlesStrategy:
                                                                                                        drop=False)
             self.candles_by_interval[period] = candles
 
-    def on_candle(self, candle: {}):
+    def get_report(self, cols=("open_time", "close_time",), n=3):
+        msg = StringIO()
+        for col in cols:
+            for interval, candles in self.candles_by_interval.items():
+                times = candles.tail(n)[col].tolist()[::-1]
+                times = [t.strftime('%Y-%m-%d %H:%M:%S') for t in times]
+                msg.write(f'{interval} candles {col}: {", ".join(times)} ...\n')
+        return msg.getvalue()
 
-        with self.data_lock:
-            # candles_buf = self.candles_buf_all.get(candle["period"])
+    def on_candle(self, candle: {}):
+        with (self.data_lock):
             period = str(candle["interval"])
             if period in self.candles_by_interval:
-                candles_buf = self.candles_by_interval.get(period)
-                last_open_time = candles_buf.iloc[-1]["open_time"]
+                candles = self.candles_by_interval.get(period)
+                last_candle = candles.iloc[-1]
+                last_open_time = last_candle["open_time"]
+
                 if candle["close_time"] - last_open_time < pd.Timedelta(period):
-                    # New candle is update of last candle in buffer
-                    candle["open_time"] = last_open_time
-                    candles_buf.iloc[-1] = candle
+                    if candle["close_time"] > last_candle["close_time"]:
+                        # New candle is update of last candle in buffer
+                        candle["open_time"] = last_open_time
+                        candles.iloc[-1] = candle
                 else:
-                    #candle["open_time"] = candles_buf.iloc[-1]["close_time"]
-                    # New candle is a new candle because period is passed
-                    candles_buf.loc[candle["open_time"]] = candle
-                    self.candles_by_interval[period] = candles_buf.tail(self.candles_history_cnt_by_interval[period])
+                    # Close last candle, open new candle
+                    closed_time = last_candle["open_time"] + pd.Timedelta(period)
+                    candles.loc[last_candle["open_time"], "close_time"] = candle["open_time"] = closed_time
+
+                    # Open new last candle
+                    candles.loc[candle["open_time"]] = candle
+                    self.candles_by_interval[period] = candles.tail(self.candles_history_cnt_by_interval[period])
             else:
-                candle["open_time"] = candle["close_time"]
-                # self.candles_buf_all[candle["period"]] = [candle]
                 self.candles_by_interval[period] = pd.DataFrame([candle]).set_index("open_time", drop=False)
         self.new_data_event.set()
-
 
     def has_all_candles(self):
         """ If gathered required history """
