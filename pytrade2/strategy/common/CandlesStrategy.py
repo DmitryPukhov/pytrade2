@@ -49,13 +49,14 @@ class CandlesStrategy:
                                                                                                        drop=False)
             self.candles_by_interval[period] = candles
 
-    def get_report(self, cols=("open_time", "close_time",), n=3):
+    def get_report(self, n=5):
         msg = StringIO()
-        for col in cols:
-            for interval, candles in self.candles_by_interval.items():
-                times = candles.tail(n)[col].tolist()[::-1]
-                times = [t.strftime('%Y-%m-%d %H:%M:%S') for t in times]
-                msg.write(f'{interval} candles {col}: {", ".join(times)} ...\n')
+
+        time_format = '%Y-%m-%d %H:%M:%S'
+        for interval, candles in self.candles_by_interval.items():
+            times = candles.tail(n).apply(lambda row:f"{row['close_time'].strftime(time_format)}" , axis=1)[::-1]
+            msg.write(f"{interval} candles: {', '.join(times)} ...\n")
+
         return msg.getvalue()
 
     def on_candle(self, candle: {}):
