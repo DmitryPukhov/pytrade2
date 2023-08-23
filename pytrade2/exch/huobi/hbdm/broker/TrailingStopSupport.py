@@ -36,17 +36,21 @@ class TrailingStopSupport:
             # We are out of market or no trailing delta set in the order
             return
 
-        if self.cur_trade.direction() == 1 and self.cur_trade.take_profit_price >= ticker["bid"]:
+        if self.cur_trade.direction() == 1 and ticker["ask"] > self.cur_trade.take_profit_price:
+            self.cur_trade.take_profit_price = ticker["ask"]
+            self.change_sl_order(1, self.cur_trade.take_profit_price - self.cur_trade.trailing_delta)
             # Move buy trailing stop
-            pass
-        elif self.cur_trade.direction() == -1 and self.cur_trade.take_profit_price <= ticker["ask"]:
-            # Move sell trailing stop
-            pass
+        elif self.cur_trade.direction() == -1 and ticker["bid"] < self.cur_trade.take_profit_price:
+            self.cur_trade.take_profit_price = ticker["bid"]
+            self.change_sl_order(-1, self.cur_trade.take_profit_price + self.cur_trade.trailing_delta)
 
     def change_sl_order(self, direction: int, new_sl):
         self._log.info(f"Changing sl: {self.cur_trade.stop_loss_price}->{new_sl}")
+
+        # Cancel old stop loss order
         res = self.rest_client.post("/linear-swap-api/v1/swap_cross_trigger_cancelall", {"pair": self.ticker})
         if res["status"] != "ok":
             self._log.error(f"Error cancelling stop loss order: {res}")
             return
-        
+        # Create new stop loss order
+
