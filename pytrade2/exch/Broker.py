@@ -66,7 +66,8 @@ class Broker:
                          quantity: float,
                          price: Optional[float],
                          stop_loss_price: float,
-                         take_profit_price: Optional[float]) -> Optional[Trade]:
+                         take_profit_price: Optional[float],
+                         trailing_delta: Optional[float]) -> Optional[Trade]:
         raise NotImplementedError()
 
     def fix_cur_trade(self):

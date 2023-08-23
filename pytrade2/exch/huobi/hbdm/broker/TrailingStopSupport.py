@@ -27,12 +27,13 @@ class TrailingStopSupport:
         self.ticker: Optional[str] = None
         self.ws_feed = ws_feed
         self.rest_client = rest_client
-        self.is_trailing_stop = bool(conf["pytrade2.order.trailingstop"])
-        if self.is_trailing_stop:
-            self.ws_feed.consumers.add(self)
+        self.ws_feed.consumers.add(self)
 
     def on_ticker(self, ticker: dict):
-        if not self.cur_trade or not self.is_trailing_stop:
+        """ Look at current price and possibly move trailing stop or close the order """
+
+        if not self.cur_trade or not self.cur_trade.trailing_delta:
+            # We are out of market or no trailing delta set in the order
             return
 
         if self.cur_trade.direction() == 1 and self.cur_trade.take_profit_price >= ticker["bid"]:
@@ -42,6 +43,10 @@ class TrailingStopSupport:
             # Move sell trailing stop
             pass
 
-    def change_sltp_order(self, direction: int, new_sl, new_tp):
+    def change_sl_order(self, direction: int, new_sl):
         self._log.info(f"Changing sl: {self.cur_trade.stop_loss_price}->{new_sl}")
-        self.rest_client.post("/linear-swap-api/v1/swap_cross_trigger_cancelall", {"pair": self.ticker})
+        res = self.rest_client.post("/linear-swap-api/v1/swap_cross_trigger_cancelall", {"pair": self.ticker})
+        if res["status"] != "ok":
+            self._log.error(f"Error cancelling stop loss order: {res}")
+            return
+        

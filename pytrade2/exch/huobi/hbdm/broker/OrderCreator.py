@@ -50,7 +50,6 @@ class OrderCreator:
         self.trade_lock: Optional[RLock] = None
         self.allow_trade = False
         self.price_precision = 2
-        self.is_trailing_stop = bool(conf["pytrade2.order.trailingstop"])
 
     @staticmethod
     def cur_trade_params(symbol: str,
@@ -120,7 +119,8 @@ class OrderCreator:
                          quantity: float,
                          price: Optional[float],
                          stop_loss_price: float,
-                         take_profit_price: Optional[float]) -> Optional[Trade]:
+                         take_profit_price: Optional[float],
+                         trailing_delta: Optional[float]) -> Optional[Trade]:
         if not self.allow_trade:
             return None
 
@@ -134,9 +134,8 @@ class OrderCreator:
                 direction, price, stop_loss_price, take_profit_price, self.price_precision, limit_ratio)
             self._log.info(
                 f"Creating current {symbol} {side} trade. price: {price}, "
-                f"sl trigger: {sl_trigger_price}, sl order: {sl_order_price},"
-                f" tp trigger: {tp_trigger_price}, tp order: {tp_order_price},"
-                f" is trailing stop: {self.is_trailing_stop}"
+                f"sl trigger: {sl_trigger_price}, sl order: {sl_order_price}, "
+                f"tp trigger: {tp_trigger_price}, tp order: {tp_order_price}, trailing delta: {trailing_delta},"
                 f"price precision: {self.price_precision}, limit ratio: {limit_ratio}")
             # Prepare create order command
             path = "/linear-swap-api/v1/swap_cross_order"
@@ -149,7 +148,8 @@ class OrderCreator:
                                            quantity=quantity,
                                            sl_trigger_price=sl_trigger_price,
                                            sl_order_price=sl_order_price,
-                                           tp_trigger_price=tp_trigger_price if not self.is_trailing_stop else None
+                                           # If trailing delta is set, we'll take profit manually, not here
+                                           tp_trigger_price=tp_trigger_price if not trailing_delta else None
                                            )
             self._log.debug(f"Create order params: {params}")
             # Request to create a new order
@@ -169,12 +169,14 @@ class OrderCreator:
                     return None
 
                 self.cur_trade = trade
-                # Fill in sltp info
+                # Fill in sltp info with executed prices
                 sltp_info = self.get_sltp_orders_info(self.cur_trade.open_order_id)
                 self.update_trade_sltp(sltp_info, self.cur_trade)
+
                 # Take profit order not set => take profit is manual => set it's price here
                 if not self.cur_trade.take_profit_price:
                     self.cur_trade.take_profit_price = tp_trigger_price
+                    self.cur_trade.trailing_delta = trailing_delta
 
                 # Save current trade to db
                 self.db_session.add(self.cur_trade)

@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 from io import StringIO
 from threading import Event, Timer
@@ -20,12 +21,15 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
+        self._log = logging.getLogger(self.__class__.__name__)
 
         self.websocket_feed = None
         self.candles_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
+        self.target_period = min(self.candles_by_interval.keys())
+        self._log.info(f"Target period: {self.target_period}")
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
 
@@ -37,10 +41,9 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         if hasattr(self.broker, "get_report"):
             msg.write(self.broker.get_report())
 
+        # Candles report
         msg.write(CandlesStrategy.get_report(self))
-        # # Candles report
-        # for i, t in self.last_candles_info().items():
-        #     msg.write(f"\nLast {i} candle: {t}")
+
         return msg.getvalue()
 
     def run(self):
@@ -81,13 +84,48 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     def process_new_data(self):
         if self.model:
             with self.data_lock:
+                # Get features
                 x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval,
                                                                       self.candles_cnt_by_interval)
                 x_trans = self.X_pipe.transform(x)
+
+                # Get last signal
                 y = self.model.predict(x_trans)
                 y_trans = self.y_pipe.inverse_transform(y)
-                signal = y_trans[0][0] if y_trans else 0
-                print(f"Signal: {signal}")
+                signal = y_trans[-1][0] if y_trans else 0
+
+                # Buy or sell or skip
+                self.process_signal(signal)
+
+    def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
+        """
+        Stop loss is low of last candle
+        :return stop loss, take profit, trailing delta
+        """
+
+        last_candle = self.candles_by_interval[self.target_period].iloc[-1]
+        td = last_candle["high"] - last_candle["low"]
+        if signal == 1:
+            sl, tp = last_candle["low"], last_candle["high"]
+        elif signal == -1:
+            sl, tp = last_candle["high"], last_candle["low"]
+        else:
+            # Should never come here
+            return None
+        return sl, tp, td
+
+    def process_signal(self, signal: int):
+        if signal == 1:
+            if not signal:
+                return
+        sl, tp, tdelta = self.get_sl_tp_trdelta(signal)
+        self.broker.create_cur_trade(symbol=self.ticker,
+                                     direction=signal,
+                                     quantity=self.order_quantity,
+                                     price=None,
+                                     stop_loss_price=sl,
+                                     take_profit_price=tp,
+                                     trailing_delta = tdelta)
 
     def is_alive(self):
         return CandlesStrategy.is_alive(self)
@@ -96,8 +134,9 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         pass
 
     def prepare_Xy(self):
-        return CandlesFeatures.features_targets_of(self.candles_by_interval, self.candles_cnt_by_interval,
-                                                   min(self.candles_by_interval.keys()))
+        return CandlesFeatures.features_targets_of(self.candles_by_interval,
+                                                   self.candles_cnt_by_interval,
+                                                   target_period=self.target_period)
 
     def generator_of(self, train_X, train_y):
         """ Data generator for learning """
