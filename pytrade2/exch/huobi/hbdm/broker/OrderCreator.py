@@ -39,6 +39,9 @@ class OrderCreator:
         all = 1
         finished = 2
 
+    price_precision = 2
+    limit_ratio = 0.01
+
     def __init__(self, conf: dict):
         # All variables will be redefined in child classes
         self._log: Optional[Logger] = None
@@ -49,7 +52,33 @@ class OrderCreator:
         self.rest_client: Optional[HuobiRestClient] = None
         self.trade_lock: Optional[RLock] = None
         self.allow_trade = False
-        self.price_precision = 2
+
+    @staticmethod
+    def sl_trade_params(symbol: str,
+                        side: str,
+                        quantity: float,
+                        sl_trigger_price,
+                        sl_order_price):
+
+        params = {"contract_code": symbol,
+                  # "client_order_id": client_order_id,
+                  # "contract_type": "swap",
+                  "volume": quantity,
+                  "direction": side,
+                  # "price": price,
+                  # "lever_rate": 1,
+                  # "order_price_type": "optimal_5_fok",
+                  # "reduce_only": 0,  # 0 for opening order
+                  "sl_trigger_price": sl_trigger_price,
+                  "sl_order_price": sl_order_price,
+                  "sl_order_price_type": "limit"
+                  }
+        return params
+
+    @staticmethod
+    def sl_order_price(main_direction: int, sl_trigger_price: float):
+        return float(
+            round(sl_trigger_price * (1 - main_direction * OrderCreator.limit_ratio), OrderCreator.price_precision))
 
     @staticmethod
     def cur_trade_params(symbol: str,
@@ -129,14 +158,14 @@ class OrderCreator:
                 self._log.info(f"Can not create current trade because another exists:{self.cur_trade}")
             side = Trade.order_side_names[direction]
             # Adjust prices to precision
-            limit_ratio = 0.01
+
             price, sl_trigger_price, sl_order_price, tp_trigger_price, tp_order_price = self.adjust_prices(
-                direction, price, stop_loss_price, take_profit_price, self.price_precision, limit_ratio)
+                direction, price, stop_loss_price, take_profit_price, self.price_precision, self.limit_ratio)
             self._log.info(
                 f"Creating current {symbol} {side} trade. price: {price}, "
                 f"sl trigger: {sl_trigger_price}, sl order: {sl_order_price}, "
                 f"tp trigger: {tp_trigger_price}, tp order: {tp_order_price}, trailing delta: {trailing_delta},"
-                f"price precision: {self.price_precision}, limit ratio: {limit_ratio}")
+                f"price precision: {self.price_precision}, limit ratio: {self.limit_ratio}")
             # Prepare create order command
             path = "/linear-swap-api/v1/swap_cross_order"
             client_order_id = round(time.time() * 1000)
@@ -238,7 +267,7 @@ class OrderCreator:
             sl_order = sltp_orders[0]
             trade.stop_loss_order_id = sl_order["order_id_str"]
             trade.stop_loss_price = sl_order["trigger_price"] \
-                    if sl_order["trigger_price"] else sl_order["order_price"]
+                if sl_order["trigger_price"] else sl_order["order_price"]
             if len(sltp_orders) > 1:
                 # If tp order
                 tp_order = sltp_orders[1]

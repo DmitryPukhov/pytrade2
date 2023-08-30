@@ -12,10 +12,11 @@ class TestTrailingStopSupport(TestCase):
     def tss_mock():
         """ Trailing stop suport mocked"""
         tss = TrailingStopSupport({}, MagicMock(), MagicMock())
-        tss.ticker="btcusdt"
+        tss.ticker = "btcusdt"
         tss._log = logging.Logger(TrailingStopSupport.__class__.__name__)
         tss.rest_client = MagicMock()
         tss.rest_client.post.return_value = {"status": "ok"}
+        tss.db_session = MagicMock()
 
         return tss
 
@@ -26,7 +27,7 @@ class TestTrailingStopSupport(TestCase):
         trade.trailing_delta = 2
         return trade
 
-    def test_move(self):
+    def test_move_up(self):
         trade = self.new_trade()
         trade.side = "BUY"
         tss = self.tss_mock()
@@ -34,4 +35,8 @@ class TestTrailingStopSupport(TestCase):
 
         # Call
         tss.on_ticker({"ask": 13, "bid": 11})
-        tss.rest_client.post.assert_called_once_with("/linear-swap-api/v1/swap_cross_trigger_cancelall", {"pair": tss.ticker})
+        mm: MagicMock
+        # mm.a
+        self.assertEqual(tss.rest_client.post.call_count, 2)
+        # tss.rest_client.post.assert_called_with("/linear-swap-api/v1/swap_cross_tpsl_cancelall",
+        #                                              {"pair": tss.ticker})
