@@ -1,7 +1,9 @@
+from datetime import timedelta, datetime
 from logging import Logger
 from multiprocessing import RLock
 from typing import Optional
 
+from pandas import Timedelta
 from sqlalchemy.orm.session import Session
 
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
@@ -25,6 +27,8 @@ class TrailingStopSupport:
         self.trade_lock: Optional[RLock] = None
         self.allow_trade = False
         self.price_precision = 2
+        self.min_trade_timedelta: timedelta = timedelta(seconds=1)
+        self.last_ts_move_time = datetime.min
         self.ticker: Optional[str] = None
 
         # Will be initialized in child class
@@ -37,7 +41,9 @@ class TrailingStopSupport:
     def on_ticker(self, ticker: dict):
         """ Look at current price and possibly move trailing stop or close the order """
 
-        if not self.cur_trade or not self.cur_trade.trailing_delta:
+        if (not self.cur_trade
+                or not self.cur_trade.trailing_delta
+                or (datetime.utcnow() - self.last_ts_move_time) < self.min_trade_timedelta):
             # We are out of market or no trailing delta set in the order
             return
 
@@ -53,7 +59,8 @@ class TrailingStopSupport:
         https://www.huobi.com/en-us/opend/newApiPages/?id=8cb87edb-77b5-11ed-9966-0242ac110003
         """
         self._log.info(f"Cancelling existing sl/tp orders")
-        res = self.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_cancelall", {"contract_code": self.cur_trade.ticker})
+        res = self.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_cancelall",
+                                    {"contract_code": self.cur_trade.ticker})
         if res["status"] != "ok":
             self._log.error(f"Error cancelling stop loss order: {res}")
             return
@@ -91,3 +98,4 @@ class TrailingStopSupport:
 
         self.cancel_prev_sl()
         self.create_ts_order(new_tp)
+        self.last_ts_move_time = datetime.utcnow()

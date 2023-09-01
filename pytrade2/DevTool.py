@@ -27,7 +27,7 @@ class DevTool():
         HuobiBrokerHbdm.sub_events = None
 
         # Read config
-        strategy = "SimpleKerasStrategy"
+        strategy = "LongCandleStrategy"
         yccfgdir = "../deploy/yandex_cloud/secret"
         devcfgdir = "../pytrade2/cfg"
         cfgpaths = [f"{devcfgdir}/app-defaults.yaml", f"{yccfgdir}/{strategy.lower()}.yaml"]
@@ -99,7 +99,8 @@ if __name__ == "__main__":
 
 
     # Open
-    # low, high = get_last_lowhigh()
+    low, high = get_last_lowhigh()
+    print(f"Last low:{low}, high:{high}")
     # broker.create_cur_trade(symbol="BTC-USDT",
     #                         direction=1,
     #                         quantity=1,
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     #                         trailing_delta=100)
     #
     # # Move stoploss
-    # newsl = low - 100.11
-    # broker.move_ts(newsl)
+    newsl = low - 1000
+    #broker.move_ts(newsl)
 
 
