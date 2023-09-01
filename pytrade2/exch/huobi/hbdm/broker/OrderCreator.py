@@ -217,13 +217,13 @@ class OrderCreator:
             return self.cur_trade
 
     @staticmethod
-    def adjust_prices(direction, price: float, stop_loss_price: float, take_profit_price: float, price_precision: int,
+    def adjust_prices(direction, price: Optional[float], stop_loss_price: float, take_profit_price: float, price_precision: int,
                       limit_ratio: float) -> \
             (float, float, float, float, float):
         """ Calc trigger and order prices, adjust precision """
-        price = float(round(price, price_precision))
-        tp_trigger_price = float(round(take_profit_price, price_precision))
-        tp_order_price = float(round(take_profit_price * (1 - direction * limit_ratio), price_precision))
+        price = float(round(price, price_precision)) if price else None
+        tp_trigger_price = float(round(take_profit_price, price_precision)) if take_profit_price else None
+        tp_order_price = float(round(take_profit_price * (1 - direction * limit_ratio), price_precision)) if take_profit_price else None
         sl_trigger_price = float(round(stop_loss_price, price_precision))
         sl_order_price = float(round(stop_loss_price * (1 - direction * limit_ratio), price_precision))
         return price, sl_trigger_price, sl_order_price, tp_trigger_price, tp_order_price

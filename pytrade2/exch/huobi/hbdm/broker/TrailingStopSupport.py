@@ -53,7 +53,7 @@ class TrailingStopSupport:
         https://www.huobi.com/en-us/opend/newApiPages/?id=8cb87edb-77b5-11ed-9966-0242ac110003
         """
         self._log.info(f"Cancelling existing sl/tp orders")
-        res = self.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_cancelall", {"pair": self.ticker})
+        res = self.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_cancelall", {"contract_code": self.cur_trade.ticker})
         if res["status"] != "ok":
             self._log.error(f"Error cancelling stop loss order: {res}")
             return
