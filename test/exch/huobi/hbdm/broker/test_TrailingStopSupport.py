@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from unittest import TestCase
 from unittest.mock import MagicMock
 
@@ -23,20 +24,59 @@ class TestTrailingStopSupport(TestCase):
     @staticmethod
     def new_trade():
         trade = Trade()
+        trade.quantity = 1
         trade.take_profit_price = 10
         trade.trailing_delta = 2
         return trade
 
     def test_move_up(self):
-        trade = self.new_trade()
+        trade = self.new_trade() # take profit 10, trailing 2
         trade.side = "BUY"
         tss = self.tss_mock()
         tss.cur_trade = trade
 
         # Call
-        tss.on_ticker({"ask": 13, "bid": 11})
-        mm: MagicMock
-        # mm.a
+        tss.on_ticker({"ask": 13, "bid": 9})
         self.assertEqual(tss.rest_client.post.call_count, 2)
-        # tss.rest_client.post.assert_called_with("/linear-swap-api/v1/swap_cross_tpsl_cancelall",
-        #                                              {"pair": tss.ticker})
+        self.assertEqual(tss.cur_trade.take_profit_price, 13)
+
+        tss.rest_client.post.reset_mock()
+        tss.last_ts_move_time = datetime.min
+        # Call
+        tss.on_ticker({"ask": 12, "bid": 9})
+        self.assertEqual(tss.rest_client.post.call_count, 0)
+        self.assertEqual(tss.cur_trade.take_profit_price, 13)
+
+        tss.rest_client.post.reset_mock()
+        tss.last_ts_move_time = datetime.min
+        # Call
+        tss.on_ticker({"ask": 14, "bid": 9})
+        self.assertEqual(tss.rest_client.post.call_count, 2)
+        self.assertEqual(tss.cur_trade.take_profit_price, 14)
+
+    def test_move_down(self):
+        trade = self.new_trade()  # Take profit 10, trailing 2
+        trade.side = "SELL"
+        tss = self.tss_mock()
+        tss.cur_trade = trade
+
+        # Call
+        tss.on_ticker({"ask": 11, "bid": 8})
+        self.assertEqual(tss.rest_client.post.call_count, 2)
+        self.assertEqual(tss.cur_trade.take_profit_price, 8)
+
+        tss.rest_client.post.reset_mock()
+        tss.last_ts_move_time = datetime.min
+        # Call
+        tss.on_ticker({"ask": 11, "bid": 9})
+        self.assertEqual(tss.rest_client.post.call_count, 0)
+        self.assertEqual(tss.cur_trade.take_profit_price, 8)
+
+        tss.rest_client.post.reset_mock()
+        tss.last_ts_move_time = datetime.min
+        # Call
+        tss.on_ticker({"ask": 11, "bid": 7})
+        self.assertEqual(tss.rest_client.post.call_count, 2)
+        self.assertEqual(tss.cur_trade.take_profit_price, 7)
+
+        self.assertNotEqual()
