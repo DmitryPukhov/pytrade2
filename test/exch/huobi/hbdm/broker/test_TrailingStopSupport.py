@@ -79,4 +79,4 @@ class TestTrailingStopSupport(TestCase):
         self.assertEqual(tss.rest_client.post.call_count, 2)
         self.assertEqual(tss.cur_trade.take_profit_price, 7)
 
-        self.assertNotEqual()
+        self.assertNotEqual(tss.last_ts_move_time, datetime.min)

@@ -28,7 +28,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        self.target_period = min(self.candles_by_interval.keys())
+        self.target_period = min(self.candles_cnt_by_interval.keys())
         self._log.info(f"Target period: {self.target_period}")
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
@@ -115,9 +115,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         return sl, tp, td
 
     def process_signal(self, signal: int):
-        if signal == 1:
-            if not signal:
-                return
+        if not signal:
+            return
         sl, tp, tdelta = self.get_sl_tp_trdelta(signal)
         self.broker.create_cur_trade(symbol=self.ticker,
                                      direction=signal,
