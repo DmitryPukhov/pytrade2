@@ -5,6 +5,7 @@ import os
 from io import StringIO
 
 import time
+from unittest.mock import MagicMock
 
 import yaml
 from huobi.client.account import AccountClient
@@ -47,9 +48,13 @@ class DevTool():
 
     def new_hbdm_broker(self):
         rc = HuobiRestClient(access_key=self.key, secret_key=self.secret)
-        ws = HuobiWebSocketClient(host="api.hbdm.vn", path="'/linear-swap-notification", access_key=self.key,
-                                  secret_key=self.secret, be_spot=False)
-        return HuobiBrokerHbdm(conf=self.config, rest_client=rc, ws_client=ws)
+        ws = HuobiWebSocketClient(host="api.hbdm.vn",
+                                  path="'/linear-swap-notification",
+                                  access_key=self.key,
+                                  secret_key=self.secret,
+                                  is_broker=True,
+                                  be_spot=False)
+        return HuobiBrokerHbdm(conf=self.config, rest_client=rc, ws_client=MagicMock(), ws_feed=MagicMock())
 
     @staticmethod
     def print_sltp_orders(res):
@@ -82,80 +87,29 @@ if __name__ == "__main__":
     dt = DevTool()
     broker = dt.new_hbdm_broker()
 
-    def is_my_order(order_id, source_order_id):
-        return order_id in {'1120523720679243778,1120523720679243777'} or source_order_id == '1120523720633106435'
+
+    def get_last_lowhigh():
+        # Open order
+        res = broker.rest_client.get("/linear-swap-ex/market/history/kline",
+                                     {"contract_code": "BTC-USDT",
+                                      "period": "1min",
+                                      "size": 1})
+        lastcandle = res["data"][-1]
+        return lastcandle["low"], lastcandle["high"]
 
 
-
+    # Open
+    # low, high = get_last_lowhigh()
+    # broker.create_cur_trade(symbol="BTC-USDT",
+    #                         direction=1,
+    #                         quantity=1,
+    #                         price=None,
+    #                         stop_loss_price=low-1000,
+    #                         take_profit_price=None,
+    #                         trailing_delta=100)
     #
-    # open '1120523720633106435'
-    # sl '1120523720679243778,1120523720679243777'
-    #
-    # closed at 21:53: 1120512647122935809, 1120512647122935808
-    # res=broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"pair": "BTC-USDT", "order_id": 1120523720633106435})
+    # # Move stoploss
+    # newsl = low - 100.11
+    # broker.move_ts(newsl)
 
-    # ???
-    # ? Open order Order id: 1120709961248485376, direction: buy, status: 6, created:2023-06-20 05:41:16.536000,  updated: 2023-06-20 05:41:18.695000, is_tpsl: 1, price: 26871.2
-    # ? Closing order Order id: 1120706425254203392, direction: sell, status: 6, created:2023-06-20 05:27:13.492000,  updated: 2023-06-20 12:07:41.780000, is_tpsl: 1, price: 26938.7
 
-    dt = datetime.datetime(year=2023, month=6, day=20, hour=2, minute=41, second=00)
-    ts = int(dt.timestamp() * 1000)
-    # res = broker.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders",
-    #                               {'contract': 'BTC-USDT', 'trade_type': 18, 'type': 2, 'status': 6,
-    #                                'start_time': 1687239676536})
-    # type2 - finished,
-    #
-    # trade_type 0:All; 1: Open long; 2: Open short; 3: Close short; 4: Close long;
-    # 5: Liquidate long positions; 6: Liquidate short positions, 17:buy(one-way mode), 18:sell(one-way mode)
-
-    res = broker.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders",
-                                  {'contract': 'BTC-USDT', 'trade_type': 18, 'type': 2, 'status': 6, "start_time":ts})
-
-    DevTool.print_orders(res)
-    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
-    #                               {"pair": "BTC-USDT", "order_id": 1120709961248485376})
-    # DevTool.print_sltp_orders(res)
-
-    # Works only for main order, not for sl/tp
-    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_order_info", {"order_id": 1120523720679243777})
-    # Error: the interface is offline
-    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_hisorders", {"pair": "BTC-USDT", "create_date": ts, "status":0});
-    # print(res)
-    #
-    # def is_my_order(order_id, source_order_id):
-    #     return order_id in {'1120523720679243778,1120523720679243777'} or source_order_id == '1120523720633106435'
-    #
-    # my_orders = [o for o in res["data"]["orders"] if is_my_order(o["order_id"], o["source_order_id"])]
-    # print(my_orders)
-    # print(broker.get_report())
-    # Set one way ok
-    # res = broker.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode", {"margin_account": "btc-usdt", "position_mode": "single_side"})
-    # Create order ok
-    # broker.create_cur_trade(symbol="BTC-USDT", direction=1, quantity=1, price=26720, stop_loss_price=26000,
-    #                         take_profit_price=27000)
-
-    # Request trade state - general setting, not orders
-    # print(broker.rest_client.get("/linear-swap-api/v1/swap_cross_trade_state", {"contract_code": "BTC-USDT"}))
-
-    # Order + sltp
-    # Ok get order info by client id from broker
-    # res = broker.get_order_info(client_order_id=1687058944, ticker="BTC-USDT")
-    # print(f"Got {len(res['data'])} orders: {res}")
-
-    # Opened sl/tp orders by main order id
-    print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
-                                  {"contract_code": "BTC-USDT", "order_id": 1120709961248485376}))
-
-    # Get opened orders - do I need this?
-    # print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_trigger_openorders",  {"contract_code": "BTC-USDT"}))
-
-    # res=broker.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders", {"contract": "BTC-USDT", "trade_type":18, "type":2, "status": 6, "start_time":1687069745272})
-    # print(res)
-    # print(f"Got {len(res['data'])} orders")
-    # for order in res["data"]:
-    #     print(f"Order: {order}")
-    # print(f"Got {len(res['data'])} orders")
-
-    # print(broker.rest_client.post("/linear-swap-api/v1/swap_cross_account_info", {"contract_code": "USDT"}))
-    # dt.test_usdt()
-    # dt.test_ws_swap()

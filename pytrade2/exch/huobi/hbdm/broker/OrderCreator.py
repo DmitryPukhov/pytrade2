@@ -39,7 +39,7 @@ class OrderCreator:
         all = 1
         finished = 2
 
-    price_precision = 2
+    price_precision = 0
     limit_ratio = 0.01
 
     def __init__(self, conf: dict):
@@ -63,14 +63,13 @@ class OrderCreator:
         params = {"contract_code": symbol,
                   # "client_order_id": client_order_id,
                   # "contract_type": "swap",
-                  "volume": quantity,
+                  "volume": int(quantity),
                   "direction": side,
-                  # "price": price,
-                  # "lever_rate": 1,
+                  "lever_rate": 1,
                   # "order_price_type": "optimal_5_fok",
                   # "reduce_only": 0,  # 0 for opening order
-                  "sl_trigger_price": sl_trigger_price,
-                  "sl_order_price": sl_order_price,
+                  "sl_trigger_price": round(sl_trigger_price, OrderCreator.price_precision),
+                  "sl_order_price": round(sl_order_price, OrderCreator.price_precision),
                   "sl_order_price_type": "limit"
                   }
         return params
@@ -168,7 +167,6 @@ class OrderCreator:
                 f"tp trigger: {tp_trigger_price}, tp order: {tp_order_price}, trailing delta: {trailing_delta},"
                 f"price precision: {self.price_precision}, limit ratio: {self.limit_ratio}")
             # Prepare create order command
-            path = "/linear-swap-api/v1/swap_cross_order"
             client_order_id = round(time.time() * 1000)
             # client_order_id = int(datetime.utcnow().timestamp())
             params = self.cur_trade_params(symbol=symbol,
@@ -183,13 +181,12 @@ class OrderCreator:
                                            )
             self._log.debug(f"Create order params: {params}")
             # Request to create a new order
+            path = "/linear-swap-api/v1/swap_cross_order"
             res = self.rest_client.post(path=path, data=params)
 
             # Process result
             self._log.info(f"Create order response: {res}")
             if res["status"] == "ok":
-                self._log.debug(f"Create order response: {res}")
-
                 # Get order details, fill in current trade
                 info = self.get_order_info(client_order_id, ticker=symbol)
                 trade = self.res2trade(info)
