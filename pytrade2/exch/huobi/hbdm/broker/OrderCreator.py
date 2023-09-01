@@ -156,6 +156,7 @@ class OrderCreator:
         with self.trade_lock:
             if self.cur_trade:
                 self._log.info(f"Can not create current trade because another exists:{self.cur_trade}")
+                return None
             side = Trade.order_side_names[direction]
             # Adjust prices to precision
 
