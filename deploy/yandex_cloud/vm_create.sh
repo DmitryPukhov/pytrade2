@@ -22,6 +22,7 @@ install_prereq() {
   echo "Install prerequisites to $public_ip"
   ssh "$user"@"$public_ip" "sudo snap install python38"
   ssh $user@"$public_ip" "sudo snap install yes"
+  ssh "$user"@"$public_ip" "sudo snap refresh snapd"
   ssh "$user"@"$public_ip" "sudo snap install docker"
 }
 

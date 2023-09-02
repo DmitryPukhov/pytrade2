@@ -16,20 +16,26 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  simplekerasstrategy:
-    container_name: simplekerasstrategy
+  longcandledensestrategy:
+    container_name: longcandledensestrategy
     extends:
       service: trade
-    command: python ./App.py --pytrade2.strategy SimpleKerasStrategy
+    command: python ./App.py --pytrade2.strategy LongCandleDenseStrategy
 
-  lstmstrategy:
-    container_name: lstmstrategy
-    extends:
-      service: trade
-    command: python ./App.py --pytrade2.strategy LSTMStrategy
-
-  lstmstrategy2:
-    container_name: lstmstrategy2
-    extends:
-      service: trade
-    command: python ./App.py --pytrade2.strategy LSTMStrategy2
+#  simplekerasstrategy:
+#    container_name: simplekerasstrategy
+#    extends:
+#      service: trade
+#    command: python ./App.py --pytrade2.strategy SimpleKerasStrategy
+#
+#  lstmstrategy:
+#    container_name: lstmstrategy
+#    extends:
+#      service: trade
+#    command: python ./App.py --pytrade2.strategy LSTMStrategy
+#
+#  lstmstrategy2:
+#    container_name: lstmstrategy2
+#    extends:
+#      service: trade
+#    command: python ./App.py --pytrade2.strategy LSTMStrategy2
