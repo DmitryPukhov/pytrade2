@@ -1,5 +1,5 @@
 pytrade2.strategy: LongCandleDenseStrategy
-pytrade2.broker.trade.allow: false
+pytrade2.broker.trade.allow: true
 
 
 pytrade2.feed.candles.periods: 1min, 5min
