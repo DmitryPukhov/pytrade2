@@ -1,2 +1,9 @@
 pytrade2.strategy: LongCandleDenseStrategy
 pytrade2.broker.trade.allow: false
+
+pytrade2.strategy.history.min.window: "15min"
+pytrade2.strategy.history.max.window: "30min"
+pytrade2.strategy.purge.interval: "1min"
+pytrade2.strategy.predict.window: "2min"
+pytrade2.strategy.past.window: "2min"
+

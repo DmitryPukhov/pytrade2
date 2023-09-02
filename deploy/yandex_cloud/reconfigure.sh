@@ -1,6 +1,6 @@
 #!/bin/bash
 
-default_bot_names="lstmstrategy2 lstmstrategy simplekerasstrategy"
+default_bot_names="longcandledensestrategy"
 bot_names=${*:-"$default_bot_names"}
 
 . deploy_lib.sh
