@@ -110,8 +110,9 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
             last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
             last_level2 = self.level2.index.max() if not self.level2.empty else None
             last_candles = [(i, c.index.max()) for i, c in self.candles_by_interval.items()]
-            self._log.info(f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
-                           f"last candles: {last_candles}")
+            self._log.info(
+                f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
+                f"last candles: {last_candles}")
         return is_alive
 
     def on_level2(self, level2: List[Dict]):
@@ -183,7 +184,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
                     [self.predict_window, open_signal, cur_trade_direction]
 
                 # Save to historical data
-                self.save_lastXy(X.tail(1), y.tail(1), self.bid_ask.tail(1))
+                self.save_lastXy(X.tail(1), y.tail(1), {"bidask": self.bid_ask.tail(1)})
             except Exception as e:
                 self._log.error(f"{e}. Traceback: {traceback.format_exc()}")
             finally:
@@ -236,7 +237,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         # Sell signal
         # Not zeroes and ratio is ok and max/min are ok
         is_sell_ratio = sell_profit > 0 and (sell_loss <= 0 or sell_profit / sell_loss >= self.profit_loss_ratio)
-        #is_sell_loss = abs(sell_loss) < self.stop_loss_max_coeff * bid
+        # is_sell_loss = abs(sell_loss) < self.stop_loss_max_coeff * bid
         is_sell_loss = self.stop_loss_min_coeff * bid <= abs(sell_loss) < self.stop_loss_max_coeff * bid
         is_sell_profit = abs(sell_profit) >= self.profit_min_coeff * bid
         is_sell = is_sell_ratio and is_sell_loss and is_sell_profit
@@ -248,12 +249,12 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         if is_buy:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
-            #stop_loss_adj = min(stop_loss_adj, round(ask * (1 - self.stop_loss_min_coeff), self.price_precision))
+            # stop_loss_adj = min(stop_loss_adj, round(ask * (1 - self.stop_loss_min_coeff), self.price_precision))
             return 1, ask, stop_loss_adj, ask + buy_profit
         elif is_sell:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
-            #stop_loss_adj = max(stop_loss_adj, round(bid * (1 + self.stop_loss_min_coeff), self.price_precision))
+            # stop_loss_adj = max(stop_loss_adj, round(bid * (1 + self.stop_loss_min_coeff), self.price_precision))
             return -1, bid, stop_loss_adj, bid - sell_profit
         else:
             # No action
@@ -263,7 +264,8 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
         X, X_prepared = self.prepare_last_X()
         # Predict
-        y = self.model.predict(X_prepared, verbose=0) if not X.empty and X_prepared.size > 0 else np.array([np.nan, np.nan, np.nan, np.nan])
+        y = self.model.predict(X_prepared, verbose=0) if not X.empty and X_prepared.size > 0 else np.array(
+            [np.nan, np.nan, np.nan, np.nan])
         y = y.reshape((-1, 4))
 
         # Get prediction result
@@ -287,10 +289,10 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
 
         if no_bidask or no_candles or no_level2 or no_level2_bid or no_level2_ask:
             self._log.info(f"Can not learn because some datasets are empty. "
-                            f"level2.empty: {no_level2}, "
-                            f"level2.bid.empty: {no_level2_bid}, "
-                            f"level2.ask.empty: {no_level2_ask}, "
-                            f"candles.empty: {no_candles}")
+                           f"level2.empty: {no_level2}, "
+                           f"level2.bid.empty: {no_level2_bid}, "
+                           f"level2.ask.empty: {no_level2_ask}, "
+                           f"candles.empty: {no_candles}")
             return False
 
         # Check If we have enough data to learn
@@ -311,7 +313,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
                                                    past_window=self.past_window)
         return X, (self.X_pipe.transform(X) if X.shape[0] else pd.DataFrame())
 
-    def prepare_Xy(self)->(pd.DataFrame, pd.DataFrame):
+    def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
         """ Prepare train data """
         with self.data_lock:
             # Copy data for this thread only
@@ -325,5 +327,3 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
             self.candles_cnt_by_interval,
             self.predict_window,
             self.past_window)
-
-

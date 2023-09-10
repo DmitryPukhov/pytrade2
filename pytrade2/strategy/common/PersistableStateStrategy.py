@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
@@ -23,12 +24,12 @@ class PersistableStateStrategy:
             self.model_Xy_dir = str(Path(self.data_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
         self.last_save_time = datetime.utcnow()
-        self.model=None
+        self.model = None
         # Save data each 10 seconds
         self.save_interval: timedelta = timedelta(seconds=60)
         self.X_buf = pd.DataFrame()
         self.y_buf = pd.DataFrame()
-        self.data_buf = pd.DataFrame()
+        self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
 
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
@@ -61,13 +62,14 @@ class PersistableStateStrategy:
                 os.remove(os.path.join(self.model_weights_dir, file))
             self._log.debug(f"Purged {len(purge_files)} files in {self.model_weights_dir}")
 
-    def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
+    def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: Dict[str, pd.DataFrame]):
         """
         Write X,y, data to csv for analysis
         """
         self.X_buf = pd.concat([self.X_buf, X_last])
         self.y_buf = pd.concat([self.y_buf, y_pred_last])
-        self.data_buf = pd.concat([self.data_buf, data_last])
+        for data_tag in data_last:
+            self.data_bufs[data_tag] = pd.concat([self.data_bufs[data_tag], data_last])
 
         if datetime.utcnow() - self.last_save_time < self.save_interval:
             return
@@ -88,8 +90,10 @@ class PersistableStateStrategy:
             self._log.debug(f"Saving last y to {ypath}")
             self.y_buf.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
             self.y_buf = pd.DataFrame()
-        if not self.data_buf.empty:
-            datapath = str(Path(self.model_Xy_dir, file_name_prefix + "data.csv"))
+        for data_tag in self.data_bufs:
+            if self.data_bufs[data_tag].empty:
+                continue
+            datapath = str(Path(self.model_Xy_dir, f"{file_name_prefix}{data_tag}.csv"))
             self._log.debug(f"Saving last data to {datapath}")
-            self.data_buf.to_csv(datapath, header=not Path(datapath).exists(), mode='a')
-            self.data_buf = pd.DataFrame()
+            self.data_bufs[data_tag].to_csv(datapath, header=not Path(datapath).exists(), mode='a')
+            self.data_bufs[data_tag] = pd.DataFrame()

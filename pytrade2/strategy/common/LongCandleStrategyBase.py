@@ -1,7 +1,7 @@
 import logging
 import multiprocessing
 from io import StringIO
-from threading import Event, Timer
+from threading import Event
 from typing import Dict
 
 from keras.preprocessing.sequence import TimeseriesGenerator
@@ -64,9 +64,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         StrategyBase.run(self)
 
-        if self.purge_interval:
-            self._log.info(f"Starting periodical purging, interval: {self.purge_interval}")
-            Timer(self.purge_interval.seconds, self.purge_all).start()
         # Run the feed, listen events
         self.candles_feed.run()
         self.broker.run()
@@ -96,6 +93,9 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
                 # Buy or sell or skip
                 self.process_signal(signal)
+
+                # Save to historical data
+                #self.save_lastXy(x.tail(1), y.tail(1), self.candles_by_interval)
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """
@@ -128,9 +128,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
     def is_alive(self):
         return CandlesStrategy.is_alive(self)
-
-    def purge_all(self):
-        pass
 
     def prepare_Xy(self):
         return CandlesFeatures.features_targets_of(self.candles_by_interval,

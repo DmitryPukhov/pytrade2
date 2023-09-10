@@ -19,6 +19,7 @@ from strategy.common.RiskManager import RiskManager
 
 class StrategyBase(PersistableStateStrategy):
     """ Any strategy """
+
     def __init__(self, config: Dict, exchange_provider: Exchange):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
@@ -64,7 +65,6 @@ class StrategyBase(PersistableStateStrategy):
 
         self._log.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
-
 
     def check_cur_trade(self):
         """ Update cur trade if sl or tp reached """
@@ -172,6 +172,11 @@ class StrategyBase(PersistableStateStrategy):
             self._log.info(f"Starting periodical learning, interval: {self.learn_interval}")
             Timer(self.learn_interval.seconds, self.learn).start()
 
+        if self.purge_interval:
+            self._log.info(f"Starting periodical purging, interval: {self.purge_interval}")
+            Timer(self.purge_interval.seconds, self.purge_all).start()
+
+
     def create_model(self, param, param1):
         raise NotImplementedError()
 
@@ -180,3 +185,7 @@ class StrategyBase(PersistableStateStrategy):
 
     def process_new_data(self):
         raise NotImplementedError()
+
+    def purge_all(self):
+        # If no data purging in child strategy, just not override this method
+        pass
