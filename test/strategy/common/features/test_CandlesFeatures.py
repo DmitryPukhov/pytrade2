@@ -6,7 +6,8 @@ from strategy.common.features.CandlesFeatures import CandlesFeatures
 
 class TestCandlesFeatures(TestCase):
 
-    def candles_1m_5(self):
+    @staticmethod
+    def candles_1m_5():
         return pd.DataFrame([
             {"close_time": datetime.fromisoformat("2023-05-21 07:01:00"), "symbol": "asset1", "interval": "1m",
              "open": 1, "high": 10, "low": 100, "close": 1000, "vol": 10000},
@@ -24,7 +25,8 @@ class TestCandlesFeatures(TestCase):
              "open": 5, "high": 50, "low": 500, "close": 5000, "vol": 50000}]) \
             .set_index("close_time", drop=False)
 
-    def candles_5m_5(self):
+    @staticmethod
+    def candles_5m_5():
         return pd.DataFrame([
             {"close_time": datetime.fromisoformat("2023-05-21 06:40:00"), "symbol": "asset1", "interval": "5m",
              "open": 6, "high": 6.40, "low": 6.40, "close": 6.40, "vol": 6.40},
@@ -130,7 +132,8 @@ class TestCandlesFeatures(TestCase):
             .set_index("close_time", drop=False)
 
         actual = CandlesFeatures.targets_of(candles)
-        self.assertSequenceEqual(actual["signal"].tolist(), [1])
+        self.assertSequenceEqual([1], actual["signal"].tolist())
+        self.assertSequenceEqual([datetime.fromisoformat("2023-05-21 07:01:00")], actual.index)
 
     def test_candles_targets_of_sell(self):
         # Go up
@@ -144,7 +147,7 @@ class TestCandlesFeatures(TestCase):
             .set_index("close_time", drop=False)
 
         actual = CandlesFeatures.targets_of(candles)
-        self.assertSequenceEqual(actual["signal"].tolist(), [-1])
+        self.assertSequenceEqual([-1], actual["signal"].tolist())
 
     def test_candles_targets_of_flat(self):
         # Go up
@@ -154,11 +157,11 @@ class TestCandlesFeatures(TestCase):
              {"close_time": datetime.fromisoformat("2023-05-21 07:02:00"), "symbol": "asset1", "interval": "1m",
               "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1},
              {"close_time": datetime.fromisoformat("2023-05-21 07:03:00"), "symbol": "asset1", "interval": "1m",
-              "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1},]) \
+              "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1}, ]) \
             .set_index("close_time", drop=False)
 
         actual = CandlesFeatures.targets_of(candles)
-        self.assertSequenceEqual(actual["signal"].tolist(), [0])
+        self.assertSequenceEqual([0],actual["signal"].tolist())
 
     def test_candles_features_targets__same_index(self):
         # Go up
@@ -171,7 +174,8 @@ class TestCandlesFeatures(TestCase):
               "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1}]) \
             .set_index("close_time", drop=False)
 
-        actual_features, actual_targets = CandlesFeatures.features_targets_of({"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
-                                                     {"1min": 2, "5min": 2}, target_period="1min")
+        actual_features, actual_targets = CandlesFeatures.features_targets_of(
+            {"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
+            {"1min": 2, "5min": 2}, target_period="1min")
 
         self.assertSequenceEqual(actual_features.index.tolist(), actual_targets.index.tolist())
