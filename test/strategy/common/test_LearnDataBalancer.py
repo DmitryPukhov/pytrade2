@@ -60,14 +60,25 @@ class LearnDataBalancerTest(TestCase):
     def test_add__all_signals(self):
         balancer = LearnDataBalancer()
         balancer.max_len = 1
-        balancer.add(datetime.datetime(2023, 10, 1, 13, 5, 1), {"feature": "feature1"}, {"signal": -1})
-        balancer.add(datetime.datetime(2023, 10, 1, 13, 5, 2), {"feature": "feature2"}, {"signal": -1})
+        times = [
+            datetime.datetime(2023, 10, 1, 13, 5, 1),
+            datetime.datetime(2023, 10, 1, 13, 5, 2),
 
-        balancer.add(datetime.datetime(2023, 10, 1, 13, 5, 3), {"feature": "feature3"}, {"signal": 0})
-        balancer.add(datetime.datetime(2023, 10, 1, 13, 5, 4), {"feature": "feature4"}, {"signal": 0})
+            datetime.datetime(2023, 10, 1, 13, 5, 3),
+            datetime.datetime(2023, 10, 1, 13, 5, 4),
 
-        balancer.add(datetime.datetime(2023, 10, 1, 13, 5, 5), {"feature": "feature5"}, {"signal": 1})
-        balancer.add(datetime.datetime(2023, 10, 1, 13, 5, 6), {"feature": "feature6"}, {"signal": 1})
+            datetime.datetime(2023, 10, 1, 13, 5, 5),
+            datetime.datetime(2023, 10, 1, 13, 5, 6),
+        ]
+
+        x = pd.DataFrame(data=["feature1", "feature2", "feature3", "feature4", "feature5", "feature6"],
+                         columns=["feature"],
+                         index=times)
+
+        y = pd.DataFrame(data=[-1, -1, 0, 0, 1, 1],
+                         columns=["signal"],
+                         index=times)
+        balancer.add(x, y)
 
         # Should keep only last single item per signal
         self.assertListEqual([["feature2"]], balancer.x_dict[-1].values.tolist())
@@ -78,3 +89,28 @@ class LearnDataBalancerTest(TestCase):
 
         self.assertListEqual([["feature6"]], balancer.x_dict[1].values.tolist())
         self.assertListEqual([[1]], balancer.y_dict[1].values.tolist())
+
+    def test_add__one_signal(self):
+        balancer = LearnDataBalancer()
+        balancer.max_len = 1
+        times = [
+            datetime.datetime(2023, 10, 1, 13, 5, 1),
+            datetime.datetime(2023, 10, 1, 13, 5, 2)
+        ]
+
+        x = pd.DataFrame(data=["feature1", "feature2"],
+                         columns=["feature"],
+                         index=times)
+
+        y = pd.DataFrame(data=[-1, -1],
+                         columns=["signal"],
+                         index=times)
+        balancer.add(x, y)
+
+        # Should keep only -1 signal
+        self.assertListEqual([["feature2"]], balancer.x_dict[-1].values.tolist())
+        self.assertListEqual([[-1]], balancer.y_dict[-1].values.tolist())
+        self.assertTrue(balancer.x_dict[0].empty)
+        self.assertTrue(balancer.y_dict[0].empty)
+        self.assertTrue(balancer.x_dict[1].empty)
+        self.assertTrue(balancer.y_dict[1].empty)

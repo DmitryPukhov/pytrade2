@@ -9,12 +9,10 @@ from typing import Dict
 import pandas as pd
 from keras.models import Model
 
-
 class PersistableStateStrategy:
     """ Strategy whicn can save the data and read/write model weights."""
 
     def __init__(self, config: Dict):
-        self._log = logging.getLogger(self.__class__.__name__)
 
         # Directory for model weights and price data
         self.data_dir = config["pytrade2.data.dir"]
@@ -30,6 +28,7 @@ class PersistableStateStrategy:
         self.X_buf = pd.DataFrame()
         self.y_buf = pd.DataFrame()
         self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
+        self.last_learn_saved_index = datetime.min
 
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
@@ -45,7 +44,7 @@ class PersistableStateStrategy:
         model = self.model
 
         model_path = str(Path(self.model_weights_dir, datetime.utcnow().isoformat()))
-        self._log.debug(f"Save model to {model_path}")
+        logging.debug(f"Save model to {model_path}")
         model.save_weights(model_path)
 
         self.purge_weights()
@@ -60,9 +59,25 @@ class PersistableStateStrategy:
             purge_files = sorted(files, reverse=True)[keep_files_count:]
             for file in purge_files:
                 os.remove(os.path.join(self.model_weights_dir, file))
-            self._log.debug(f"Purged {len(purge_files)} files in {self.model_weights_dir}")
+            logging.debug(f"Purged {len(purge_files)} files in {self.model_weights_dir}")
 
-    def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: Dict[str, pd.DataFrame]):
+    def save_learn_xy_new(self, ticker: str, x: pd.DataFrame, y: pd.DataFrame):
+        """ From given x, y save rows after stored time index """
+
+        x_path = self.file_path_of(ticker, x.index[-1], "learn_x")
+        x[x.index > self.last_learn_saved_index].to_csv(x_path, header=not Path(x_path).exists(), mode='a')
+
+        y_path = self.file_path_of(ticker, x.index[-1], "learn_y")
+        y[x.index > self.last_learn_saved_index].to_csv(y_path, header=not Path(x_path).exists(), mode='a')
+
+        self.last_learn_saved_index = x.index[-1]
+
+    def file_path_of(self, ticker: str, time: pd.Timestamp, tag: str):
+        file_name_prefix = f"{pd.to_datetime(time).date()}_{ticker}"
+        file_path = str(Path(self.model_Xy_dir, f"{file_name_prefix}_{tag}.csv"))
+        return file_path
+
+    def save_lastXy(self, ticker: str, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: Dict[str, pd.DataFrame]):
         """
         Write X,y, data to csv for analysis
         """
@@ -77,23 +92,21 @@ class PersistableStateStrategy:
         self.last_save_time = datetime.utcnow()
 
         time = X_last.index[-1] if X_last is not None else data_last.index[-1]
-        file_name_prefix = f"{pd.to_datetime(time).date()}_{self.ticker}_"
-
         # Save
         if not self.X_buf.empty:
-            Xpath = str(Path(self.model_Xy_dir, file_name_prefix + "X.csv"))
-            self._log.debug(f"Saving last X to {Xpath}")
+            Xpath = self.file_path_of(ticker, self.time, "X")
+            logging.debug(f"Saving last X to {Xpath}")
             self.X_buf.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
             self.X_buf = pd.DataFrame()
         if not self.y_buf.empty:
-            ypath = str(Path(self.model_Xy_dir, file_name_prefix + "y.csv"))
-            self._log.debug(f"Saving last y to {ypath}")
+            ypath=self.file_path_of(ticker, time, "y")
+            logging.debug(f"Saving last y to {ypath}")
             self.y_buf.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
             self.y_buf = pd.DataFrame()
         for data_tag in self.data_bufs:
             if self.data_bufs[data_tag].empty:
                 continue
-            datapath = str(Path(self.model_Xy_dir, f"{file_name_prefix}{data_tag}.csv"))
-            self._log.debug(f"Saving last {data_tag} data to {datapath}")
+            datapath = self.file_path_of(ticker, time, data_tag)
+            logging.debug(f"Saving last {data_tag} data to {datapath}")
             self.data_bufs[data_tag].to_csv(datapath, header=not Path(datapath).exists(), mode='a')
             self.data_bufs[data_tag] = pd.DataFrame()

@@ -4,6 +4,7 @@ from io import StringIO
 from threading import Event
 from typing import Dict
 
+import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -95,7 +96,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 self.process_signal(signal)
 
                 # Save to historical data
-                #self.save_lastXy(x.tail(1), y.tail(1), self.candles_by_interval)
+                # self.save_lastXy(x.tail(1), y.tail(1), self.candles_by_interval)
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """
@@ -124,15 +125,19 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                                      price=None,
                                      stop_loss_price=sl,
                                      take_profit_price=tp,
-                                     trailing_delta = tdelta)
+                                     trailing_delta=tdelta)
 
     def is_alive(self):
         return CandlesStrategy.is_alive(self)
 
-    def prepare_Xy(self):
-        return CandlesFeatures.features_targets_of(self.candles_by_interval,
+    def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
+        # Get features and targets
+        x, y = CandlesFeatures.features_targets_of(self.candles_by_interval,
                                                    self.candles_cnt_by_interval,
                                                    target_period=self.target_period)
+        # Balance by signal
+        self.learn_data_balancer.add(x, y)
+        return self.learn_data_balancer.get_balanced_xy()
 
     def generator_of(self, train_X, train_y):
         """ Data generator for learning """

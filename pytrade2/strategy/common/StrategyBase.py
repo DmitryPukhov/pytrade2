@@ -13,6 +13,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
 from exch.Exchange import Exchange
+from strategy.common.LearnDataBalancer import LearnDataBalancer
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.RiskManager import RiskManager
 
@@ -23,6 +24,7 @@ class StrategyBase(PersistableStateStrategy):
     def __init__(self, config: Dict, exchange_provider: Exchange):
         self._log = logging.getLogger(self.__class__.__name__)
         self.config = config
+        self.learn_data_balancer = LearnDataBalancer()
         self.tickers = self.config["pytrade2.tickers"].split(",")
         self.ticker = self.tickers[-1]
         self.order_quantity = config["pytrade2.order.quantity"]
@@ -130,8 +132,10 @@ class StrategyBase(PersistableStateStrategy):
                     self.model = self.create_model(X_trans.shape[1], y_trans.shape[1])
                 self.model.fit(gen)
 
-                # Save weights
+                # Save weights and xy new delta
                 self.save_model()
+                self.save_learn_xy_new(self.ticker, train_X, train_y)
+
                 # to avoid OOM
                 tensorflow.keras.backend.clear_session()
                 gc.collect()
