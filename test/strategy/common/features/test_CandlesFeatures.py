@@ -64,12 +64,6 @@ class TestCandlesFeatures(TestCase):
         self.assertSequenceEqual([100, 100, 100], features["1min_low"].tolist())
         self.assertSequenceEqual([1000, 1000, 1000], features["1min_close"].tolist())
         self.assertSequenceEqual([10000, 10000, 10000], features["1min_vol"].tolist())
-        #
-        # self.assertSequenceEqual([2, 3, 4, 5], features["1m_open"].tolist())
-        # self.assertSequenceEqual([20, 30, 40, 50], features["1m_high"].tolist())
-        # self.assertSequenceEqual([200, 300, 400, 500], features["1m_low"].tolist())
-        # self.assertSequenceEqual([2000, 3000, 4000, 5000], features["1m_close"].tolist())
-        # self.assertSequenceEqual([20000, 30000, 40000, 50000], features["1m_vol"].tolist())
 
         self.assertSequenceEqual([1, 1, 1], features["1min_-1_open"].tolist())
         self.assertSequenceEqual([10, 10, 10], features["1min_-1_high"].tolist())

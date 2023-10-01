@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 import traceback
 from datetime import datetime
