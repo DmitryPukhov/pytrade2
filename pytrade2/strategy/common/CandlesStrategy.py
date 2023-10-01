@@ -44,8 +44,9 @@ class CandlesStrategy:
     def read_initial_candles(self):
         # Produce initial candles
         for period, cnt in self.candles_history_cnt_by_interval.items():
-            candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period, cnt)).set_index("open_time",
-                                                                                                       drop=False)
+            candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period, cnt)) \
+                .set_index("open_time", drop=False)
+            logging.info(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
 
     def get_report(self):
