@@ -22,7 +22,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-        self._log = logging.getLogger(self.__class__.__name__)
+        
 
         self.websocket_feed = None
         self.candles_feed = None
@@ -30,7 +30,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
         self.target_period = min(self.candles_cnt_by_interval.keys())
-        self._log.info(f"Target period: {self.target_period}")
+        logging.info(f"Target period: {self.target_period}")
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
 
@@ -73,7 +73,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         """ Check preconditions for learning"""
 
         if not self.has_all_candles():
-            self._log.info(f"Can not learn because not enough candles.")
+            logging.info(f"Can not learn because not enough candles.")
             return False
 
         # Check If we have enough data to learn

@@ -23,7 +23,7 @@ class BrokerStub(BinanceBrokerSpot):
     """ Broker emulation, don't trade """
 
     def __init__(self):
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.cur_trade: Trade = None
 
     def update_trade_status(self, trade: Trade) -> Trade:

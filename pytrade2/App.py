@@ -28,8 +28,8 @@ class App:
         os.environ['TZ'] = 'UTC'
         time.tzset()
         self._init_logger()
-        self._log = logging.getLogger(self.__class__.__name__)
-        self._log.info(f"\n--------------------------------------------------------------"
+        
+        logging.info(f"\n--------------------------------------------------------------"
                        f"\n--------------   Starting pytrade2 App   ---------------------"
                        f"\n--------------------------------------------------------------")
         # For pandas printing to log
@@ -41,7 +41,7 @@ class App:
         self.config = self._load_config()
 
         self._log_report_interval_sec = 60
-        self._log.info("App initialized")
+        logging.info("App initialized")
 
     def log_report(self):
         """ Periodically report to log"""
@@ -57,7 +57,7 @@ class App:
         footer = "\n".ljust(len(header), "-") + "\n"
 
         # Write to log
-        self._log.info(header + report + footer)
+        logging.info(header + report + footer)
 
         # Schedule next report
         threading.Timer(self._log_report_interval_sec, self.log_report).start()
@@ -115,7 +115,7 @@ class App:
         config.update(os.environ)
         config["pytrade2.strategy"] = final_strategy
 
-        self._log.info(self._config_msg(config))
+        logging.info(self._config_msg(config))
 
         return config
     @staticmethod
@@ -147,7 +147,7 @@ class App:
 
         strategy_file = f"strategy." + self.config["pytrade2.strategy"]
         strategy_class_name = strategy_file.split(".")[-1]
-        self._log.info(f"Running the strategy: {strategy_file}")
+        logging.info(f"Running the strategy: {strategy_file}")
         module = importlib.import_module(strategy_file, strategy_class_name)
         strategy = getattr(module, strategy_class_name)(config=self.config, exchange_provider=exchange)
         return strategy
@@ -166,15 +166,15 @@ class App:
         # Run and wait until the end
         self.strategy.run()
 
-        self._log.info("Started the app")
+        logging.info("Started the app")
 
     def watchdog_check(self):
         """ If not alive, reset websocket feed"""
         if not self.strategy.is_alive():
-            self._log.error(f"Strategy seems to be dead, exiting")
+            logging.error(f"Strategy seems to be dead, exiting")
             os.kill(os.getpid(), signal.SIGINT)
         else:
-            self._log.info(f"Strategy is alive")
+            logging.info(f"Strategy is alive")
             # Schedule next check
             threading.Timer(60, self.watchdog_check).start()
 

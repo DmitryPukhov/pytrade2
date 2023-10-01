@@ -12,7 +12,7 @@ class HuobiExchangeHbdm:
     """ Huobi derivatives market exchange: futures, swaps """
 
     def __init__(self, config: dict):
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.config = config
         self.__rest_client: Optional[HuobiRestClient] = None
         self.__websocket_client_market: Optional[HuobiWebSocketClient] = None

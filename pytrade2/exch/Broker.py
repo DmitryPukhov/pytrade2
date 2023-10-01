@@ -21,7 +21,7 @@ class Broker:
         self.trade_lock: RLock = RLock()
         self.config = config
         self.amount_precision = config["pytrade2.amount.precision"]
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.min_trade_interval = timedelta(seconds=10)
         self.last_trade_time = datetime.utcnow() - self.min_trade_interval
         self.allow_trade = config.get("pytrade2.broker.trade.allow", False)
@@ -30,12 +30,12 @@ class Broker:
         # Load saved opened trade
         self.cur_trade = self.read_last_opened_trade()
         if self.cur_trade:
-            self._log.info(f"Loaded previously opened current trade: {self.cur_trade}")
+            logging.info(f"Loaded previously opened current trade: {self.cur_trade}")
             if self.allow_trade:
                 self.fix_cur_trade()
         else:
-            self._log.info("Opened trades not found")
-        self._log.info(f"Completed init broker.")
+            logging.info("Opened trades not found")
+        logging.info(f"Completed init broker.")
 
     def __init_db__(self, config: Dict[str, str]):
         # Create database
@@ -43,7 +43,7 @@ class Broker:
         data_dir = config["pytrade2.data.dir"] + "/" + strategy
         Path(data_dir).mkdir(parents=True, exist_ok=True)
         db_path = f"{data_dir}/{strategy}.db"
-        self._log.info(f"Init database, path: {db_path}")
+        logging.info(f"Init database, path: {db_path}")
         engine = create_engine(f"sqlite:///{db_path}")
         Trade.metadata.create_all(engine)
         self.db_session = sessionmaker(engine)()

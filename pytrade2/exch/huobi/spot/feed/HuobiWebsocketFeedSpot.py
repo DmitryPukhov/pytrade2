@@ -19,7 +19,7 @@ class HuobiWebsocketFeedSpot:
     def __init__(self, config: dict, market_client: MarketClient):
 
         self.consumers = []
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.tickers = config["pytrade2.tickers"].lower().split(",")
         self.__market_client = market_client
 
@@ -37,21 +37,21 @@ class HuobiWebsocketFeedSpot:
                                             error_handler=self.socket_error_callback)
 
     def socket_error_callback(self, ex):
-        self._log.error(HuobiTools.format_exception("HuobiWebSocketFeed price depth", ex))
+        logging.error(HuobiTools.format_exception("HuobiWebSocketFeed price depth", ex))
 
     def level2_callback(self, msg: PriceDepthEvent):
         try:
             for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
                 consumer.on_level2(self.rawlevel2model(self.tickers[-1], msg.tick))
         except Exception as e:
-            self._log.error(e)
+            logging.error(e)
 
     def ticker_callback(self, event: PriceDepthBboEvent):
         try:
             for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
                 consumer.on_ticker(self.rawticker2model(event.tick))
         except Exception as e:
-            self._log.error(e)
+            logging.error(e)
 
     def rawticker2model(self, tick: PriceDepthBbo) -> Dict:
         dt = datetime.utcnow()

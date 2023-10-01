@@ -154,14 +154,14 @@ class OrderCreator:
 
         with self.trade_lock:
             if self.cur_trade:
-                self._log.info(f"Can not create current trade because another exists:{self.cur_trade}")
+                logging.info(f"Can not create current trade because another exists:{self.cur_trade}")
                 return None
             side = Trade.order_side_names[direction]
             # Adjust prices to precision
 
             price, sl_trigger_price, sl_order_price, tp_trigger_price, tp_order_price = self.adjust_prices(
                 direction, price, stop_loss_price, take_profit_price, self.price_precision, self.limit_ratio)
-            self._log.info(
+            logging.info(
                 f"Creating current {symbol} {side} trade. price: {price}, "
                 f"sl trigger: {sl_trigger_price}, sl order: {sl_order_price}, "
                 f"tp trigger: {tp_trigger_price}, tp order: {tp_order_price}, trailing delta: {trailing_delta},"
@@ -179,20 +179,20 @@ class OrderCreator:
                                            # If trailing delta is set, we'll take profit manually, not here
                                            tp_trigger_price=tp_trigger_price if not trailing_delta else None
                                            )
-            self._log.debug(f"Create order params: {params}")
+            logging.debug(f"Create order params: {params}")
             # Request to create a new order
             path = "/linear-swap-api/v1/swap_cross_order"
             res = self.rest_client.post(path=path, data=params)
 
             # Process result
-            self._log.info(f"Create order response: {res}")
+            logging.info(f"Create order response: {res}")
             if res["status"] == "ok":
                 # Get order details, fill in current trade
                 info = self.get_order_info(client_order_id, ticker=symbol)
                 trade = self.res2trade(info)
 
                 if trade.status != TradeStatus.opened:
-                    self._log.info(f"Order not filled, that's ok.")
+                    logging.info(f"Order not filled, that's ok.")
                     return None
 
                 self.cur_trade = trade
@@ -208,9 +208,9 @@ class OrderCreator:
                 # Save current trade to db
                 self.db_session.add(self.cur_trade)
                 self.db_session.commit()
-                self._log.info(f"Opened trade: {self.cur_trade}")
+                logging.info(f"Opened trade: {self.cur_trade}")
             else:
-                self._log.error(f"Error creating order: {res}")
+                logging.error(f"Error creating order: {res}")
 
             return self.cur_trade
 
@@ -229,7 +229,7 @@ class OrderCreator:
     def get_sltp_orders_info(self, main_order_id):
         res = self.rest_client.post("/linear-swap-api/v1/swap_cross_relation_tpsl_order",
                                     {"contract_code": "BTC-USDT", "order_id": main_order_id})
-        self._log.debug(f"Got sltp order info: f{res}")
+        logging.debug(f"Got sltp order info: f{res}")
         return res
 
     @staticmethod
@@ -300,5 +300,5 @@ class OrderCreator:
         path = "/linear-swap-api/v1/swap_cross_order_info"
         data = {"client_order_id": client_order_id, "contract_code": ticker}
         res = self.rest_client.post(path, data)
-        self._log.debug(f"Got order {res}")
+        logging.debug(f"Got order {res}")
         return res

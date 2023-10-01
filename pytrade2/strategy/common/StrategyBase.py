@@ -22,13 +22,13 @@ class StrategyBase(PersistableStateStrategy):
     """ Any strategy """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.config = config
         self.learn_data_balancer = LearnDataBalancer()
         self.tickers = self.config["pytrade2.tickers"].split(",")
         self.ticker = self.tickers[-1]
         self.order_quantity = config["pytrade2.order.quantity"]
-        self._log.info(f"Order quantity: {self.order_quantity}")
+        logging.info(f"Order quantity: {self.order_quantity}")
         self.price_precision = config["pytrade2.price.precision"]
         self.amount_precision = config["pytrade2.amount.precision"]
         self.learn_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval']) \
@@ -65,7 +65,7 @@ class StrategyBase(PersistableStateStrategy):
 
         PersistableStateStrategy.__init__(self, config)
 
-        self._log.info("Strategy parameters:\n" + "\n".join(
+        logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
     def check_cur_trade(self):
@@ -107,13 +107,13 @@ class StrategyBase(PersistableStateStrategy):
 
     def learn(self):
         try:
-            self._log.debug("Learning")
+            logging.debug("Learning")
             if not self.can_learn():
                 return
 
             train_X, train_y = self.prepare_Xy()
 
-            self._log.info(
+            logging.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}")
             if len(train_X.index) >= self.min_xy_len:
                 self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
@@ -141,13 +141,13 @@ class StrategyBase(PersistableStateStrategy):
                 gc.collect()
 
             else:
-                self._log.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
+                logging.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
         finally:
             if self.learn_interval:
                 Timer(self.learn_interval.seconds, self.learn).start()
 
     def processing_loop(self):
-        self._log.info("Starting processing loop")
+        logging.info("Starting processing loop")
 
         # If alive is None, not started, so continue loop
         is_alive = self.is_alive()
@@ -163,7 +163,7 @@ class StrategyBase(PersistableStateStrategy):
             # Refresh live status
             is_alive = self.is_alive()
 
-        self._log.info("End main processing loop")
+        logging.info("End main processing loop")
 
     def run(self):
         self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
@@ -173,11 +173,11 @@ class StrategyBase(PersistableStateStrategy):
 
         # Start periodical jobs
         if self.learn_interval:
-            self._log.info(f"Starting periodical learning, interval: {self.learn_interval}")
+            logging.info(f"Starting periodical learning, interval: {self.learn_interval}")
             Timer(self.learn_interval.seconds, self.learn).start()
 
         if self.purge_interval:
-            self._log.info(f"Starting periodical purging, interval: {self.purge_interval}")
+            logging.info(f"Starting periodical purging, interval: {self.purge_interval}")
             Timer(self.purge_interval.seconds, self.purge_all).start()
 
 

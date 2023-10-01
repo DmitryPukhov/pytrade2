@@ -24,7 +24,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
 
         self.tickers = conf["pytrade2.tickers"].lower().split(",")
         self.fee = float(conf["pytrade2.exchange.huobi.hbdm.fee"])
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.ws_client, self.ws_feed, self.rest_client = ws_client, ws_feed, rest_client
 
         # This mode means that sell closes previous buy and vice versa
@@ -33,10 +33,10 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
 
     def set_one_way_mode(self):
         """ Set up exchange to set one way (no buy and sell opened simultaneously) """
-        self._log.info(f"Setting one way trading mode (opposite trade will close current one)")
+        logging.info(f"Setting one way trading mode (opposite trade will close current one)")
         res = self.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode",
                                     {"margin_account": "USDT", "position_mode": "single_side"})
-        self._log.debug(f"responce: f{res}")
+        logging.debug(f"responce: f{res}")
 
     def run(self):
         """ Open socket and subscribe to events """
@@ -64,13 +64,13 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
             params = {"op": "sub", "topic": topic}
             self.ws_client.add_consumer(topic, params, self)
 
-        self._log.info("Broker subscribed to all events needed.")
+        logging.info("Broker subscribed to all events needed.")
 
     def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""
         try:
             status = msg.get("status")
-            self._log.info(f"Got order event: {msg}")
+            logging.info(f"Got order event: {msg}")
 
             if not self.cur_trade \
                     or not status \
@@ -92,7 +92,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
                         self.finalize_closed_trade()
 
         except Exception as e:
-            self._log.error(f"Socket message processing error: {e}")
+            logging.error(f"Socket message processing error: {e}")
 
     def get_report(self):
         """ Short info for report """
@@ -115,6 +115,6 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
                               f"frozen:{c['margin_frozen']} {currency}, "
                               f"available: {c['margin_available']} {currency}\n")
         except Exception as e:
-            self._log.error(f"Error reporting broker info: {e}")
+            logging.error(f"Error reporting broker info: {e}")
 
         return msg.getvalue()

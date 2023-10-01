@@ -17,7 +17,7 @@ class HuobiRestClient:
     """
 
     def __init__(self, access_key: str, secret_key: str):
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.access_key, self.secret_key = access_key, secret_key
         # Futures, coins url
         self.host = 'api.hbdm.vn'
@@ -49,16 +49,16 @@ class HuobiRestClient:
         try:
             # Compose url and headers
             url = f'https://{self.host}{path}?'
-            self._log.debug(f"Doing get request to url: {url}, params: {params}")
+            logging.debug(f"Doing get request to url: {url}, params: {params}")
             url_suffix = self._auth_params_of('get', self.access_key, self.secret_key, self.host, path)
             url = url + url_suffix
             headers = {'Content-type': 'application/x-www-form-urlencoded'}
             # Request
             res_json = requests.get(url, params=params, headers=headers).json()
-            self._log.debug(f"Got response: {res_json}")
+            logging.debug(f"Got response: {res_json}")
             return res_json
         except Exception as e:
-            self._log.error(e)
+            logging.error(e)
         return None
 
     def post(self, path: str, data: dict = None) -> json:
@@ -67,15 +67,15 @@ class HuobiRestClient:
         try:
             # Compose url and headers
             url = f'https://{self.host}{path}?'
-            self._log.debug(f"Doing post request to url: {url}, data: {data}")
+            logging.debug(f"Doing post request to url: {url}, data: {data}")
             url_suffix = self._auth_params_of('post', self.access_key, self.secret_key, self.host, path)
             url = url + url_suffix
             # url = f'https://{self.host}{path}?{url_suffix}'
             headers = {'Accept': 'application/json', 'Content-type': 'application/json'}
             # Post request to huobi rest service
             res_json = requests.post(url, json=data, headers=headers).json()
-            self._log.debug(f"Got response: {res_json}")
+            logging.debug(f"Got response: {res_json}")
             return res_json
         except Exception as e:
-            self._log.error(e)
+            logging.error(e)
         return None

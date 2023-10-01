@@ -18,7 +18,6 @@ class TrailingStopSupport:
 
     def __init__(self, conf, ws_feed: HuobiWebSocketFeedHbdm, rest_client: HuobiRestClient):
         # All variables will be redefined in child classes
-        self._log: Optional[Logger] = None
         self.cur_trade: Optional[Trade] = None
         self.prev_trade: Optional[Trade] = None
         self.account_manager: Optional[AccountManagerHbdm] = None
@@ -58,11 +57,11 @@ class TrailingStopSupport:
         Cancel existing stop loss to move trailing stop
         https://www.huobi.com/en-us/opend/newApiPages/?id=8cb87edb-77b5-11ed-9966-0242ac110003
         """
-        self._log.info(f"Cancelling existing sl/tp orders")
+        logging.info(f"Cancelling existing sl/tp orders")
         res = self.rest_client.post("/linear-swap-api/v1/swap_cross_tpsl_cancelall",
                                     {"contract_code": self.cur_trade.ticker})
         if res["status"] != "ok":
-            self._log.error(f"Error cancelling stop loss order: {res}")
+            logging.error(f"Error cancelling stop loss order: {res}")
             return
 
     def create_ts_order(self, new_tp: float):
@@ -75,7 +74,7 @@ class TrailingStopSupport:
         t = self.cur_trade
         new_sl_trigger = new_tp - t.direction() * t.trailing_delta
         new_sl_order = OrderCreator.sl_order_price(t.direction(), new_sl_trigger)
-        self._log.info(f"Creating new sl order for trailing stop with new tp: {new_tp}, "
+        logging.info(f"Creating new sl order for trailing stop with new tp: {new_tp}, "
                        f"new sl trigger: {new_sl_trigger}, new sl order: {new_sl_order}")
 
         sl_params = OrderCreator.sl_trade_params(symbol=t.ticker,
@@ -90,11 +89,11 @@ class TrailingStopSupport:
             self.cur_trade.take_profit_price = new_tp
             self.db_session.commit()
         else:
-            self._log.error(f"Error moving trailing stop: ${sl_res}")
+            logging.error(f"Error moving trailing stop: ${sl_res}")
 
     def move_ts(self, new_tp: float):
         """ Move trailing stop of current trade"""
-        self._log.info(f"Moving trailing stop to new take profit:{new_tp}")
+        logging.info(f"Moving trailing stop to new take profit:{new_tp}")
 
         self.cancel_prev_sl()
         self.create_ts_order(new_tp)

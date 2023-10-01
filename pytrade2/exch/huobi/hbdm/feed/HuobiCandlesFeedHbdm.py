@@ -21,7 +21,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         self.sub_events()
 
     def sub_events(self):
-        self._log.info(f"Subscribing to {','.join(self.periods)} candles of {','.join(self.tickers)}")
+        logging.info(f"Subscribing to {','.join(self.periods)} candles of {','.join(self.tickers)}")
         for ticker in self.tickers:
             for period in self.periods:
                 topic = f"market.{ticker}.kline.{period}"
@@ -36,7 +36,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
             for consumer in self.consumers:
                 consumer.on_candle(candle)
         except Exception as e:
-            self._log.error(e)
+            logging.error(e)
 
     @staticmethod
     def raw_socket_msg_to_candle(msg):

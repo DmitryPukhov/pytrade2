@@ -12,7 +12,7 @@ class HuobiCandlesFeedSpot:
     """
 
     def __init__(self, market_client: MarketClient):
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.market_client = MarketClient()
 
     def read_candles(self, ticker, interval, limit):
@@ -21,7 +21,7 @@ class HuobiCandlesFeedSpot:
         # Fix interval to huobi format, from 1m to 1min etc.
         if interval.endswith("m"):
             interval += "in"
-        self._log.debug(f"Reading {limit} last {ticker} {interval} candles from Huobi")
+        logging.debug(f"Reading {limit} last {ticker} {interval} candles from Huobi")
 
         # Call Huobi client
         raw_candles = self.market_client.get_candlestick(symbol=ticker.lower(), period=interval, size=limit)

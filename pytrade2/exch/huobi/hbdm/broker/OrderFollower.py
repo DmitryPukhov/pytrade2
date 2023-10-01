@@ -66,9 +66,9 @@ class OrderFollower:
             #      'reduce_only': 1, 'contract_type': 'swap', 'business_type': 'swap'}], 'ts': 1687077630615}
 
             # Call history
-            self._log.debug(f"Updating current trade status:: {self.cur_trade}")
+            logging.debug(f"Updating current trade status:: {self.cur_trade}")
             params = self.huobi_history_close_order_query_params(self.cur_trade)
-            self._log.debug(
+            logging.debug(
                 f"Order history query start_time: {datetime.utcfromtimestamp(params['start_time'] / 1000)}, tz:{time.tzname}, params: {params}")
             res = self.rest_client.post("/linear-swap-api/v3/swap_cross_hisorders", params)
 
@@ -80,14 +80,14 @@ class OrderFollower:
                 if raw_update_time > self.cur_trade.open_time:
                     # Got closing order - after cur trade
                     self.update_trade_closed(raw, self.cur_trade)
-                    self._log.info(f"Current trade found closed, probably by sl or tp: {self.cur_trade}")
+                    logging.info(f"Current trade found closed, probably by sl or tp: {self.cur_trade}")
                     self.finalize_closed_trade()
                 else:
-                    self._log.debug(
+                    logging.debug(
                         f"Current trade is still opened. open time: {self.cur_trade.open_time},"
                         f" last order in history: {raw_update_time}")
             else:
-                self._log.debug(
+                logging.debug(
                     f"Current trade is still opened. open time: {self.cur_trade.open_time}, last orders are empty.")
 
     @staticmethod

@@ -30,13 +30,13 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
 
     def sub_events(self):
         for ticker in self.tickers:
-            self._log.info(f"Subscribing to {ticker} feed")
+            logging.info(f"Subscribing to {ticker} feed")
 
             # Sub bid ask, level2
             for topic in [f"market.{ticker}.bbo", f"market.{ticker}.depth.step2"]:
                 self._client.add_consumer(topic, {"sub": topic}, self)
 
-        self._log.info("Feed subscribed to all events needed")
+        logging.info("Feed subscribed to all events needed")
 
     def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""
@@ -54,7 +54,7 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
                 for consumer in [c for c in self.consumers if hasattr(c, 'on_level2')]:
                     consumer.on_level2(l2)
         except Exception as e:
-            self._log.error(e)
+            logging.error(e)
 
     @staticmethod
     def rawlevel2model(tick: dict) -> [{}]:

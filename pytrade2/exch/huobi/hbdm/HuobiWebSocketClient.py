@@ -37,7 +37,7 @@ class HuobiWebSocketClient:
     """
 
     def __init__(self, host: str, path: str, access_key: str, secret_key: str, be_spot: bool, is_broker: bool):
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self._host = host
         self._path = path
         self.url = 'wss://{}{}'.format(self._host, self._path)
@@ -50,7 +50,7 @@ class HuobiWebSocketClient:
         self.is_opened = False
         self._ws = None
         self._consumers = defaultdict(set)
-        self._log.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
+        logging.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
 
     def __del__(self):
         self.close()
@@ -66,7 +66,7 @@ class HuobiWebSocketClient:
         if self._is_opening or self.is_opened: return
 
         self._is_opening = True
-        self._log.info(f"Opening socket: {self.url}")
+        logging.info(f"Opening socket: {self.url}")
         self._ws = websocket.WebSocketApp(self.url,
                                           on_open=self._on_open,
                                           on_message=self._on_msg,
@@ -76,7 +76,7 @@ class HuobiWebSocketClient:
         t.start()
 
     def _on_open(self, ws):
-        self._log.info(f"Socket opened: {self.url}")
+        logging.info(f"Socket opened: {self.url}")
         if self._is_broker:
             # Some endpoints requires this signature data, others just returns invalid command error and continue to work.
             signature_data = self._get_signature_data()  # signature data
@@ -87,7 +87,7 @@ class HuobiWebSocketClient:
         # Subscribe to messages for consumers
         for topic_consumers in self._consumers.values():
             for params, consumer in topic_consumers:
-                self._log.info(f"Subscribing to socket data, params: {params}, consumer: {consumer}")
+                logging.info(f"Subscribing to socket data, params: {params}, consumer: {consumer}")
                 self._ws.send(params)  # as json string to be send
 
     def _get_signature_data(self) -> dict:
@@ -175,27 +175,27 @@ class HuobiWebSocketClient:
                                          if hasattr(consumer, 'on_socket_data')]:
                     consumer.on_socket_data(topic, jdata)
             elif jdata.get('status') == 'error':
-                self._log.error(f"Got message with error: {jdata}")
+                logging.error(f"Got message with error: {jdata}")
         except Exception as e:
-            self._log.error(e)
+            logging.error(e)
 
     def _on_close(self, ws):
-        self._log.info("Socket closed")
+        logging.info("Socket closed")
         self.is_opened = False
         if not self._active_close:
             self.open()
 
     def _on_error(self, ws, error):
-        self._log.error(f"Socket error: {error}")
+        logging.error(f"Socket error: {error}")
 
     def add_consumer(self, topic, params: dict, consumer):
         """ Registering consumer for the topic """
-        self._log.debug(f"Adding consumer, topic: {topic}, params: {params}, consumer: {consumer}")
+        logging.debug(f"Adding consumer, topic: {topic}, params: {params}, consumer: {consumer}")
         # topic -> (params, consumer obj)
         self._consumers[topic].add((json.dumps(params), consumer))
 
     def close(self):
-        self._log.info("Closing socket")
+        logging.info("Closing socket")
         self._active_close = True
         self.is_opened = False
         if self._ws: self._ws.close()

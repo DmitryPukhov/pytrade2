@@ -16,7 +16,7 @@ class TakeProfitSupport:
     """ Programmatically support take profit because Huobi does not have oco orders  for sl/tp"""
 
     def __init__(self):
-        self._log = logging.getLogger(self.__class__.__name__)
+        
         self.cur_trade: Optional[Trade] = None
         self.market_client: MarketClient = None
         self.trade_client: TradeClient = None
@@ -27,10 +27,10 @@ class TakeProfitSupport:
         self.market_client.sub_trade_detail(symbols=symbol,
                                             callback=self.on_price_changed,
                                             error_handler=self.tss_error_callback)
-        self._log.debug(f"Subscribed to price changed events for {symbol}")
+        logging.debug(f"Subscribed to price changed events for {symbol}")
 
     def tss_error_callback(self, ex):
-        self._log.error(HuobiTools.format_exception("TrailingStopSupport market client", ex))
+        logging.error(HuobiTools.format_exception("TrailingStopSupport market client", ex))
 
     def on_price_changed(self, event: TradeDetailEvent):
         """ Price changing event, check tp"""
@@ -52,7 +52,7 @@ class TakeProfitSupport:
                         if not self.cur_trade or self.cur_trade.status != TradeStatus.opened:
                             continue
 
-                        self._log.info(
+                        logging.info(
                             f"Triggering take profit of base {self.cur_trade.side} order. "
                             f"Price: {e.price}, take profit price: {self.cur_trade.take_profit_price}, "
                             f"current trade: {self.cur_trade}")
@@ -62,7 +62,7 @@ class TakeProfitSupport:
                         # Final closure will be not here but when on_order_update event triggered
                         break
             except Exception as ex:
-                self._log.error(f"on_price_changed error: {ex}")
+                logging.error(f"on_price_changed error: {ex}")
                 self.update_cur_trade_status()
 
     def update_cur_trade_status(self):

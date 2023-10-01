@@ -45,7 +45,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
         self.last_learn_bidask_time = datetime(1970, 1, 1)
 
-        self._log.info("Strategy parameters:\n" + "\n".join(
+        logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
     def get_report(self):
@@ -89,7 +89,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         StrategyBase.run(self)
 
         if self.purge_interval:
-            self._log.info(f"Starting periodical purging, interval: {self.purge_interval}")
+            logging.info(f"Starting periodical purging, interval: {self.purge_interval}")
             Timer(self.purge_interval.seconds, self.purge_all).start()
         # Run the feed, listen events
         self.websocket_feed.run()
@@ -110,7 +110,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
             last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
             last_level2 = self.level2.index.max() if not self.level2.empty else None
             last_candles = [(i, c.index.max()) for i, c in self.candles_by_interval.items()]
-            self._log.info(
+            logging.info(
                 f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
                 f"last candles: {last_candles}")
         return is_alive
@@ -152,7 +152,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         Purge data frame
         """
         purge_window = self.history_max_window
-        self._log.debug(f"Purging old {tag} data using window {purge_window}")
+        logging.debug(f"Purging old {tag} data using window {purge_window}")
         if df is None or df.empty:
             return df
         left_bound = df.index.max() - pd.Timedelta(purge_window)
@@ -186,7 +186,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
                 # Save to historical data
                 self.save_lastXy(X.tail(1), y.tail(1), {"bidask": self.bid_ask.tail(1)})
             except Exception as e:
-                self._log.error(f"{e}. Traceback: {traceback.format_exc()}")
+                logging.error(f"{e}. Traceback: {traceback.format_exc()}")
             finally:
                 self.is_processing = False
 
@@ -288,7 +288,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         no_level2_ask = "ask" not in self.level2.columns or self.level2["ask"].empty
 
         if no_bidask or no_candles or no_level2 or no_level2_bid or no_level2_ask:
-            self._log.info(f"Can not learn because some datasets are empty. "
+            logging.info(f"Can not learn because some datasets are empty. "
                            f"level2.empty: {no_level2}, "
                            f"level2.bid.empty: {no_level2_bid}, "
                            f"level2.ask.empty: {no_level2_ask}, "
@@ -298,7 +298,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         # Check If we have enough data to learn
         interval = self.bid_ask.index.max() - self.bid_ask.index.min()
         if interval < self.history_min_window:
-            self._log.info(
+            logging.info(
                 f"Can not learn because not enough history. We have {interval}, but we need {self.history_min_window}")
             return False
         return True

@@ -20,7 +20,7 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
         # lstm window
         self.lstm_window_size = config["pytrade2.strategy.lstm.window.size"]
         self.min_xy_len = self.lstm_window_size + 1
-        self._log.info(f"LSTM window size: {self.lstm_window_size}")
+        logging.info(f"LSTM window size: {self.lstm_window_size}")
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Reshape last features to lstm window"""
