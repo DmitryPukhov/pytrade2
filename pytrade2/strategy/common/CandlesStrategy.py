@@ -12,7 +12,6 @@ class CandlesStrategy:
 
     def __init__(self, config, ticker: str, candles_feed):
         # self.last_candles_read_time = datetime.min
-        self._log = logging.getLogger(self.__class__.__name__)
 
         self.data_lock: multiprocessing.RLock() = None
         self.candles_feed = candles_feed
@@ -62,6 +61,7 @@ class CandlesStrategy:
     def on_candle(self, candle: {}):
         with (self.data_lock):
             period = str(candle["interval"])
+            logging.debug(f"Got {period} candle: {candle}")
             if period in self.candles_by_interval:
                 candles = self.candles_by_interval.get(period)
                 last_candle = candles.iloc[-1]

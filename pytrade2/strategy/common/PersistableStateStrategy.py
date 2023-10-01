@@ -94,6 +94,6 @@ class PersistableStateStrategy:
             if self.data_bufs[data_tag].empty:
                 continue
             datapath = str(Path(self.model_Xy_dir, f"{file_name_prefix}{data_tag}.csv"))
-            self._log.debug(f"Saving last data to {datapath}")
+            self._log.debug(f"Saving last {data_tag} data to {datapath}")
             self.data_bufs[data_tag].to_csv(datapath, header=not Path(datapath).exists(), mode='a')
             self.data_bufs[data_tag] = pd.DataFrame()
