@@ -22,7 +22,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-        
 
         self.websocket_feed = None
         self.candles_feed = None
@@ -91,12 +90,13 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 y = self.model.predict(x_trans)
                 y_trans = self.y_pipe.inverse_transform(y)
                 signal = y_trans[-1][0] if y_trans else 0
+                y_df = pd.DataFrame(data=[{"signal": signal}], index=[x.index[-1]])
 
                 # Buy or sell or skip
                 self.process_signal(signal)
 
                 # Save to historical data
-                # self.save_lastXy(x.tail(1), y.tail(1), self.candles_by_interval)
+                self.save_last_data(self.ticker, {"x": x.tail(1), "y_pred": y_df.tail(1)})
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """

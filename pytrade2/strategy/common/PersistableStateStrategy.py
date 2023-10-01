@@ -9,6 +9,7 @@ from typing import Dict
 import pandas as pd
 from keras.models import Model
 
+
 class PersistableStateStrategy:
     """ Strategy whicn can save the data and read/write model weights."""
 
@@ -77,35 +78,38 @@ class PersistableStateStrategy:
         file_path = str(Path(self.model_Xy_dir, f"{file_name_prefix}_{tag}.csv"))
         return file_path
 
-    def save_lastXy(self, ticker: str, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: Dict[str, pd.DataFrame]):
+    def save_last_data(self, ticker: str,  # X_last: pd.DataFrame, y_pred_last: pd.DataFrame,
+                       data_last: Dict[str, pd.DataFrame]):
         """
         Write X,y, data to csv for analysis
         """
-        self.X_buf = pd.concat([self.X_buf, X_last])
-        self.y_buf = pd.concat([self.y_buf, y_pred_last])
+        # self.X_buf = pd.concat([self.X_buf, X_last])
+        # self.y_buf = pd.concat([self.y_buf, y_pred_last])
         for data_tag in data_last:
-            self.data_bufs[data_tag] = pd.concat([self.data_bufs[data_tag], data_last])
+            self.data_bufs[data_tag] = pd.concat([self.data_bufs[data_tag], data_last[data_tag]])
 
         if datetime.utcnow() - self.last_save_time < self.save_interval:
             return
 
         self.last_save_time = datetime.utcnow()
 
-        time = X_last.index[-1] if X_last is not None else data_last.index[-1]
+        # Get last time which should be the same for all
+        # time = X_last.index[-1] if X_last is not None else data_last.values()[0].index[-1]
         # Save
-        if not self.X_buf.empty:
-            Xpath = self.file_path_of(ticker, self.time, "X")
-            logging.debug(f"Saving last X to {Xpath}")
-            self.X_buf.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
-            self.X_buf = pd.DataFrame()
-        if not self.y_buf.empty:
-            ypath=self.file_path_of(ticker, time, "y")
-            logging.debug(f"Saving last y to {ypath}")
-            self.y_buf.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
-            self.y_buf = pd.DataFrame()
+        # if not self.X_buf.empty:
+        #     Xpath = self.file_path_of(ticker, time, "X")
+        #     logging.debug(f"Saving last X to {Xpath}")
+        #     self.X_buf.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
+        #     self.X_buf = pd.DataFrame()
+        # if not self.y_buf.empty:
+        #     ypath = self.file_path_of(ticker, time, "y")
+        #     logging.debug(f"Saving last y to {ypath}")
+        #     self.y_buf.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
+        #     self.y_buf = pd.DataFrame()
         for data_tag in self.data_bufs:
             if self.data_bufs[data_tag].empty:
                 continue
+            time = self.data_bufs[data_tag].index[-1]
             datapath = self.file_path_of(ticker, time, data_tag)
             logging.debug(f"Saving last {data_tag} data to {datapath}")
             self.data_bufs[data_tag].to_csv(datapath, header=not Path(datapath).exists(), mode='a')

@@ -97,5 +97,5 @@ class StrategyStub(PredictBidAskStrategyBase):
                 .set_index("close_time", drop=False)}
         self.candles_cnt_by_interval={"1min":1, "5min":1}
 
-    def save_lastXy(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
+    def save_last_data(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
         pass

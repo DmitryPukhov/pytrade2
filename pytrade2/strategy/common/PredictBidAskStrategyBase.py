@@ -185,7 +185,11 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
                     [self.predict_window, open_signal, cur_trade_direction]
 
                 # Save to historical data
-                self.save_lastXy(X.tail(1), y.tail(1), {"bidask": self.bid_ask.tail(1)})
+                self.save_last_data(self.ticker, {
+                    "x": X.tail(1),
+                    "y_pred": y.tail(1),
+                    "bidask": self.bid_ask.tail(1)
+                })
             except Exception as e:
                 logging.error(f"{e}. Traceback: {traceback.format_exc()}")
             finally:
@@ -290,10 +294,10 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
 
         if no_bidask or no_candles or no_level2 or no_level2_bid or no_level2_ask:
             logging.info(f"Can not learn because some datasets are empty. "
-                           f"level2.empty: {no_level2}, "
-                           f"level2.bid.empty: {no_level2_bid}, "
-                           f"level2.ask.empty: {no_level2_ask}, "
-                           f"candles.empty: {no_candles}")
+                         f"level2.empty: {no_level2}, "
+                         f"level2.bid.empty: {no_level2_bid}, "
+                         f"level2.ask.empty: {no_level2_ask}, "
+                         f"candles.empty: {no_candles}")
             return False
 
         # Check If we have enough data to learn
