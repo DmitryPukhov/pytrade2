@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, tzinfo, timezone
+from datetime import datetime
 
 import pandas as pd
 
