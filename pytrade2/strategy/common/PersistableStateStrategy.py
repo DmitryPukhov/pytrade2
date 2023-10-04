@@ -1,3 +1,4 @@
+
 import glob
 import logging
 import os
@@ -5,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
-
+import boto3
 import pandas as pd
 from keras.models import Model
 
@@ -14,6 +15,13 @@ class PersistableStateStrategy:
     """ Strategy whicn can save the data and read/write model weights."""
 
     def __init__(self, config: Dict):
+        # Init boto3
+        self.s3_enabled = config.get('pytrade2.s3.enabled', False)
+        if self.s3_enabled:
+            self.s3_access_key = config['pytrade2.s3.access_key']
+            self.s3_secret_key = config['pytrade2.s3.secret_key']
+            self.s3_bucket = config['pytrade2.s3.bucket']
+            self.s3_endpoint_url = config ['pytrade2.s3.endpoint_url']
 
         # Directory for model weights and price data
         self.data_dir = config["pytrade2.data.dir"]
@@ -93,19 +101,6 @@ class PersistableStateStrategy:
 
         self.last_save_time = datetime.utcnow()
 
-        # Get last time which should be the same for all
-        # time = X_last.index[-1] if X_last is not None else data_last.values()[0].index[-1]
-        # Save
-        # if not self.X_buf.empty:
-        #     Xpath = self.file_path_of(ticker, time, "X")
-        #     logging.debug(f"Saving last X to {Xpath}")
-        #     self.X_buf.to_csv(Xpath, header=not Path(Xpath).exists(), mode='a')
-        #     self.X_buf = pd.DataFrame()
-        # if not self.y_buf.empty:
-        #     ypath = self.file_path_of(ticker, time, "y")
-        #     logging.debug(f"Saving last y to {ypath}")
-        #     self.y_buf.to_csv(ypath, header=not Path(ypath).exists(), mode='a')
-        #     self.y_buf = pd.DataFrame()
         for data_tag in self.data_bufs:
             if self.data_bufs[data_tag].empty:
                 continue
@@ -114,3 +109,16 @@ class PersistableStateStrategy:
             logging.debug(f"Saving last {data_tag} data to {datapath}")
             self.data_bufs[data_tag].to_csv(datapath, header=not Path(datapath).exists(), mode='a')
             self.data_bufs[data_tag] = pd.DataFrame()
+            self.copy2s3(datapath)
+
+    def copy2s3(self, datapath: str):
+        if not self.s3_enabled:
+            return
+        s3datapath = datapath.lstrip("../")
+        logging.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
+        session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
+        s3=session.client(service_name='s3', endpoint_url=self.s3_endpoint_url)
+        s3.upload_file(datapath, self.s3_bucket, s3datapath)
+        logging.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
+
+
