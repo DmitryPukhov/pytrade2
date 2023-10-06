@@ -180,7 +180,6 @@ class StrategyBase(PersistableStateStrategy):
             logging.info(f"Starting periodical purging, interval: {self.purge_interval}")
             Timer(self.purge_interval.seconds, self.purge_all).start()
 
-
     def create_model(self, param, param1):
         raise NotImplementedError()
 

@@ -41,7 +41,7 @@ class CandlesStrategy:
             out[interval] = cnt
         return out
 
-    def read_initial_candles(self):
+    def read_candles(self):
         # Produce initial candles
         for period, cnt in self.candles_history_cnt_by_interval.items():
             candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period, cnt)) \

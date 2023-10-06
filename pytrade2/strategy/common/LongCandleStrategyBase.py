@@ -60,7 +60,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
-        self.read_initial_candles()
+        self.read_candles()
 
         StrategyBase.run(self)
 
