@@ -94,6 +94,7 @@ class App:
 
         # App configs
         app_config = self._read_config_file("cfg/app-defaults.yaml")
+        app_config.update(self._read_config_file("cfg/secret.yaml"))
         app_config.update(self._read_config_file("cfg/app.yaml"))
         app_config.update(self._read_config_file("cfg/app-dev.yaml"))
 
@@ -123,7 +124,7 @@ class App:
         """ Pring config parameters to log
         """
         def secured_key_val(key, value):
-            if key.endswith(".secret") or key.endswith(".key"):
+            if any([key.endswith(suffix) for suffix in [".secret", ".key", ".access_key", ".secret_key"]]):
                 value = "***" + value[-3:]
             return (key, value)
 

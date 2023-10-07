@@ -4,6 +4,7 @@ tmp
 _trial_temp
 data
 /env
+secret.yaml
 /pytrade2/cfg/*-dev.yaml
 /pytrade2/cfg/*strategy*.yaml
 
