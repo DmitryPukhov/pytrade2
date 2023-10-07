@@ -137,7 +137,16 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                                                    target_period=self.target_period)
         # Balance by signal
         self.learn_data_balancer.add(x, y)
-        return self.learn_data_balancer.get_balanced_xy()
+        balanced_x, balanced_y = self.learn_data_balancer.get_balanced_xy()
+
+        # Log each signal count
+        msgs = ["Prepared balanced xy for learning."]
+        for signal in [-1, 0, 1]:
+            cnt = balanced_y[balanced_y['signal'] == signal].size
+            msgs.append(f"signal{signal}:{cnt}")
+        logging.info(' '.join(msgs))
+
+        return balanced_x, balanced_y
 
     def generator_of(self, train_X, train_y):
         """ Data generator for learning """
