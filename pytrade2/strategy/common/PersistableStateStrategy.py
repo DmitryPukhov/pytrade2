@@ -1,4 +1,3 @@
-
 import glob
 import logging
 import os
@@ -21,7 +20,7 @@ class PersistableStateStrategy:
             self.s3_access_key = config['pytrade2.s3.access_key']
             self.s3_secret_key = config['pytrade2.s3.secret_key']
             self.s3_bucket = config['pytrade2.s3.bucket']
-            self.s3_endpoint_url = config ['pytrade2.s3.endpoint_url']
+            self.s3_endpoint_url = config['pytrade2.s3.endpoint_url']
 
         # Directory for model weights and price data
         self.data_dir = config["pytrade2.data.dir"]
@@ -32,6 +31,9 @@ class PersistableStateStrategy:
             # Xy data dir
             self.model_Xy_dir = str(Path(self.data_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
+            # Account dir
+            self.account_dir = str(Path(self.data_dir, self.__class__.__name__, "account"))
+            Path(self.account_dir).mkdir(parents=True, exist_ok=True)
             # Database file
             self.db_path = str(Path(self.data_dir, self.__class__.__name__, f"{self.__class__.__name__}.db"))
 
@@ -74,6 +76,21 @@ class PersistableStateStrategy:
             for file in purge_files:
                 os.remove(os.path.join(self.model_weights_dir, file))
             logging.debug(f"Purged {len(purge_files)} files in {self.model_weights_dir}")
+
+    @staticmethod
+    def purge_data_files(data_dir):
+        """ Keep only last day """
+
+        files = os.listdir(data_dir)
+        if files:
+            keep_prefix = max(files)[:10]
+            #keep_prefix = [f[:10] for f in files][-1]  # last yyyy-mm-dd prefix
+            logging.debug(f"Purging files in {data_dir}, keep only {keep_prefix}")
+            for f in files:
+                if not f.startswith(keep_prefix):
+                    f = os.path.join(data_dir, f)
+                    logging.debug(f"Purging {f}")
+                    os.remove(os.path.join(data_dir, f))
 
     def save_learn_xy_new(self, ticker: str, x: pd.DataFrame, y: pd.DataFrame):
         """ From given x, y save rows after stored time index """
@@ -122,6 +139,9 @@ class PersistableStateStrategy:
 
         # Database file copy
         self.copy2s3(self.db_path)
+        # Purge old data
+        self.purge_data_files(self.model_Xy_dir)
+        self.purge_data_files(self.account_dir)
 
     def copy2s3(self, datapath: str):
         if not self.s3_enabled:
@@ -133,8 +153,6 @@ class PersistableStateStrategy:
         s3datapath = datapath.lstrip("../")
         logging.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
         session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
-        s3=session.client(service_name='s3', endpoint_url=self.s3_endpoint_url)
+        s3 = session.client(service_name='s3', endpoint_url=self.s3_endpoint_url)
         s3.upload_file(datapath, self.s3_bucket, s3datapath)
         logging.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
-
-
