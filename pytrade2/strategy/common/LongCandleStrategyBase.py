@@ -33,6 +33,10 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
 
+        # x, y buffer to validate later when target can be calculated
+        self.x_unchecked = pd.DataFrame()
+        self.y_unchecked = pd.DataFrame()
+
     def get_report(self):
         """ Short info for report """
 
@@ -78,6 +82,25 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         # Check If we have enough data to learn
         return True
 
+    def update_unchecked(self, x_new: pd.DataFrame, y_new: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
+        """ New data have come, and we can calculate targets for first record in unchecked buffer """
+        # Save to buffer for targets calculation in future
+        self.x_unchecked = pd.concat([self.x_unchecked, x_new])
+        self.y_unchecked = pd.concat([self.y_unchecked, y_new])
+        #cndls = self.candles_by_interval[self.target_period]
+        # Data with calculated targets
+        #y_checked = CandlesFeatures.targets_of(cndls[cndls.index >= self.y_unchecked.index.min()])
+        y_checked = CandlesFeatures.targets_of(self.x_unchecked)
+        if y_checked.empty:
+            return pd.DataFrame(), pd.DataFrame()
+
+        x_checked = self.x_unchecked.loc[y_checked.index]
+        # Leave only data without calculated targets
+        self.x_unchecked = self.x_unchecked[self.x_unchecked.index > x_checked.index.max()]
+        self.y_unchecked = self.y_unchecked[self.y_unchecked.index > y_checked.index.max()]
+
+        return x_checked, y_checked
+
     def process_new_data(self):
         if self.model:
             with self.data_lock:
@@ -87,16 +110,21 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 x_trans = self.X_pipe.transform(x)
 
                 # Get last signal
-                y = self.model.predict(x_trans)
-                y_trans = self.y_pipe.inverse_transform(y)
-                signal = y_trans[-1][0] if y_trans else 0
-                y_df = pd.DataFrame(data=[{"signal": signal}], index=[x.index[-1]])
+                y_pred_raw = self.model.predict(x_trans)
+                y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
+                signal = y_pred_trans[-1][0] if y_pred_trans else 0
+                y_pred_df = pd.DataFrame(data=[{"signal": signal}], index=[x.index[-1]])
 
                 # Buy or sell or skip
                 self.process_signal(signal)
 
-                # Save to historical data
-                self.save_last_data(self.ticker, {"x": x.tail(1), "y_pred": y_df.tail(1)})
+                # Save to disk
+                self.save_last_data(self.ticker, {"y_pred": y_pred_df})
+
+                # Get targets of previous data when it is already possible
+                x_checked, y_checked = self.update_unchecked(x, y_pred_df)
+                if not x_checked.empty and not y_checked.empty:
+                    self.save_last_data(self.ticker, {"x": x_checked, "y": y_checked, "y_pred": y_pred_df.tail(1)})
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """
