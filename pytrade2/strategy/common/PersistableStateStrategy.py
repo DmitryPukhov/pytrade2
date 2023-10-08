@@ -26,10 +26,15 @@ class PersistableStateStrategy:
         # Directory for model weights and price data
         self.data_dir = config["pytrade2.data.dir"]
         if self.data_dir:
+            # weights dir
             self.model_weights_dir = str(Path(self.data_dir, self.__class__.__name__, "weights"))
             Path(self.model_weights_dir).mkdir(parents=True, exist_ok=True)
+            # Xy data dir
             self.model_Xy_dir = str(Path(self.data_dir, self.__class__.__name__, "Xy"))
             Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
+            # Database file
+            self.db_path = str(Path(self.data_dir, self.__class__.__name__, f"{self.__class__.__name__}.db"))
+
         self.last_save_time = datetime.utcnow()
         self.model = None
         # Save data each 10 seconds
@@ -112,11 +117,19 @@ class PersistableStateStrategy:
             logging.debug(f"Saving last {data_tag} data to {datapath}")
             self.data_bufs[data_tag].to_csv(datapath, header=not Path(datapath).exists(), mode='a')
             self.data_bufs[data_tag] = pd.DataFrame()
+            # Data file copy
             self.copy2s3(datapath)
+
+        # Database file copy
+        self.copy2s3(self.db_path)
 
     def copy2s3(self, datapath: str):
         if not self.s3_enabled:
             return
+        if not os.path.exists(datapath):
+            logging.info(f"{datapath} does not exist, cannot upload it to s3")
+            return
+
         s3datapath = datapath.lstrip("../")
         logging.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
         session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
