@@ -1,5 +1,6 @@
 #!/bin/bash
 
+S3_DATA_URL='s3://pytrade2/data'
 VM_PUBLIC_IP="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
 VM_USER="yc-user"
 TMP_DIR="$(pwd)/tmp"

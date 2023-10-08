@@ -3,8 +3,16 @@
 . deploy_lib.sh
 local_data_dir="$PYTRADE2_DIR/data/yandex-cloud"
 
-# Download from remote to local folder
-download_data(){
+# Sync from s3 to local folder
+download_data_s3(){
+  mkdir -p "$local_data_dir"
+  echo "Sync pytrade2 data from $S3_DATA_URL to $local_data_dir"
+  s3cmd sync -v "$S3_DATA_URL/" "$local_data_dir/"
+}
+
+
+# Download from remote virtual machine to local folder
+download_data_vm(){
   mkdir -p $local_data_dir
   vm_data_dir="/home/$VM_USER/pytrade2/data"
   echo "Downloading pytrade2 data from $VM_PUBLIC_IP to $local_data_dir"
@@ -25,5 +33,5 @@ print_last_trades(){
 }
 
 
-download_data
+download_data_s3
 print_last_trades
