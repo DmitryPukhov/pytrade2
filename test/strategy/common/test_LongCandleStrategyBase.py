@@ -60,12 +60,19 @@ class LongCandleStrategyBaseTest(TestCase):
             index=[1, 2, 3])}
 
         # Add candle 1
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
+            data=[{'low': 1, 'high': 1}],
+            index=[1])}
         checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 1, 'high': 1}], index=[1]),
                                                          pd.DataFrame(data=[1], index=[1]))
+
         self.assertTrue(checked_x.empty)
         self.assertTrue(checked_y.empty)
 
         # Add candle 2
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
+            data=[{'low': 1, 'high': 1}, {'low': 2, 'high': 2}],
+            index=[1, 2])}
         checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 2, 'high': 2}], index=[2]),
                                                          pd.DataFrame(data=[2], index=[2]))
 
@@ -73,6 +80,9 @@ class LongCandleStrategyBaseTest(TestCase):
         self.assertTrue(checked_y.empty)
 
         # Add candle3
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
+            data=[{'low': 1, 'high': 1}, {'low': 2, 'high': 2}, {'low': 3, 'high': 3}],
+            index=[1, 2, 3])}
         checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 3, 'high': 3}], index=[3]),
                                                          pd.DataFrame(data=[3], index=[3]))
 
