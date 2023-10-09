@@ -87,9 +87,9 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         # Save to buffer for targets calculation in future
         self.x_unchecked = pd.concat([self.x_unchecked, x_new])
         self.y_unchecked = pd.concat([self.y_unchecked, y_new])
-        #cndls = self.candles_by_interval[self.target_period]
+        # cndls = self.candles_by_interval[self.target_period]
         # Data with calculated targets
-        #y_checked = CandlesFeatures.targets_of(cndls[cndls.index >= self.y_unchecked.index.min()])
+        # y_checked = CandlesFeatures.targets_of(cndls[cndls.index >= self.y_unchecked.index.min()])
         y_checked = CandlesFeatures.targets_of(self.x_unchecked)
         if y_checked.empty:
             return pd.DataFrame(), pd.DataFrame()
@@ -124,7 +124,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 # Get targets of previous data when it is already possible
                 x_checked, y_checked = self.update_unchecked(x, y_pred_df)
                 if not x_checked.empty and not y_checked.empty:
-                    self.save_last_data(self.ticker, {"x": x_checked, "y": y_checked, "y_pred": y_pred_df.tail(1)})
+                    self.save_last_data(self.ticker, {"x": x_checked, "y": y_checked})
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """
