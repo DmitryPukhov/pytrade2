@@ -90,7 +90,7 @@ class PersistableStateStrategy:
                 if not f.startswith(keep_prefix):
                     f = os.path.join(data_dir, f)
                     logging.debug(f"Purging {f}")
-                    os.remove(os.path.join(data_dir, f))
+                    os.remove(f)
 
     def save_learn_xy_new(self, ticker: str, x: pd.DataFrame, y: pd.DataFrame):
         """ From given x, y save rows after stored time index """
