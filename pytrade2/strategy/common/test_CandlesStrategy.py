@@ -8,7 +8,7 @@ import pandas as pd
 from strategy.common.CandlesStrategy import CandlesStrategy
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
-from StrategyStub import StrategyStub
+from test_StrategyStub import StrategyStub
 
 
 class TestCandlesStrategy(TestCase):

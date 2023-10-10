@@ -6,7 +6,7 @@ from unittest import TestCase
 import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
-from StrategyStub import StrategyStub
+from test_StrategyStub import StrategyStub
 from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
