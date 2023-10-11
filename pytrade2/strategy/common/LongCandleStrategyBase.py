@@ -117,7 +117,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 x_trans = self.X_pipe.transform(x)
 
                 # Get last signal
-                y_pred_raw = self.model.predict(x_trans)
+                y_pred_raw = self.model.predict(x_trans, verbose=0)
                 y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
                 signal = y_pred_trans[-1][0] if y_pred_trans else 0
                 y_pred_df = pd.DataFrame(data=[{"signal": signal}], index=[x.index[-1]])
