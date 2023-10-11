@@ -51,6 +51,29 @@ class LongCandleStrategyBaseTest(TestCase):
         self.assertEqual(1, tp)
         self.assertEqual(2, trd)
 
+    def test_update_unchecked_dups(self):
+        # Prepare strategy
+        strategy = self.new_strategy()
+
+        # Single candle, cannot calculate targets
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
+            data=[{'low': 1, 'high': 1}],
+            index=[1])}
+        # First call
+        checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 1, 'high': 1}], index=[1]),
+                                                         pd.DataFrame(data=[1], index=[1]))
+        self.assertTrue(checked_x.empty)
+        self.assertTrue(checked_y.empty)
+        self.assertListEqual([1], strategy.x_unchecked.index.tolist())
+        self.assertListEqual([1], strategy.y_unchecked.index.tolist())
+
+        checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 1, 'high': 1}], index=[1]),
+                                                         pd.DataFrame(data=[1], index=[1]))
+        self.assertTrue(checked_x.empty)
+        self.assertTrue(checked_y.empty)
+        self.assertListEqual([1], strategy.x_unchecked.index.tolist())  # No duplicates
+        self.assertListEqual([1], strategy.y_unchecked.index.tolist())  # No duplicates
+
     def test_update_unchecked(self):
         # Prepare strategy
         strategy = self.new_strategy()
@@ -64,7 +87,7 @@ class LongCandleStrategyBaseTest(TestCase):
             data=[{'low': 1, 'high': 1}],
             index=[1])}
         checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 1, 'high': 1}], index=[1]),
-                                                         pd.DataFrame(data=[1], index=[1]))
+                                                         pd.DataFrame(data=[{"signal": 1}], index=[1]))
 
         self.assertTrue(checked_x.empty)
         self.assertTrue(checked_y.empty)
@@ -74,7 +97,7 @@ class LongCandleStrategyBaseTest(TestCase):
             data=[{'low': 1, 'high': 1}, {'low': 2, 'high': 2}],
             index=[1, 2])}
         checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 2, 'high': 2}], index=[2]),
-                                                         pd.DataFrame(data=[2], index=[2]))
+                                                         pd.DataFrame(data=[{'signal': -1}], index=[2]))
 
         self.assertTrue(checked_x.empty)
         self.assertTrue(checked_y.empty)
@@ -84,7 +107,7 @@ class LongCandleStrategyBaseTest(TestCase):
             data=[{'low': 1, 'high': 1}, {'low': 2, 'high': 2}, {'low': 3, 'high': 3}],
             index=[1, 2, 3])}
         checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 3, 'high': 3}], index=[3]),
-                                                         pd.DataFrame(data=[3], index=[3]))
+                                                         pd.DataFrame(data=[{'signal': 0}], index=[3]))
 
         # Candle1 is old, has targets
         self.assertListEqual([1], checked_x.index.tolist())

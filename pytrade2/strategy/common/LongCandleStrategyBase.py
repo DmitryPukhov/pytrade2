@@ -83,19 +83,25 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         return True
 
     def update_unchecked(self, x_new: pd.DataFrame, y_new: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
-        """ New data have come, and we can calculate targets for first record in unchecked buffer """
-        # Save to buffer for targets calculation in future
-        self.x_unchecked = pd.concat([self.x_unchecked, x_new])
-        self.y_unchecked = pd.concat([self.y_unchecked, y_new])
+        """ New data have come, and we can calculate targets for first records in unchecked buffer """
+
+        self.x_unchecked = pd.concat([self.x_unchecked, x_new], sort=True)
+        self.x_unchecked = self.x_unchecked.iloc[~self.x_unchecked.index.duplicated(keep='last')]
+        self.y_unchecked = pd.concat([self.y_unchecked, y_new], sort=True)
+        self.y_unchecked = self.y_unchecked.iloc[~self.y_unchecked.index.duplicated(keep='last')]
         cndls = self.candles_by_interval[self.target_period]
+
         # Data with calculated targets
-        y_checked = CandlesFeatures.targets_of(cndls[cndls.index >= self.y_unchecked.index.min()])
-        # y_checked = CandlesFeatures.targets_of(self.x_unchecked)
-        if y_checked.empty:
+        y_targets = CandlesFeatures.targets_of(cndls[cndls.index >= self.y_unchecked.index.min()])
+        if y_targets.empty:
             return pd.DataFrame(), pd.DataFrame()
 
-        x_checked = self.x_unchecked.loc[y_checked.index]
-        # Leave only data without calculated targets
+        x_checked = self.x_unchecked[self.y_unchecked.index <= y_targets.index.max()]
+        # Y checked with signal predicted and signal_target columns
+        y_checked = self.y_unchecked[self.y_unchecked.index <= y_targets.index.max()]
+        y_checked = pd.merge_asof(y_checked, y_targets, left_index=True, right_index=True, direction='forward', suffixes=("_pred", "_target"))
+
+        # Leave unchecked buffer without calculated targets
         self.x_unchecked = self.x_unchecked[self.x_unchecked.index > x_checked.index.max()]
         self.y_unchecked = self.y_unchecked[self.y_unchecked.index > y_checked.index.max()]
 
@@ -105,6 +111,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         if self.model:
             with self.data_lock:
                 # Get features
+
                 x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval,
                                                                       self.candles_cnt_by_interval)
                 x_trans = self.X_pipe.transform(x)
@@ -122,7 +129,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 self.save_last_data(self.ticker, {"y_pred": y_pred_df})
 
                 # Get targets of previous data when it is already possible
-                x_checked, y_checked = self.update_unchecked(x, y_pred_df)
+                x_checked, y_checked = self.update_unchecked(x.tail(1), y_pred_df)
                 if not x_checked.empty and not y_checked.empty:
                     self.save_last_data(self.ticker, {"x": x_checked, "y": y_checked})
 
