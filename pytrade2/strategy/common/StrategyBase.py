@@ -1,6 +1,7 @@
 import gc
 import logging
 import multiprocessing
+import sys
 from datetime import datetime, timedelta
 from threading import Thread, Event, Timer
 from typing import Dict, Optional
@@ -152,16 +153,20 @@ class StrategyBase(PersistableStateStrategy):
         # If alive is None, not started, so continue loop
         is_alive = self.is_alive()
         while is_alive or is_alive is None:
-            # Wait for new data received
-            # while not self.new_data_event.is_set():
-            self.new_data_event.wait()
-            self.new_data_event.clear()
+            try:
+                # Wait for new data received
+                # while not self.new_data_event.is_set():
+                self.new_data_event.wait()
+                self.new_data_event.clear()
 
-            # Learn and predict only if no gap between level2 and bidask
-            self.process_new_data()
+                # Learn and predict only if no gap between level2 and bidask
+                self.process_new_data()
 
-            # Refresh live status
-            is_alive = self.is_alive()
+                # Refresh live status
+                is_alive = self.is_alive()
+            except Exception as e:
+                logging.error(e)
+                sys.exit(1)
 
         logging.info("End main processing loop")
 
