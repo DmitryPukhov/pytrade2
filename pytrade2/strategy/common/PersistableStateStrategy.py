@@ -99,7 +99,7 @@ class PersistableStateStrategy:
         x[x.index > self.last_learn_saved_index].to_csv(x_path, header=not Path(x_path).exists(), mode='a')
 
         y_path = self.file_path_of(ticker, x.index[-1], "learn_y")
-        y[x.index > self.last_learn_saved_index].to_csv(y_path, header=not Path(x_path).exists(), mode='a')
+        y[x.index > self.last_learn_saved_index].to_csv(y_path, header=not Path(y_path).exists(), mode='a')
 
         self.copy2s3(x_path)
         self.copy2s3(y_path)

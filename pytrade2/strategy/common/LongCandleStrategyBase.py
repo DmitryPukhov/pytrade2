@@ -18,7 +18,7 @@ from strategy.common.features.CandlesFeatures import CandlesFeatures
 
 class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     """
-    Listen price data from web socket, predict future low/high
+    Predict long candle, classification model, target signals: -1, 0, 1
     """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
