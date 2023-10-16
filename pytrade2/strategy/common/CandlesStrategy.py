@@ -37,15 +37,16 @@ class CandlesStrategy:
         out = {}
         for interval, count in zip(intervals, counts):
             period_time = pd.Timedelta(interval) * count + pd.Timedelta(history_window) + pd.Timedelta(predict_window)
-            cnt = period_time // pd.Timedelta(interval) + 1 # 1 - for diff, 2 - for targets
+            cnt = period_time // pd.Timedelta(interval) + 1  # 1 - for diff
             out[interval] = cnt
         return out
 
-    def read_candles(self):
+    def read_candles(self, index_col='open_time'):
         # Produce initial candles
         for period, cnt in self.candles_history_cnt_by_interval.items():
-            candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period, cnt)) \
-                .set_index("open_time", drop=False)
+            # Read cnt + 1 extra for diff candles
+            candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period)) \
+                .set_index(index_col, drop=False)
             logging.info(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
 

@@ -49,16 +49,6 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
     def run(self):
         super().run()
 
-    # def produce_initial_candles(self):
-    #     for ticker in self.tickers:
-    #         for period, count in zip(self.periods, self.counts):
-    #             # Read candles from Huobi
-    #             candles = self.read_candles(ticker, period, count)
-    #             for consumer in self.consumers:
-    #                 for candle in candles:
-    #                     # Produce the candle to the consumer
-    #                     consumer.on_candle(candle)
-
     def read_candles(self, ticker, interval, limit):
         """ Read candles from Huobi """
 

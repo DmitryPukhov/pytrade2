@@ -1,7 +1,9 @@
+import datetime
 import logging
 import multiprocessing
+import time
 from io import StringIO
-from threading import Event
+from threading import Event, Thread
 from typing import Dict
 
 import pandas as pd
@@ -30,13 +32,12 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
 
-        # Should keep 2 more candles for targets
-        for key in self.candles_cnt_by_interval:
-            self.candles_cnt_by_interval[key] += 2
-        for key in self.candles_history_cnt_by_interval:
-            self.candles_history_cnt_by_interval[key] += 2
-
         self.target_period = min(self.candles_cnt_by_interval.keys())
+        # Should keep 2 more candles for targets
+        self.candles_cnt_by_interval[self.target_period] += 2
+        self.candles_history_cnt_by_interval[self.target_period] += 2
+        self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '1 minute'))
+
         logging.info(f"Target period: {self.target_period}")
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
@@ -66,9 +67,11 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         # Create feed and broker
         self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
+        # Do not listen feeds
         self.websocket_feed.consumers.add(self)
         self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
-        self.candles_feed.consumers.add(self)
+        # Do not listen feeds
+        #self.candles_feed.consumers.add(self)
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
@@ -77,7 +80,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         StrategyBase.run(self)
 
         # Run the feed, listen events
-        self.candles_feed.run()
+        # Do not listen candles
+        #self.candles_feed.run()
         self.broker.run()
 
     def can_learn(self) -> bool:
@@ -119,8 +123,10 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     def process_new_data(self):
         if self.model:
             with self.data_lock:
-                # Get features
+                # Get last candles data
+                self.read_candles(index_col='close_time')
 
+                # Get features
                 x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval,
                                                                       self.candles_cnt_by_interval)
                 x_trans = self.X_pipe.transform(x)
@@ -141,6 +147,9 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 x_checked, y_checked = self.update_unchecked(x.tail(1), y_pred_df)
                 if not x_checked.empty and not y_checked.empty:
                     self.save_last_data(self.ticker, {"x": x_checked, "y": y_checked})
+
+            # Delay before next processing cycle
+            time.sleep(self.processing_interval.seconds)
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """

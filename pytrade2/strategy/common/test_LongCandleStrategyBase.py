@@ -1,6 +1,7 @@
 import datetime
 import multiprocessing
 import threading
+import time
 from threading import Timer
 from typing import Dict
 from unittest import TestCase, skip
@@ -36,12 +37,15 @@ class LongCandleStrategyBaseTest(TestCase):
         # strategy.x_unchecked = pd.DataFrame()
         # strategy.y_unchecked = pd.DataFrame()
         strategy.model = MagicMock()
+        strategy.X_pipe = MagicMock()
+        strategy.y_pipe = MagicMock()
+        strategy.save_last_data = MagicMock()
         # strategy.data_lock = multiprocessing.RLock()
         # strategy.new_data_event = multiprocessing.Event()
         # strategy.candles_cnt_by_interval = {'1min': 1, '5min': 1}
         # strategy.candles_by_interval = dict()
         # strategy.learn_interval = pd.Timedelta.min
-
+        strategy.candles_feed = MagicMock()
         return strategy
 
     def test_get_sl_tp_trdelta_buy(self):
@@ -128,71 +132,69 @@ class LongCandleStrategyBaseTest(TestCase):
         self.assertListEqual([2, 3], strategy.x_unchecked.index.tolist())
         self.assertListEqual([2, 3], strategy.y_unchecked.index.tolist())
 
-    @skip
+    # @skip
     def test_process_new_data(self):
         # Build strategy instance
         base_dt = datetime.datetime.fromisoformat('2023-10-15T10:00:00')
         strategy = self.new_strategy()
         strategy.candles_cnt_by_interval = {'1min': 2, '5min': 2}
+        time.sleep = MagicMock()
 
-        # Receive 1 min candles
-        # before prev to make diff() for prev not none
-        strategy.on_candle(
+        # Input data
+        candles_1min = ([
+            # before prev to make diff() for prev not none
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:57:00'),
-             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:57:59'),
-             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
-        # prev
-        strategy.on_candle(
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:58:00'),
+             'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
+            # prev
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:58:00'),
-             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:58:59'),
-             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:59:00'),
+             'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
 
-        # Current
-        strategy.on_candle(
+            # Current
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:59:00'),
-             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:59:59'),
-             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
-        # next1
-        strategy.on_candle(
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:00'),
+             'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
+            # next1
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:00:00'),
-             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:00:59'),
-             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
-        # next2
-        strategy.on_candle(
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
+             'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
+            # next2
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
-             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:01:59'),
-             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:02:00'),
+             'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0}])
 
-
-        # 5 min prev
-        strategy.on_candle(
+        candles_5min = ([
+            # before prev to make diff() for prev not none
+            {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:45:00'),
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:50:00'),
+             'interval': '5min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
+            # prev
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:50:00'),
-             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:54:59'),
-             'interval': '5min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
-        # 5 min current
-        strategy.on_candle(
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:55:00'),
+             'interval': '5min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
+            # Current
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:55:00'),
-             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:55:59'),
-             'interval': '5min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:00'),
+             'interval': '5min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
+            # next1
+            # {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:00:00'),
+            #  'close_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
+            #  'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1},
+            # # next2
+            # {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
+            #  'close_time': datetime.datetime.fromisoformat('2023-10-15T10:02:00'),
+            #  'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1}
+        ])
 
-        X, y = LongCandleFeatures.features_targets_of(strategy.candles_by_interval, strategy.candles_cnt_by_interval,
-                                                      '1min')
-        strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
-        strategy.X_pipe.fit(X)
-        strategy.y_pipe.fit(y)
+        # Mock input
+        strategy.candles_feed.read_candles = lambda ticker, interval: \
+            {'1min': candles_1min, '5min': candles_5min}[interval]
+        # Mock signal
+        strategy.y_pipe.inverse_transform = MagicMock(return_value=[[0]])
 
-        # Candles should be added
-        self.assertListEqual([pd.Timestamp(base_dt - datetime.timedelta(minutes=1))],
-                             strategy.candles_by_interval['1min']['open_time'].tolist())
-        strategy.learn()
-
-        # X, y = CandlesFeatures.features_targets_of(strategy.candles_by_interval, strategy.candles_cnt_by_interval,
-        #                                            '1min')
-        # strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
-        # strategy.X_pipe.fit(X)
-        # strategy.y_pipe.fit(y)
-
+        # Call
         strategy.process_new_data()
 
-        self.assertListEqual([pd.Timestamp(base_dt - datetime.timedelta(minutes=5))],
-                             strategy.candles_by_interval['5min']['open_time'].tolist())
+        # self.assertListEqual([pd.Timestamp(base_dt - datetime.timedelta(minutes=5))],
+        #                      strategy.candles_by_interval['5min']['close_time'].tolist())

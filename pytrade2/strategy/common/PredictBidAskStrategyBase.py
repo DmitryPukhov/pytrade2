@@ -85,7 +85,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
-        self.read_candles()
+        self.read_candles(index_col='open_time')
 
         StrategyBase.run(self)
 
