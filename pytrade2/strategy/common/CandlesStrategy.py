@@ -37,7 +37,7 @@ class CandlesStrategy:
         out = {}
         for interval, count in zip(intervals, counts):
             period_time = pd.Timedelta(interval) * count + pd.Timedelta(history_window) + pd.Timedelta(predict_window)
-            cnt = period_time // pd.Timedelta(interval) + 1
+            cnt = period_time // pd.Timedelta(interval) + 1 # 1 - for diff, 2 - for targets
             out[interval] = cnt
         return out
 
@@ -76,6 +76,7 @@ class CandlesStrategy:
                 else:
                     # Close last candle, open new candle
                     closed_time = last_candle["open_time"] + pd.Timedelta(period)
+
                     candles.loc[last_candle["open_time"], "close_time"] = candle["open_time"] = closed_time
 
                     # Open new last candle

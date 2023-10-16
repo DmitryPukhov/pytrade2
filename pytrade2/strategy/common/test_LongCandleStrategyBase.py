@@ -1,18 +1,23 @@
 import datetime
-from unittest import TestCase
+import multiprocessing
+import threading
+from threading import Timer
+from typing import Dict
+from unittest import TestCase, skip
 from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 
 from strategy.common.LongCandleStrategyBase import LongCandleStrategyBase
 from strategy.common.features.CandlesFeatures import CandlesFeatures
+from strategy.common.features.LongCandleFeatures import LongCandleFeatures
 
 
 class LongCandleStrategyBaseTest(TestCase):
 
     def new_strategy(self):
         conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
-                "pytrade2.data.dir": "tmp",
+                "pytrade2.data.dir": None,
                 "pytrade2.price.precision": 2,
                 "pytrade2.amount.precision": 2,
                 "pytrade2.strategy.predict.window": "10s",
@@ -25,11 +30,17 @@ class LongCandleStrategyBaseTest(TestCase):
                 "pytrade2.feed.candles.counts": "1,1",
                 "pytrade2.order.quantity": 0.001}
 
-        LongCandleStrategyBase.__init__ = MagicMock(return_value=None)
+        # LongCandleStrategyBase.__init__ = MagicMock(return_value=None)
+        threading.Timer = MagicMock()
         strategy = LongCandleStrategyBase(conf, None)
-        strategy.target_period = "1min"
-        strategy.x_unchecked = pd.DataFrame()
-        strategy.y_unchecked = pd.DataFrame()
+        # strategy.x_unchecked = pd.DataFrame()
+        # strategy.y_unchecked = pd.DataFrame()
+        strategy.model = MagicMock()
+        # strategy.data_lock = multiprocessing.RLock()
+        # strategy.new_data_event = multiprocessing.Event()
+        # strategy.candles_cnt_by_interval = {'1min': 1, '5min': 1}
+        # strategy.candles_by_interval = dict()
+        # strategy.learn_interval = pd.Timedelta.min
 
         return strategy
 
@@ -116,3 +127,72 @@ class LongCandleStrategyBaseTest(TestCase):
         # Candle 2,3 are still without targets
         self.assertListEqual([2, 3], strategy.x_unchecked.index.tolist())
         self.assertListEqual([2, 3], strategy.y_unchecked.index.tolist())
+
+    @skip
+    def test_process_new_data(self):
+        # Build strategy instance
+        base_dt = datetime.datetime.fromisoformat('2023-10-15T10:00:00')
+        strategy = self.new_strategy()
+        strategy.candles_cnt_by_interval = {'1min': 2, '5min': 2}
+
+        # Receive 1 min candles
+        # before prev to make diff() for prev not none
+        strategy.on_candle(
+            {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:57:00'),
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:57:59'),
+             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+        # prev
+        strategy.on_candle(
+            {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:58:00'),
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:58:59'),
+             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+
+        # Current
+        strategy.on_candle(
+            {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:59:00'),
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:59:59'),
+             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+        # next1
+        strategy.on_candle(
+            {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:00:00'),
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:00:59'),
+             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+        # next2
+        strategy.on_candle(
+            {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:01:59'),
+             'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+
+
+        # 5 min prev
+        strategy.on_candle(
+            {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:50:00'),
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T09:54:59'),
+             'interval': '5min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+        # 5 min current
+        strategy.on_candle(
+            {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:55:00'),
+             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:55:59'),
+             'interval': '5min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1})
+
+        X, y = LongCandleFeatures.features_targets_of(strategy.candles_by_interval, strategy.candles_cnt_by_interval,
+                                                      '1min')
+        strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
+        strategy.X_pipe.fit(X)
+        strategy.y_pipe.fit(y)
+
+        # Candles should be added
+        self.assertListEqual([pd.Timestamp(base_dt - datetime.timedelta(minutes=1))],
+                             strategy.candles_by_interval['1min']['open_time'].tolist())
+        strategy.learn()
+
+        # X, y = CandlesFeatures.features_targets_of(strategy.candles_by_interval, strategy.candles_cnt_by_interval,
+        #                                            '1min')
+        # strategy.X_pipe, strategy.y_pipe = strategy.create_pipe(X, y)
+        # strategy.X_pipe.fit(X)
+        # strategy.y_pipe.fit(y)
+
+        strategy.process_new_data()
+
+        self.assertListEqual([pd.Timestamp(base_dt - datetime.timedelta(minutes=5))],
+                             strategy.candles_by_interval['5min']['open_time'].tolist())

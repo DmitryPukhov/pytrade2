@@ -14,6 +14,7 @@ from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.StrategyBase import StrategyBase
 from strategy.common.features.CandlesFeatures import CandlesFeatures
+from strategy.common.features.LongCandleFeatures import LongCandleFeatures
 
 
 class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
@@ -28,6 +29,13 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
+
+        # Should keep 2 more candles for targets
+        for key in self.candles_cnt_by_interval:
+            self.candles_cnt_by_interval[key] += 2
+        for key in self.candles_history_cnt_by_interval:
+            self.candles_history_cnt_by_interval[key] += 2
+
         self.target_period = min(self.candles_cnt_by_interval.keys())
         logging.info(f"Target period: {self.target_period}")
         self.data_lock = multiprocessing.RLock()
@@ -92,14 +100,15 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         cndls = self.candles_by_interval[self.target_period]
 
         # Data with calculated targets
-        y_targets = CandlesFeatures.targets_of(cndls[cndls.index >= self.y_unchecked.index.min()])
+        y_targets = LongCandleFeatures.targets_of(cndls[cndls.index >= self.y_unchecked.index.min()])
         if y_targets.empty:
             return pd.DataFrame(), pd.DataFrame()
 
         x_checked = self.x_unchecked[self.y_unchecked.index <= y_targets.index.max()]
         # Y checked with signal predicted and signal_target columns
         y_checked = self.y_unchecked[self.y_unchecked.index <= y_targets.index.max()]
-        y_checked = pd.merge_asof(y_checked, y_targets, left_index=True, right_index=True, direction='forward', suffixes=("_pred", "_target"))
+        y_checked = pd.merge_asof(y_checked, y_targets, left_index=True, right_index=True, direction='forward',
+                                  suffixes=("_pred", "_target"))
 
         # Leave unchecked buffer without calculated targets
         self.x_unchecked = self.x_unchecked[self.x_unchecked.index > x_checked.index.max()]
@@ -167,17 +176,16 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
         # Get features and targets
-        x, y = CandlesFeatures.features_targets_of(self.candles_by_interval,
-                                                   self.candles_cnt_by_interval,
-                                                   target_period=self.target_period)
+        x, y = LongCandleFeatures.features_targets_of(self.candles_by_interval,
+                                                      self.candles_cnt_by_interval,
+                                                      target_period=self.target_period)
         # Balance by signal
         self.learn_data_balancer.add(x, y)
         balanced_x, balanced_y = self.learn_data_balancer.get_balanced_xy()
-
         # Log each signal count
         msgs = ["Prepared balanced xy for learning."]
         for signal in [-1, 0, 1]:
-            cnt = balanced_y[balanced_y['signal'] == signal].size
+            cnt = balanced_y[balanced_y['signal'] == signal].size if not balanced_y.empty else 0
             msgs.append(f"signal{signal}:{cnt}")
         logging.info(' '.join(msgs))
 
