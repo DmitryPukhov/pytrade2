@@ -28,6 +28,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         self.candles_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider)
+        self.new_data_event = None  # No new data by event
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
 
         self.target_period = min(self.candles_cnt_by_interval.keys())
@@ -73,7 +74,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
-        self.read_candles()
+        # self.read_candles()
 
         StrategyBase.run(self)
 
@@ -81,6 +82,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         # Do not listen candles
         # self.candles_feed.run()
         self.broker.run()
+        self.process_new_data()
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
@@ -92,33 +94,40 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
             return True
 
     def process_new_data(self):
-        if self.model:
+        with self.data_lock:
+            # Get candles starting from current moment to the past
             with self.data_lock:
-                # Get candles starting from current moment to the past
                 self.read_candles(index_col='close_time')
 
-                x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
-                                                                            self.candles_cnt_by_interval,
-                                                                            self.target_period,
-                                                                            with_empty_targets=True)
-                # We could calculate targets for x, so add x and targets to learn data
-                self.learn_data_balancer.add(x, y)
+            x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
+                                                                        self.candles_cnt_by_interval,
+                                                                        self.target_period,
+                                                                        with_empty_targets=True)
 
-                # Predict last signal
-                x_trans = self.X_pipe.transform(x_wo_targets)
-                y_pred_raw = self.model.predict(x_trans, verbose=0)
-                y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
-                last_signal = y_pred_trans[-1][0] if y_pred_trans else 0
-                y_pred_df = pd.DataFrame(data=[{"signal": last_signal}], index=[x_wo_targets.index[-1]])
+            # We could calculate targets for x, so add x and targets to learn data
+            self.learn_data_balancer.add(x, y)
+            if not self.model:
+                self.model = self.create_model(len(x.columns), 3)  # y_size - one hot encoded signals: -1,0.1
+            if not (self.X_pipe and self.y_pipe):
+                self.X_pipe, self.y_pipe = self.create_pipe(x, y)
 
-                # Buy or sell or skip
-                self.process_signal(last_signal)
+            # Predict last signal
+            x_trans = self.X_pipe.transform(x_wo_targets)
+            y_pred_raw = self.model.predict(x_trans, verbose=0)
+            y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
+            last_signal = y_pred_trans[-1][0] if y_pred_trans.size > 0 else 0
+            # y_pred_raw = self.model.predict(x_trans, verbose=0)
+            # last_signal = y_pred_raw[-1][0] if y_pred_raw else 0
+            y_pred_df = pd.DataFrame(data=[{"signal": last_signal}], index=[x_wo_targets.index[-1]])
 
-                # Save to disk for analysis
-                self.save_last_data(self.ticker, {'y_pred': y_pred_df})
+            # Buy or sell or skip
+            self.process_signal(last_signal)
 
-            # Delay before next processing cycle
-            time.sleep(self.processing_interval.seconds)
+            # Save to disk for analysis
+            self.save_last_data(self.ticker, {'y_pred': y_pred_df})
+
+        # Delay before next processing cycle
+        time.sleep(self.processing_interval.seconds)
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """
@@ -153,8 +162,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         return CandlesStrategy.is_alive(self)
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
-
-        balanced_x, balanced_y = self.learn_data_balancer.get_balanced_xy()
+        with self.data_lock:
+            balanced_x, balanced_y = self.learn_data_balancer.get_balanced_xy()
         # Log each signal count
         msgs = ["Prepared balanced xy for learning."]
         for signal in [-1, 0, 1]:
@@ -183,4 +192,5 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         # One hot encode y
         y_pipe = Pipeline([('adjust_labels', OneHotEncoder(categories=[[-1, 0, 1]], sparse=True, drop=None))])
+        y_pipe.fit(y)
         return x_pipe, y_pipe

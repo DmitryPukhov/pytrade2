@@ -23,7 +23,7 @@ class StrategyBase(PersistableStateStrategy):
     """ Any strategy """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-        
+
         self.risk_manager = None
         self.config = config
         self.learn_data_balancer = LearnDataBalancer()
@@ -156,8 +156,9 @@ class StrategyBase(PersistableStateStrategy):
             try:
                 # Wait for new data received
                 # while not self.new_data_event.is_set():
-                self.new_data_event.wait()
-                self.new_data_event.clear()
+                if self.new_data_event:
+                    self.new_data_event.wait()
+                    self.new_data_event.clear()
 
                 # Learn and predict only if no gap between level2 and bidask
                 self.process_new_data()
@@ -185,7 +186,7 @@ class StrategyBase(PersistableStateStrategy):
             logging.info(f"Starting periodical purging, interval: {self.purge_interval}")
             Timer(self.purge_interval.seconds, self.purge_all).start()
 
-    def create_model(self, param, param1):
+    def create_model(self, x_size, y_size):
         raise NotImplementedError()
 
     def is_alive(self):

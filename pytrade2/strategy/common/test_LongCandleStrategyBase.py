@@ -7,6 +7,7 @@ from typing import Dict
 from unittest import TestCase, skip
 from unittest.mock import MagicMock, Mock, patch
 
+import numpy as np
 import pandas as pd
 
 from strategy.common.LongCandleStrategyBase import LongCandleStrategyBase
@@ -124,11 +125,11 @@ class LongCandleStrategyBaseTest(TestCase):
         ])
 
         # Mock input
-        strategy.candles_feed.read_candles = lambda ticker, interval: \
+        strategy.candles_feed.read_candles = lambda ticker, interval, limit: \
             {'1min': candles_1min, '5min': candles_5min}[interval]
 
         # Flat signal received
-        strategy.y_pipe.inverse_transform = MagicMock(return_value=[[0]])
+        strategy.y_pipe.inverse_transform = MagicMock(return_value=np.array([[0]]))
         strategy.process_new_data()
 
         # New candles should be added to candles_by_interval
