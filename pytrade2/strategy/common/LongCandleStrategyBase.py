@@ -191,6 +191,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         x_pipe.fit(X)
 
         # One hot encode y
-        y_pipe = Pipeline([('adjust_labels', OneHotEncoder(categories=[[-1, 0, 1]], sparse=True, drop=None))])
+        y_pipe = Pipeline([('adjust_labels', OneHotEncoder(categories=[[-1, 0, 1]], sparse_output=True, drop=None))])
         y_pipe.fit(y)
         return x_pipe, y_pipe
