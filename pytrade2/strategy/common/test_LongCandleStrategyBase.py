@@ -47,6 +47,7 @@ class LongCandleStrategyBaseTest(TestCase):
         # strategy.learn_interval = pd.Timedelta.min
         strategy.candles_feed = MagicMock()
         strategy.processing_interval = pd.Timedelta('0 seconds')
+        strategy.broker = MagicMock()
         return strategy
 
     def test_get_sl_tp_trdelta_buy(self):
@@ -126,12 +127,36 @@ class LongCandleStrategyBaseTest(TestCase):
         strategy.candles_feed.read_candles = lambda ticker, interval: \
             {'1min': candles_1min, '5min': candles_5min}[interval]
 
-        # Process bull signal
+        # Flat signal received
         strategy.y_pipe.inverse_transform = MagicMock(return_value=[[0]])
         strategy.process_new_data()
 
-        self.assertListEqual([c['close_time'] for c in candles_1min], strategy.candles_by_interval['1min'].index.tolist())
-        #self.assertListEqual([candles_1min[-3]['close_time']], strategy.learn_data_balancer.x_dict[0].index.tolist())
+        # New candles should be added to candles_by_interval
+        self.assertListEqual([c['close_time'] for c in candles_1min],
+                             strategy.candles_by_interval['1min'].index.tolist())
+        # Data with targets should be added to learn data
+        self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
+                             strategy.learn_data_balancer.x_dict[0].index.tolist())
+        self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
+                             strategy.learn_data_balancer.y_dict[0].index.tolist())
+        self.assertTrue(strategy.learn_data_balancer.x_dict[1].empty)
+        self.assertTrue(strategy.learn_data_balancer.x_dict[-1].empty)
 
-        # self.assertListEqual([pd.Timestamp(base_dt - datetime.timedelta(minutes=5))],
-        #                      strategy.candles_by_interval['5min']['close_time'].tolist())
+        # # Bull signal received
+        # strategy.y_pipe.inverse_transform = MagicMock(return_value=[[1]])
+        # strategy.process_new_data()
+        #
+        # # New candles should be added to candles_by_interval
+        # self.assertListEqual([c['close_time'] for c in candles_1min],
+        #                      strategy.candles_by_interval['1min'].index.tolist())
+        # # Data with targets should be added to learn data
+        # self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
+        #                      strategy.learn_data_balancer.x_dict[0].index.tolist())
+        # self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
+        #                      strategy.learn_data_balancer.y_dict[0].index.tolist())
+        # self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
+        #                      strategy.learn_data_balancer.x_dict[1].index.tolist())
+        # self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
+        #                      strategy.learn_data_balancer.y_dict[1].index.tolist())
+        #
+        # self.assertTrue(strategy.learn_data_balancer.x_dict[-1].empty)

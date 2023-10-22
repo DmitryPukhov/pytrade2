@@ -94,18 +94,18 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     def process_new_data(self):
         if self.model:
             with self.data_lock:
-                # Get last candles data
+                # Get candles starting from current moment to the past
                 self.read_candles(index_col='close_time')
+
                 x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                             self.candles_cnt_by_interval,
                                                                             self.target_period,
                                                                             with_empty_targets=True)
-                # Get features
-                # x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval,
-                #                                                       self.candles_cnt_by_interval)
-                x_trans = self.X_pipe.transform(x_wo_targets)
+                # We could calculate targets for x, so add x and targets to learn data
+                self.learn_data_balancer.add(x, y)
 
-                # Get last signal
+                # Predict last signal
+                x_trans = self.X_pipe.transform(x_wo_targets)
                 y_pred_raw = self.model.predict(x_trans, verbose=0)
                 y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
                 last_signal = y_pred_trans[-1][0] if y_pred_trans else 0
@@ -114,8 +114,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 # Buy or sell or skip
                 self.process_signal(last_signal)
 
-                # Save to disk
-                self.learn_data_balancer.add(x, y)
+                # Save to disk for analysis
                 self.save_last_data(self.ticker, {'y_pred': y_pred_df})
 
             # Delay before next processing cycle
@@ -154,12 +153,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         return CandlesStrategy.is_alive(self)
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
-        # Get features and targets
-        # x, y = LongCandleFeatures.features_targets_of(self.candles_by_interval,
-        #                                               self.candles_cnt_by_interval,
-        #                                               target_period=self.target_period)
-        # # Balance by signal
-        # self.learn_data_balancer.add(x, y)
+
         balanced_x, balanced_y = self.learn_data_balancer.get_balanced_xy()
         # Log each signal count
         msgs = ["Prepared balanced xy for learning."]
