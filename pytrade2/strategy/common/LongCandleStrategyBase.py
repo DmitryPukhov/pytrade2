@@ -127,8 +127,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
             self.save_last_data(self.ticker, {'y_pred': y_pred_last})
 
             # Predict last signal for old x with y. To save and analyse actual and predicted values.
-            y_pred = self.predict_last_signal(x).join(y.tail(1))
-            y_pred.columnns = ['signal_pred', 'signal_actual']
+            y_pred = self.predict_last_signal(x).join(y.tail(1), lsuffix='_pred', rsuffix='_actual')
             self.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
 
         # Delay before next processing cycle
