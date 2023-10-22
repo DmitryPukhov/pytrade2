@@ -90,54 +90,12 @@ class TestLongCandleFeatures(TestCase):
         self.assertSequenceEqual([0], actual["signal"].tolist())
 
     def test_features_targets__same_index(self):
-        actual_features, actual_targets = LongCandleFeatures.features_targets_of(
+        actual_features, actual_targets, actual_features_wo_targets = LongCandleFeatures.features_targets_of(
             {"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
             {"1min": 2, "5min": 2}, target_period="1min")
 
         self.assertSequenceEqual(actual_features.index.tolist(), actual_targets.index.tolist())
-    #
-    # def test_features_targets_of(self):
-    #     # Receive 1 min candles
-    #     # before prev to make diff() for prev not none
-    #     candles_1min = (pd.DataFrame([
-    #         # before prev to make diff() for prev not none
-    #         {'open_time': datetime.fromisoformat('2023-10-15T09:57:00'),
-    #          'close_time': datetime.fromisoformat('2023-10-15T09:58:00'),
-    #          'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1},
-    #         # prev
-    #         {'open_time': datetime.fromisoformat('2023-10-15T09:58:00'),
-    #          'close_time': datetime.fromisoformat('2023-10-15T09:59:00'),
-    #          'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1},
-    #         # Current
-    #         {'open_time': datetime.fromisoformat('2023-10-15T09:59:00'),
-    #          'close_time': datetime.fromisoformat('2023-10-15T10:00:00'),
-    #          'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1},
-    #         # next1
-    #         {'open_time': datetime.fromisoformat('2023-10-15T10:00:00'),
-    #          'close_time': datetime.fromisoformat('2023-10-15T10:01:00'),
-    #          'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1},
-    #         # next2
-    #         {'open_time': datetime.fromisoformat('2023-10-15T10:01:00'),
-    #          'close_time': datetime.fromisoformat('2023-10-15T10:02:00'),
-    #          'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1}])
-    #                     .set_index('close_time', drop=False))
-    #
-    #     candles_5min = (pd.DataFrame([
-    #         # 5 min prev
-    #         {'open_time': datetime.fromisoformat('2023-10-15T09:50:00'),
-    #          'close_time': datetime.fromisoformat('2023-10-15T09:55:00'),
-    #          'interval': '5min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1},
-    #         # 5 min current
-    #         {'open_time': datetime.fromisoformat('2023-10-15T09:55:00'),
-    #          'close_time': datetime.fromisoformat('2023-10-15T10:00:00'),
-    #          'interval': '5min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1}])
-    #                     .set_index('close_time', drop=False))
-    #
-    #     candles_by_interval = {'1min': candles_1min, '5min': candles_5min}
-    #     cnt_by_interval = {'1min': 1, '5min': 1}
-    #
-    #     X, y = LongCandleFeatures.features_targets_of(candles_by_interval,
-    #                                                   cnt_by_interval,
-    #                                                   '1min')
-    #     self.assertFalse(X.empty)
-    #     self.assertFalse(y.empty)
+        self.assertEqual(1, len(actual_features))
+        self.assertEqual(2, len(actual_features_wo_targets))
+
+

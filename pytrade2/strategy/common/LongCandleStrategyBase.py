@@ -1,9 +1,8 @@
-import datetime
 import logging
 import multiprocessing
 import time
 from io import StringIO
-from threading import Event, Thread
+from threading import Event
 from typing import Dict
 
 import pandas as pd
@@ -15,7 +14,6 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.StrategyBase import StrategyBase
-from strategy.common.features.CandlesFeatures import CandlesFeatures
 from strategy.common.features.LongCandleFeatures import LongCandleFeatures
 
 
@@ -71,7 +69,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         self.websocket_feed.consumers.add(self)
         self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
         # Do not listen feeds
-        #self.candles_feed.consumers.add(self)
+        # self.candles_feed.consumers.add(self)
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
@@ -81,7 +79,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         # Run the feed, listen events
         # Do not listen candles
-        #self.candles_feed.run()
+        # self.candles_feed.run()
         self.broker.run()
 
     def can_learn(self) -> bool:
@@ -90,63 +88,35 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         if not self.has_all_candles():
             logging.info(f"Can not learn because not enough candles.")
             return False
-
-        # Check If we have enough data to learn
-        return True
-
-    def update_unchecked(self, x_new: pd.DataFrame, y_new: pd.DataFrame) -> (pd.DataFrame, pd.DataFrame):
-        """ New data have come, and we can calculate targets for first records in unchecked buffer """
-
-        self.x_unchecked = pd.concat([self.x_unchecked, x_new], sort=True)
-        self.x_unchecked = self.x_unchecked.iloc[~self.x_unchecked.index.duplicated(keep='last')]
-        self.y_unchecked = pd.concat([self.y_unchecked, y_new], sort=True)
-        self.y_unchecked = self.y_unchecked.iloc[~self.y_unchecked.index.duplicated(keep='last')]
-        cndls = self.candles_by_interval[self.target_period]
-
-        # Data with calculated targets
-        y_targets = LongCandleFeatures.targets_of(cndls[cndls.index >= self.y_unchecked.index.min()])
-        if y_targets.empty:
-            return pd.DataFrame(), pd.DataFrame()
-
-        x_checked = self.x_unchecked[self.y_unchecked.index <= y_targets.index.max()]
-        # Y checked with signal predicted and signal_target columns
-        y_checked = self.y_unchecked[self.y_unchecked.index <= y_targets.index.max()]
-        y_checked = pd.merge_asof(y_checked, y_targets, left_index=True, right_index=True, direction='forward',
-                                  suffixes=("_pred", "_target"))
-
-        # Leave unchecked buffer without calculated targets
-        self.x_unchecked = self.x_unchecked[self.x_unchecked.index > x_checked.index.max()]
-        self.y_unchecked = self.y_unchecked[self.y_unchecked.index > y_checked.index.max()]
-
-        return x_checked, y_checked
+        else:
+            return True
 
     def process_new_data(self):
         if self.model:
             with self.data_lock:
                 # Get last candles data
                 self.read_candles(index_col='close_time')
-
+                x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
+                                                                            self.candles_cnt_by_interval,
+                                                                            self.target_period,
+                                                                            with_empty_targets=True)
                 # Get features
-                x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval,
-                                                                      self.candles_cnt_by_interval)
-                x_trans = self.X_pipe.transform(x)
+                # x = CandlesFeatures.candles_last_combined_features_of(self.candles_by_interval,
+                #                                                       self.candles_cnt_by_interval)
+                x_trans = self.X_pipe.transform(x_wo_targets)
 
                 # Get last signal
                 y_pred_raw = self.model.predict(x_trans, verbose=0)
                 y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
-                signal = y_pred_trans[-1][0] if y_pred_trans else 0
-                y_pred_df = pd.DataFrame(data=[{"signal": signal}], index=[x.index[-1]])
+                last_signal = y_pred_trans[-1][0] if y_pred_trans else 0
+                y_pred_df = pd.DataFrame(data=[{"signal": last_signal}], index=[x_wo_targets.index[-1]])
 
                 # Buy or sell or skip
-                self.process_signal(signal)
+                self.process_signal(last_signal)
 
                 # Save to disk
-                self.save_last_data(self.ticker, {"y_pred": y_pred_df})
-
-                # Get targets of previous data when it is already possible
-                x_checked, y_checked = self.update_unchecked(x.tail(1), y_pred_df)
-                if not x_checked.empty and not y_checked.empty:
-                    self.save_last_data(self.ticker, {"x": x_checked, "y": y_checked})
+                self.learn_data_balancer.add(x, y)
+                self.save_last_data(self.ticker, {'y_pred': y_pred_df})
 
             # Delay before next processing cycle
             time.sleep(self.processing_interval.seconds)
@@ -185,11 +155,11 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
         # Get features and targets
-        x, y = LongCandleFeatures.features_targets_of(self.candles_by_interval,
-                                                      self.candles_cnt_by_interval,
-                                                      target_period=self.target_period)
-        # Balance by signal
-        self.learn_data_balancer.add(x, y)
+        # x, y = LongCandleFeatures.features_targets_of(self.candles_by_interval,
+        #                                               self.candles_cnt_by_interval,
+        #                                               target_period=self.target_period)
+        # # Balance by signal
+        # self.learn_data_balancer.add(x, y)
         balanced_x, balanced_y = self.learn_data_balancer.get_balanced_xy()
         # Log each signal count
         msgs = ["Prepared balanced xy for learning."]

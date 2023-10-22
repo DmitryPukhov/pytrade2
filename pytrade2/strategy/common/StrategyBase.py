@@ -24,6 +24,7 @@ class StrategyBase(PersistableStateStrategy):
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
         
+        self.risk_manager = None
         self.config = config
         self.learn_data_balancer = LearnDataBalancer()
         self.tickers = self.config["pytrade2.tickers"].split(",")
@@ -117,7 +118,6 @@ class StrategyBase(PersistableStateStrategy):
             logging.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}")
             if len(train_X.index) >= self.min_xy_len:
-                self.last_learn_bidask_time = pd.to_datetime(train_X.index.max())
                 if not (self.X_pipe and self.y_pipe):
                     self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
 

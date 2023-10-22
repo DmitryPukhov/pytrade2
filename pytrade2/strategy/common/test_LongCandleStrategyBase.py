@@ -46,6 +46,7 @@ class LongCandleStrategyBaseTest(TestCase):
         # strategy.candles_by_interval = dict()
         # strategy.learn_interval = pd.Timedelta.min
         strategy.candles_feed = MagicMock()
+        strategy.processing_interval = pd.Timedelta('0 seconds')
         return strategy
 
     def test_get_sl_tp_trdelta_buy(self):
@@ -65,72 +66,6 @@ class LongCandleStrategyBaseTest(TestCase):
         self.assertEqual(3, sl)
         self.assertEqual(1, tp)
         self.assertEqual(2, trd)
-
-    def test_update_unchecked_dups(self):
-        # Prepare strategy
-        strategy = self.new_strategy()
-
-        # Single candle, cannot calculate targets
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
-            data=[{'low': 1, 'high': 1}],
-            index=[1])}
-        # First call
-        checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 1, 'high': 1}], index=[1]),
-                                                         pd.DataFrame(data=[1], index=[1]))
-        self.assertTrue(checked_x.empty)
-        self.assertTrue(checked_y.empty)
-        self.assertListEqual([1], strategy.x_unchecked.index.tolist())
-        self.assertListEqual([1], strategy.y_unchecked.index.tolist())
-
-        checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 1, 'high': 1}], index=[1]),
-                                                         pd.DataFrame(data=[1], index=[1]))
-        self.assertTrue(checked_x.empty)
-        self.assertTrue(checked_y.empty)
-        self.assertListEqual([1], strategy.x_unchecked.index.tolist())  # No duplicates
-        self.assertListEqual([1], strategy.y_unchecked.index.tolist())  # No duplicates
-
-    def test_update_unchecked(self):
-        # Prepare strategy
-        strategy = self.new_strategy()
-        # CandlesFeatures.targets_of = MagicMock(return_value=pd.DataFrame(data=[1], index=[1]))
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
-            data=[{'low': 1, 'high': 1}, {'low': 2, 'high': 2}, {'low': 3, 'high': 3}],
-            index=[1, 2, 3])}
-
-        # Add candle 1
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
-            data=[{'low': 1, 'high': 1}],
-            index=[1])}
-        checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 1, 'high': 1}], index=[1]),
-                                                         pd.DataFrame(data=[{"signal": 1}], index=[1]))
-
-        self.assertTrue(checked_x.empty)
-        self.assertTrue(checked_y.empty)
-
-        # Add candle 2
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
-            data=[{'low': 1, 'high': 1}, {'low': 2, 'high': 2}],
-            index=[1, 2])}
-        checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 2, 'high': 2}], index=[2]),
-                                                         pd.DataFrame(data=[{'signal': -1}], index=[2]))
-
-        self.assertTrue(checked_x.empty)
-        self.assertTrue(checked_y.empty)
-
-        # Add candle3
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame(
-            data=[{'low': 1, 'high': 1}, {'low': 2, 'high': 2}, {'low': 3, 'high': 3}],
-            index=[1, 2, 3])}
-        checked_x, checked_y = strategy.update_unchecked(pd.DataFrame([{'low': 3, 'high': 3}], index=[3]),
-                                                         pd.DataFrame(data=[{'signal': 0}], index=[3]))
-
-        # Candle1 is old, has targets
-        self.assertListEqual([1], checked_x.index.tolist())
-        self.assertListEqual([1], checked_y.index.tolist())
-
-        # Candle 2,3 are still without targets
-        self.assertListEqual([2, 3], strategy.x_unchecked.index.tolist())
-        self.assertListEqual([2, 3], strategy.y_unchecked.index.tolist())
 
     # @skip
     def test_process_new_data(self):
@@ -190,11 +125,13 @@ class LongCandleStrategyBaseTest(TestCase):
         # Mock input
         strategy.candles_feed.read_candles = lambda ticker, interval: \
             {'1min': candles_1min, '5min': candles_5min}[interval]
-        # Mock signal
-        strategy.y_pipe.inverse_transform = MagicMock(return_value=[[0]])
 
-        # Call
+        # Process bull signal
+        strategy.y_pipe.inverse_transform = MagicMock(return_value=[[0]])
         strategy.process_new_data()
+
+        self.assertListEqual([c['close_time'] for c in candles_1min], strategy.candles_by_interval['1min'].index.tolist())
+        #self.assertListEqual([candles_1min[-3]['close_time']], strategy.learn_data_balancer.x_dict[0].index.tolist())
 
         # self.assertListEqual([pd.Timestamp(base_dt - datetime.timedelta(minutes=5))],
         #                      strategy.candles_by_interval['5min']['close_time'].tolist())

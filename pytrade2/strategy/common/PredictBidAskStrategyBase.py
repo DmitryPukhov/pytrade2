@@ -44,7 +44,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         self.level2_buf: pd.DataFrame = pd.DataFrame()  # Buffer
 
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
-        self.last_learn_bidask_time = datetime(1970, 1, 1)
 
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))

@@ -1,6 +1,5 @@
 from typing import Dict
 
-import numpy as np
 import pandas as pd
 
 from strategy.common.features.CandlesFeatures import CandlesFeatures
@@ -10,8 +9,9 @@ class LongCandleFeatures:
 
     @staticmethod
     def features_targets_of(candles_by_periods: Dict[str, pd.DataFrame],
-                            cnt_by_period: Dict[str, int], target_period: str) -> (pd.DataFrame, pd.DataFrame):
-
+                            cnt_by_period: Dict[str, int],
+                            target_period: str,
+                            with_empty_targets=True) -> (pd.DataFrame, pd.DataFrame):
         # Candles features -
         features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).dropna()
 
@@ -20,8 +20,10 @@ class LongCandleFeatures:
         targets = LongCandleFeatures.targets_of(targets_src).dropna()
 
         common_index = features.index.intersection(targets.index)
+        features_wo_targets = features[features.index > common_index.max()]
+        features_with_targets, targets = features.loc[common_index], targets.loc[common_index]
 
-        return features.loc[common_index], targets.loc[common_index]
+        return features_with_targets, targets, features_wo_targets
 
     @staticmethod
     def targets_of(candles: pd.DataFrame):
@@ -42,6 +44,6 @@ class LongCandleFeatures:
         next2down = next2["high"] < (next1["high"] - (next1["high"] - next1["low"]) / 2)
         targets["sell"] = next1down & next2down
 
-        #targets["none"] = ~ targets["buy"] & ~ targets["sell"]
+        # targets["none"] = ~ targets["buy"] & ~ targets["sell"]
         targets["signal"] = targets["buy"].astype(int) - targets["sell"].astype(int)
         return targets[["signal"]].iloc[:-2]
