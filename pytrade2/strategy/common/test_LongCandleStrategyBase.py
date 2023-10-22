@@ -156,3 +156,13 @@ class LongCandleStrategyBaseTest(TestCase):
         #                      strategy.learn_data_balancer.y_dict[1].index.tolist())
         #
         # self.assertTrue(strategy.learn_data_balancer.x_dict[-1].empty)
+
+    def test_create_pipe_y_encode_decode(self):
+        x = pd.DataFrame([1, 2, 3], columns=['col1'])
+        y = pd.DataFrame([-1, 0, 1], columns=['signal'])
+
+        x_pipe, y_pipe = self.new_strategy().create_pipe(x, y)
+
+        y_encoded = y_pipe.transform(y)
+        y_actual = y_pipe.inverse_transform(y_encoded)
+        self.assertListEqual([[-1], [0], [1]], y_actual.tolist())
