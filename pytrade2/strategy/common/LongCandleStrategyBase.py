@@ -28,7 +28,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         self.candles_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider)
-        self.new_data_event = None  # No new data by event
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
 
         self.target_period = min(self.candles_cnt_by_interval.keys())
@@ -39,7 +38,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         logging.info(f"Target period: {self.target_period}")
         self.data_lock = multiprocessing.RLock()
-        self.new_data_event: Event = Event()
+        self.new_data_event = None  # No new data by event
 
         # x, y buffer to validate later when target can be calculated
         self.x_unchecked = pd.DataFrame()
@@ -82,7 +81,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         # Do not listen candles
         # self.candles_feed.run()
         self.broker.run()
-        self.process_new_data()
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""

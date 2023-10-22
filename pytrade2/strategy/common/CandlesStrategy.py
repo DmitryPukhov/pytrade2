@@ -47,7 +47,7 @@ class CandlesStrategy:
             # Read cnt + 1 extra for diff candles
             candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period, cnt)) \
                 .set_index(index_col, drop=False)
-            logging.info(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
+            logging.debug(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
 
     def get_report(self):

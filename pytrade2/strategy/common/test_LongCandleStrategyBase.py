@@ -1,18 +1,13 @@
 import datetime
-import multiprocessing
 import threading
 import time
-from threading import Timer
-from typing import Dict
-from unittest import TestCase, skip
-from unittest.mock import MagicMock, Mock, patch
+from unittest import TestCase
+from unittest.mock import MagicMock
 
 import numpy as np
 import pandas as pd
 
 from strategy.common.LongCandleStrategyBase import LongCandleStrategyBase
-from strategy.common.features.CandlesFeatures import CandlesFeatures
-from strategy.common.features.LongCandleFeatures import LongCandleFeatures
 
 
 class LongCandleStrategyBaseTest(TestCase):
