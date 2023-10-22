@@ -91,6 +91,13 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         else:
             return True
 
+    def predict_last_signal(self, x):
+        x_trans = self.X_pipe.transform(x)
+        y_pred_raw = self.model.predict(x_trans, verbose=0)
+        y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
+        last_signal = y_pred_trans[-1][0] if y_pred_trans.size > 0 else 0
+        return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
+
     def process_new_data(self):
         with self.data_lock:
             # Get candles starting from current moment to the past
@@ -110,19 +117,19 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
                 self.X_pipe, self.y_pipe = self.create_pipe(x, y)
 
             # Predict last signal
-            x_trans = self.X_pipe.transform(x_wo_targets)
-            y_pred_raw = self.model.predict(x_trans, verbose=0)
-            y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
-            last_signal = y_pred_trans[-1][0] if y_pred_trans.size > 0 else 0
-            # y_pred_raw = self.model.predict(x_trans, verbose=0)
-            # last_signal = y_pred_raw[-1][0] if y_pred_raw else 0
-            y_pred_df = pd.DataFrame(data=[{"signal": last_signal}], index=[x_wo_targets.index[-1]])
+            y_pred_last = self.predict_last_signal(x_wo_targets)
+            last_signal = y_pred_last['signal'][-1]
 
             # Buy or sell or skip
             self.process_signal(last_signal)
 
             # Save to disk for analysis
-            self.save_last_data(self.ticker, {'y_pred': y_pred_df})
+            self.save_last_data(self.ticker, {'y_pred': y_pred_last})
+
+            # Predict last signal for old x with y. To save and analyse actual and predicted values.
+            y_pred = self.predict_last_signal(x).join(y.tail(1))
+            y_pred.columnns = ['signal_pred', 'signal_actual']
+            self.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
 
         # Delay before next processing cycle
         time.sleep(self.processing_interval.seconds)
