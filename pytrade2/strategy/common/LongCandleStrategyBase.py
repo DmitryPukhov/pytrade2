@@ -180,12 +180,12 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     def generator_of(self, train_X, train_y):
         """ Data generator for learning """
 
-        return TimeseriesGenerator(train_X, train_y.data, length=1)
+        return TimeseriesGenerator(train_X, train_y, length=1, shuffle=False)
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
 
-        time_cols = [col for col in X.columns if col.startswith("time")]
+        time_cols = [col for col in X.columns if col.startswith("time") or col.endswith("time")]
         float_cols = list(set(X.columns) - set(time_cols))
 
         # Scale x
@@ -195,6 +195,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         x_pipe.fit(X)
 
         # One hot encode y
-        y_pipe = Pipeline([('adjust_labels', OneHotEncoder(categories=[[-1, 0, 1]], sparse_output=True, drop=None))])
+        y_pipe = Pipeline([('adjust_labels', OneHotEncoder(categories=[[-1, 0, 1]], sparse_output=False, drop=None))])
         y_pipe.fit(y)
         return x_pipe, y_pipe

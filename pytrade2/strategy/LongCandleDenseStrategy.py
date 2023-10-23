@@ -18,7 +18,7 @@ class LongCandleDenseStrategy(LongCandleStrategyBase):
         model.add(Dense(32, activation='relu'))
         model.add(Dropout(0.1))
         model.add(Dense(y_size, activation='softmax'))
-        model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['sparse_categorical_accuracy'])
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
         # Load weights
         self.load_last_model(model)
