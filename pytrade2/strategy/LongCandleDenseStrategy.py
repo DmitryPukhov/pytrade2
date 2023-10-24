@@ -1,8 +1,7 @@
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
 from strategy.common.LongCandleStrategyBase import LongCandleStrategyBase
-import tensorflow as tf
-import tensorflow.python as tf
+
 
 class LongCandleDenseStrategy(LongCandleStrategyBase):
     """ Predict long candle, NN with dense layers mainly """
@@ -20,7 +19,6 @@ class LongCandleDenseStrategy(LongCandleStrategyBase):
         model.add(Dropout(0.1))
         model.add(Dense(y_size, activation='softmax'))
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
-        tf.keras.losses.CategoricalCrossentropy()
 
         # Load weights
         self.load_last_model(model)

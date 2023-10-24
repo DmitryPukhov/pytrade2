@@ -184,7 +184,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
 
-        time_cols = [col for col in X.columns if col.startswith("time")]
+        time_cols = [col for col in X.columns if col.startswith("time") or col.endswith("time")]
         float_cols = list(set(X.columns) - set(time_cols))
 
         # Scale x
