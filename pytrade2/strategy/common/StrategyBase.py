@@ -126,12 +126,14 @@ class StrategyBase(PersistableStateStrategy):
                 self.y_pipe.fit(train_y)
 
                 X_trans, y_trans = self.X_pipe.transform(train_X), self.y_pipe.transform(train_y)
-                gen = self.generator_of(X_trans, y_trans)
 
                 # Train
                 if not self.model:
                     self.model = self.create_model(X_trans.shape[1], y_trans.shape[1])
-                self.model.fit(gen)
+                # Generator produces error
+                #gen = self.generator_of(X_trans, y_trans)
+                #self.model.fit(gen)
+                self.model.fit(X_trans, y_trans)
 
                 # Save weights and xy new delta
                 self.save_model()
