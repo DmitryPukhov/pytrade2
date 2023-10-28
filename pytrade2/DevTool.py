@@ -5,6 +5,7 @@ import os
 from io import StringIO
 
 import time
+from threading import Thread, Timer
 from unittest.mock import MagicMock
 
 import yaml
@@ -27,7 +28,7 @@ class DevTool():
         HuobiBrokerHbdm.sub_events = None
 
         # Read config
-        strategy = "LongCandleStrategy"
+        strategy = "LongCandleDenseStrategy"
         yccfgdir = "../deploy/yandex_cloud/secret"
         devcfgdir = "../pytrade2/cfg"
         cfgpaths = [f"{devcfgdir}/app-defaults.yaml", f"{yccfgdir}/{strategy.lower()}.yaml"]
@@ -48,12 +49,13 @@ class DevTool():
 
     def new_hbdm_broker(self):
         rc = HuobiRestClient(access_key=self.key, secret_key=self.secret)
-        ws = HuobiWebSocketClient(host="api.hbdm.vn",
-                                  path="'/linear-swap-notification",
-                                  access_key=self.key,
-                                  secret_key=self.secret,
-                                  is_broker=True,
-                                  be_spot=False)
+        Timer.start = MagicMock()
+        # ws = HuobiWebSocketClient(host="api.hbdm.vn",
+        #                           path="'/linear-swap-notification",
+        #                           access_key=self.key,
+        #                           secret_key=self.secret,
+        #                           is_broker=True,
+        #                           be_spot=False)
         return HuobiBrokerHbdm(conf=self.config, rest_client=rc, ws_client=MagicMock(), ws_feed=MagicMock())
 
     @staticmethod
@@ -80,14 +82,7 @@ class DevTool():
             print(
                 f"Order id: {o['order_id']}, direction: {o['direction']}, status: {o['status']}, created:{cdt},  updated: {udt}, is_tpsl: {o['is_tpsl']}, price: {o['trade_avg_price']}")
 
-
-if __name__ == "__main__":
-    os.environ['TZ'] = 'UTC'
-    time.tzset()
-    dt = DevTool()
-    broker = dt.new_hbdm_broker()
-
-
+    @staticmethod
     def get_last_lowhigh():
         # Open order
         res = broker.rest_client.get("/linear-swap-ex/market/history/kline",
@@ -98,9 +93,18 @@ if __name__ == "__main__":
         return lastcandle["low"], lastcandle["high"]
 
 
+if __name__ == "__main__":
+    os.environ['TZ'] = 'UTC'
+    time.tzset()
+    dt = DevTool()
+    broker = dt.new_hbdm_broker()
+    res = broker.get_sltp_orders_info(broker.cur_trade.open_order_id)
+    # DevTool.print_sltp_orders(res)
+
+
     # Open
-    low, high = get_last_lowhigh()
-    print(f"Last low:{low}, high:{high}")
+    # low, high = DevTool.get_last_lowhigh()
+    # logging.debug(f"Last low:{low}, high:{high}")
     # broker.create_cur_trade(symbol="BTC-USDT",
     #                         direction=1,
     #                         quantity=1,
@@ -110,7 +114,9 @@ if __name__ == "__main__":
     #                         trailing_delta=100)
     #
     # # Move stoploss
-    newsl = low - 1000
-    #broker.move_ts(newsl)
+    # newsl = low - 200
+    # broker.move_ts(newsl)
+    # res = broker.get_sltp_orders_info(broker.cur_trade.open_order_id)
+    # print(res)
 
 
