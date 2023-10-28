@@ -52,10 +52,10 @@ class StrategyBase(PersistableStateStrategy):
         self.stop_loss_min_coeff = config.get("pytrade2.strategy.stoploss.min.coeff", 0)
 
         # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
-        self.stop_loss_max_coeff = config.get("pytrade2.strategy.stoploss.max.coeff",
-                                              float('inf'))
+        self.stop_loss_max_coeff = config.get("pytrade2.strategy.stoploss.max.coeff", float('inf'))
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
         self.profit_min_coeff = config.get("pytrade2.strategy.profit.min.coeff", 0)
+        self.profit_max_coeff = config.get("pytrade2.strategy.profit.max.coeff", float('inf'))
 
         self.trade_check_interval = timedelta(seconds=30)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
@@ -131,8 +131,8 @@ class StrategyBase(PersistableStateStrategy):
                 if not self.model:
                     self.model = self.create_model(X_trans.shape[1], y_trans.shape[1])
                 # Generator produces error
-                #gen = self.generator_of(X_trans, y_trans)
-                #self.model.fit(gen)
+                # gen = self.generator_of(X_trans, y_trans)
+                # self.model.fit(gen)
                 self.model.fit(X_trans, y_trans)
 
                 # Save weights and xy new delta
