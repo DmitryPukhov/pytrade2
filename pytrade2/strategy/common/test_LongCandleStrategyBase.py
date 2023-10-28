@@ -46,16 +46,52 @@ class LongCandleStrategyBaseTest(TestCase):
 
     def test_get_sl_tp_trdelta_buy(self):
         strategy = self.new_strategy()
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 3, "low": 1}])}
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 3, "close": 2, "low": 1}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(1)
 
         self.assertEqual(1, sl)
         self.assertEqual(3, tp)
         self.assertEqual(2, trd)
 
-    def test_get_sl_tp_trdelta_sell(self):
+    def test_get_sl_tp_trdelta_buy_with_min_sltp(self):
         strategy = self.new_strategy()
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 3, "low": 1}])}
+        strategy.stop_loss_min_coeff = 0.6
+        strategy.profit_min_coeff = 0.8
+
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 21, "close": 20, "low": 19}])}
+        sl, tp, trd = strategy.get_sl_tp_trdelta(1)
+
+        self.assertEqual(8, sl)
+        self.assertEqual(36, tp)
+        self.assertEqual(12, trd)
+
+    def test_get_sl_tp_trdelta_buy_no_min_sltp(self):
+        strategy = self.new_strategy()
+        # default strategy.stop_loss_min_coeff = strategy.profit_min_coeff = 0
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 30, "close": 20, "low": 10}])}
+        sl, tp, trd = strategy.get_sl_tp_trdelta(1)
+
+        self.assertEqual(10, sl)
+        self.assertEqual(30, tp)
+        self.assertEqual(20, trd)
+
+    def test_get_sl_tp_trdelta_sell_with_min_sltp(self):
+        strategy = self.new_strategy()
+        strategy.stop_loss_min_coeff = 0.6
+        strategy.profit_min_coeff = 0.8
+
+        # default strategy.stop_loss_min_coeff = strategy.profit_min_coeff = 0
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 21, "close": 20, "low": 19}])}
+        sl, tp, trd = strategy.get_sl_tp_trdelta(-1)
+
+        self.assertEqual(32, sl)
+        self.assertEqual(4, tp)
+        self.assertEqual(12, trd)
+
+    def test_get_sl_tp_trdelta_sell_no_min_sltp(self):
+        strategy = self.new_strategy()
+        # default strategy.stop_loss_min_coeff = strategy.profit_min_coeff = 0
+        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 3, "close": 2, "low": 1}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(-1)
 
         self.assertEqual(3, sl)

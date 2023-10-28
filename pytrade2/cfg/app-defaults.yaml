@@ -26,7 +26,7 @@ pytrade2.feed.candles.periods: 1min,5min
 pytrade2.feed.candles.counts: 5,5
 
 
-# coeff 0.00005 for BTCUSDT 30000 means 1,5
+# coeff fee 0.05% * 2 = 0.1%  for BTCUSDT 30000 means 30
 pytrade2.strategy.stoploss.min.coeff: 0.00005
 
 # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
@@ -43,4 +43,4 @@ pytrade2.tickers: "BTC-USDT"
 pytrade2.broker.trade.allow: true
 pytrade2.strategy.lstm.window.size: 10
 pytrade2.order.quantity: 1
-pytrade2.order.trailingstop: false
+#pytrade2.order.trailingstop: false

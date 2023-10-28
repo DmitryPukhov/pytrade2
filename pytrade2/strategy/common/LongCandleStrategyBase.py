@@ -136,14 +136,22 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         """
 
         last_candle = self.candles_by_interval[self.target_period].iloc[-1]
-        td = last_candle["high"] - last_candle["low"]
+        sl_delta_min = self.stop_loss_min_coeff * last_candle["close"]
+        tp_delta_min = self.profit_min_coeff * last_candle["close"]
+        tr_delta_min = sl_delta_min
+        open_price = last_candle["close"]  # Order open price
+
+        td = max(abs(last_candle["high"] - last_candle["low"]), tr_delta_min)  # trailing delta
         if signal == 1:
-            sl, tp = last_candle["low"], last_candle["high"]
+            sl = min(last_candle["low"], open_price - sl_delta_min)
+            tp = max(last_candle["high"], open_price + tp_delta_min)
         elif signal == -1:
-            sl, tp = last_candle["high"], last_candle["low"]
+            sl = max(last_candle["high"], open_price + sl_delta_min)
+            tp = min(last_candle["low"], open_price - tp_delta_min)
         else:
             # Should never come here
             return None
+
         return sl, tp, td
 
     def process_signal(self, signal: int):
