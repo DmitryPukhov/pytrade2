@@ -30,8 +30,6 @@ class LongCandleStrategyBaseTest(TestCase):
         # LongCandleStrategyBase.__init__ = MagicMock(return_value=None)
         threading.Timer = MagicMock()
         strategy = LongCandleStrategyBase(conf, None)
-        # strategy.x_unchecked = pd.DataFrame()
-        # strategy.y_unchecked = pd.DataFrame()
         strategy.model = MagicMock()
         strategy.X_pipe = MagicMock()
         strategy.y_pipe = MagicMock()

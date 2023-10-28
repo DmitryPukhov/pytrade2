@@ -40,10 +40,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         self.data_lock = multiprocessing.RLock()
         self.new_data_event = None  # No new data by event
 
-        # x, y buffer to validate later when target can be calculated
-        self.x_unchecked = pd.DataFrame()
-        self.y_unchecked = pd.DataFrame()
-
     def get_report(self):
         """ Short info for report """
 

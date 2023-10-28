@@ -137,6 +137,8 @@ class OrderCreator:
                   "sl_order_price": sl_order_price,
                   "sl_order_price_type": "limit"
                   }
+        if price:
+            params.update({"order_price_type": "fok", "price": price})
         if tp_trigger_price:
             params.update({
                 "tp_trigger_price": tp_trigger_price,

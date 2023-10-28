@@ -103,15 +103,15 @@ if __name__ == "__main__":
 
 
     # Open
-    # low, high = DevTool.get_last_lowhigh()
+    low, high = DevTool.get_last_lowhigh()
     # logging.debug(f"Last low:{low}, high:{high}")
-    # broker.create_cur_trade(symbol="BTC-USDT",
-    #                         direction=1,
-    #                         quantity=1,
-    #                         price=None,
-    #                         stop_loss_price=low-1000,
-    #                         take_profit_price=None,
-    #                         trailing_delta=100)
+    broker.create_cur_trade(symbol="BTC-USDT",
+                            direction=1,
+                            quantity=1,
+                            price=None,
+                            stop_loss_price=low-1000,
+                            take_profit_price=None,
+                            trailing_delta=100)
     #
     # # Move stoploss
     # newsl = low - 200
