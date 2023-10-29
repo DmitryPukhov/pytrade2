@@ -2,15 +2,12 @@ import logging
 import multiprocessing
 import time
 from io import StringIO
-from threading import Event
 from typing import Dict
-
 import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
-
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.StrategyBase import StrategyBase
@@ -102,8 +99,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
             x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                         self.candles_cnt_by_interval,
-                                                                        self.target_period,
-                                                                        with_empty_targets=True)
+                                                                        self.target_period)
 
             # We could calculate targets for x, so add x and targets to learn data
             self.learn_data_balancer.add(x, y)

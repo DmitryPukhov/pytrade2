@@ -1,5 +1,6 @@
 from typing import Dict
 
+import numpy as np
 import pandas as pd
 
 from strategy.common.features.CandlesFeatures import CandlesFeatures
@@ -10,11 +11,10 @@ class LongCandleFeatures:
     @staticmethod
     def features_targets_of(candles_by_periods: Dict[str, pd.DataFrame],
                             cnt_by_period: Dict[str, int],
-                            target_period: str,
-                            with_empty_targets=True) -> (pd.DataFrame, pd.DataFrame):
+                            target_period: str) -> (pd.DataFrame, pd.DataFrame):
         # Candles features -
         features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).dropna()
-
+        features = LongCandleFeatures.time_features_of(features)
         # Get targets - movements
         targets_src = candles_by_periods[target_period]
         targets = LongCandleFeatures.targets_of(targets_src).dropna()
@@ -24,6 +24,14 @@ class LongCandleFeatures:
         features_with_targets, targets = features.loc[common_index], targets.loc[common_index]
 
         return features_with_targets, targets, features_wo_targets
+
+    @staticmethod
+    def time_features_of(df: pd.DataFrame):
+        dt = df.index.to_frame()["close_time"].dt
+        df["time_hour"] = dt.hour
+        df["time_minute"] = dt.minute
+        df["time_second"] = dt.second
+        return df
 
     @staticmethod
     def targets_of(candles: pd.DataFrame):

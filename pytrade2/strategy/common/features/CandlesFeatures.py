@@ -6,7 +6,6 @@ import pandas as pd
 
 class CandlesFeatures:
 
-
     @staticmethod
     def candles_last_combined_features_of(candles_by_periods: Dict[str, pd.DataFrame],
                                      cnt_by_period: Dict[str, int]) -> pd.DataFrame:
