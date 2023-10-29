@@ -40,6 +40,8 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
 
     def run(self):
         """ Open socket and subscribe to events """
+        # Subscribe (add self to subscriber list, events will come later when socket is opened)
+        self.sub_events()
 
         # Open and wait until opened
         if not self.ws_client.is_opened:
@@ -50,8 +52,6 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
         self.account_manager.refresh_balance()
 
         self.update_cur_trade_status()
-        # Subscribe
-        self.sub_events()
 
     def sub_events(self):
         """ Subscribe account and order events """
