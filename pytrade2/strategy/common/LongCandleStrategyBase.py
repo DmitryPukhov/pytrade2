@@ -165,10 +165,12 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         if not signal:
             return
         sl, tp, tdelta = self.get_sl_tp_trdelta(signal)
+        last_candle = self.candles_by_interval[self.target_period].iloc[-1]
+        price = last_candle["close"]
         self.broker.create_cur_trade(symbol=self.ticker,
                                      direction=signal,
                                      quantity=self.order_quantity,
-                                     price=None,
+                                     price=price,
                                      stop_loss_price=sl,
                                      take_profit_price=tp,
                                      trailing_delta=tdelta)
