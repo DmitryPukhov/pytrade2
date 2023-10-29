@@ -139,6 +139,11 @@ class PersistableStateStrategy:
 
         # Database file copy
         self.copy2s3(self.db_path)
+
+        # Account balance copy
+        account_path = str(Path(self.account_dir, f"{datetime.utcnow().date()}_balance.csv"))
+        self.copy2s3(account_path)
+
         # Purge old data
         self.purge_data_files(self.model_Xy_dir)
         self.purge_data_files(self.account_dir)
