@@ -35,12 +35,12 @@ pytrade2.strategy.profitloss.ratio: 3
 # 30K*0.001=30 USDT
 # For 30 USDT profit = 0.3 USDT
 pytrade2.strategy.profit.min.coeff: 0.001
-pytrade2.strategy.profit.max.coeff: 0.002
+pytrade2.strategy.profit.max.coeff: 0.004
 
 # 30K*0.001=30 USDT
-# For 30 USDT loss = 0.3 USDT
-pytrade2.strategy.stoploss.min.coeff: 0.001
-pytrade2.strategy.stoploss.max.coeff: 0.003
+# For 30 USDT loss 0.00 = 0.3 USDT
+pytrade2.strategy.stoploss.min.coeff: 0.002
+pytrade2.strategy.stoploss.max.coeff: 0.004
 
 # 0.001 of 30000 = 30
 pytrade2.order.quantity: 1
