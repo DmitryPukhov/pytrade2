@@ -1,6 +1,7 @@
+import atexit
 import logging
 from datetime import timedelta, datetime
-from multiprocessing import RLock
+from multiprocessing import RLock, Lock, Semaphore
 from typing import Optional
 
 from sqlalchemy.orm.session import Session
@@ -35,6 +36,13 @@ class TrailingStopSupport:
         self.ws_feed = ws_feed
         self.rest_client = rest_client
         self.ws_feed.consumers.add(self)
+        self.ts_moving_lock = RLock()
+        atexit.register(self.at_exit)
+
+    def at_exit(self):
+        # Wait until critical sl movement completed
+        with(self.ts_moving_lock):
+            return
 
     def on_ticker(self, ticker: dict):
         """ Look at current price and possibly move trailing stop or close the order """
@@ -74,7 +82,7 @@ class TrailingStopSupport:
         new_sl_trigger = new_tp - t.direction() * t.trailing_delta
         new_sl_order = OrderCreator.sl_order_price(t.direction(), new_sl_trigger)
         logging.info(f"Creating new sl order for trailing stop with new tp: {new_tp}, "
-                       f"new sl trigger: {new_sl_trigger}, new sl order: {new_sl_order}")
+                     f"new sl trigger: {new_sl_trigger}, new sl order: {new_sl_order}")
 
         sl_params = OrderCreator.sl_trade_params(symbol=t.ticker,
                                                  side=Trade.order_side_names[-t.direction()],
@@ -93,7 +101,7 @@ class TrailingStopSupport:
     def move_ts(self, new_tp: float):
         """ Move trailing stop of current trade"""
         logging.info(f"Moving trailing stop to new take profit:{new_tp}")
-
-        self.cancel_prev_sl()
-        self.create_ts_order(new_tp)
-        self.last_ts_move_time = datetime.utcnow()
+        with self.ts_moving_lock:
+            self.cancel_prev_sl()
+            self.create_ts_order(new_tp)
+            self.last_ts_move_time = datetime.utcnow()
