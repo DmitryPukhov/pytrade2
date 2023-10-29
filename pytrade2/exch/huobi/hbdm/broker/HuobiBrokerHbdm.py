@@ -45,6 +45,8 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
         if not self.ws_client.is_opened:
             self.ws_client.open()
 
+        self.ws_feed.run()
+
         self.account_manager.refresh_balance()
 
         self.update_cur_trade_status()

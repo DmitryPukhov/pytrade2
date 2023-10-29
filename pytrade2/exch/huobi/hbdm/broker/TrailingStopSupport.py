@@ -1,10 +1,8 @@
 import logging
 from datetime import timedelta, datetime
-from logging import Logger
 from multiprocessing import RLock
 from typing import Optional
 
-from pandas import Timedelta
 from sqlalchemy.orm.session import Session
 
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
@@ -29,7 +27,7 @@ class TrailingStopSupport:
         self.price_precision = 2
         self.min_trade_timedelta: timedelta = timedelta(seconds=1)
         self.last_ts_move_time = datetime.min
-        self.ticker: Optional[str] = None
+        self.tickers: Optional[str] = None
 
         # Will be initialized in child class
         self.db_session: Optional[Session] = None
