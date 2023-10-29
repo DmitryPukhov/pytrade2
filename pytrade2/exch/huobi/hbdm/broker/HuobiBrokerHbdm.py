@@ -85,11 +85,13 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
                         # Current trade is opened
                         self.update_trade_opened_event(msg, self.cur_trade)
                         self.db_session.commit()
+                        logging.info(f"Current trade is opened")
 
                     elif order_direction == - self.cur_trade.direction():
                         # Current trade is closed
-                        self.update_trade_closed_event(msg, self.cur_trade)
+                        t = self.update_trade_closed_event(msg, self.cur_trade)
                         self.finalize_closed_trade()
+                        logging.info(f"Current trade is closed: {t}")
 
         except Exception as e:
             logging.error(f"Socket message processing error: {e}")
