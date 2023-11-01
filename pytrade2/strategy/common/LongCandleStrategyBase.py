@@ -99,7 +99,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
             x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                         self.candles_cnt_by_interval,
-                                                                        self.target_period)
+                                                                        self.target_period,
+                                                                        self.profit_min_coeff)
 
             # We could calculate targets for x, so add x and targets to learn data
             self.learn_data_balancer.add(x, y)
@@ -178,11 +179,17 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         with self.data_lock:
             balanced_x, balanced_y = self.learn_data_balancer.get_balanced_xy()
         # Log each signal count
-        msgs = ["Prepared balanced xy for learning."]
+        msgs_bal = ["Prepared balanced xy for learning. Balanced counts"]
+        msgs_unbal = ["Unbalanced accumulated counts"]
         for signal in [-1, 0, 1]:
-            cnt = balanced_y[balanced_y['signal'] == signal].size if not balanced_y.empty else 0
-            msgs.append(f"signal{signal}:{cnt}")
-        logging.info(' '.join(msgs))
+            cnt_bal = balanced_y[balanced_y['signal'] == signal].size if not balanced_y.empty else 0
+            msgs_bal.append(f"signal{signal}:{cnt_bal}")
+
+            cnt_unbal = self.learn_data_balancer.y_dict[signal].size
+            msgs_unbal.append(f"signal{signal}:{cnt_unbal}")
+
+        logging.info(' '.join(msgs_bal))
+        logging.info(' '.join(msgs_unbal))
 
         return balanced_x, balanced_y
 

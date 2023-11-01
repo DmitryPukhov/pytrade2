@@ -46,6 +46,21 @@ class TestLongCandleFeatures(TestCase):
              "open": 16, "high": 7.0000, "low": 7.0000, "close": 7000, "vol": 70000}]) \
             .set_index("close_time", drop=False)
 
+    def test_targets_of_low_profit_no_buy(self):
+        # Go up
+        candles = pd.DataFrame(
+            [{"close_time": datetime.fromisoformat("2023-05-21 07:01:00"), "symbol": "asset1", "interval": "1m",
+              "open": 10, "high": 12, "low": 9, "close": 11, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:02:00"), "symbol": "asset1", "interval": "1m",
+              "open": 13, "high": 15, "low": 12, "close": 14, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:03:00"), "symbol": "asset1", "interval": "1m",
+              "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1}]) \
+            .set_index("close_time", drop=False)
+
+        actual = LongCandleFeatures.targets_of(candles, (18-10)/11)
+        self.assertSequenceEqual([0], actual["signal"].tolist())
+        self.assertSequenceEqual([datetime.fromisoformat("2023-05-21 07:01:00")], actual.index)
+
     def test_targets_of_buy(self):
         # Go up
         candles = pd.DataFrame(
@@ -57,7 +72,7 @@ class TestLongCandleFeatures(TestCase):
               "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1}]) \
             .set_index("close_time", drop=False)
 
-        actual = LongCandleFeatures.targets_of(candles)
+        actual = LongCandleFeatures.targets_of(candles, 0)
         self.assertSequenceEqual([1], actual["signal"].tolist())
         self.assertSequenceEqual([datetime.fromisoformat("2023-05-21 07:01:00")], actual.index)
 
@@ -72,8 +87,22 @@ class TestLongCandleFeatures(TestCase):
               "open": 10, "high": 12, "low": 9, "close": 11, "vol": 1}]) \
             .set_index("close_time", drop=False)
 
-        actual = LongCandleFeatures.targets_of(candles)
+        actual = LongCandleFeatures.targets_of(candles, 0)
         self.assertSequenceEqual([-1], actual["signal"].tolist())
+
+    def test_targets_of_low_profit_no_sell(self):
+        # Go up
+        candles = pd.DataFrame(
+            [{"close_time": datetime.fromisoformat("2023-05-21 07:01:00"), "symbol": "asset1", "interval": "1m",
+              "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:02:00"), "symbol": "asset1", "interval": "1m",
+              "open": 13, "high": 15, "low": 12, "close": 14, "vol": 1},
+             {"close_time": datetime.fromisoformat("2023-05-21 07:03:00"), "symbol": "asset1", "interval": "1m",
+              "open": 10, "high": 12, "low": 9, "close": 11, "vol": 1}]) \
+            .set_index("close_time", drop=False)
+
+        actual = LongCandleFeatures.targets_of(candles, (17-8)/17)
+        self.assertSequenceEqual([0], actual["signal"].tolist())
 
     def test_targets_of_flat(self):
         # Go up
@@ -86,13 +115,15 @@ class TestLongCandleFeatures(TestCase):
               "open": 16, "high": 18, "low": 15, "close": 17, "vol": 1}, ]) \
             .set_index("close_time", drop=False)
 
-        actual = LongCandleFeatures.targets_of(candles)
+        actual = LongCandleFeatures.targets_of(candles, 0)
         self.assertSequenceEqual([0], actual["signal"].tolist())
 
     def test_features_targets__same_index(self):
         actual_features, actual_targets, actual_features_wo_targets = LongCandleFeatures.features_targets_of(
-            {"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
-            {"1min": 2, "5min": 2}, target_period="1min")
+            candles_by_periods={"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
+            cnt_by_period={"1min": 2, "5min": 2},
+            target_period="1min",
+            profit_min_coeff=0)
 
         self.assertSequenceEqual(actual_features.index.tolist(), actual_targets.index.tolist())
         self.assertEqual(1, len(actual_features))
