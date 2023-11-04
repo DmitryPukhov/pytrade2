@@ -177,15 +177,16 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
         with self.data_lock:
-            balanced_x, balanced_y = self.learn_data_balancer.get_balanced_xy()
+            balanced_x, balanced_y = self.learn_data_balancer.pop_balanced_xy()
+
         # Log each signal count
         msgs_bal = ["Prepared balanced xy for learning. Balanced counts"]
         msgs_unbal = ["Unbalanced accumulated counts"]
         for signal in [-1, 0, 1]:
-            cnt_bal = balanced_y[balanced_y['signal'] == signal].size if not balanced_y.empty else 0
+            cnt_bal = len(balanced_y[balanced_y['signal'] == signal]) if not balanced_y.empty else 0
             msgs_bal.append(f"signal{signal}:{cnt_bal}")
 
-            cnt_unbal = self.learn_data_balancer.y_dict[signal].size
+            cnt_unbal = len(self.learn_data_balancer.y_dict[signal])
             msgs_unbal.append(f"signal{signal}:{cnt_unbal}")
 
         logging.info(' '.join(msgs_bal))

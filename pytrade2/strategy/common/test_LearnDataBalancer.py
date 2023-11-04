@@ -24,16 +24,26 @@ class LearnDataBalancerTest(TestCase):
 
     def test_get_balanced_xy__empty(self):
         balancer = LearnDataBalancer()
-        x, y = balancer.get_balanced_xy()
+        x, y = balancer.pop_balanced_xy()
         self.assertTrue(x.empty)
         self.assertTrue(y.empty)
 
     def test_get_balanced_xy__zero_max_len(self):
         balancer = self.balancer_with_data()
         balancer.max_len = 0
-        x, y = balancer.get_balanced_xy()
+        x, y = balancer.pop_balanced_xy()
+
+        # No data popped
         self.assertTrue(x.empty)
         self.assertTrue(y.empty)
+
+        # Balancer data should left inside
+        original_balancer = self.balancer_with_data()
+        for signal in [-1, 0, 1]:
+            self.assertListEqual(original_balancer.x_dict[signal].values.tolist(),
+                                 balancer.x_dict[signal].values.tolist())
+            self.assertListEqual(original_balancer.y_dict[signal].values.tolist(),
+                                 balancer.y_dict[signal].values.tolist())
 
     def test_get_balanced_xy__unbalanced_empty(self):
         # Prepare unbalanced data
@@ -41,21 +51,38 @@ class LearnDataBalancerTest(TestCase):
         balancer.x_dict[1], balancer.y_dict[1] = pd.DataFrame(), pd.DataFrame()
 
         # Call
-        x, y = balancer.get_balanced_xy()
+        x, y = balancer.pop_balanced_xy()
 
         # Absense of one signal data should result empty output
         self.assertTrue(x.empty)
         self.assertTrue(y.empty)
 
+        # Balancer data should left inside
+        original_balancer = self.balancer_with_data()
+        original_balancer.x_dict[1], original_balancer.y_dict[1] = pd.DataFrame(), pd.DataFrame()
+        for signal in [-1, 0, 1]:
+            self.assertListEqual(original_balancer.x_dict[signal].values.tolist(),
+                                 balancer.x_dict[signal].values.tolist())
+            self.assertListEqual(original_balancer.y_dict[signal].values.tolist(),
+                                 balancer.y_dict[signal].values.tolist())
+
     def test_get_balanced_xy__balanced(self):
         # Prepare unbalanced data
         balancer = self.balancer_with_data()
         # Call
-        x, y = balancer.get_balanced_xy()
+        x, y = balancer.pop_balanced_xy()
 
         # Assert max item is balanced
         self.assertEqual([[2], [3], [4], [5], [6], [7], [8], [9], [10]], x.values.tolist())
         self.assertEqual([[20], [30], [40], [50], [60], [70], [80], [90], [100]], y.values.tolist())
+
+        # Assert unbalanced items are left in the balancer
+        self.assertEqual(1, len(balancer.x_dict[-1]))
+        self.assertEqual(1, len(balancer.y_dict[-1]))
+        self.assertEqual(0, len(balancer.x_dict[0]))
+        self.assertEqual(0, len(balancer.y_dict[0]))
+        self.assertEqual(0, len(balancer.x_dict[1]))
+        self.assertEqual(0, len(balancer.y_dict[1]))
 
     def test_add__all_signals(self):
         balancer = LearnDataBalancer()
