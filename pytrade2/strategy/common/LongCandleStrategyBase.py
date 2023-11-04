@@ -181,7 +181,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         # Log each signal count
         msgs_bal = ["Prepared balanced xy for learning. Balanced counts"]
-        msgs_unbal = ["Unbalanced accumulated counts"]
+        msgs_unbal = ["Unbalanced left counts"]
         for signal in [-1, 0, 1]:
             cnt_bal = len(balanced_y[balanced_y['signal'] == signal]) if not balanced_y.empty else 0
             msgs_bal.append(f"signal{signal}:{cnt_bal}")
