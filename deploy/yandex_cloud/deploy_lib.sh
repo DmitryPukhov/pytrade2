@@ -56,7 +56,10 @@ copy_to_remote_config() {
 
 build_docker() {
   echo "Building pytrade2 at $VM_PUBLIC_IP"
-  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker-compose build"
+  #ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker-compose build"
+  # build with DOCKER_BUILDKIT=0 to avoid the error: https://github.com/docker/cli/issues/4437
+  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR; sudo DOCKER_BUILDKIT=0 docker-compose build"
+
 }
 
 build_baremetal() {
