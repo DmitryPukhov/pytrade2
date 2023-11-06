@@ -31,7 +31,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         # Should keep 2 more candles for targets
         self.candles_cnt_by_interval[self.target_period] += 2
         self.candles_history_cnt_by_interval[self.target_period] += 2
-        self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '1 minute'))
+        self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
 
         logging.info(f"Target period: {self.target_period}")
         self.data_lock = multiprocessing.RLock()
