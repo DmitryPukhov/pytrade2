@@ -51,7 +51,8 @@ class PersistableStateStrategy:
         if saved_models:
             last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
             logging.info(f"Load model from {last_model_path}")
-            model.load_weights(last_model_path)
+            # skip_mismatch=True because a model changes often during development
+            model.load_weights(last_model_path, skip_mismatch=True)
         else:
             logging.info(f"No saved models in {self.model_weights_dir}")
 
@@ -84,7 +85,7 @@ class PersistableStateStrategy:
         files = os.listdir(data_dir)
         if files:
             keep_prefix = max(files)[:10]
-            #keep_prefix = [f[:10] for f in files][-1]  # last yyyy-mm-dd prefix
+            # keep_prefix = [f[:10] for f in files][-1]  # last yyyy-mm-dd prefix
             logging.debug(f"Purging files in {data_dir}, keep only {keep_prefix}")
             for f in files:
                 if not f.startswith(keep_prefix):
