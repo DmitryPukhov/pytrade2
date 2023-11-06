@@ -14,7 +14,7 @@ pytrade2.data.dir: '/data'
 pytrade2.s3.enabled: true
 
 # Predict next X min
-pytrade2.strategy.learn.interval: "5min"
+pytrade2.strategy.learn.interval: "1min"
 pytrade2.strategy.history.min.window: "5min"
 pytrade2.strategy.history.max.window: "15min"
 pytrade2.strategy.predict.window: "5min"

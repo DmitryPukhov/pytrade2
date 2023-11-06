@@ -49,10 +49,13 @@ class PersistableStateStrategy:
     def load_last_model(self, model: Model):
         saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
         if saved_models:
-            last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
-            logging.info(f"Load model from {last_model_path}")
-            # skip_mismatch=True because a model changes often during development
-            model.load_weights(last_model_path, skip_mismatch=True)
+            try:
+                last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
+                logging.info(f"Load model from {last_model_path}")
+                model.load_weights(last_model_path)
+            except Exception as e:
+                logging.warning(f'Error loading last model. It\'s ok if the model architecture is changed. Error: {e}')
+                pass
         else:
             logging.info(f"No saved models in {self.model_weights_dir}")
 
