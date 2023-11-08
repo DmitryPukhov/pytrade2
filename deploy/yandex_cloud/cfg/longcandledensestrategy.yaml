@@ -2,8 +2,8 @@ pytrade2.strategy: LongCandleDenseStrategy
 pytrade2.broker.trade.allow: false
 
 
-pytrade2.feed.candles.periods: 1min, 5min
-pytrade2.feed.candles.counts: 5, 5
+pytrade2.feed.candles.periods: 1min
+pytrade2.feed.candles.counts: 60
 
 pytrade2.strategy.history.min.window: "3h"
 pytrade2.strategy.history.max.window: "24h"

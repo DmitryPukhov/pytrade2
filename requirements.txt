@@ -15,4 +15,5 @@ scikeras~=0.4.1
 sqlalchemy~=2.0.3
 huobi-sdk~=2.3.3
 boto3==1.21.3
+ta==0.11.0
 #boto3==1.28.60

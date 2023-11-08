@@ -43,3 +43,11 @@ class CandlesFeatures:
             features.rename(columns={col: f"{interval}_{col}"}, inplace=True)
 
         return features.diff().dropna()
+
+    @staticmethod
+    def time_features_of(df: pd.DataFrame):
+        dt = df.index.to_frame()["close_time"].dt
+        df["time_hour"] = dt.hour
+        df["time_minute"] = dt.minute
+        df["time_second"] = dt.second
+        return df

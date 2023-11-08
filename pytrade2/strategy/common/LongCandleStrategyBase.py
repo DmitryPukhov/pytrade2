@@ -91,16 +91,20 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         last_signal = y_pred_trans[-1][0] if y_pred_trans.size > 0 else 0
         return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
 
+    def features_targets(self):
+        x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
+                                                                    self.candles_cnt_by_interval,
+                                                                    self.target_period,
+                                                                    self.profit_min_coeff)
+        return x, y, x_wo_targets
+
     def process_new_data(self):
         with self.data_lock:
             # Get candles starting from current moment to the past
             with self.data_lock:
                 self.read_candles(index_col='close_time')
 
-            x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
-                                                                        self.candles_cnt_by_interval,
-                                                                        self.target_period,
-                                                                        self.profit_min_coeff)
+            x, y, x_wo_targets = self.features_targets()
 
             # We could calculate targets for x, so add x and targets to learn data
             self.learn_data_balancer.add(x, y)
