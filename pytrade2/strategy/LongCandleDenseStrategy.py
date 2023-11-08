@@ -1,33 +1,43 @@
 import pandas as pd
+import ta.wrapper
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
 from strategy.common.LongCandleStrategyBase import LongCandleStrategyBase
 from strategy.common.features.CandlesFeatures import CandlesFeatures
 from strategy.common.features.LongCandleFeatures import LongCandleFeatures
-from ta import trend
+from ta import trend, momentum, volume, others, volatility
 
 
 class LongCandleDenseStrategy(LongCandleStrategyBase):
     """ Predict long candle, NN with dense layers mainly """
 
     def features_targets(self):
-        # Data
-        candles = self.candles_by_interval[min(self.candles_by_interval)]  # 1 minute
+        # Data - 1 minute or other minimal period candles
+        candles = self.candles_by_interval[min(self.candles_by_interval)].copy()
+        candles_cols = candles.columns
 
         # Targets
         targets = LongCandleFeatures.targets_of(candles, self.profit_min_coeff)
 
-        # Features
-        features = CandlesFeatures.time_features_of(candles.copy())
+        # Time features
+        features = CandlesFeatures.time_features_of(candles)
 
+        # Ichimoku indicator
         ichimoku = trend.IchimokuIndicator(candles['high'], candles['low'])
         features['ichimoku_base_line'] = ichimoku.ichimoku_base_line()
         features['ichimoku_conversion_line'] = ichimoku.ichimoku_conversion_line()
         features['ichimoku_a'] = ichimoku.ichimoku_a()
         features['ichimoku_b'] = ichimoku.ichimoku_b()
 
+        # CCI indicator
+        features['cci'] = trend.cci(candles['high'], candles['low'], candles['close'])
+        features['adx'] = trend.adx(candles['high'], candles['low'], candles['close'])
+        features['rsi'] = momentum.rsi(candles['close'])
+        features['stoch'] = momentum.stoch(candles['high'], candles['low'], candles['close'])
+        features['macd'] = ta.trend.macd(candles['close'])
+
         features.dropna(inplace=True)
-        features = features.drop(candles.columns, axis=1)
+        features = features.drop(candles_cols, axis=1)
 
         # Split to features, targets, features wo targets
         common_index = features.index.intersection(targets.index)
