@@ -95,6 +95,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                     self.candles_cnt_by_interval,
                                                                     self.target_period,
+                                                                    self.stop_loss_min_coeff,
                                                                     self.profit_min_coeff)
         return x, y, x_wo_targets
 

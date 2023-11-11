@@ -149,11 +149,8 @@ class LongCandleStrategyBaseTest(TestCase):
             # next1
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:00:00'),
              'close_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
-             'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
-            # next2
-            {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
-             'close_time': datetime.datetime.fromisoformat('2023-10-15T10:02:00'),
-             'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0}])
+             'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0}
+        ])
 
         candles_5min = ([
             # before prev to make diff() for prev not none

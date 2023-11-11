@@ -12,13 +12,14 @@ class LongCandleFeatures:
     def features_targets_of(candles_by_periods: Dict[str, pd.DataFrame],
                             cnt_by_period: Dict[str, int],
                             target_period: str,
+                            loss_min_coeff: float,
                             profit_min_coeff: float) -> (pd.DataFrame, pd.DataFrame):
         # Candles features -
         features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).dropna()
         features = CandlesFeatures.time_features_of(features)
         # Get targets - movements
         targets_src = candles_by_periods[target_period]
-        targets = LongCandleFeatures.targets_of(targets_src, profit_min_coeff).dropna()
+        targets = LongCandleFeatures.targets_of(targets_src, loss_min_coeff, profit_min_coeff).dropna()
 
         common_index = features.index.intersection(targets.index)
         features_wo_targets = features[features.index > common_index.max()]
@@ -27,26 +28,23 @@ class LongCandleFeatures:
         return features_with_targets, targets, features_wo_targets
 
     @staticmethod
-    def targets_of(candles: pd.DataFrame, profit_min_coeff: float):
-        """ One hot encoded signal: buy signal if next 2 candles moves up, sell if down, none if not buy and not sell"""
+    def targets_of(candles: pd.DataFrame, loss_min_coeff: float, profit_min_coeff: float):
+        """ One hot encoded signal: buy signal if next candle moves up, sell if down, none if not buy and not sell"""
 
-        # Next 2 candles
-        next1 = candles.shift(-1)
-        next2 = candles.shift(-2)
+        # Next candle
+        next_ = candles.shift(-1)
 
         targets = pd.DataFrame(index=candles.index)
         # Up move
-        next1up = next1["low"] > (candles["low"] + (candles["high"] - candles["low"]) / 2)
-        next2up = next2["low"] > (next1["low"] + (next1["high"] - next1["low"]) / 2)
-        profitup = next2["high"] >= candles["close"] * (1 + profit_min_coeff)
-        targets["buy"] = next1up & next2up & profitup
+        is_sl_up = next_["low"] > candles["close"] * (1 - loss_min_coeff)
+        is_tp_up = next_["high"] >= candles["close"] * (1 + profit_min_coeff)
+        targets["buy"] = is_sl_up & is_tp_up
 
         # Down move
-        next1down = next1["high"] < (candles["high"] - (candles["high"] - candles["low"]) / 2)
-        next2down = next2["high"] < (next1["high"] - (next1["high"] - next1["low"]) / 2)
-        profitdown = next2["low"] <= candles["close"] * (1 - profit_min_coeff)
-        targets["sell"] = next1down & next2down & profitdown
+        is_sl_down = next_["high"] < candles["close"] * (1 + loss_min_coeff)
+        is_tp_down = next_["low"] <= candles["close"] * (1 - profit_min_coeff)
+        targets["sell"] = is_sl_down & is_tp_down
 
         # targets["none"] = ~ targets["buy"] & ~ targets["sell"]
         targets["signal"] = targets["buy"].astype(int) - targets["sell"].astype(int)
-        return targets[["signal"]].iloc[:-2]
+        return targets[["signal"]].iloc[:-1]
