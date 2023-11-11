@@ -165,14 +165,6 @@ class LongCandleStrategyBaseTest(TestCase):
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:55:00'),
              'close_time': datetime.datetime.fromisoformat('2023-10-15T10:00'),
              'interval': '5min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
-            # next1
-            # {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:00:00'),
-            #  'close_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
-            #  'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1},
-            # # next2
-            # {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
-            #  'close_time': datetime.datetime.fromisoformat('2023-10-15T10:02:00'),
-            #  'interval': '1min', 'open': 10, 'high': 11, 'low': 9, 'close': 10, 'vol': 1}
         ])
 
         # Mock input
