@@ -17,7 +17,7 @@ class LongCandleDenseStrategy(LongCandleStrategyBase):
         candles_cols = candles.columns
 
         # Targets
-        targets = LongCandleFeatures.targets_of(candles, self.profit_min_coeff)
+        targets = LongCandleFeatures.targets_of(candles, self.stop_loss_min_coeff, self.profit_min_coeff)
 
         # Time features
         features = CandlesFeatures.time_features_of(candles)
