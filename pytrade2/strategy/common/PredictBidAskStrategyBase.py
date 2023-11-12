@@ -266,7 +266,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
             return -1, bid, stop_loss_adj, bid - sell_profit, tr_delta
         else:
             # No action
-            return 0, None, None, None
+            return 0, None, None, None, None
 
     def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
