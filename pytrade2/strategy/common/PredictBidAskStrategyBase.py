@@ -210,20 +210,22 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         open_signal = 0
         if not self.broker.cur_trade and self.risk_manager.can_trade():
             # Maybe open a new order
-            open_signal, open_price, stop_loss, take_profit = self.get_signal(bid, ask, bid_min_fut, bid_max_fut,
-                                                                              ask_min_fut,
-                                                                              ask_max_fut)
+            open_signal, open_price, stop_loss, take_profit, tr_delta = self.get_signal(bid, ask, bid_min_fut,
+                                                                                        bid_max_fut,
+                                                                                        ask_min_fut,
+                                                                                        ask_max_fut)
             if open_signal:
                 self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
                                              price=open_price,
                                              stop_loss_price=stop_loss,
-                                             take_profit_price=take_profit)
+                                             take_profit_price=take_profit,
+                                             trailing_delta=tr_delta)
         return open_signal
 
     def get_signal(self, bid: float, ask: float, bid_min_fut: float, bid_max_fut: float, ask_min_fut: float,
                    ask_max_fut: float) -> (int, float, float, float):
         """ Calculate buy, sell or nothing signal based on predictions and profit/loss ratio
-        :return (<-1 for sell, 0 for none, 1 for buy>, stop loss, take profit)"""
+        :return (<-1 for sell, 0 for none, 1 for buy>, stop loss, take profit, trailing delta)"""
 
         buy_profit = bid_max_fut - ask
         buy_loss = ask - bid_min_fut
@@ -253,13 +255,15 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         if is_buy:
             # Buy and possibly fix the loss
             stop_loss_adj = ask - abs(buy_loss) * 1.25
+            tr_delta = abs(stop_loss_adj)
             # stop_loss_adj = min(stop_loss_adj, round(ask * (1 - self.stop_loss_min_coeff), self.price_precision))
-            return 1, ask, stop_loss_adj, ask + buy_profit
+            return 1, ask, stop_loss_adj, ask + buy_profit, tr_delta
         elif is_sell:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
+            tr_delta = abs(stop_loss_adj)
             # stop_loss_adj = max(stop_loss_adj, round(bid * (1 + self.stop_loss_min_coeff), self.price_precision))
-            return -1, bid, stop_loss_adj, bid - sell_profit
+            return -1, bid, stop_loss_adj, bid - sell_profit, tr_delta
         else:
             # No action
             return 0, None, None, None

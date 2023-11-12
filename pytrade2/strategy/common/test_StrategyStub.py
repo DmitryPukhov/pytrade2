@@ -33,11 +33,14 @@ class BrokerStub(BinanceBrokerSpot):
                          quantity: float,
                          price: Optional[float],
                          stop_loss_price: Optional[float],
-                         take_profit_price: Optional[float]) -> Optional[Trade]:
+                         take_profit_price: Optional[float],
+                         trailing_delta: Optional[float]) -> Optional[Trade]:
         """ Don't trade, just emulate """
         self.cur_trade = Trade(ticker=symbol, side=Trade.order_side_names.get(direction),
                                open_time=datetime.utcnow(), open_price=price, open_order_id=None,
-                               stop_loss_price=stop_loss_price, take_profit_price=take_profit_price,
+                               stop_loss_price=stop_loss_price,
+                               take_profit_price=take_profit_price,
+                               trailing_delta = trailing_delta,
                                stop_loss_order_id=None,
                                quantity=quantity)
 
