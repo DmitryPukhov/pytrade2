@@ -72,13 +72,13 @@ build_baremetal() {
 
 bots_up() {
   bot_names=$1
-  echo "Starting bot $bot_names at $VM_PUBLIC_UP machine"
+  echo "Starting bot $bot_names at $VM_PUBLIC_IP machine"
   ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker compose up $bot_names &"
 }
 
 bots_down() {
   bot_names=$1
-  echo "Stopping bot $bot_names at $VM_PUBLIC_UP machine"
+  echo "Stopping bot $bot_names at $VM_PUBLIC_IP machine"
   #ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker compose down $bot_names"
   ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker stop $bot_names"
   ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker rm $bot_names"
