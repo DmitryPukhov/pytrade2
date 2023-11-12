@@ -22,12 +22,12 @@ services:
       service: trade
     command: python ./App.py --pytrade2.strategy LongCandleDenseStrategy
 
-#  simplekerasstrategy:
-#    container_name: simplekerasstrategy
-#    extends:
-#      service: trade
-#    command: python ./App.py --pytrade2.strategy SimpleKerasStrategy
-#
+  simplekerasstrategy:
+    container_name: simplekerasstrategy
+    extends:
+      service: trade
+    command: python ./App.py --pytrade2.strategy SimpleKerasStrategy
+
 #  lstmstrategy:
 #    container_name: lstmstrategy
 #    extends:

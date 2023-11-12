@@ -1,10 +1,8 @@
 #!/bin/bash
 
-default_bot_names="longcandledensestrategy"
-bot_names=${*:-"$default_bot_names"}
+bot_names=${*:-"$DEFAULT_BOT_NAMES"}
 
 . deploy_lib.sh
-
 
 
 echo "Reconfiguring $bot_names at $VM_PUBLIC_IP machine."

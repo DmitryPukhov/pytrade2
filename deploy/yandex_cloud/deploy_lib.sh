@@ -1,5 +1,7 @@
 #!/bin/bash
+#DEFAULT_BOT_NAMES="longcandledensestrategy lstmstrategy2 lstmstrategy simplekerasstrategy"
 
+DEFAULT_BOT_NAMES='longcandledensestrategy simplekerasstrategy'
 S3_DATA_URL='s3://pytrade2/data'
 VM_PUBLIC_IP="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
 VM_USER="yc-user"
@@ -66,4 +68,18 @@ build_baremetal() {
     # In case of running without docker
     ssh $VM_USER@"$VM_PUBLIC_IP" "sudo apt install -y pip"
     ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo pip install -r requirements.txt"
+}
+
+bots_up() {
+  bot_names=$1
+  echo "Starting bot $bot_names at $VM_PUBLIC_UP machine"
+  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker compose up $bot_names &"
+}
+
+bots_down() {
+  bot_names=$1
+  echo "Stopping bot $bot_names at $VM_PUBLIC_UP machine"
+  #ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker compose down $bot_names"
+  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker stop $bot_names"
+  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker rm $bot_names"
 }
