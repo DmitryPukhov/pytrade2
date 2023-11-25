@@ -35,9 +35,6 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.candles_cnt_by_interval[self.target_period] += 1
         self.candles_history_cnt_by_interval[self.target_period] += 1
 
-        # Set level2 history to keep = 1 minute history
-        self.level2_history_period = pd.Timedelta(self.target_period)*self.candles_cnt_by_interval[self.target_period]
-
         self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
 
         logging.info(f"Target period: {self.target_period}")

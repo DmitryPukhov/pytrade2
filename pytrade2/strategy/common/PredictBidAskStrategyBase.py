@@ -39,7 +39,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.past_window = config["pytrade2.strategy.past.window"]
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
-        self.level2_history_period = self.history_max_window
 
         # Price, level2 dataframes and their buffers
         self.bid_ask: pd.DataFrame = pd.DataFrame()
