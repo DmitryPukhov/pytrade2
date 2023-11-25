@@ -88,9 +88,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
 
         StrategyBase.run(self)
 
-        if self.purge_interval:
-            logging.info(f"Starting periodical purging, interval: {self.purge_interval}")
-            Timer(self.purge_interval.seconds, self.purge_all).start()
         # Run the feed, listen events
         self.websocket_feed.run()
         self.candles_feed.run()

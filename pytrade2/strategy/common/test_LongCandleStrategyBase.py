@@ -170,6 +170,7 @@ class LongCandleStrategyBaseTest(TestCase):
         # Mock input
         strategy.candles_feed.read_candles = lambda ticker, interval, limit: \
             {'1min': candles_1min, '5min': candles_5min}[interval]
+        strategy.read_candles(index_col='close_time')
 
         # Flat signal received
         strategy.y_pipe.inverse_transform = MagicMock(return_value=np.array([[0]]))

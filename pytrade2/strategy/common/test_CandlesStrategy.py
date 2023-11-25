@@ -44,9 +44,9 @@ class TestCandlesStrategy(TestCase):
         candle3 = {"open_time": dt2, "close_time": dt3, "interval": "1min", "close": 3}
         strategy.on_candle(candle3)
         self.assertEqual(2, len(strategy.candles_by_interval["1min"]))
-        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt1) + pd.Timedelta("1min")],
+        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt1) + pd.Timedelta("59s")],
                          [pd.Timestamp(dt) for dt in strategy.candles_by_interval["1min"]["open_time"].values.tolist()])
-        self.assertEqual([pd.Timestamp(dt1) + pd.Timedelta("1min"), pd.Timestamp(dt3)],
+        self.assertEqual([pd.Timestamp(dt1) + pd.Timedelta("59s"), pd.Timestamp(dt3)],
                          [pd.Timestamp(dt) for dt in
                           strategy.candles_by_interval["1min"]["close_time"].values.tolist()])
         self.assertEqual([2, 3], strategy.candles_by_interval["1min"]["close"].values.tolist())

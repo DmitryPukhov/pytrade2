@@ -71,20 +71,21 @@ class CandlesStrategy:
 
                 if candle["close_time"] - last_open_time < pd.Timedelta(period):
                     if candle["close_time"] > last_candle["close_time"]:
-                        # New candle is update of last candle in buffer
-                        candle["open_time"] = last_open_time
-                        candles.iloc[-1] = candle
+                        # Replace last candle
+                        #candle["open_time"] = last_open_time
+                        candles.drop(candles.index[-1], inplace=True)
+                        candles.loc[candle["close_time"]] = candle
                 else:
-                    # Close last candle, open new candle
-                    closed_time = last_candle["open_time"] + pd.Timedelta(period)
-
-                    candles.loc[last_candle["open_time"], "close_time"] = candle["open_time"] = closed_time
-
-                    # Open new last candle
-                    candles.loc[candle["open_time"]] = candle
+                    # Fix last candle close time
+                    #closed_time = last_candle["open_time"] + pd.Timedelta(period)
+                    #candles.loc[last_candle["close_time"], "close_time"] = closed_time
+                    #candles.loc[last_candle["open_time"], "close_time"] = candle["open_time"] = closed_time
+                    # Add new candle
+                    candles.loc[candle["close_time"]] = candle
                     self.candles_by_interval[period] = candles.tail(self.candles_history_cnt_by_interval[period])
             else:
-                self.candles_by_interval[period] = pd.DataFrame([candle]).set_index("open_time", drop=False)
+                # Create new dataframe for candles of this period
+                self.candles_by_interval[period] = pd.DataFrame([candle]).set_index("close_time", drop=False)
         self.new_data_event.set()
 
     def has_all_candles(self):

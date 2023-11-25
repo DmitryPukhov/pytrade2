@@ -122,7 +122,7 @@ class TestHuobiBrokerHbdm(TestCase):
                     "direction": "side1",
                     "price": 2,
                     "lever_rate": 1,
-                    "order_price_type": "optimal_5_fok",
+                    "order_price_type": "fok",
                     "reduce_only": 0,  # 0 for opening order
                     "sl_trigger_price": 4,
                     "sl_order_price": 5,
@@ -149,7 +149,7 @@ class TestHuobiBrokerHbdm(TestCase):
                     "direction": "side1",
                     "price": 2,
                     "lever_rate": 1,
-                    "order_price_type": "optimal_5_fok",
+                    "order_price_type": "fok",
                     "reduce_only": 0,  # 0 for opening order
                     "sl_trigger_price": 4,
                     "sl_order_price": 5,

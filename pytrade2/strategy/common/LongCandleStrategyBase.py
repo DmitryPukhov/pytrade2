@@ -6,6 +6,7 @@ from typing import Dict
 import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.compose import ColumnTransformer
+from threading import Event, Timer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 from exch.Exchange import Exchange
@@ -35,7 +36,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         logging.info(f"Target period: {self.target_period}")
         self.data_lock = multiprocessing.RLock()
-        self.new_data_event = None  # No new data by event
+        self.new_data_event: Event = Event()
 
     def get_report(self):
         """ Short info for report """
@@ -56,23 +57,23 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         """
         exchange_name = self.config["pytrade2.exchange"]
 
-        # Create feed and broker
+        # Create feeds and broker
         self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
-        # Do not listen feeds
         self.websocket_feed.consumers.add(self)
+
         self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
-        # Do not listen feeds
-        # self.candles_feed.consumers.add(self)
+        self.candles_feed.consumers.add(self)
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
-        # self.read_candles()
+        self.read_candles()
 
         StrategyBase.run(self)
 
         # Run the feed, listen events
-        # Do not listen candles
-        # self.candles_feed.run()
+        # Run the feed, listen events
+        self.websocket_feed.run()
+        self.candles_feed.run()
         self.broker.run()
 
     def can_learn(self) -> bool:
@@ -102,8 +103,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     def process_new_data(self):
         with self.data_lock:
             # Get candles starting from current moment to the past
-            with self.data_lock:
-                self.read_candles(index_col='close_time')
+            # with self.data_lock:
+            #     self.read_candles(index_col='close_time')
 
             x, y, x_wo_targets = self.features_targets()
 
