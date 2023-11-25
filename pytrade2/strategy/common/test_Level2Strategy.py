@@ -15,7 +15,7 @@ class TestLevel2Strategy(TestCase):
     ], columns=["datetime"])
 
     def new_strategy(self):
-        strategy = Level2Strategy()
+        strategy = Level2Strategy({})
         strategy.data_lock = multiprocessing.RLock()
 
         strategy.level2_buf = self.level2_buf

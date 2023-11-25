@@ -28,7 +28,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
 
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        Level2Strategy.__init__(self)
+        Level2Strategy.__init__(self, config)
 
         self.target_period = min(self.candles_cnt_by_interval.keys())
         # Should keep 1 more candle for targets

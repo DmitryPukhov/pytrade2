@@ -3,10 +3,10 @@ import pandas as pd
 
 
 class Level2Strategy:
-    def __init__(self):
+    def __init__(self, cfg:Dict[str, str]):
         self.level2: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])
         self.level2_buf: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])  # Buffer
-        self.level2_history_period = pd.Timedelta(0)
+        self.level2_history_period = pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))
         self.data_lock = None
         self.new_data_event = None
 

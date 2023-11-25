@@ -29,7 +29,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
 
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        Level2Strategy.__init__(self)
+        Level2Strategy.__init__(self, config)
 
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
