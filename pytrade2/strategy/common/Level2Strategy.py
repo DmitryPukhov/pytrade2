@@ -1,6 +1,4 @@
-from io import StringIO
 from typing import Dict, List
-
 import pandas as pd
 
 
@@ -25,7 +23,11 @@ class Level2Strategy:
         self.new_data_event.set()
 
     def get_report(self):
-            """ Short info for report """
-            return f"Level2 cnt:{self.level2.index.size}, first: {self.level2.index.min()}, last: {self.level2.index.max()}" \
-                if not self.level2.empty \
-                else "Level2 is empty"
+        """ Short info for report """
+        time_format = '%Y-%m-%d %H:%M:%S'
+
+        return (f"Level2 cnt:{self.level2.index.size}, "
+                f"first: {self.level2.index.min().strftime(time_format)}, "
+                f"last: {self.level2.index.max().strftime(time_format)}") \
+            if not self.level2.empty \
+            else "Level2 is empty"

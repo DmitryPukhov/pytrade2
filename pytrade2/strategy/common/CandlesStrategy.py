@@ -11,7 +11,6 @@ class CandlesStrategy:
     """ Decorator for strategies. Reads candles from Binance """
 
     def __init__(self, config, ticker: str, candles_feed):
-        # self.last_candles_read_time = datetime.min
 
         self.data_lock: multiprocessing.RLock() = None
         self.candles_feed = candles_feed
