@@ -39,6 +39,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.past_window = config["pytrade2.strategy.past.window"]
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
+        self.level2_history_period = self.history_max_window
 
         # Price, level2 dataframes and their buffers
         self.bid_ask: pd.DataFrame = pd.DataFrame()
@@ -123,7 +124,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         try:
             with self.data_lock:
                 self.bid_ask = self.purged(self.bid_ask, "bid_ask")
-                self.level2 = self.purged(self.level2, "level2")
+                # self.level2 = self.purged(self.level2, "level2")
                 self.fut_low_high = self.purged(self.fut_low_high, "fut_low_high")
         finally:
             if self.purge_interval:
@@ -146,8 +147,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         with self.data_lock:
             self.bid_ask = pd.concat([self.bid_ask, self.bid_ask_buf]).sort_index()
             self.bid_ask_buf = pd.DataFrame()
-            self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
-            self.level2_buf = pd.DataFrame()
+            self.update_level2()
 
         if not self.bid_ask.empty and not self.level2.empty and self.model \
                 and not self.is_processing and self.X_pipe and self.y_pipe:
@@ -273,7 +273,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
 
         no_bidask = self.bid_ask.empty
         no_candles = not self.has_all_candles()
-        no_level2 = self.level2.empty
+        no_level2 = self.level2.empty and self.level2_buf.empty
 
         if no_bidask or no_candles or no_level2:
             logging.info(f"Can not learn because some datasets are empty. "

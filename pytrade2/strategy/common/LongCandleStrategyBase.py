@@ -34,6 +34,10 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         # Should keep 1 more candle for targets
         self.candles_cnt_by_interval[self.target_period] += 1
         self.candles_history_cnt_by_interval[self.target_period] += 1
+
+        # Set level2 history to keep = 1 minute history
+        self.level2_history_period = pd.Timedelta(self.target_period)*self.candles_cnt_by_interval[self.target_period]
+
         self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
 
         logging.info(f"Target period: {self.target_period}")
@@ -111,8 +115,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
 
     def process_new_data(self):
         with self.data_lock:
-            self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
-            self.level2_buf = pd.DataFrame()
+            self.update_level2()
 
             x, y, x_wo_targets = self.features_targets()
 
@@ -191,6 +194,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
         with self.data_lock:
+            self.update_level2()
             balanced_x, balanced_y = self.learn_data_balancer.pop_balanced_xy()
 
         # Log each signal count

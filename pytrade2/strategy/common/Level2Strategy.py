@@ -6,6 +6,7 @@ class Level2Strategy:
     def __init__(self):
         self.level2: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])
         self.level2_buf: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])  # Buffer
+        self.level2_history_period = pd.Timedelta(0)
         self.data_lock = None
         self.new_data_event = None
 
@@ -21,6 +22,17 @@ class Level2Strategy:
             self.level2_buf = pd.concat([self.level2_buf, new_df])
 
         self.new_data_event.set()
+
+    def update_level2(self):
+        """ Add level2 buf to level2 and purge old level2 """
+
+        with self.data_lock:
+            self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
+            self.level2_buf = pd.DataFrame()
+            # Purge old level2
+            min_time = self.level2["datetime"].max() - self.level2_history_period
+            self.level2 = self.level2[self.level2["datetime"] > min_time]
+        return self.level2
 
     def get_report(self):
         """ Short info for report """
