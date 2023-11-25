@@ -38,7 +38,7 @@ class Level2Strategy:
         """ Short info for report """
         time_format = '%Y-%m-%d %H:%M:%S'
 
-        return (f"Level2 cnt:{self.level2.index.size}, "
+        return (f"Level2 cnt:{len(self.level2)}, "
                 f"first: {self.level2.index.min().strftime(time_format)}, "
                 f"last: {self.level2.index.max().strftime(time_format)}") \
             if not self.level2.empty \
