@@ -4,25 +4,33 @@ import numpy as np
 import pandas as pd
 
 from strategy.common.features.CandlesFeatures import CandlesFeatures
+from strategy.common.features.Level2Features import Level2Features
 
 
 class LongCandleFeatures:
 
     @staticmethod
-    def features_targets_of(candles_by_periods: Dict[str, pd.DataFrame],
+    def features_targets_of(
+                            candles_by_periods: Dict[str, pd.DataFrame],
                             cnt_by_period: Dict[str, int],
+                            level2: pd.DataFrame,
+                            level2_past_window: str,
                             target_period: str,
                             loss_min_coeff: float,
                             profit_min_coeff: float) -> (pd.DataFrame, pd.DataFrame):
-        # Candles features -
+
+        # Candles + level2 features
         features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).dropna()
         features = CandlesFeatures.time_features_of(features)
+        l2features = Level2Features().level2_buckets(level2, level2_past_window)
+        features = pd.merge_asof(features, l2features, left_index=True, right_index=True)
+
         # Get targets - movements
         targets_src = candles_by_periods[target_period]
         targets = LongCandleFeatures.targets_of(targets_src, loss_min_coeff, profit_min_coeff).dropna()
 
         common_index = features.index.intersection(targets.index)
-        features_wo_targets = features[features.index > common_index.max()]
+        features_wo_targets = features[common_index.empty | (features.index > common_index.max())]
         features_with_targets, targets = features.loc[common_index], targets.loc[common_index]
 
         return features_with_targets, targets, features_wo_targets

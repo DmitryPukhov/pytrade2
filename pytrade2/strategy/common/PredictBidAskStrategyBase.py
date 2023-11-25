@@ -12,11 +12,12 @@ from numpy import ndarray
 
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
+from strategy.common.Level2Strategy import Level2Strategy
 from strategy.common.StrategyBase import StrategyBase
 from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
+class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -28,6 +29,8 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
 
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
+        Level2Strategy.__init__(self)
+
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
 
@@ -40,8 +43,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         # Price, level2 dataframes and their buffers
         self.bid_ask: pd.DataFrame = pd.DataFrame()
         self.bid_ask_buf: pd.DataFrame = pd.DataFrame()  # Buffer
-        self.level2: pd.DataFrame = pd.DataFrame()
-        self.level2_buf: pd.DataFrame = pd.DataFrame()  # Buffer
 
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
 
@@ -59,15 +60,12 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         msg.write(f"\nBid ask ")
         msg.write(
             f"cnt:{self.bid_ask.index.size}, first:{self.bid_ask.index.min()}, last: {self.bid_ask.index.max()}" if not self.bid_ask.empty else "is empty")
-
+        msg.write("\n")
         # Level2 report
-        msg.write(f"\nLevel2 ")
-        msg.write(
-            f"cnt:{self.level2.index.size}, first: {self.level2.index.min()}, last: {self.level2.index.max()}" if not self.level2.empty else "is empty")
-
+        msg.write(Level2Strategy.get_report(self))
+        msg.write("\n")
         # Candles report
-        for i, t in self.last_candles_info().items():
-            msg.write(f"\nLast {i} candle: {t}")
+        msg.write(CandlesStrategy.get_report(self))
         return msg.getvalue()
 
     def run(self):
@@ -84,7 +82,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
-        self.read_candles(index_col='open_time')
+        self.read_candles()
 
         StrategyBase.run(self)
 
@@ -111,19 +109,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
                 f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
                 f"last candles: {last_candles}")
         return is_alive
-
-    def on_level2(self, level2: List[Dict]):
-        """
-        Got new order book items event
-        """
-        bid_ask_columns = ["datetime", "symbol", "bid", "bid_vol", "ask", "ask_vol"]
-
-        # Add new data to df
-        new_df = pd.DataFrame(level2, columns=bid_ask_columns).set_index("datetime", drop=False)
-        with self.data_lock:
-            self.level2_buf = pd.concat([self.level2_buf, new_df])
-
-        self.new_data_event.set()
 
     def on_ticker(self, ticker: dict):
         # Add new data to df
@@ -289,14 +274,10 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy):
         no_bidask = self.bid_ask.empty
         no_candles = not self.has_all_candles()
         no_level2 = self.level2.empty
-        no_level2_bid = "bid" not in self.level2.columns or self.level2["bid"].empty
-        no_level2_ask = "ask" not in self.level2.columns or self.level2["ask"].empty
 
-        if no_bidask or no_candles or no_level2 or no_level2_bid or no_level2_ask:
+        if no_bidask or no_candles or no_level2:
             logging.info(f"Can not learn because some datasets are empty. "
                          f"level2.empty: {no_level2}, "
-                         f"level2.bid.empty: {no_level2_bid}, "
-                         f"level2.ask.empty: {no_level2_ask}, "
                          f"candles.empty: {no_candles}")
             return False
 

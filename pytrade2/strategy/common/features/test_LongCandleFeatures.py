@@ -7,6 +7,14 @@ from strategy.common.features.LongCandleFeatures import LongCandleFeatures
 
 
 class TestLongCandleFeatures(TestCase):
+    @staticmethod
+    def level2():
+        return pd.DataFrame([
+            {'datetime': datetime.fromisoformat('2023-05-21 07:05:00'), 'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            {'datetime': datetime.fromisoformat('2023-05-21 07:05:00'), 'ask': 0.9, 'ask_vol': 1, 'bid_vol': None},
+            {'datetime': datetime.fromisoformat('2023-05-21 07:05:00'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1},
+            {'datetime': datetime.fromisoformat('2023-05-21 07:05:00'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1}
+        ])
 
     @staticmethod
     def candles_1m_5():
@@ -118,6 +126,8 @@ class TestLongCandleFeatures(TestCase):
         actual_features, actual_targets, actual_features_wo_targets = LongCandleFeatures.features_targets_of(
             candles_by_periods={"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
             cnt_by_period={"1min": 2, "5min": 2},
+            level2=self.level2(),
+            level2_past_window="1min",
             target_period="1min",
             loss_min_coeff=0,
             profit_min_coeff=0)

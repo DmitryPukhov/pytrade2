@@ -166,11 +166,20 @@ class LongCandleStrategyBaseTest(TestCase):
              'close_time': datetime.datetime.fromisoformat('2023-10-15T10:00'),
              'interval': '5min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
         ])
+        level2 = pd.DataFrame(
+            [
+                {'datetime': datetime.datetime.fromisoformat('2023-05-21 07:05:00'),
+                 'ask': 0.9, 'ask_vol': 1},
+                {'datetime': datetime.datetime.fromisoformat('2023-05-21 07:05:00'),
+                 'bid': 0.8, 'bid_vol': 1},
+
+            ])
 
         # Mock input
         strategy.candles_feed.read_candles = lambda ticker, interval, limit: \
             {'1min': candles_1min, '5min': candles_5min}[interval]
-        strategy.read_candles(index_col='close_time')
+        strategy.read_candles()
+        strategy.level2 = level2
 
         # Flat signal received
         strategy.y_pipe.inverse_transform = MagicMock(return_value=np.array([[0]]))

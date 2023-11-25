@@ -11,11 +11,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
+from strategy.common.Level2Strategy import Level2Strategy
 from strategy.common.StrategyBase import StrategyBase
 from strategy.common.features.LongCandleFeatures import LongCandleFeatures
 
 
-class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
+class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
     """
     Predict long candle, classification model, target signals: -1, 0, 1
     """
@@ -27,6 +28,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
         StrategyBase.__init__(self, config, exchange_provider)
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
+        Level2Strategy.__init__(self)
 
         self.target_period = min(self.candles_cnt_by_interval.keys())
         # Should keep 1 more candle for targets
@@ -46,7 +48,9 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
         if hasattr(self.broker, "get_report"):
             msg.write(self.broker.get_report())
 
-        # Candles report
+        msg.write("\n")
+        msg.write(Level2Strategy.get_report(self))
+        msg.write("\n")
         msg.write(CandlesStrategy.get_report(self))
 
         return msg.getvalue()
@@ -78,12 +82,15 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
+        no_candles = not self.has_all_candles()
+        no_level2 = self.level2.empty
 
-        if not self.has_all_candles():
-            logging.info(f"Can not learn because not enough candles.")
+        if no_candles or no_level2:
+            logging.info(f"Can not learn because some datasets are empty. "
+                         f"level2.empty: {no_level2}, "
+                         f"candles.empty: {no_candles}")
             return False
-        else:
-            return True
+        return True
 
     def predict_last_signal(self, x):
         x_trans = self.X_pipe.transform(x)
@@ -95,6 +102,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
     def features_targets(self):
         x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                     self.candles_cnt_by_interval,
+                                                                    self.level2,
+                                                                    '1min',
                                                                     self.target_period,
                                                                     self.stop_loss_min_coeff,
                                                                     self.profit_min_coeff)
@@ -102,32 +111,31 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy):
 
     def process_new_data(self):
         with self.data_lock:
-            # Get candles starting from current moment to the past
-            # with self.data_lock:
-            #     self.read_candles(index_col='close_time')
+            self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
+            self.level2_buf = pd.DataFrame()
 
             x, y, x_wo_targets = self.features_targets()
 
-            # We could calculate targets for x, so add x and targets to learn data
-            self.learn_data_balancer.add(x, y)
-            if not self.model:
-                self.model = self.create_model(len(x.columns), 3)  # y_size - one hot encoded signals: -1,0.1
-            if not (self.X_pipe and self.y_pipe):
-                self.X_pipe, self.y_pipe = self.create_pipe(x, y)
+        # We could calculate targets for x, so add x and targets to learn data
+        self.learn_data_balancer.add(x, y)
+        if not self.model:
+            self.model = self.create_model(len(x.columns), 3)  # y_size - one hot encoded signals: -1,0.1
+        if not (self.X_pipe and self.y_pipe):
+            self.X_pipe, self.y_pipe = self.create_pipe(x, y)
 
-            # Predict last signal
-            y_pred_last = self.predict_last_signal(x_wo_targets)
-            last_signal = y_pred_last['signal'][-1]
+        # Predict last signal
+        y_pred_last = self.predict_last_signal(x_wo_targets)
+        last_signal = y_pred_last['signal'][-1]
 
-            # Buy or sell or skip
-            self.process_signal(last_signal)
+        # Buy or sell or skip
+        self.process_signal(last_signal)
 
-            # Save to disk for analysis
-            self.save_last_data(self.ticker, {'y_pred': y_pred_last})
+        # Save to disk for analysis
+        self.save_last_data(self.ticker, {'y_pred': y_pred_last})
 
-            # Predict last signal for old x with y. To save and analyse actual and predicted values.
-            y_pred = self.predict_last_signal(x).join(y.tail(1), lsuffix='_pred', rsuffix='_actual')
-            self.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
+        # Predict last signal for old x with y. To save and analyse actual and predicted values.
+        y_pred = self.predict_last_signal(x).join(y.tail(1), lsuffix='_pred', rsuffix='_actual')
+        self.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
 
         # Delay before next processing cycle
         time.sleep(self.processing_interval.seconds)

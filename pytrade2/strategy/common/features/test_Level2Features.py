@@ -6,6 +6,11 @@ from strategy.common.features.Level2Features import Level2Features
 
 class TestLevel2Features(TestCase):
 
+    def test_level2_features_empty(self):
+        buckets = Level2Features().level2_buckets(
+            pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"]), past_window="1s")
+        self.assertTrue(buckets.empty)
+
     def test_level2_features__equal_buckets(self):
         # datetime, price, ask_vol, bid_vol
         # Each bucket has one item
@@ -15,7 +20,7 @@ class TestLevel2Features(TestCase):
         bids = [
             {'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'bid': i, 'ask_vol': None,
              'bid_vol': 1} for i in range(0, 10)]
-        data = pd.DataFrame(asks+bids)
+        data = pd.DataFrame(asks + bids)
         # Call
         buckets = Level2Features().level2_buckets(data, past_window="1s")
         features = buckets.values.tolist()
@@ -45,4 +50,3 @@ class TestLevel2Features(TestCase):
              'l2_bucket_2', 'l2_bucket_3', 'l2_bucket_4', 'l2_bucket_5',
              'l2_bucket_6', 'l2_bucket_7', 'l2_bucket_8', 'l2_bucket_9'],
             features.columns.tolist())
-

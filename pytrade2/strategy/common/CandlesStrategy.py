@@ -41,16 +41,19 @@ class CandlesStrategy:
             out[interval] = cnt
         return out
 
-    def read_candles(self, index_col='open_time'):
+    def read_candles(self):
         # Produce initial candles
         for period, cnt in self.candles_history_cnt_by_interval.items():
             # Read cnt + 1 extra for diff candles
             candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period, cnt)) \
-                .set_index(index_col, drop=False)
+                .set_index("close_time", drop=False)
             logging.debug(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
 
     def get_report(self):
+        if not self.candles_by_interval:
+            return "Candles are empty"
+
         msg = StringIO()
         n = 5
         time_format = '%Y-%m-%d %H:%M:%S'
@@ -72,14 +75,9 @@ class CandlesStrategy:
                 if candle["close_time"] - last_open_time < pd.Timedelta(period):
                     if candle["close_time"] > last_candle["close_time"]:
                         # Replace last candle
-                        #candle["open_time"] = last_open_time
                         candles.drop(candles.index[-1], inplace=True)
                         candles.loc[candle["close_time"]] = candle
                 else:
-                    # Fix last candle close time
-                    #closed_time = last_candle["open_time"] + pd.Timedelta(period)
-                    #candles.loc[last_candle["close_time"], "close_time"] = closed_time
-                    #candles.loc[last_candle["open_time"], "close_time"] = candle["open_time"] = closed_time
                     # Add new candle
                     candles.loc[candle["close_time"]] = candle
                     self.candles_by_interval[period] = candles.tail(self.candles_history_cnt_by_interval[period])
@@ -95,16 +93,11 @@ class CandlesStrategy:
                 return False
         return True
 
-    def last_candles_info(self) -> dict:
-        """ interval: last candle time"""
-
-        return dict([(i, c.index[-1]) for i, c in self.candles_by_interval.items()])
-
     def is_alive(self):
         dt = datetime.now()
         for i, c in self.candles_by_interval.items():
             candle_max_delta = pd.Timedelta(i)
             if dt - c.index.max() > candle_max_delta * 2:
-                # If double candle interval passed and we did not get a new candle, we are dead
+                # If double candle interval passed, and we did not get a new candle, we are dead
                 return False
         return True
