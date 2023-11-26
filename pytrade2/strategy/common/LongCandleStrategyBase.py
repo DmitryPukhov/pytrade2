@@ -112,9 +112,9 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         return x, y, x_wo_targets
 
     def process_new_data(self):
-        self.update_level2()
-
-        x, y, x_wo_targets = self.features_targets()
+        with self.data_lock:
+            self.update_level2()
+            x, y, x_wo_targets = self.features_targets()
         if x.empty or y.empty or x_wo_targets.empty:
             logging.debug(
                 f'Cannot process new data: features or targets are empty. Waiting {self.target_period} for next attempt')
