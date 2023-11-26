@@ -102,10 +102,11 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
 
     def features_targets(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+        level2_past__window = min(self.candles_by_interval)
         x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                     self.candles_cnt_by_interval,
                                                                     self.level2,
-                                                                    '1min',
+                                                                    level2_past__window,
                                                                     self.target_period,
                                                                     self.stop_loss_min_coeff,
                                                                     self.profit_min_coeff)
@@ -116,7 +117,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
             self.update_level2()
             x, y, x_wo_targets = self.features_targets()
         if x.empty or y.empty or x_wo_targets.empty:
-            logging.debug(
+            logging.info(
                 f'Cannot process new data: features or targets are empty. Waiting {self.target_period} for next attempt')
             # Wait until level2 data accumulated
             time.sleep(pd.Timedelta(self.target_period).seconds)
@@ -144,7 +145,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
 
         # Delay before next processing cycle
-        time.sleep(self.processing_interval.seconds)
+        #time.sleep(self.processing_interval.seconds)
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """

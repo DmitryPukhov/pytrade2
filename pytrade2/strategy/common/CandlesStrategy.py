@@ -73,11 +73,13 @@ class CandlesStrategy:
 
                 if candle["close_time"] - last_open_time < pd.Timedelta(period):
                     if candle["close_time"] > last_candle["close_time"]:
+                        candle["open_time"] = last_open_time
                         # Replace last candle
                         candles.drop(candles.index[-1], inplace=True)
                         candles.loc[candle["close_time"]] = candle
                 else:
                     # Add new candle
+                    candle["open_time"] = max(candle["open_time"], last_candle["close_time"] + pd.Timedelta(seconds=1))
                     candles.loc[candle["close_time"]] = candle
                     self.candles_by_interval[period] = candles.tail(self.candles_history_cnt_by_interval[period])
             else:
