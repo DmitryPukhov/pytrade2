@@ -8,7 +8,7 @@ class CandlesFeatures:
 
     @staticmethod
     def candles_last_combined_features_of(candles_by_periods: Dict[str, pd.DataFrame],
-                                     cnt_by_period: Dict[str, int]) -> pd.DataFrame:
+                                          cnt_by_period: Dict[str, int]) -> pd.DataFrame:
         # todo: optimize
         return CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).tail(1)
 
@@ -32,11 +32,13 @@ class CandlesFeatures:
         features = candles.copy().reset_index(drop=True)[cols + ["close_time"]]
 
         # Add previous window candles to columns
+        concat_features = [features]
         for i in range(1, window_size):
             prefix = f"{interval}_-{i}_"
-            for col in cols:
-                features[prefix + col] = features.shift(i)[col]
-        features.set_index("close_time", inplace=True, drop=True)
+            prev_cols_map = {col: prefix + col for col in cols}
+            prev_features = features[cols].shift(i).rename(prev_cols_map, axis=1)
+            concat_features.append(prev_features)
+        features = pd.concat(concat_features, axis=1).set_index("close_time", drop=True)
 
         # Add prefix to ohlcv columns
         for col in cols:
@@ -46,7 +48,7 @@ class CandlesFeatures:
 
     @staticmethod
     def time_features_of(df: pd.DataFrame):
-        #dt = df.index.to_frame()["close_time"].dt
+        # dt = df.index.to_frame()["close_time"].dt
         dt = df.index
         df["time_hour"] = dt.hour
         df["time_minute"] = dt.minute
