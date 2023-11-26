@@ -31,7 +31,10 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
         Level2Strategy.__init__(self, config)
 
-        self.target_period = min(self.candles_cnt_by_interval.keys())
+        predict_window = config["pytrade2.strategy.predict.window"]
+
+        self.target_period = predict_window
+
         # Should keep 1 more candle for targets
         self.candles_cnt_by_interval[self.target_period] += 1
         self.candles_history_cnt_by_interval[self.target_period] += 1
@@ -102,7 +105,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
 
     def features_targets(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
-        level2_past__window = min(self.candles_by_interval)
+        level2_past__window = self.target_period
         x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                     self.candles_cnt_by_interval,
                                                                     self.level2,

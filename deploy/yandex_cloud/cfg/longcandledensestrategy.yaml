@@ -2,16 +2,16 @@ pytrade2.strategy: LongCandleDenseStrategy
 pytrade2.broker.trade.allow: false
 
 
-pytrade2.feed.candles.periods: 1min
-pytrade2.feed.candles.counts: 60
+pytrade2.feed.candles.periods: 5min, 15min
+pytrade2.feed.candles.counts: 5, 5
 
-pytrade2.strategy.history.min.window: "1min"
+pytrade2.strategy.history.min.window: "15min"
 
 # Learn on last 1 min
-pytrade2.strategy.history.max.window: "5min"
-pytrade2.strategy.learn.interval: "1min"
+pytrade2.strategy.history.max.window: "30min"
+pytrade2.strategy.learn.interval: "5min"
 
 pytrade2.strategy.purge.interval: "1min"
-pytrade2.strategy.predict.window: "2min"
-pytrade2.strategy.past.window: "2min"
+pytrade2.strategy.predict.window: "5min"
+pytrade2.strategy.past.window: "5min"
 
