@@ -42,8 +42,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
 
         logging.info(f"Target period: {self.target_period}")
-        self.data_lock = multiprocessing.RLock()
-        self.new_data_event: Event = Event()
+        # self.data_lock = multiprocessing.RLock()
+        # self.new_data_event: Event = Event()
 
     def get_report(self):
         """ Short info for report """
@@ -68,10 +68,10 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
 
         # Create feeds and broker
         self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
-        self.websocket_feed.consumers.add(self)
+        #self.websocket_feed.consumers.add(self)
 
         self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
-        self.candles_feed.consumers.add(self)
+        #self.candles_feed.consumers.add(self)
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
@@ -81,21 +81,25 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
 
         # Run the feed, listen events
         # Run the feed, listen events
-        self.websocket_feed.run()
-        self.candles_feed.run()
+        #self.websocket_feed.run()
+        #self.candles_feed.run()
         self.broker.run()
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
-        no_candles = not self.has_all_candles()
-        no_level2 = self.level2.empty
-
-        if no_candles or no_level2:
-            logging.info(f"Can not learn because some datasets are empty. "
-                         f"level2.empty: {no_level2}, "
-                         f"candles.empty: {no_candles}")
-            return False
-        return True
+        if self.has_all_candles():
+            return True
+        else:
+            logging.info("Cannot learn, not enough data")
+        # no_candles = not self.has_all_candles()
+        # no_level2 = self.level2.empty
+        #
+        # if no_candles or no_level2:
+        #     logging.info(f"Can not learn because some datasets are empty. "
+        #                  f"level2.empty: {no_level2}, "
+        #                  f"candles.empty: {no_candles}")
+        #     return False
+        # return True
 
     def predict_last_signal(self, x):
         x_trans = self.X_pipe.transform(x)
@@ -105,25 +109,28 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
 
     def features_targets(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
-        level2_past__window = self.target_period
+        #level2_past__window = self.target_period
         x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                     self.candles_cnt_by_interval,
-                                                                    self.level2,
-                                                                    level2_past__window,
+                                                                    #self.level2,
+                                                                    #level2_past__window,
                                                                     self.target_period,
                                                                     self.stop_loss_min_coeff,
                                                                     self.profit_min_coeff)
         return x, y, x_wo_targets
 
     def process_new_data(self):
-        with self.data_lock:
-            self.update_level2()
-            x, y, x_wo_targets = self.features_targets()
+        #with self.data_lock:
+            #self.update_level2()
+            #x, y, x_wo_targets = self.features_targets()
+        self.read_candles()
+        x, y, x_wo_targets = self.features_targets()
+
         if x.empty or y.empty or x_wo_targets.empty:
             logging.info(
                 f'Cannot process new data: features or targets are empty. Waiting {self.target_period} for next attempt')
             # Wait until level2 data accumulated
-            time.sleep(pd.Timedelta(self.target_period).seconds)
+            #time.sleep(pd.Timedelta(self.target_period).seconds)
             return
 
         # We could calculate targets for x, so add x and targets to learn data
@@ -148,7 +155,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
 
         # Delay before next processing cycle
-        #time.sleep(self.processing_interval.seconds)
+        time.sleep(self.processing_interval.seconds)
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
         """
@@ -200,9 +207,10 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         return CandlesStrategy.is_alive(self)
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
-        with self.data_lock:
-            self.update_level2()
-            balanced_x, balanced_y = self.learn_data_balancer.pop_balanced_xy()
+        # with self.data_lock:
+        #     self.update_level2()
+        #     balanced_x, balanced_y = self.learn_data_balancer.pop_balanced_xy()
+        balanced_x, balanced_y = self.learn_data_balancer.pop_balanced_xy()
 
         # Log each signal count
         msgs_bal = ["Prepared balanced xy for learning. Balanced counts"]

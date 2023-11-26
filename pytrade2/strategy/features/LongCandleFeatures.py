@@ -10,8 +10,8 @@ class LongCandleFeatures:
     def features_targets_of(
                             candles_by_periods: Dict[str, pd.DataFrame],
                             cnt_by_period: Dict[str, int],
-                            level2: pd.DataFrame,
-                            level2_past_window: str,
+                            #level2: pd.DataFrame,
+                            #level2_past_window: str,
                             target_period: str,
                             loss_min_coeff: float,
                             profit_min_coeff: float) -> (pd.DataFrame, pd.DataFrame):
@@ -19,9 +19,9 @@ class LongCandleFeatures:
         # Candles + level2 features
         features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).dropna()
         features = CandlesFeatures.time_features_of(features)
-        l2features = Level2Features().level2_buckets(level2, level2_past_window)
+        #l2features = Level2Features().level2_buckets(level2, level2_past_window)
         # Merge backward
-        features = pd.merge_asof(features, l2features, left_index=True, right_index=True).dropna()
+        #features = pd.merge_asof(features, l2features, left_index=True, right_index=True).dropna()
 
         # Get targets - movements
         targets_src = candles_by_periods[target_period]
