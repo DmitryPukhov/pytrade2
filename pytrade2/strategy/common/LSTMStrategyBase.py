@@ -1,3 +1,4 @@
+import logging
 import math
 from typing import Dict
 
@@ -8,7 +9,6 @@ from numpy import ndarray
 
 from exch.Exchange import Exchange
 from strategy.common.PredictBidAskStrategyBase import PredictBidAskStrategyBase
-from strategy.features.CandlesFeatures import CandlesFeatures
 from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 

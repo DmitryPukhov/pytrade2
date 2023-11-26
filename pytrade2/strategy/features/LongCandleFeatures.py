@@ -1,8 +1,5 @@
 from typing import Dict
-
-import numpy as np
 import pandas as pd
-
 from strategy.features.CandlesFeatures import CandlesFeatures
 from strategy.features.Level2Features import Level2Features
 
@@ -23,6 +20,7 @@ class LongCandleFeatures:
         features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).dropna()
         features = CandlesFeatures.time_features_of(features)
         l2features = Level2Features().level2_buckets(level2, level2_past_window)
+        # Merge backward
         features = pd.merge_asof(features, l2features, left_index=True, right_index=True)
 
         # Get targets - movements

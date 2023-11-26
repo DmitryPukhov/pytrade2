@@ -111,10 +111,9 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         return x, y, x_wo_targets
 
     def process_new_data(self):
-        with self.data_lock:
-            self.update_level2()
+        self.update_level2()
 
-            x, y, x_wo_targets = self.features_targets()
+        x, y, x_wo_targets = self.features_targets()
 
         # We could calculate targets for x, so add x and targets to learn data
         self.learn_data_balancer.add(x, y)
