@@ -3,8 +3,8 @@ import ta.wrapper
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
 from strategy.common.LongCandleStrategyBase import LongCandleStrategyBase
-from strategy.common.features.CandlesFeatures import CandlesFeatures
-from strategy.common.features.LongCandleFeatures import LongCandleFeatures
+from strategy.features.CandlesFeatures import CandlesFeatures
+from strategy.features.LongCandleFeatures import LongCandleFeatures
 from ta import trend, momentum, volume, others, volatility
 
 

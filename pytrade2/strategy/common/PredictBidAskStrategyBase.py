@@ -14,7 +14,7 @@ from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.Level2Strategy import Level2Strategy
 from strategy.common.StrategyBase import StrategyBase
-from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
+from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
 class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):

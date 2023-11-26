@@ -8,7 +8,7 @@ import pandas as pd
 
 
 class CandlesStrategy:
-    """ Decorator for strategies. Reads candles from Binance """
+    """ Decorator for strategies. Reads candles from exchange """
 
     def __init__(self, config, ticker: str, candles_feed):
 

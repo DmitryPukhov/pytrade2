@@ -8,8 +8,8 @@ from numpy import ndarray
 
 from exch.Exchange import Exchange
 from strategy.common.PredictBidAskStrategyBase import PredictBidAskStrategyBase
-from strategy.common.features.CandlesFeatures import CandlesFeatures
-from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
+from strategy.features.CandlesFeatures import CandlesFeatures
+from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
 class LSTMStrategyBase(PredictBidAskStrategyBase):

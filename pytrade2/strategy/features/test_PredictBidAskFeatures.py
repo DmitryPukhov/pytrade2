@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 from unittest import TestCase
 
-from strategy.common.features.PredictBidAskFeatures import PredictBidAskFeatures
+from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
 class TestPredictBidAskFeatures(TestCase):

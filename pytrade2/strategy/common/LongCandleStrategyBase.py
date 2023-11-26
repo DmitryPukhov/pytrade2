@@ -13,7 +13,7 @@ from exch.Exchange import Exchange
 from strategy.common.CandlesStrategy import CandlesStrategy
 from strategy.common.Level2Strategy import Level2Strategy
 from strategy.common.StrategyBase import StrategyBase
-from strategy.common.features.LongCandleFeatures import LongCandleFeatures
+from strategy.features.LongCandleFeatures import LongCandleFeatures
 
 
 class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
