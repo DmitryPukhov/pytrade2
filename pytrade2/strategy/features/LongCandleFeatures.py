@@ -21,7 +21,7 @@ class LongCandleFeatures:
         features = CandlesFeatures.time_features_of(features)
         l2features = Level2Features().level2_buckets(level2, level2_past_window)
         # Merge backward
-        features = pd.merge_asof(features, l2features, left_index=True, right_index=True)
+        features = pd.merge_asof(features, l2features, left_index=True, right_index=True).dropna()
 
         # Get targets - movements
         targets_src = candles_by_periods[target_period]

@@ -1,3 +1,4 @@
+import datetime
 import logging
 import multiprocessing
 import time
@@ -100,7 +101,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         last_signal = y_pred_trans[-1][0] if y_pred_trans.size > 0 else 0
         return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
 
-    def features_targets(self):
+    def features_targets(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
                                                                     self.candles_cnt_by_interval,
                                                                     self.level2,
@@ -114,6 +115,12 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.update_level2()
 
         x, y, x_wo_targets = self.features_targets()
+        if x.empty or y.empty or x_wo_targets.empty:
+            logging.debug(
+                f'Cannot process new data: features or targets are empty. Waiting {self.target_period} for next attempt')
+            # Wait until level2 data accumulated
+            time.sleep(pd.Timedelta(self.target_period).seconds)
+            return
 
         # We could calculate targets for x, so add x and targets to learn data
         self.learn_data_balancer.add(x, y)

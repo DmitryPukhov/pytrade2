@@ -133,7 +133,7 @@ class TestLongCandleFeatures(TestCase):
             profit_min_coeff=0)
 
         self.assertSequenceEqual(actual_features.index.tolist(), actual_targets.index.tolist())
-        self.assertEqual(2, len(actual_features))
+        self.assertEqual(1, len(actual_features))
         self.assertEqual(1, len(actual_features_wo_targets))
 
     def test_features_targets__should_get_last_level2(self):
@@ -149,7 +149,7 @@ class TestLongCandleFeatures(TestCase):
             profit_min_coeff=0)
 
         self.assertSequenceEqual(actual_features.index.tolist(), actual_targets.index.tolist())
-        self.assertEqual(2, len(actual_features))
+        self.assertEqual(1, len(actual_features))
         self.assertEqual(1, len(actual_features_wo_targets))
 
         # L2 should be filled in the features after l2
@@ -172,10 +172,10 @@ class TestLongCandleFeatures(TestCase):
             profit_min_coeff=0)
 
         self.assertSequenceEqual(actual_features.index.tolist(), actual_targets.index.tolist())
-        self.assertEqual(2, len(actual_features))
+        self.assertEqual(1, len(actual_features))
         self.assertEqual(1, len(actual_features_wo_targets))
 
         # L2 should be filled in the features after l2
         l2cols = [c for c in actual_features.columns if c.startswith("l2_bucket")]
-        l2index = actual_features[l2cols].dropna().index.tolist()
+        l2index = actual_features[l2cols].index.tolist()
         self.assertEqual([datetime.fromisoformat('2023-05-21 07:04:00')], l2index)
