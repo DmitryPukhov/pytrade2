@@ -41,8 +41,6 @@ class PersistableStateStrategy:
         self.model = None
         # Save data each 10 seconds
         self.save_interval: timedelta = timedelta(seconds=60)
-        self.X_buf = pd.DataFrame()
-        self.y_buf = pd.DataFrame()
         self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
         self.last_learn_saved_index = datetime.min
 
