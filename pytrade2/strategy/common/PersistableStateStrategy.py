@@ -41,8 +41,6 @@ class PersistableStateStrategy:
         self.model = None
         # Save data each 10 seconds
         self.save_interval: timedelta = timedelta(seconds=60)
-        self.X_buf = pd.DataFrame()
-        self.y_buf = pd.DataFrame()
         self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
         self.last_learn_saved_index = datetime.min
 
@@ -120,8 +118,6 @@ class PersistableStateStrategy:
         """
         Write X,y, data to csv for analysis
         """
-        # self.X_buf = pd.concat([self.X_buf, X_last])
-        # self.y_buf = pd.concat([self.y_buf, y_pred_last])
         for data_tag in data_last:
             self.data_bufs[data_tag] = pd.concat([self.data_bufs[data_tag], data_last[data_tag]])
 
