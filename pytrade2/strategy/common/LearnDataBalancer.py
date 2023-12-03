@@ -1,3 +1,5 @@
+from io import StringIO
+
 import pandas as pd
 
 
@@ -8,6 +10,20 @@ class LearnDataBalancer:
         self.x_dict = {-1: pd.DataFrame(), 0: pd.DataFrame(), 1: pd.DataFrame()}
         self.y_dict = {-1: pd.DataFrame(), 0: pd.DataFrame(), 1: pd.DataFrame()}
         self.max_len = max_len
+
+    def get_report(self):
+        """ Short info for report """
+
+        msg = StringIO()
+        signal_names = {-1: "sell", 0: "oom", 1: "buy"}
+        for signal in self.x_dict:
+            msg.write(f"learn balanced {signal_names[signal]}: {len(self.x_dict[signal])} ")
+            if not self.x_dict[signal].empty:
+                msg.write(f"from {self.x_dict[signal].index.min().floor('S')}"
+                          f" to {self.x_dict[signal].index.max().floor('S')}")
+            msg.write("\n")
+
+        return msg.getvalue()
 
     def add(self, x: pd.DataFrame, y: pd.DataFrame):
         for signal in y['signal'].unique():

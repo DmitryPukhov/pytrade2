@@ -53,10 +53,12 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         if hasattr(self.broker, "get_report"):
             msg.write(self.broker.get_report())
 
-        msg.write("\n")
-        msg.write(Level2Strategy.get_report(self))
+        # msg.write("\n")
+        # msg.write(Level2Strategy.get_report(self))
         msg.write("\n")
         msg.write(CandlesStrategy.get_report(self))
+
+        msg.write(self.learn_data_balancer.get_report())
 
         return msg.getvalue()
 
