@@ -8,9 +8,6 @@ import pandas as pd
 from strategy.common.test_StrategyStub import StrategyStub
 from strategy.feed.CandlesFeed import CandlesFeed
 
-#sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
-#from test_StrategyStub import StrategyStub
-
 
 class TestCandlesFeed(TestCase):
     def test_on_candle(self):
