@@ -2,7 +2,7 @@ from typing import Dict, List
 import pandas as pd
 
 
-class Level2Strategy:
+class Level2Feed:
     def __init__(self, cfg: Dict[str, str]):
         self.level2: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])
         self.level2_buf: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])  # Buffer

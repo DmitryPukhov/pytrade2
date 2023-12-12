@@ -4,10 +4,10 @@ from unittest import TestCase
 
 import pandas as pd
 
-from strategy.common.Level2Strategy import Level2Strategy
+from strategy.feed.Level2Feed import Level2Feed
 
 
-class TestLevel2Strategy(TestCase):
+class TestLevel2Feed(TestCase):
     level2_buf = pd.DataFrame([
         datetime.fromisoformat("2023-11-26 00:10"),
         datetime.fromisoformat("2023-11-26 00:10:01"),
@@ -15,7 +15,7 @@ class TestLevel2Strategy(TestCase):
     ], columns=["datetime"])
 
     def new_strategy(self):
-        strategy = Level2Strategy({})
+        strategy = Level2Feed({})
         strategy.data_lock = multiprocessing.RLock()
 
         strategy.level2_buf = self.level2_buf

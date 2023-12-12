@@ -4,20 +4,21 @@ import traceback
 from datetime import datetime
 from io import StringIO
 from threading import Event, Timer
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
 from numpy import ndarray
 
 from exch.Exchange import Exchange
-from strategy.common.CandlesStrategy import CandlesStrategy
-from strategy.common.Level2Strategy import Level2Strategy
+from strategy.feed.BidAskFeed import BidAskFeed
+from strategy.feed.CandlesFeed import CandlesFeed
+from strategy.feed.Level2Feed import Level2Feed
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
+class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Feed):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -28,8 +29,9 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.candles_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider)
-        CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        Level2Strategy.__init__(self, config)
+        CandlesFeed.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
+        Level2Feed.__init__(self, config)
+        BidAskFeed.__init__(self, config)
 
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
@@ -39,10 +41,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.past_window = config["pytrade2.strategy.past.window"]
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
-
-        # Price, level2 dataframes and their buffers
-        self.bid_ask: pd.DataFrame = pd.DataFrame()
-        self.bid_ask_buf: pd.DataFrame = pd.DataFrame()  # Buffer
 
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
 
@@ -56,16 +54,14 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         # Broker report
         if hasattr(self.broker, "get_report"):
             msg.write(self.broker.get_report())
-        # Bid ask report
-        msg.write(f"\nBid ask ")
-        msg.write(
-            f"cnt:{self.bid_ask.index.size}, first:{self.bid_ask.index.min()}, last: {self.bid_ask.index.max()}" if not self.bid_ask.empty else "is empty")
+        # BidAsk report
+        msg.write(BidAskFeed.get_report(self))
         msg.write("\n")
         # Level2 report
-        msg.write(Level2Strategy.get_report(self))
+        msg.write(Level2Feed.get_report(self))
         msg.write("\n")
         # Candles report
-        msg.write(CandlesStrategy.get_report(self))
+        msg.write(CandlesFeed.get_report(self))
         return msg.getvalue()
 
     def run(self):
@@ -100,7 +96,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         elif not self.level2.empty and dt - self.level2.index.max() > maxdelta:
             is_alive = False
         else:
-            is_alive = CandlesStrategy.is_alive(self)
+            is_alive = CandlesFeed.is_alive(self)
         if not is_alive:
             last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
             last_level2 = self.level2.index.max() if not self.level2.empty else None
@@ -109,14 +105,6 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
                 f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
                 f"last candles: {last_candles}")
         return is_alive
-
-    def on_ticker(self, ticker: dict):
-        # Add new data to df
-        new_df = pd.DataFrame([ticker], columns=list(ticker.keys())).set_index("datetime")
-        with self.data_lock:
-            self.bid_ask_buf = pd.concat([self.bid_ask_buf, new_df])
-
-        self.new_data_event.set()
 
     def purge_all(self):
         """ Purge old data to reduce memory usage"""
@@ -144,8 +132,13 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
 
         # Append new data from buffers to main data frames
         with self.data_lock:
-            self.bid_ask = pd.concat([self.bid_ask, self.bid_ask_buf]).sort_index()
-            self.bid_ask_buf = pd.DataFrame()
+            # Save raw buffers to history
+            self.save_last_data(self.ticker, {
+                "raw_bid_ask": self.bid_ask_buf,
+                "raw_level2": self.level2_buf
+            })
+            # Update data from buffers
+            self.update_bid_ask()
             self.update_level2()
 
         if not self.bid_ask.empty and not self.level2.empty and self.model \

@@ -5,7 +5,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from strategy.common.CandlesStrategy import CandlesStrategy
+from strategy.feed.CandlesFeed import CandlesFeed
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 from test_StrategyStub import StrategyStub
@@ -87,7 +87,7 @@ class TestCandlesStrategy(TestCase):
         counts = [2, 2]
         history_window = "10min"
         predict_window = "1min"
-        actual = CandlesStrategy.candles_history_cnts(periods, counts, history_window, predict_window)
+        actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
         self.assertEqual({"1min": 14, "5min": 5}, actual)
 
     def test_candles_history_counts__small_history(self):
@@ -95,5 +95,5 @@ class TestCandlesStrategy(TestCase):
         counts = [2, 2]
         history_window = "10s"
         predict_window = "1s"
-        actual = CandlesStrategy.candles_history_cnts(periods, counts, history_window, predict_window)
+        actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
         self.assertEqual({"1min": 3, "5min": 3}, actual)

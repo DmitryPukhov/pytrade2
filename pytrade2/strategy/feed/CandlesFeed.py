@@ -7,7 +7,7 @@ from typing import Dict
 import pandas as pd
 
 
-class CandlesStrategy:
+class CandlesFeed:
     """ Decorator for strategies. Reads candles from exchange """
 
     def __init__(self, config, ticker: str, candles_feed):

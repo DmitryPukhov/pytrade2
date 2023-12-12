@@ -1,23 +1,20 @@
-import datetime
 import logging
-import multiprocessing
 import time
 from io import StringIO
 from typing import Dict
 import pandas as pd
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.compose import ColumnTransformer
-from threading import Event, Timer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 from exch.Exchange import Exchange
-from strategy.common.CandlesStrategy import CandlesStrategy
-from strategy.common.Level2Strategy import Level2Strategy
+from strategy.feed.CandlesFeed import CandlesFeed
+from strategy.feed.Level2Feed import Level2Feed
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LongCandleFeatures import LongCandleFeatures
 
 
-class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
+class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
     """
     Predict long candle, classification model, target signals: -1, 0, 1
     """
@@ -28,8 +25,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         self.candles_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider)
-        CandlesStrategy.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        Level2Strategy.__init__(self, config)
+        CandlesFeed.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
+        Level2Feed.__init__(self, config)
 
         predict_window = config["pytrade2.strategy.predict.window"]
 
@@ -56,7 +53,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
         # msg.write("\n")
         # msg.write(Level2Strategy.get_report(self))
         msg.write("\n")
-        msg.write(CandlesStrategy.get_report(self))
+        msg.write(CandlesFeed.get_report(self))
 
         msg.write(self.learn_data_balancer.get_report())
 
@@ -206,7 +203,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesStrategy, Level2Strategy):
                                      trailing_delta=tdelta)
 
     def is_alive(self):
-        return CandlesStrategy.is_alive(self)
+        return CandlesFeed.is_alive(self)
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
         # with self.data_lock:
