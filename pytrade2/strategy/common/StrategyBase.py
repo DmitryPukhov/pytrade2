@@ -138,7 +138,6 @@ class StrategyBase(PersistableStateStrategy):
 
                 # Save weights and xy new delta
                 self.save_model()
-                self.save_learn_xy_new(self.ticker, train_X, train_y)
 
                 # to avoid OOM
                 tensorflow.keras.backend.clear_session()

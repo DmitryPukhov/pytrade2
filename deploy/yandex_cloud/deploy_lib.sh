@@ -28,6 +28,15 @@ prepare_tmp_config(){
    for f in $files; do cp -v -f $f $tmp_cfg_dir; done
 }
 
+prepare_tmp_clean_cache(){
+  echo "Clean cache files"
+  for name in __pycache__ _trial_temp "*.lock"
+  do
+    find "$TMP_DIR" -type d -name "$name" -exec rm -rf {} \; 2> /dev/null # Supress cannot find messages
+    find "$TMP_DIR" -name "$name" -exec rm -rf {} \; 2> /dev/null # Supress cannot find messages
+  done
+}
+
 prepare_tmp(){
   echo "Cleaning tmp dir: $TMP_DIR"
   rm -r -f "$TMP_DIR"
@@ -36,6 +45,8 @@ prepare_tmp(){
   echo "Copying pytrade2 to tmp"
   cp -r "$PYTRADE2_DIR/pytrade2" "$TMP_DIR/pytrade2"
 
+  # Clean caches
+  prepare_tmp_clean_cache
   # Compose configs in tmp
   prepare_tmp_config
 
