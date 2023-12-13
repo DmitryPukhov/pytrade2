@@ -128,21 +128,21 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
         left_bound = df.index.max() - pd.Timedelta(purge_window)
         return df[df.index >= left_bound]
 
-    def process_new_data(self):
-
+    def apply_buffers(self):
         # Append new data from buffers to main data frames
         with (self.data_lock):
             # Save raw buffers to history
-            save_dict = {"raw_bid_ask": self.bid_ask_buf,
-                         "raw_level2": self.level2_buf}
-            # save to raw_candles_M1, raw_candles_m2 etc.
-            save_dict.update({f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf})
+            save_dict = {**{"raw_bid_ask": self.bid_ask_buf, "raw_level2": self.level2_buf},
+                         **{f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}}
             self.save_last_data(self.ticker, save_dict)
 
             # Update data from buffers
             self.update_bid_ask()
             self.update_level2()
             self.update_candles()
+
+    def process_new_data(self):
+        self.apply_buffers()
 
         if not self.bid_ask.empty and not self.level2.empty and self.model \
                 and not self.is_processing and self.X_pipe and self.y_pipe:

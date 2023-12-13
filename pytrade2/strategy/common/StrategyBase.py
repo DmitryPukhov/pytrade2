@@ -109,6 +109,7 @@ class StrategyBase(PersistableStateStrategy):
 
     def learn(self):
         try:
+            self.apply_buffers()
             logging.debug("Learning")
             if not self.can_learn():
                 return
@@ -199,4 +200,7 @@ class StrategyBase(PersistableStateStrategy):
 
     def purge_all(self):
         # If no data purging in child strategy, just not override this method
+        pass
+
+    def apply_buffers(self):
         pass
