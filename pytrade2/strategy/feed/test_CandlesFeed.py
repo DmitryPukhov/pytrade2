@@ -10,15 +10,18 @@ from strategy.feed.CandlesFeed import CandlesFeed
 
 
 class TestCandlesFeed(TestCase):
-    def test_on_candle(self):
+    def test_update_candles(self):
         strategy = StrategyStub()
         strategy.candles_by_interval = {}
 
         # Candle 1 received
         dt1 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=52)
         candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "close": 1}
+        # Call
         strategy.on_candle(candle1)
+        strategy.update_candles()
         candles = strategy.candles_by_interval["1min"]
+        # Assert candle1
         self.assertEqual(1, len(candles))
         self.assertEqual([dt1], candles.index.tolist())
         self.assertEqual([pd.Timestamp(dt1)],
@@ -28,7 +31,11 @@ class TestCandlesFeed(TestCase):
         # Candle2 received in 59 sec - update of candle1
         dt2 = dt1 + datetime.timedelta(seconds=59)
         candle2 = {"open_time": dt1, "close_time": dt2, "interval": "1min", "close": 2}
+        # Call
         strategy.on_candle(candle2)
+        strategy.update_candles()
+        candles = strategy.candles_by_interval["1min"]
+        # Assert candle 2
         self.assertEqual(1, len(candles))
         self.assertEqual([pd.Timestamp(dt1)],
                          [pd.Timestamp(dt) for dt in candles["open_time"].values.tolist()])
@@ -40,15 +47,18 @@ class TestCandlesFeed(TestCase):
         # Candle3 received in 1 min - new candle
         dt3 = dt1 + datetime.timedelta(minutes=1)
         candle3 = {"open_time": dt2, "close_time": dt3, "interval": "1min", "close": 3}
+        # Call candle3
         strategy.on_candle(candle3)
-        self.assertEqual(2, len(strategy.candles_by_interval["1min"]))
+        strategy.update_candles()
+        candles = strategy.candles_by_interval["1min"]
+        # Assert candle3
+        self.assertEqual(2, len(candles))
         # Second candle is forming, open time is fixed prev candle + 1s
-        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt1) + pd.Timedelta("60s")],
-                         [pd.Timestamp(dt) for dt in strategy.candles_by_interval["1min"]["open_time"].values.tolist()])
+        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt1) + pd.Timedelta("59s")],
+                         [pd.Timestamp(dt) for dt in candles["open_time"].values.tolist()])
         self.assertEqual([pd.Timestamp(dt1) + pd.Timedelta("59s"), pd.Timestamp(dt3)],
-                         [pd.Timestamp(dt) for dt in
-                          strategy.candles_by_interval["1min"]["close_time"].values.tolist()])
-        self.assertEqual([2, 3], strategy.candles_by_interval["1min"]["close"].values.tolist())
+                         [pd.Timestamp(dt) for dt in candles["close_time"].values.tolist()])
+        self.assertEqual([2, 3], candles["close"].values.tolist())
 
     def test_has_history_empty(self):
         strategy = StrategyStub()

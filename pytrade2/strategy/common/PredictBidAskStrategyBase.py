@@ -131,15 +131,18 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
     def process_new_data(self):
 
         # Append new data from buffers to main data frames
-        with self.data_lock:
+        with (self.data_lock):
             # Save raw buffers to history
-            self.save_last_data(self.ticker, {
-                "raw_bid_ask": self.bid_ask_buf,
-                "raw_level2": self.level2_buf
-            })
+            save_dict = {"raw_bid_ask": self.bid_ask_buf,
+                         "raw_level2": self.level2_buf}
+            # save to raw_candles_M1, raw_candles_m2 etc.
+            save_dict.update({f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf})
+            self.save_last_data(self.ticker, save_dict)
+
             # Update data from buffers
             self.update_bid_ask()
             self.update_level2()
+            self.update_candles()
 
         if not self.bid_ask.empty and not self.level2.empty and self.model \
                 and not self.is_processing and self.X_pipe and self.y_pipe:
@@ -160,8 +163,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
                 # Save to historical data
                 self.save_last_data(self.ticker, {
                     "x": X.tail(1),
-                    "y_pred": y.tail(1),
-                    "bidask": self.bid_ask.tail(1)
+                    "y_pred": y.tail(1)
                 })
             except Exception as e:
                 logging.error(f"{e}. Traceback: {traceback.format_exc()}")

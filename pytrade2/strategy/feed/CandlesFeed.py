@@ -16,6 +16,7 @@ class CandlesFeed:
         self.candles_feed = candles_feed
         self.ticker = ticker
         self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
+        self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
         self.data_lock: multiprocessing.RLock() = None
         self.new_data_event: multiprocessing.Event = None
 
@@ -61,30 +62,26 @@ class CandlesFeed:
 
         return msg.getvalue()
 
+    def update_candles(self):
+        """ Combine candles with buffers"""
+        with self.data_lock:
+            for period, buf in self.candles_by_interval_buf.items():
+                # candles + buf
+                candles = self.candles_by_interval.get(period, pd.DataFrame())
+                candles = pd.concat([candles, buf]).set_index("close_time", drop=False)
+                candles = candles.resample(period).last().sort_index().tail(self.candles_history_cnt_by_interval[period])
+
+                self.candles_by_interval[period] = candles
+                self.candles_by_interval_buf[period] = pd.DataFrame()
+
     def on_candle(self, candle: {}):
+        candle_df = pd.DataFrame([candle]).set_index("close_time", drop=False)
         with (self.data_lock):
             period = str(candle["interval"])
             logging.debug(f"Got {period} candle: {candle}")
-            if period in self.candles_by_interval:
-                candles = self.candles_by_interval.get(period)
-                last_candle = candles.iloc[-1]
-                last_open_time = last_candle["open_time"]
-
-                if candle["close_time"] - last_open_time < pd.Timedelta(period):
-                    if candle["close_time"] > last_candle["close_time"]:
-                        # Replace last candle if new candle is later
-                        candle["open_time"] = last_open_time
-                        candles.drop(candles.index[-1], inplace=True)
-                        candles.loc[candle["close_time"]] = candle
-                else:
-                    # Add new candle
-                    candle["open_time"] = max(candle["open_time"], last_candle["close_time"] + pd.Timedelta(seconds=1))
-                    candles.loc[candle["close_time"]] = candle
-                    # Purge old candles
-                    self.candles_by_interval[period] = candles.tail(self.candles_history_cnt_by_interval[period])
-            else:
-                # Create new dataframe for candles of this period
-                self.candles_by_interval[period] = pd.DataFrame([candle]).set_index("close_time", drop=False)
+            prev_buf = self.candles_by_interval_buf.get(period, pd.DataFrame())
+            # Add to buffer
+            self.candles_by_interval_buf[period] = pd.concat([prev_buf, candle_df])
         self.new_data_event.set()
 
     def has_all_candles(self):
