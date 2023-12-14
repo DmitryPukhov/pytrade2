@@ -28,7 +28,7 @@ class Level2Features:
 
         # Ask + bid buckets
         level2features = bidfeatures.merge(askfeatures, on='datetime').fillna(0)
-        level2features = level2features.rolling(past_window).agg(sum)
+        level2features = level2features.rolling(past_window).agg('sum')
 
         return level2features
 

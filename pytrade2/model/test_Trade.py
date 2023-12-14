@@ -18,17 +18,17 @@ class TestTrade(TestCase):
         actual_millis = trade.open_time_epoch_millis()
 
         # Assert millis
-        self.assertEquals(original_millis, actual_millis)
+        self.assertEqual(original_millis, actual_millis)
 
     def test_direction_buy(self):
         trade = Trade()
         trade.side = "BUY"
-        self.assertEquals(1, trade.direction())
+        self.assertEqual(1, trade.direction())
 
     def test_direction_sell(self):
         trade = Trade()
         trade.side = "SELL"
-        self.assertEquals(-1, trade.direction())
+        self.assertEqual(-1, trade.direction())
 
     def test_direction_bad(self):
         trade = Trade()

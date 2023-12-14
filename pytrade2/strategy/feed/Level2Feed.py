@@ -26,9 +26,11 @@ class Level2Feed:
 
     def update_level2(self):
         """ Add level2 buf to level2 and purge old level2 """
+        if self.level2_buf.empty:
+            return
 
         with self.data_lock:
-            self.level2 = pd.concat([self.level2, self.level2_buf]).sort_index()
+            self.level2 = pd.concat([df for df in [self.level2, self.level2_buf] if not df.empty])
             self.level2_buf = pd.DataFrame()
             # Purge old level2
             min_time = self.level2["datetime"].max() - self.level2_history_period

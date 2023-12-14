@@ -105,7 +105,7 @@ class PersistableStateStrategy:
         Write X,y, data to csv for analysis
         """
         for data_tag in data_last:
-            self.data_bufs[data_tag] = pd.concat([self.data_bufs[data_tag], data_last[data_tag]])
+            self.data_bufs[data_tag] = pd.concat([df for df in [self.data_bufs[data_tag], data_last[data_tag]] if not df.empty])
 
         if datetime.utcnow() - self.last_save_time < self.save_interval:
             return

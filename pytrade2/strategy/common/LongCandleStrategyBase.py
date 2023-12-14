@@ -141,7 +141,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
 
         # Predict last signal
         y_pred_last = self.predict_last_signal(x_wo_targets)
-        last_signal = y_pred_last['signal'][-1]
+        last_signal = y_pred_last['signal'].iloc[-1]
 
         # Buy or sell or skip
         self.process_signal(last_signal)
