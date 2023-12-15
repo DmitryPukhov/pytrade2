@@ -86,8 +86,7 @@ class PersistableStateStrategy:
 
         files = os.listdir(data_dir)
         if files:
-            keep_prefix = max(files)[:10]
-            # keep_prefix = [f[:10] for f in files][-1]  # last yyyy-mm-dd prefix
+            keep_prefix = max(files)[:10]  # last yyyy-mm-dd prefix
             logging.debug(f"Purging files in {data_dir}, keep only {keep_prefix}")
             for f in files:
                 if not f.startswith(keep_prefix):

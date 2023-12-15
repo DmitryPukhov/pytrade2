@@ -30,7 +30,7 @@ prepare_tmp_config(){
 
 prepare_tmp_clean_cache(){
   echo "Clean cache files"
-  for name in __pycache__ _trial_temp "*.lock"
+  for name in __pycache__ _trial_temp "*.lock" "MagicMock"
   do
     find "$TMP_DIR" -type d -name "$name" -exec rm -rf {} \; 2> /dev/null # Supress cannot find messages
     find "$TMP_DIR" -name "$name" -exec rm -rf {} \; 2> /dev/null # Supress cannot find messages
