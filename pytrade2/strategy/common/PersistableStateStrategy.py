@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+import zipfile
 from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -94,18 +95,14 @@ class PersistableStateStrategy:
                     logging.debug(f"Purging {f}")
                     os.remove(f)
 
-    def file_path_of(self, ticker: str, time: pd.Timestamp, tag: str):
-        file_name_prefix = f"{pd.to_datetime(time).date()}_{ticker}"
-        file_path = str(Path(self.model_Xy_dir, f"{file_name_prefix}_{tag}.csv"))
-        return file_path
-
     def save_last_data(self, ticker: str,  # X_last: pd.DataFrame, y_pred_last: pd.DataFrame,
                        data_last: Dict[str, pd.DataFrame]):
         """
         Write X,y, data to csv for analysis
         """
         for data_tag in data_last:
-            self.data_bufs[data_tag] = pd.concat([df for df in [self.data_bufs[data_tag], data_last[data_tag]] if not df.empty])
+            self.data_bufs[data_tag] = pd.concat(
+                [df for df in [self.data_bufs[data_tag], data_last[data_tag]] if not df.empty])
 
         if datetime.utcnow() - self.last_save_time < self.save_interval:
             return
@@ -116,34 +113,47 @@ class PersistableStateStrategy:
             if self.data_bufs[data_tag].empty:
                 continue
             time = self.data_bufs[data_tag].index[-1]
-            datapath = self.file_path_of(ticker, time, data_tag)
-            logging.debug(f"Saving last {data_tag} data to {datapath}")
-            self.data_bufs[data_tag].to_csv(datapath, header=not Path(datapath).exists(), mode='a')
+            file_name = f"{pd.to_datetime(time).date()}_{ticker}_{data_tag}"
+            file_path = Path(self.model_Xy_dir, f"{file_name}.csv")
+            logging.debug(f"Saving last {data_tag} data to {file_path}")
+            self.data_bufs[data_tag].to_csv(str(file_path),
+                                            header=not file_path.exists(),
+                                            mode='a')
             self.data_bufs[data_tag] = pd.DataFrame()
             # Data file copy
-            self.copy2s3(datapath)
+            self.copy2s3(file_path)
 
         # Database file copy
-        self.copy2s3(self.db_path)
+        self.copy2s3(Path(self.db_path))
 
         # Account balance copy
-        account_path = str(Path(self.account_dir, f"{datetime.utcnow().date()}_balance.csv"))
+        account_path = Path(self.account_dir, f"{datetime.utcnow().date()}_balance.csv")
         self.copy2s3(account_path)
 
         # Purge old data
         self.purge_data_files(self.model_Xy_dir)
         self.purge_data_files(self.account_dir)
 
-    def copy2s3(self, datapath: str):
+    def copy2s3(self, datapath: Path):
         if not self.s3_enabled:
             return
         if not os.path.exists(datapath):
             logging.info(f"{datapath} does not exist, cannot upload it to s3")
             return
 
-        s3datapath = datapath.lstrip("../")
-        logging.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
+        # Compress to temp zip before uploading to s3
+        zippath = datapath.with_suffix(datapath.suffix+'.zip')
+        with zipfile.ZipFile(zippath, 'w') as zf:
+            # csv file inside zip file
+            zf.write(datapath, arcname=datapath.name)
+
+        # Upload
+        s3datapath = str(zippath).lstrip("../")
+        logging.debug(f"Uploading {zippath} to s3://{self.s3_bucket}/{s3datapath}")
         session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
         s3 = session.client(service_name='s3', endpoint_url=self.s3_endpoint_url)
         s3.upload_file(datapath, self.s3_bucket, s3datapath)
         logging.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
+
+        # Delete temp zip
+        os.remove(zippath)
