@@ -64,8 +64,11 @@ class CandlesFeed:
 
     def update_candles(self):
         """ Combine candles with buffers"""
+
         with self.data_lock:
             for period, buf in self.candles_by_interval_buf.items():
+                if buf.empty:
+                    continue
                 # candles + buf
                 candles = self.candles_by_interval.get(period, pd.DataFrame())
                 candles = pd.concat([df for df in [candles, buf] if not df.empty]).set_index("close_time", drop=False)

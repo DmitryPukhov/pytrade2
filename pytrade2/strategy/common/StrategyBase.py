@@ -168,8 +168,9 @@ class StrategyBase(PersistableStateStrategy):
                 # Refresh live status
                 is_alive = self.is_alive()
             except Exception as e:
-                logging.error(e)
-                sys.exit(1)
+                logging.exception(e)
+                logging.error("Exiting")
+                exit(1)
 
         logging.info("End main processing loop")
 

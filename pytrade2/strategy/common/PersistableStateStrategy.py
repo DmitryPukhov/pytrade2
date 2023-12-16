@@ -16,6 +16,7 @@ import threading
 
 class PersistableStateStrategy:
     """ Strategy whicn can save the data and read/write model weights."""
+
     @staticmethod
     def _register_atexit(func, *arg, **kwargs):
         """
@@ -117,6 +118,8 @@ class PersistableStateStrategy:
         Write X,y, data to csv for analysis
         """
         for data_tag in data_last:
+            if data_last[data_tag].empty:
+                continue
             self.data_bufs[data_tag] = pd.concat(
                 [df for df in [self.data_bufs[data_tag], data_last[data_tag]] if not df.empty])
 
@@ -159,24 +162,21 @@ class PersistableStateStrategy:
 
         if compress:
             # Compress to temp zip before uploading to s3
-            zippath = datapath.with_suffix(datapath.suffix+'.zip')
+            zippath = datapath.with_suffix(datapath.suffix + '.zip')
             with zipfile.ZipFile(zippath, 'w') as zf:
                 # csv file inside zip file
                 zf.write(datapath, arcname=datapath.name)
-            datapath=zippath
+            datapath = zippath
 
         # Upload
         s3datapath = str(datapath).lstrip("../")
         logging.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
 
         session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
-        s3 = session.resource(service_name='s3', endpoint_url=self.s3_endpoint_url) # error is here
+        s3 = session.resource(service_name='s3', endpoint_url=self.s3_endpoint_url)  # error is here
         s3.meta.client.upload_file(datapath, self.s3_bucket, s3datapath)
         logging.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
 
         # Delete temp zip
         if compress:
             os.remove(datapath)
-
-
-

@@ -23,6 +23,8 @@ class BidAskFeed:
 
     def update_bid_ask(self):
         """ Add buf to the data and purge old buf """
+        if self.bid_ask_buf.empty:
+            return
 
         with self.data_lock:
             self.bid_ask = pd.concat([df for df in [self.bid_ask, self.bid_ask_buf] if not df.empty]).sort_index()
