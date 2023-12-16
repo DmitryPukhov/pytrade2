@@ -68,7 +68,7 @@ class CandlesFeed:
             for period, buf in self.candles_by_interval_buf.items():
                 # candles + buf
                 candles = self.candles_by_interval.get(period, pd.DataFrame())
-                candles = pd.concat([candles, buf]).set_index("close_time", drop=False)
+                candles = pd.concat([df for df in [candles, buf] if not df.empty]).set_index("close_time", drop=False)
                 candles = candles.resample(period).last().sort_index().tail(self.candles_history_cnt_by_interval[period])
 
                 self.candles_by_interval[period] = candles

@@ -25,7 +25,7 @@ class BidAskFeed:
         """ Add buf to the data and purge old buf """
 
         with self.data_lock:
-            self.bid_ask = pd.concat([self.bid_ask, self.bid_ask_buf]).sort_index()
+            self.bid_ask = pd.concat([df for df in [self.bid_ask, self.bid_ask_buf] if not df.empty]).sort_index()
             self.bid_ask_buf = pd.DataFrame()
             # Purge old data
             min_time = self.bid_ask.index.max() - self.bid_ask_history_period
