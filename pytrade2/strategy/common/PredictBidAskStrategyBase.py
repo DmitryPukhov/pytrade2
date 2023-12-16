@@ -132,7 +132,10 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
         # Append new data from buffers to main data frames
         with (self.data_lock):
             # Save raw buffers to history
-            save_dict = {**{"raw_bid_ask": self.bid_ask_buf, "raw_level2": self.level2_buf},
+            # save_dict = {**{"raw_bid_ask": self.bid_ask_buf, "raw_level2": self.level2_buf},
+            #              **{f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}}
+            # Level 2 is too big to save
+            save_dict = {**{"raw_bid_ask": self.bid_ask_buf},
                          **{f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}}
             self.save_last_data(self.ticker, save_dict)
 
