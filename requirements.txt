@@ -6,13 +6,11 @@ requests~=2.31.0; python_version >= '3.7'
 urllib3~=2.0.7; python_version >= '3.7'
 tensorflow~=2.15.0.post1; python_version >= '3.9'
 keras~=2.15.0; python_version >= '3.8'
-
 numpy~=1.26.2; python_version >= '3.9'
 scikeras~=0.12.0; python_full_version < '3.12.0' and python_full_version >= '3.8.0'
 scikit-learn~=1.3.2; python_version >= '3.8'
 sqlalchemy~=2.0.23; python_version >= '3.7'
 huobi-sdk~=2.3.3
-#boto3~=1.34.2; python_version >= '3.8'
-botocore==1.34.2; python_version >= '3.8'
+boto3>=1.34.1; python_version >= '3.8'
+botocore>=1.34.1; python_version >= '3.8'
 ta~=0.11.0
-boto3==1.28.60
