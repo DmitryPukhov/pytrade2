@@ -1,6 +1,8 @@
+import functools
 import glob
 import logging
 import os
+import threading
 import zipfile
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -9,12 +11,27 @@ from typing import Dict
 import boto3
 import pandas as pd
 from keras.models import Model
+import threading
 
 
 class PersistableStateStrategy:
     """ Strategy whicn can save the data and read/write model weights."""
+    @staticmethod
+    def _register_atexit(func, *arg, **kwargs):
+        """
+        Hack to fix boto3 threading issue: https://bugs.python.org/issue42647
+        """
+        # This code is commented to fix boto3 error
+        # if threading._SHUTTING_DOWN:
+        #     raise RuntimeError("can't register atexit after shutdown")
+
+        call = functools.partial(func, *arg, **kwargs)
+        threading._threading_atexits.append(call)
 
     def __init__(self, config: Dict):
+        # Hack to fix boto3 issue https://bugs.python.org/issue42647
+        threading._register_atexit = PersistableStateStrategy._register_atexit
+
         # Init boto3
         self.s3_enabled = config.get('pytrade2.s3.enabled', False)
         if self.s3_enabled:
@@ -22,6 +39,14 @@ class PersistableStateStrategy:
             self.s3_secret_key = config['pytrade2.s3.secret_key']
             self.s3_bucket = config['pytrade2.s3.bucket']
             self.s3_endpoint_url = config['pytrade2.s3.endpoint_url']
+            # import atexit
+            # import concurrent.futures
+            #
+            # def spawn():
+            #     with concurrent.futures.ThreadPoolExecutor() as t:
+            #         pass
+            #
+            # atexit.register(spawn)
 
         # Directory for model weights and price data
         self.data_dir = config["pytrade2.data.dir"]
@@ -149,10 +174,15 @@ class PersistableStateStrategy:
         # Upload
         s3datapath = str(zippath).lstrip("../")
         logging.debug(f"Uploading {zippath} to s3://{self.s3_bucket}/{s3datapath}")
+
+
         session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
-        s3 = session.client(service_name='s3', endpoint_url=self.s3_endpoint_url)
+        s3 = session.client(service_name='s3', endpoint_url=self.s3_endpoint_url) # error is here
         s3.upload_file(datapath, self.s3_bucket, s3datapath)
         logging.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
 
         # Delete temp zip
         os.remove(zippath)
+
+
+

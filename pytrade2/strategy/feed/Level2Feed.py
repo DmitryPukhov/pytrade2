@@ -20,7 +20,7 @@ class Level2Feed:
         # Add new data to df
         new_df = pd.DataFrame(level2, columns=bid_ask_columns).set_index("datetime", drop=False)
         with self.data_lock:
-            self.level2_buf = pd.concat([self.level2_buf, new_df])
+            self.level2_buf = pd.concat([df for df in [self.level2_buf, new_df] if not df.empty])
 
         self.new_data_event.set()
 
