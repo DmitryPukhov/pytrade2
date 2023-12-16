@@ -39,14 +39,6 @@ class PersistableStateStrategy:
             self.s3_secret_key = config['pytrade2.s3.secret_key']
             self.s3_bucket = config['pytrade2.s3.bucket']
             self.s3_endpoint_url = config['pytrade2.s3.endpoint_url']
-            # import atexit
-            # import concurrent.futures
-            #
-            # def spawn():
-            #     with concurrent.futures.ThreadPoolExecutor() as t:
-            #         pass
-            #
-            # atexit.register(spawn)
 
         # Directory for model weights and price data
         self.data_dir = config["pytrade2.data.dir"]
@@ -148,7 +140,7 @@ class PersistableStateStrategy:
             self.copy2s3(file_path)
 
         # Database file copy
-        self.copy2s3(Path(self.db_path))
+        self.copy2s3(Path(self.db_path), compress=False)
 
         # Account balance copy
         account_path = Path(self.account_dir, f"{datetime.utcnow().date()}_balance.csv")
@@ -158,31 +150,33 @@ class PersistableStateStrategy:
         self.purge_data_files(self.model_Xy_dir)
         self.purge_data_files(self.account_dir)
 
-    def copy2s3(self, datapath: Path):
+    def copy2s3(self, datapath: Path, compress=True):
         if not self.s3_enabled:
             return
         if not os.path.exists(datapath):
             logging.info(f"{datapath} does not exist, cannot upload it to s3")
             return
 
-        # Compress to temp zip before uploading to s3
-        zippath = datapath.with_suffix(datapath.suffix+'.zip')
-        with zipfile.ZipFile(zippath, 'w') as zf:
-            # csv file inside zip file
-            zf.write(datapath, arcname=datapath.name)
+        if compress:
+            # Compress to temp zip before uploading to s3
+            zippath = datapath.with_suffix(datapath.suffix+'.zip')
+            with zipfile.ZipFile(zippath, 'w') as zf:
+                # csv file inside zip file
+                zf.write(datapath, arcname=datapath.name)
+            datapath=zippath
 
         # Upload
-        s3datapath = str(zippath).lstrip("../")
-        logging.debug(f"Uploading {zippath} to s3://{self.s3_bucket}/{s3datapath}")
-
+        s3datapath = str(datapath).lstrip("../")
+        logging.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
 
         session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
-        s3 = session.client(service_name='s3', endpoint_url=self.s3_endpoint_url) # error is here
-        s3.upload_file(datapath, self.s3_bucket, s3datapath)
+        s3 = session.resource(service_name='s3', endpoint_url=self.s3_endpoint_url) # error is here
+        s3.meta.client.upload_file(datapath, self.s3_bucket, s3datapath)
         logging.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
 
         # Delete temp zip
-        os.remove(zippath)
+        if compress:
+            os.remove(datapath)
 
 
 
