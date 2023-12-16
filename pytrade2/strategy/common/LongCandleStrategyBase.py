@@ -1,4 +1,5 @@
 import logging
+import multiprocessing
 import time
 from io import StringIO
 from typing import Dict
@@ -12,6 +13,7 @@ from strategy.feed.CandlesFeed import CandlesFeed
 from strategy.feed.Level2Feed import Level2Feed
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LongCandleFeatures import LongCandleFeatures
+from threading import Event
 
 
 class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
@@ -39,8 +41,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
 
         logging.info(f"Target period: {self.target_period}")
-        # self.data_lock = multiprocessing.RLock()
-        # self.new_data_event: Event = Event()
+        self.data_lock = multiprocessing.RLock()
+        self.new_data_event: Event = Event()
 
     def get_report(self):
         """ Short info for report """
@@ -70,7 +72,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         #self.websocket_feed.consumers.add(self)
 
         self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
-        #self.candles_feed.consumers.add(self)
+        self.candles_feed.consumers.add(self)
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
@@ -81,7 +83,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         # Run the feed, listen events
         # Run the feed, listen events
         #self.websocket_feed.run()
-        #self.candles_feed.run()
+        self.candles_feed.run()
         self.broker.run()
 
     def can_learn(self) -> bool:
@@ -118,11 +120,22 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
                                                                     self.profit_min_coeff)
         return x, y, x_wo_targets
 
+    def apply_buffers(self):
+        # Append new data from buffers to main data frames
+        with (self.data_lock):
+            # Save raw buffers to history
+            save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}
+            self.save_last_data(self.ticker, save_dict)
+            self.update_candles()
+
     def process_new_data(self):
-        #with self.data_lock:
-            #self.update_level2()
-            #x, y, x_wo_targets = self.features_targets()
-        self.read_candles()
+
+        with (self.data_lock):
+            # Save raw candles to history
+            save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}
+            self.save_last_data(self.ticker, save_dict)
+            self.update_candles()
+
         x, y, x_wo_targets = self.features_targets()
 
         if x.empty or y.empty or x_wo_targets.empty:
