@@ -56,14 +56,10 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         path = "/linear-swap-ex/market/history/kline"
         params = {"contract_code": ticker,
                   "period": interval,
-                  "size": limit}
-        interval_delta = timedelta(seconds=pd.Timedelta(interval).total_seconds())
-        if from_:
-            from_ts = (from_ - interval_delta).timestamp()
-            params["from"] = int(from_ts)
-        if to:
-            to_ts = (to - interval_delta).timestamp()
-            params["to"] = int(to_ts)
+                  "size": limit,
+                  "from": int(from_.timestamp()),
+                  "to": int(to.timestamp())
+                  }
 
         res = self.rest_client.get(path, params)
 
@@ -105,8 +101,8 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         # Example of raw candle: {'id': 1686981240, 'open': 26677.8, 'close': 26663.3, 'high': 26703.9, 'low': 26654.7,
         # 'amount': 33.826, 'vol': 33826, 'trade_turnover': 902606.0032, 'count': 228}
 
-        open_time = datetime.fromtimestamp(raw_candle['id'])
-        close_time = open_time + pd.Timedelta(interval)
+        close_time = datetime.fromtimestamp(raw_candle['id'])
+        open_time = close_time - pd.Timedelta(interval)
 
         return {
             "open_time": open_time,
