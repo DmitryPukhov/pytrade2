@@ -100,7 +100,7 @@ class App:
 
         # Extra config if passed in command line
         extra_config = self._read_config_file(f"cfg/{args['config']}", required=True) \
-            if args["config"] else defaultdict()
+            if args.get("config") else defaultdict()
 
         # Determine strategy name
         final_strategy = args.get(strategy_key) or extra_config.get(strategy_key) or app_config.get(strategy_key)

@@ -85,7 +85,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         ticker = HuobiFeedBase.ticker_of_ch(ch)
         interval = HuobiFeedBase.period_of_ch(ch)
 
-        dt = datetime.fromtimestamp(raw_candles["ts"] / 1000, tz=timezone.utc)
+        #dt = datetime.fromtimestamp(raw_candles["ts"] / 1000, tz=timezone.utc)
         # dt = datetime.fromtimestamp(raw_candles["ts"] / 1000)
         # dt = datetime.utcnow()
 
@@ -105,7 +105,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         # Example of raw candle: {'id': 1686981240, 'open': 26677.8, 'close': 26663.3, 'high': 26703.9, 'low': 26654.7,
         # 'amount': 33.826, 'vol': 33826, 'trade_turnover': 902606.0032, 'count': 228}
 
-        open_time = datetime.fromtimestamp(raw_candle['id'], tz=timezone.utc)
+        open_time = datetime.fromtimestamp(raw_candle['id'])
         close_time = open_time + pd.Timedelta(interval)
 
         return {

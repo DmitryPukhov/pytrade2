@@ -107,19 +107,19 @@ class TestCandlesFeed(TestCase):
         self.assertEqual({"1min": 3, "5min": 3}, actual)
 
     def test_days_of_2(self):
-        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 2))
+        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 2, '1min'))
 
         self.assertListEqual(
-            [(datetime.fromisoformat("2023-12-18 00:00:00"), datetime.fromisoformat("2023-12-19 00:00:00")),
-             (datetime.fromisoformat("2023-12-17 00:00:00"), datetime.fromisoformat("2023-12-18 00:00:00")),
+            [(datetime.fromisoformat("2023-12-18 00:01:00"), datetime.fromisoformat("2023-12-19 00:00:00")),
+             (datetime.fromisoformat("2023-12-17 00:01:00"), datetime.fromisoformat("2023-12-18 00:00:00")),
              ], actual)
 
     def test_days_of_1(self):
-        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 1))
+        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 1, '1min'))
         self.assertListEqual(
-            [(datetime.fromisoformat("2023-12-18 00:00:00"), datetime.fromisoformat("2023-12-19 00:00:00"))], actual)
+            [(datetime.fromisoformat("2023-12-18 00:01:00"), datetime.fromisoformat("2023-12-19 00:00:00"))], actual)
 
     def test_days_of_0(self):
-        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 0))
+        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 0, '1min'))
         self.assertListEqual(
             [], actual)

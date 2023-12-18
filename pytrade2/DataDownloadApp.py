@@ -54,7 +54,7 @@ class DataDownloadApp(App):
         logging.info(f"Start downloading data to {self.download_dir}")
         feed = self.exchange_provider.candles_feed()
         period = "1min"
-        intervals = CandlesFeed.last_days(datetime.utcnow(), self.days)
+        intervals = CandlesFeed.last_days(datetime.utcnow(), self.days, period)
         for start, end in intervals:
             # Get candles for the day from the service
             candles_raw = feed.read_candles(ticker=self.ticker,
