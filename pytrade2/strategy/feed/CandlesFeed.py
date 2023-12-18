@@ -1,9 +1,9 @@
 import logging
 import multiprocessing
-from datetime import datetime
+from datetime import datetime, date, time, timedelta, timezone
 from io import StringIO
 from typing import Dict
-
+import pytz
 import pandas as pd
 
 
@@ -72,7 +72,8 @@ class CandlesFeed:
                 # candles + buf
                 candles = self.candles_by_interval.get(period, pd.DataFrame())
                 candles = pd.concat([df for df in [candles, buf] if not df.empty]).set_index("close_time", drop=False)
-                candles = candles.resample(period).last().sort_index().tail(self.candles_history_cnt_by_interval[period])
+                candles = candles.resample(period).last().sort_index().tail(
+                    self.candles_history_cnt_by_interval[period])
 
                 self.candles_by_interval[period] = candles
                 self.candles_by_interval_buf[period] = pd.DataFrame()
@@ -102,3 +103,10 @@ class CandlesFeed:
                 # If double candle interval passed, and we did not get a new candle, we are dead
                 return False
         return True
+
+    @staticmethod
+    def last_days(to: datetime, days=1) -> [(datetime, datetime)]:
+        for i in list(range(days)):
+            start = datetime.combine(to.replace(hour=0, minute=0, second=0, microsecond=0)-timedelta(days=i), time.min)
+            end = start + timedelta(days=1)
+            yield start, end

@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 import os
 import sys
 from unittest import TestCase
@@ -15,7 +15,7 @@ class TestCandlesFeed(TestCase):
         strategy.candles_by_interval = {}
 
         # Candle 1 received
-        dt1 = datetime.datetime(year=2023, month=6, day=28, hour=9, minute=52)
+        dt1 = datetime(year=2023, month=6, day=28, hour=9, minute=52)
         candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "close": 1}
         # Call
         strategy.on_candle(candle1)
@@ -29,7 +29,7 @@ class TestCandlesFeed(TestCase):
         self.assertEqual([1], candles["close"].values.tolist())
 
         # Candle2 received in 59 sec - update of candle1
-        dt2 = dt1 + datetime.timedelta(seconds=59)
+        dt2 = dt1 + timedelta(seconds=59)
         candle2 = {"open_time": dt1, "close_time": dt2, "interval": "1min", "close": 2}
         # Call
         strategy.on_candle(candle2)
@@ -45,7 +45,7 @@ class TestCandlesFeed(TestCase):
         self.assertEqual([2], candles["close"].values.tolist())
 
         # Candle3 received in 1 min - new candle
-        dt3 = dt1 + datetime.timedelta(minutes=1)
+        dt3 = dt1 + timedelta(minutes=1)
         candle3 = {"open_time": dt2, "close_time": dt3, "interval": "1min", "close": 3}
         # Call candle3
         strategy.on_candle(candle3)
@@ -105,3 +105,21 @@ class TestCandlesFeed(TestCase):
         predict_window = "1s"
         actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
         self.assertEqual({"1min": 3, "5min": 3}, actual)
+
+    def test_days_of_2(self):
+        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 2))
+
+        self.assertListEqual(
+            [(datetime.fromisoformat("2023-12-18 00:00:00"), datetime.fromisoformat("2023-12-19 00:00:00")),
+             (datetime.fromisoformat("2023-12-17 00:00:00"), datetime.fromisoformat("2023-12-18 00:00:00")),
+             ], actual)
+
+    def test_days_of_1(self):
+        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 1))
+        self.assertListEqual(
+            [(datetime.fromisoformat("2023-12-18 00:00:00"), datetime.fromisoformat("2023-12-19 00:00:00"))], actual)
+
+    def test_days_of_0(self):
+        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 0))
+        self.assertListEqual(
+            [], actual)

@@ -88,7 +88,7 @@ class App:
         """
         Load config from cfg folder respecting the order: defaults, app.yaml, environment vars
         """
-        args = App._parse_args()
+        args = self._parse_args()
         strategy_key = "pytrade2.strategy"
         config: Dict[str, str] = defaultdict()
 
@@ -114,6 +114,7 @@ class App:
         config.update(strategy_config)
         config.update(extra_config)
         config.update(os.environ)
+        config.update(args)
         config["pytrade2.strategy"] = final_strategy
 
         logging.info(self._config_msg(config))
@@ -133,8 +134,7 @@ class App:
         msg = "\n" + "\n".join([f"{key}: {val}" for key, val in secured_conf])
         return msg
 
-    @staticmethod
-    def _parse_args() -> Dict[str, str]:
+    def _parse_args(self) -> Dict[str, str]:
         """ Parse command line arguments"""
         parser = argparse.ArgumentParser()
         parser.add_argument('--pytrade2.strategy',

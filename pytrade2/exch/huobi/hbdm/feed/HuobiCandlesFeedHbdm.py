@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone, tzinfo, timedelta
 
 import pandas as pd
 
@@ -42,14 +42,14 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
     def raw_socket_msg_to_candle(msg):
         ticker = HuobiCandlesFeedHbdm.ticker_of_ch(msg["ch"])
         period = HuobiCandlesFeedHbdm.period_of_ch(msg["ch"])
-        #dt = datetime.fromtimestamp(msg["ts"] / 1000, tz=timezone.utc)
-        dt = datetime.fromtimestamp(msg["ts"] / 1000)
-        return HuobiCandlesFeedHbdm.rawcandle2model(dt, ticker, period, msg["tick"])
+        # dt = datetime.fromtimestamp(msg["ts"] / 1000, tz=timezone.utc)
+        # dt = datetime.fromtimestamp(msg["ts"] / 1000)
+        return HuobiCandlesFeedHbdm.rawcandle2model(ticker, period, msg["tick"])
 
     def run(self):
         super().run()
 
-    def read_candles(self, ticker, interval, limit):
+    def read_candles(self, ticker: str, interval: str, limit: int, from_: datetime = None, to: datetime = None):
         """ Read candles from Huobi """
 
         # Get candles from huobi rest
@@ -57,6 +57,14 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         params = {"contract_code": ticker,
                   "period": interval,
                   "size": limit}
+        interval_delta = timedelta(seconds=pd.Timedelta(interval).total_seconds())
+        if from_:
+            from_ts = (from_ - interval_delta).timestamp()
+            params["from"] = int(from_ts)
+        if to:
+            to_ts = (to - interval_delta).timestamp()
+            params["to"] = int(to_ts)
+
         res = self.rest_client.get(path, params)
 
         # Convert
@@ -77,26 +85,32 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         ticker = HuobiFeedBase.ticker_of_ch(ch)
         interval = HuobiFeedBase.period_of_ch(ch)
 
-        #dt = datetime.fromtimestamp(raw_candles["ts"] / 1000, tz=timezone.utc)
-        dt = datetime.fromtimestamp(raw_candles["ts"] / 1000)
-        #dt = datetime.utcnow()
+        dt = datetime.fromtimestamp(raw_candles["ts"] / 1000, tz=timezone.utc)
+        # dt = datetime.fromtimestamp(raw_candles["ts"] / 1000)
+        # dt = datetime.utcnow()
 
-        deltatime = pd.Timedelta(interval)
-        times = [dt - deltatime * i for i in range(len(raw_candles["data"]))]
-        data = [HuobiCandlesFeedHbdm.rawcandle2model(time, ticker, interval, raw_candle) for time, raw_candle in
-                zip(times, raw_candles["data"])]
+        # deltatime = pd.Timedelta(interval)
+        # times = [dt - deltatime * i for i in range(len(raw_candles["data"]))]
+        # data = [HuobiCandlesFeedHbdm.rawcandle2model(time, ticker, interval, raw_candle) for time, raw_candle in
+        #         zip(times, raw_candles["data"])]
+        data = [HuobiCandlesFeedHbdm.rawcandle2model(ticker, interval, raw_candle) for raw_candle in
+                raw_candles["data"]]
+
         data.sort(key=lambda c: c["close_time"])
         return data
 
     @staticmethod
-    def rawcandle2model(time: datetime, ticker: str, interval: str, raw_candle: {}):
+    def rawcandle2model(ticker: str, interval: str, raw_candle: {}):
         """ Huobi raw responce dictionary to model dictionary """
         # Example of raw candle: {'id': 1686981240, 'open': 26677.8, 'close': 26663.3, 'high': 26703.9, 'low': 26654.7,
         # 'amount': 33.826, 'vol': 33826, 'trade_turnover': 902606.0032, 'count': 228}
-        open_time = time - pd.Timedelta(interval)
+
+        open_time = datetime.fromtimestamp(raw_candle['id'], tz=timezone.utc)
+        close_time = open_time + pd.Timedelta(interval)
+
         return {
             "open_time": open_time,
-            "close_time": time,
+            "close_time": close_time,
             "ticker": ticker,
             "interval": interval,
             "open": raw_candle["open"],
