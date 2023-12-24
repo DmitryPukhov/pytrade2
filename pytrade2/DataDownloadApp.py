@@ -35,6 +35,10 @@ class DataDownloadApp(App):
         self.ticker = self.config["pytrade2.tickers"].split(",")[-1]
 
         self.days = int(self.config.get("days", 1))
+
+        to = self.config.get("to")
+        self.to = datetime.fromisoformat(to) if to else datetime.now()
+
         # self.from_ = datetime.fromisoformat(self.config["from"]) if "from" in self.config \
         #     else datetime.combine(datetime.today(), datetime.min.time())
         # self.to = datetime.fromisoformat(self.config["to"]) if "to" in self.config \
@@ -48,13 +52,17 @@ class DataDownloadApp(App):
         parser = argparse.ArgumentParser()
         parser.add_argument('--days',
                             help='How much days to download example: --days 2')
+        parser.add_argument('--to',
+                            help='last date',
+                            default=None)
+
         return vars(parser.parse_args())
 
     def run(self):
         logging.info(f"Start downloading data to {self.download_dir}")
         feed = self.exchange_provider.candles_feed()
         period = "1min"
-        intervals = CandlesFeed.last_days(datetime.utcnow(), self.days, period)
+        intervals = CandlesFeed.last_days(self.to, self.days, period)
         for start, end in intervals:
             # Get candles for the day from the service
             candles_raw = feed.read_candles(ticker=self.ticker,
@@ -65,7 +73,7 @@ class DataDownloadApp(App):
 
             candles = pd.DataFrame(candles_raw).set_index("close_time")
             # Save to file system
-            file_name = f"{end.date()}_{self.ticker}_candles_{period}.csv"
+            file_name = f"{start.date()}_{self.ticker}_candles_{period}.csv"
             file_path = Path(self.download_dir, f"{file_name}")
             candles.to_csv(str(file_path),
                            header=True,
