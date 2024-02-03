@@ -35,7 +35,7 @@ class LongCandleStrategyBaseTest(TestCase):
         strategy.model = MagicMock()
         strategy.X_pipe = MagicMock()
         strategy.y_pipe = MagicMock()
-        strategy.save_last_data = MagicMock()
+        strategy.data_persister = MagicMock()
         strategy.data_lock = multiprocessing.RLock()
         # strategy.new_data_event = multiprocessing.Event()
         # strategy.candles_cnt_by_interval = {'1min': 1, '5min': 1}

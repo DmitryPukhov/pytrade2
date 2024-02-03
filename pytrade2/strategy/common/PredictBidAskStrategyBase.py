@@ -137,7 +137,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
             # Level 2 is too big to save
             save_dict = {**{"raw_bid_ask": self.bid_ask_buf},
                          **{f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}}
-            self.save_last_data(self.ticker, save_dict)
+            self.data_persister.save_last_data(self.ticker, save_dict)
 
             # Update data from buffers
             self.update_bid_ask()
@@ -164,7 +164,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
                     [self.predict_window, open_signal, cur_trade_direction]
 
                 # Save to historical data
-                self.save_last_data(self.ticker, {
+                self.data_persister.save_last_data(self.ticker, {
                     "x": X.tail(1),
                     "y_pred": y.tail(1)
                 })

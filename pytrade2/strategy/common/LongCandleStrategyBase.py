@@ -125,7 +125,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         with (self.data_lock):
             # Save raw buffers to history
             save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}
-            self.save_last_data(self.ticker, save_dict)
+            self.data_persister.save_last_data(self.ticker, save_dict)
             self.update_candles()
 
     def process_new_data(self):
@@ -133,7 +133,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         with (self.data_lock):
             # Save raw candles to history
             save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}
-            self.save_last_data(self.ticker, save_dict)
+            self.data_persister.save_last_data(self.ticker, save_dict)
             self.update_candles()
 
         x, y, x_wo_targets = self.features_targets()
@@ -160,11 +160,11 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         self.process_signal(last_signal)
 
         # Save to disk for analysis
-        self.save_last_data(self.ticker, {'y_pred': y_pred_last})
+        self.data_persister.save_last_data(self.ticker, {'y_pred': y_pred_last})
 
         # Predict last signal for old x with y. To save and analyse actual and predicted values.
         y_pred = self.predict_last_signal(x).join(y.tail(1), lsuffix='_pred', rsuffix='_actual')
-        self.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
+        self.data_persister.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
 
         # Delay before next processing cycle
         time.sleep(self.processing_interval.seconds)

@@ -21,6 +21,7 @@ huobi-sdk = ">=2.3.3"
 ta = ">=0.11.0"
 boto3= ">=1.28.60"
 botocore = ">=1.34.2"
+backend = "*"
 
 [dev-packages]
 

@@ -17,12 +17,17 @@ from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.RiskManager import RiskManager
+from strategy.common.persist.DataPersister import DataPersister
+from strategy.common.persist.ModelPersister import ModelPersister
 
 
-class StrategyBase(PersistableStateStrategy):
+class StrategyBase():
     """ Any strategy """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
+
+        self.data_persister = DataPersister(config,  self.__class__.__name__)
+        self.model_persister = ModelPersister(config,  self.__class__.__name__)
 
         self.risk_manager = None
         self.config = config
@@ -137,7 +142,7 @@ class StrategyBase(PersistableStateStrategy):
                 self.model.fit(X_trans, y_trans)
 
                 # Save weights and xy new delta
-                self.save_model()
+                self.model_persister.save_model(self.model)
 
                 # to avoid OOM
                 tensorflow.keras.backend.clear_session()
