@@ -15,7 +15,6 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler
 
 from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
-from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.RiskManager import RiskManager
 from strategy.persist.DataPersister import DataPersister
 from strategy.persist.ModelPersister import ModelPersister
@@ -70,7 +69,7 @@ class StrategyBase():
         self.data_lock: multiprocessing.RLock() = None
         self.new_data_event: Optional[Event] = None
 
-        PersistableStateStrategy.__init__(self, config)
+        #PersistableStateStrategy.__init__(self, config)
 
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))

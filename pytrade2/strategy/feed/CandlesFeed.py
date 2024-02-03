@@ -57,7 +57,7 @@ class CandlesFeed:
         msg = StringIO()
         n = 5
         for interval, candles in self.candles_by_interval.items():
-            times = candles.tail(n).apply(lambda row: f"{row['close_time'].floor('S')}", axis=1)[::-1]
+            times = candles.tail(n).apply(lambda row: f"{row['close_time'].floor('s')}", axis=1)[::-1]
             msg.write(f"{interval} candles: {', '.join(times)} ...\n")
 
         return msg.getvalue()
