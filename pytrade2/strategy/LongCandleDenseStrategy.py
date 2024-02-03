@@ -1,4 +1,3 @@
-import pandas as pd
 import ta.wrapper
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
@@ -13,7 +12,7 @@ class LongCandleDenseStrategy(LongCandleStrategyBase):
 
     def features_targets(self):
         # Data - 1 minute or other minimal period candles
-        candles = self.candles_by_interval[min(self.candles_by_interval)].copy()
+        candles = self.candles_feed.candles_by_interval[min(self.candles_feed.candles_by_interval)].copy()
         candles_cols = candles.columns
 
         # Targets

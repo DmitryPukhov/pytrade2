@@ -63,25 +63,12 @@ class LongCandleStrategyBase(StrategyBase):
         Attach to the feed and listen
         """
         exchange_name = self.config["pytrade2.exchange"]
-
-        # Create feeds and broker
-        self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
-        #self.websocket_feed.consumers.add(self)
-
-        self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
-        self.candles_feed.consumers.add(self)
-
         self.broker = self.exchange_provider.broker(exchange_name)
-
         self.candles_feed.read_candles()
 
         StrategyBase.run(self)
-
-        # Run the feed, listen events
-        # Run the feed, listen events
-        #self.websocket_feed.run()
-        self.candles_feed.run()
         self.broker.run()
+
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
@@ -214,7 +201,7 @@ class LongCandleStrategyBase(StrategyBase):
                                      trailing_delta=tdelta)
 
     def is_alive(self):
-        return CandlesFeed.is_alive(self)
+        return self.candles_feed.is_alive()
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
         # with self.data_lock:
