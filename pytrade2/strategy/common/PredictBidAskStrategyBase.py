@@ -18,7 +18,7 @@ from strategy.common.StrategyBase import StrategyBase
 from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Feed):
+class PredictBidAskStrategyBase(StrategyBase):
     """
     Listen price data from web socket, predict future low/high
     """
@@ -26,15 +26,15 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
     def __init__(self, config: Dict, exchange_provider: Exchange):
 
         self.websocket_feed = None
-        self.candles_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider)
-        CandlesFeed.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        Level2Feed.__init__(self, config)
-        BidAskFeed.__init__(self, config)
+        self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
+        self.level2_feed = Level2Feed(config,  self.data_lock, self.new_data_event)
+        self.bid_ask_feed = BidAskFeed(config,  self.data_lock, self.new_data_event)
+        #CandlesFeed.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
+        #Level2Feed.__init__(self, config)
+        #BidAskFeed.__init__(self, config)
 
-        self.data_lock = multiprocessing.RLock()
-        self.new_data_event: Event = Event()
 
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
@@ -55,13 +55,13 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
         if hasattr(self.broker, "get_report"):
             msg.write(self.broker.get_report())
         # BidAsk report
-        msg.write(BidAskFeed.get_report(self))
+        msg.write(self.bid_ask_feed.get_report())
         msg.write("\n")
         # Level2 report
-        msg.write(Level2Feed.get_report(self))
+        msg.write(self.level2_feed.get_report())
         msg.write("\n")
         # Candles report
-        msg.write(CandlesFeed.get_report(self))
+        msg.write(self.candles_feed.get_report())
         return msg.getvalue()
 
     def run(self):
@@ -71,36 +71,37 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
         exchange_name = self.config["pytrade2.exchange"]
 
         # Create feed and broker
-        self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
-        self.websocket_feed.consumers.add(self)
-        self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
-        self.candles_feed.consumers.add(self)
+        #self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
+        #self.websocket_feed.consumers.add(self)
+        #self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
+        #self.candles_feed.consumers.add(self)
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
-        self.read_candles()
+        self.candles_feed.read_candles()
 
         StrategyBase.run(self)
 
         # Run the feed, listen events
-        self.websocket_feed.run()
-        self.candles_feed.run()
+        #self.websocket_feed.run()
+        #self.candles_feed.run()
+        self.candles_feed.candles_feed.run()
         self.broker.run()
 
     def is_alive(self):
         maxdelta = self.history_min_window + pd.Timedelta("60s")
         dt = datetime.utcnow()
 
-        if not self.bid_ask.empty and dt - self.bid_ask.index.max() > maxdelta:
+        if not self.bid_ask_feed.bid_ask.empty and dt - self.bid_ask_feed.bid_ask.index.max() > maxdelta:
             is_alive = False
-        elif not self.level2.empty and dt - self.level2.index.max() > maxdelta:
+        elif not self.level2_feed.level2.empty and dt - self.level2_feed.level2.index.max() > maxdelta:
             is_alive = False
         else:
-            is_alive = CandlesFeed.is_alive(self)
+            is_alive = self.candles_feed.is_alive()
         if not is_alive:
-            last_bid_ask = self.bid_ask.index.max() if not self.bid_ask.empty else None
-            last_level2 = self.level2.index.max() if not self.level2.empty else None
-            last_candles = [(i, c.index.max()) for i, c in self.candles_by_interval.items()]
+            last_bid_ask = self.bid_ask_feed.bid_ask.index.max() if not self.bid_ask_feed.bid_ask.empty else None
+            last_level2 = self.level2_feed.level2.index.max() if not self.level2_feed.level2.empty else None
+            last_candles = [(i, c.index.max()) for i, c in self.candles_feed.candles_by_interval.items()]
             logging.info(
                 f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
                 f"last candles: {last_candles}")
@@ -110,7 +111,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
         """ Purge old data to reduce memory usage"""
         try:
             with self.data_lock:
-                self.bid_ask = self.purged(self.bid_ask, "bid_ask")
+                self.bid_ask_feed.bid_ask = self.purged(self.bid_ask_feed.bid_ask, "bid_ask")
                 # self.level2 = self.purged(self.level2, "level2")
                 self.fut_low_high = self.purged(self.fut_low_high, "fut_low_high")
         finally:
@@ -135,19 +136,19 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
             # save_dict = {**{"raw_bid_ask": self.bid_ask_buf, "raw_level2": self.level2_buf},
             #              **{f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}}
             # Level 2 is too big to save
-            save_dict = {**{"raw_bid_ask": self.bid_ask_buf},
-                         **{f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}}
+            save_dict = {**{"raw_bid_ask": self.bid_ask_feed.bid_ask_buf},
+                         **{f"raw_candles_{period}": buf for period, buf in self.candles_feed.candles_by_interval_buf.items()}}
             self.data_persister.save_last_data(self.ticker, save_dict)
 
             # Update data from buffers
-            self.update_bid_ask()
-            self.update_level2()
-            self.update_candles()
+            self.bid_ask_feed.update_bid_ask()
+            self.level2_feed.update_level2()
+            self.candles_feed.update_candles()
 
     def process_new_data(self):
         self.apply_buffers()
 
-        if not self.bid_ask.empty and not self.level2.empty and self.model \
+        if not self.bid_ask_feed.bid_ask.empty and not self.level2_feed.level2.empty and self.model \
                 and not self.is_processing and self.X_pipe and self.y_pipe:
             try:
                 self.is_processing = True
@@ -177,8 +178,8 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
         """ Process last prediction, open a new order, save history if needed
         @:return open signal where signal can be 0,-1,1 """
 
-        bid = self.bid_ask.loc[self.bid_ask.index[-1], "bid"]
-        ask = self.bid_ask.loc[self.bid_ask.index[-1], "ask"]
+        bid = self.bid_ask_feed.bid_ask.loc[self.bid_ask_feed.bid_ask.index[-1], "bid"]
+        ask = self.bid_ask_feed.bid_ask.loc[self.bid_ask_feed.bid_ask.index[-1], "ask"]
 
         # Update current trade status
         self.check_cur_trade()
@@ -258,7 +259,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
         # Get prediction result
         y = self.y_pipe.inverse_transform(y)
         (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1]  # if y.shape[0] < 2 else y
-        y_df = self.bid_ask.loc[X.index][["bid", "ask"]]
+        y_df = self.bid_ask_feed.bid_ask.loc[X.index][["bid", "ask"]]
         y_df["bid_max_fut"] = y_df["bid"] + bid_max_fut_diff
         y_df["bid_min_fut"] = y_df["bid_max_fut"] - bid_spread_fut
         y_df["ask_min_fut"] = y_df["ask"] + ask_min_fut_diff
@@ -268,9 +269,9 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
 
-        no_bidask = self.bid_ask.empty
-        no_candles = not self.has_all_candles()
-        no_level2 = self.level2.empty and self.level2_buf.empty
+        no_bidask = self.bid_ask_feed.bid_ask.empty
+        no_candles = not self.candles_feed.has_all_candles()
+        no_level2 = self.level2_feed.level2.empty and self.level2_feed.level2_buf.empty
 
         if no_bidask or no_candles or no_level2:
             logging.info(f"Can not learn because some datasets are empty. "
@@ -279,7 +280,7 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
             return False
 
         # Check If we have enough data to learn
-        interval = self.bid_ask.index.max() - self.bid_ask.index.min()
+        interval = self.bid_ask_feed.bid_ask.index.max() - self.bid_ask_feed.bid_ask.index.min()
         if interval < self.history_min_window:
             logging.info(
                 f"Can not learn because not enough history. We have {interval}, but we need {self.history_min_window}")
@@ -288,11 +289,11 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-        X = PredictBidAskFeatures.last_features_of(self.bid_ask,
+        X = PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
                                                    1,  # For diff
-                                                   self.level2,
-                                                   self.candles_by_interval,
-                                                   self.candles_cnt_by_interval,
+                                                   self.level2_feed.level2,
+                                                   self.candles_feed.candles_by_interval,
+                                                   self.candles_feed.candles_cnt_by_interval,
                                                    past_window=self.past_window)
         return X, (self.X_pipe.transform(X) if X.shape[0] else pd.DataFrame())
 
@@ -300,13 +301,13 @@ class PredictBidAskStrategyBase(StrategyBase, CandlesFeed, BidAskFeed, Level2Fee
         """ Prepare train data """
         with self.data_lock:
             # Copy data for this thread only
-            bid_ask = self.bid_ask.copy()
-            level2 = self.level2.copy()
+            bid_ask = self.bid_ask_feed.bid_ask.copy()
+            level2 = self.level2_feed.level2.copy()
 
         return PredictBidAskFeatures.features_targets_of(
             bid_ask,
             level2,
-            self.candles_by_interval,
-            self.candles_cnt_by_interval,
+            self.candles_feed.candles_by_interval,
+            self.candles_feed.candles_cnt_by_interval,
             self.predict_window,
             self.past_window)

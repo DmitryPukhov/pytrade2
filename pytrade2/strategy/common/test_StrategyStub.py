@@ -52,7 +52,9 @@ class StrategyStub(PredictBidAskStrategyBase):
     """ Strategy wrapper for tests """
 
     def __init__(self):
-        conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
+        conf = {
+                "pytrade2.exchange": None,
+                "pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
                 "pytrade2.data.dir": "tmp",
                 "pytrade2.price.precision": 2,
                 "pytrade2.amount.precision": 2,
@@ -65,15 +67,17 @@ class StrategyStub(PredictBidAskStrategyBase):
                 "pytrade2.feed.candles.periods": "1min,5min",
                 "pytrade2.feed.candles.counts": "1,1",
                 "pytrade2.order.quantity": 0.001}
-        PredictBidAskStrategyBase.__init__(self, conf, None)
+        PredictBidAskStrategyBase.__init__(self, conf, MagicMock())
+        self.candles_feed = MagicMock()
         self.profit_loss_ratio = 4
         self.close_profit_loss_ratio = 2
         self.model = ModelStub()
         self.broker = BrokerStub()
+        self.candles_feed = MagicMock()
         self.risk_manager = MagicMock()
         self.min_stop_loss = 0
         self.max_stop_loss_coeff = float('inf')
-        self.candles_by_interval = {"1min":
+        self.candles_feed.candles_by_interval = {"1min":
             pd.DataFrame([
                 {
                     "close_time": datetime.fromisoformat("2023-03-17 15:56:01"),
@@ -98,7 +102,7 @@ class StrategyStub(PredictBidAskStrategyBase):
                     },
                 ])
                 .set_index("close_time", drop=False)}
-        self.candles_cnt_by_interval={"1min":1, "5min":1}
+        self.candles_feed.candles_cnt_by_interval={"1min":1, "5min":1}
 
     def save_last_data(self, X_last: pd.DataFrame, y_pred_last: pd.DataFrame, data_last: pd.DataFrame):
         pass

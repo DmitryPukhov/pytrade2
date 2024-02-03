@@ -1,17 +1,18 @@
+import multiprocessing
 from io import StringIO
 from typing import Dict, List
 import pandas as pd
 
 
 class BidAskFeed:
-    def __init__(self, cfg: Dict[str, str]):
+    def __init__(self, cfg: Dict[str, str], data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
         self.bid_ask: pd.DataFrame = pd.DataFrame()
         self.bid_ask_buf: pd.DataFrame = pd.DataFrame()  # Buffer
 
         self.bid_ask_history_period = (pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))
                                       + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
-        self.data_lock = None
-        self.new_data_event = None
+        self.data_lock = data_lock
+        self.new_data_event = new_data_event
 
     def on_ticker(self, ticker: dict):
         # Add new data to df

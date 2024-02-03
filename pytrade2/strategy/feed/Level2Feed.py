@@ -1,15 +1,16 @@
+import multiprocessing
 from typing import Dict, List
 import pandas as pd
 
 
 class Level2Feed:
-    def __init__(self, cfg: Dict[str, str]):
+    def __init__(self, cfg: Dict[str, str], data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
         self.level2: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])
         self.level2_buf: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])  # Buffer
         self.level2_history_period = (pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))
                                       + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
-        self.data_lock = None
-        self.new_data_event = None
+        self.data_lock = data_lock
+        self.new_data_event = new_data_event
 
     def on_level2(self, level2: List[Dict]):
         """

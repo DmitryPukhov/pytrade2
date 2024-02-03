@@ -66,8 +66,8 @@ class StrategyBase():
         self.min_xy_len = 2
         self.X_pipe, self.y_pipe = None, None
 
-        self.data_lock: multiprocessing.RLock() = None
-        self.new_data_event: Optional[Event] = None
+        self.data_lock = multiprocessing.RLock()
+        self.new_data_event: Event = Event()
 
         #PersistableStateStrategy.__init__(self, config)
 

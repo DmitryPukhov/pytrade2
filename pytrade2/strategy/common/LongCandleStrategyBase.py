@@ -16,7 +16,7 @@ from strategy.features.LongCandleFeatures import LongCandleFeatures
 from threading import Event
 
 
-class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
+class LongCandleStrategyBase(StrategyBase):
     """
     Predict long candle, classification model, target signals: -1, 0, 1
     """
@@ -24,25 +24,22 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
     def __init__(self, config: Dict, exchange_provider: Exchange):
 
         self.websocket_feed = None
-        self.candles_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider)
-        CandlesFeed.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        Level2Feed.__init__(self, config)
-
-        predict_window = config["pytrade2.strategy.predict.window"]
-
-        self.target_period = predict_window
-
+        self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
         # Should keep 1 more candle for targets
-        self.candles_cnt_by_interval[self.target_period] += 1
-        self.candles_history_cnt_by_interval[self.target_period] += 1
+        predict_window = config["pytrade2.strategy.predict.window"]
+        self.target_period = predict_window
+        self.candles_feed.candles_cnt_by_interval[self.target_period] += 1
+        self.candles_feed.candles_history_cnt_by_interval[self.target_period] += 1
+
+        self.level2_feed = Level2Feed(config, self.data_lock, self.new_data_event)
+        # CandlesFeed.__init__(self, config=config, ticker=self.ticker, exchange_provider=exchange_provider)
+        #Level2Feed.__init__(self, config)
 
         self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
 
         logging.info(f"Target period: {self.target_period}")
-        self.data_lock = multiprocessing.RLock()
-        self.new_data_event: Event = Event()
 
     def get_report(self):
         """ Short info for report """
@@ -55,7 +52,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         # msg.write("\n")
         # msg.write(Level2Strategy.get_report(self))
         msg.write("\n")
-        msg.write(CandlesFeed.get_report(self))
+        msg.write(self.candles_feed.get_report())
 
         msg.write(self.learn_data_balancer.get_report())
 
@@ -76,7 +73,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
 
         self.broker = self.exchange_provider.broker(exchange_name)
 
-        self.read_candles()
+        self.candles_feed.read_candles()
 
         StrategyBase.run(self)
 
@@ -88,7 +85,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
-        if self.has_all_candles():
+        if self.candles_feed.has_all_candles():
             return True
         else:
             logging.info("Cannot learn, not enough data")
@@ -111,8 +108,8 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
 
     def features_targets(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         #level2_past__window = self.target_period
-        x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_by_interval,
-                                                                    self.candles_cnt_by_interval,
+        x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_feed.candles_by_interval,
+                                                                    self.candles_feed.candles_cnt_by_interval,
                                                                     #self.level2,
                                                                     #level2_past__window,
                                                                     self.target_period,
@@ -124,17 +121,18 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         # Append new data from buffers to main data frames
         with (self.data_lock):
             # Save raw buffers to history
-            save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}
+            save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_feed.candles_by_interval_buf.items()}
             self.data_persister.save_last_data(self.ticker, save_dict)
-            self.update_candles()
+            self.candles_feed.update_candles()
 
     def process_new_data(self):
-
-        with (self.data_lock):
-            # Save raw candles to history
-            save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}
-            self.data_persister.save_last_data(self.ticker, save_dict)
-            self.update_candles()
+        self.apply_buffers()
+        #
+        # with (self.data_lock):
+        #     # Save raw candles to history
+        #     save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_feed.candles_by_interval_buf.items()}
+        #     self.data_persister.save_last_data(self.ticker, save_dict)
+        #     self.candles_feed.update_candles()
 
         x, y, x_wo_targets = self.features_targets()
 
@@ -175,7 +173,7 @@ class LongCandleStrategyBase(StrategyBase, CandlesFeed, Level2Feed):
         :return stop loss, take profit, trailing delta
         """
 
-        last_candle = self.candles_by_interval[self.target_period].iloc[-1]
+        last_candle = self.candles_feed.candles_by_interval[self.target_period].iloc[-1]
         sl_delta_min = self.stop_loss_min_coeff * last_candle["close"]
         sl_delta_max = self.stop_loss_max_coeff * last_candle["close"]
         tp_delta_min = self.profit_min_coeff * last_candle["close"]

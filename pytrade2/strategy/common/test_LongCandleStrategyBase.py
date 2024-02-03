@@ -15,6 +15,7 @@ class LongCandleStrategyBaseTest(TestCase):
 
     def new_strategy(self):
         conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
+                "pytrade2.exchange": None,
                 "pytrade2.data.dir": None,
                 "pytrade2.price.precision": 2,
                 "pytrade2.amount.precision": 2,
@@ -31,7 +32,9 @@ class LongCandleStrategyBaseTest(TestCase):
 
         # LongCandleStrategyBase.__init__ = MagicMock(return_value=None)
         threading.Timer = MagicMock()
-        strategy = LongCandleStrategyBase(conf, None)
+        strategy = LongCandleStrategyBase(conf, MagicMock())
+        strategy.candles_feed = MagicMock()
+        strategy.level2_feed = MagicMock()
         strategy.model = MagicMock()
         strategy.X_pipe = MagicMock()
         strategy.y_pipe = MagicMock()
@@ -39,16 +42,15 @@ class LongCandleStrategyBaseTest(TestCase):
         strategy.data_lock = multiprocessing.RLock()
         # strategy.new_data_event = multiprocessing.Event()
         # strategy.candles_cnt_by_interval = {'1min': 1, '5min': 1}
-        # strategy.candles_by_interval = dict()
+        # strategy.candles_feed.candles_by_interval = dict()
         # strategy.learn_interval = pd.Timedelta.min
-        strategy.candles_feed = MagicMock()
         strategy.processing_interval = pd.Timedelta('0 seconds')
         strategy.broker = MagicMock()
         return strategy
 
     def test_get_sl_tp_trdelta_buy(self):
         strategy = self.new_strategy()
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 3, "close": 2, "low": 1}])}
+        strategy.candles_feed.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 3, "close": 2, "low": 1}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(1)
 
         self.assertEqual(1, sl)
@@ -60,7 +62,7 @@ class LongCandleStrategyBaseTest(TestCase):
         strategy.stop_loss_min_coeff = 0.6
         strategy.profit_min_coeff = 0.8
 
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 21, "close": 20, "low": 19}])}
+        strategy.candles_feed.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 21, "close": 20, "low": 19}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(1)
 
         self.assertEqual(8, sl)
@@ -72,7 +74,7 @@ class LongCandleStrategyBaseTest(TestCase):
         strategy.stop_loss_max_coeff = 0.1
         strategy.profit_max_coeff = 0.2
 
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 30, "close": 20, "low": 10}])}
+        strategy.candles_feed.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 30, "close": 20, "low": 10}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(1)
 
         self.assertEqual(18, sl)
@@ -82,7 +84,7 @@ class LongCandleStrategyBaseTest(TestCase):
     def test_get_sl_tp_trdelta_buy_no_min_sltp(self):
         strategy = self.new_strategy()
         # default strategy.stop_loss_min_coeff = strategy.profit_min_coeff = 0
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 30, "close": 20, "low": 10}])}
+        strategy.candles_feed.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 30, "close": 20, "low": 10}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(1)
 
         self.assertEqual(10, sl)
@@ -95,7 +97,7 @@ class LongCandleStrategyBaseTest(TestCase):
         strategy.profit_min_coeff = 0.8
 
         # default strategy.stop_loss_min_coeff = strategy.profit_min_coeff = 0
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 21, "close": 20, "low": 19}])}
+        strategy.candles_feed.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 21, "close": 20, "low": 19}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(-1)
 
         self.assertEqual(32, sl)
@@ -108,7 +110,7 @@ class LongCandleStrategyBaseTest(TestCase):
         strategy.profit_max_coeff = 0.2
 
         # default strategy.stop_loss_min_coeff = strategy.profit_min_coeff = 0
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 30, "close": 20, "low": 10}])}
+        strategy.candles_feed.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 30, "close": 20, "low": 10}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(-1)
 
         self.assertEqual(22, sl)
@@ -118,7 +120,7 @@ class LongCandleStrategyBaseTest(TestCase):
     def test_get_sl_tp_trdelta_sell_no_min_sltp(self):
         strategy = self.new_strategy()
         # default strategy.stop_loss_min_coeff = strategy.profit_min_coeff = 0
-        strategy.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 3, "close": 2, "low": 1}])}
+        strategy.candles_feed.candles_by_interval = {strategy.target_period: pd.DataFrame([{"high": 3, "close": 2, "low": 1}])}
         sl, tp, trd = strategy.get_sl_tp_trdelta(-1)
 
         self.assertEqual(3, sl)
@@ -130,11 +132,11 @@ class LongCandleStrategyBaseTest(TestCase):
         # Build strategy instance
         base_dt = datetime.datetime.fromisoformat('2023-10-15T10:00:00')
         strategy = self.new_strategy()
-        strategy.candles_cnt_by_interval = {'1min': 2, '5min': 2}
+        strategy.candles_feed.candles_cnt_by_interval = {'1min': 2, '5min': 2}
         time.sleep = MagicMock()
 
         # Input data
-        candles_1min = ([
+        candles_1min = pd.DataFrame([
             # before prev to make diff() for prev not none
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:57:00'),
              'close_time': datetime.datetime.fromisoformat('2023-10-15T09:58:00'),
@@ -152,9 +154,9 @@ class LongCandleStrategyBaseTest(TestCase):
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T10:00:00'),
              'close_time': datetime.datetime.fromisoformat('2023-10-15T10:01:00'),
              'interval': '1min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0}
-        ])
+        ]).set_index('close_time', drop=False)
 
-        candles_5min = ([
+        candles_5min = pd.DataFrame([
             # before prev to make diff() for prev not none
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:45:00'),
              'close_time': datetime.datetime.fromisoformat('2023-10-15T09:50:00'),
@@ -167,7 +169,7 @@ class LongCandleStrategyBaseTest(TestCase):
             {'open_time': datetime.datetime.fromisoformat('2023-10-15T09:55:00'),
              'close_time': datetime.datetime.fromisoformat('2023-10-15T10:00'),
              'interval': '5min', 'open': 10.0, 'high': 11.0, 'low': 9.0, 'close': 10.0, 'vol': 1.0},
-        ])
+        ]).set_index('close_time', drop=False)
         level2 = pd.DataFrame(
             [
                 {'datetime': datetime.datetime.fromisoformat('2023-05-21 07:05:00'),
@@ -178,18 +180,19 @@ class LongCandleStrategyBaseTest(TestCase):
             ])
 
         # Mock input
-        strategy.candles_feed.read_candles = lambda ticker, interval, limit: \
-            {'1min': candles_1min, '5min': candles_5min}[interval]
-        strategy.read_candles()
-        strategy.level2 = level2
+        # strategy.candles_feed.candles_feed.read_candles = lambda ticker, interval, limit: \
+        #     {'1min': candles_1min, '5min': candles_5min}[interval]
+        # strategy.candles_feed.read_candles()
+        strategy.candles_feed.candles_by_interval = {'1min': candles_1min, '5min': candles_5min}
+        strategy.level2_feed.level2 = level2
 
         # Flat signal received
         strategy.y_pipe.inverse_transform = MagicMock(return_value=np.array([[0]]))
         strategy.process_new_data()
 
         # New candles should be added to candles_by_interval
-        self.assertListEqual([c['close_time'] for c in candles_1min],
-                             strategy.candles_by_interval['1min'].index.tolist())
+        self.assertListEqual(candles_1min.index.tolist(),
+                             strategy.candles_feed.candles_by_interval['1min'].index.tolist())
         # Data with targets should be added to learn data
         self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
                              strategy.learn_data_balancer.x_dict[0].index.tolist())
@@ -204,7 +207,7 @@ class LongCandleStrategyBaseTest(TestCase):
         #
         # # New candles should be added to candles_by_interval
         # self.assertListEqual([c['close_time'] for c in candles_1min],
-        #                      strategy.candles_by_interval['1min'].index.tolist())
+        #                      strategy.candles_feed.candles_by_interval['1min'].index.tolist())
         # # Data with targets should be added to learn data
         # self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
         #                      strategy.learn_data_balancer.x_dict[0].index.tolist())

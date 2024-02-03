@@ -6,19 +6,20 @@ from typing import Dict
 import pytz
 import pandas as pd
 
+from exch.Exchange import Exchange
+
 
 class CandlesFeed:
     """ Decorator for strategies. Reads candles from exchange """
 
-    def __init__(self, config, ticker: str, candles_feed):
+    def __init__(self, config, ticker: str, exchange_provider: Exchange, data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
 
-        self.data_lock: multiprocessing.RLock() = None
-        self.candles_feed = candles_feed
+        self.data_lock = data_lock
+        self.candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
         self.ticker = ticker
         self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
         self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
-        self.data_lock: multiprocessing.RLock() = None
-        self.new_data_event: multiprocessing.Event = None
+        self.new_data_event = new_data_event
 
         periods = [s.strip() for s in str(config["pytrade2.feed.candles.periods"]).split(",")]
         counts = [int(s) for s in str(config["pytrade2.feed.candles.counts"]).split(",")]

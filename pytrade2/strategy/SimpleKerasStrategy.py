@@ -25,6 +25,6 @@ class SimpleKerasStrategy(PredictBidAskStrategyBase):
         model.compile(optimizer='adam', loss='mean_absolute_error', metrics=['mean_squared_error'])
 
         # Load weights
-        self.load_last_model(model)
+        self.model_persister.load_last_model(model)
         model.summary()
         return model

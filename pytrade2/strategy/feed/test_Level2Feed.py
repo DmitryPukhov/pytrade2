@@ -14,15 +14,15 @@ class TestLevel2Feed(TestCase):
         datetime.fromisoformat("2023-11-26 00:11"),
     ], columns=["datetime"])
 
-    def new_strategy(self):
-        strategy = Level2Feed({})
-        strategy.data_lock = multiprocessing.RLock()
+    def new_level2_feed(self):
+        level2_feed = Level2Feed({}, multiprocessing.RLock(), multiprocessing.Event())
+        level2_feed.data_lock = multiprocessing.RLock()
 
-        strategy.level2_buf = self.level2_buf
-        return strategy
+        level2_feed.level2_buf = self.level2_buf
+        return level2_feed
 
     def test_on_level2_should_purge_old(self):
-        strategy = self.new_strategy()
+        strategy = self.new_level2_feed()
         strategy.level2_history_period = pd.Timedelta('1min')
 
         # Call
@@ -36,32 +36,32 @@ class TestLevel2Feed(TestCase):
             strategy.level2["datetime"].tolist())
 
     def test_on_level2_no_purge(self):
-        strategy = self.new_strategy()
-        strategy.level2_history_period = pd.Timedelta('2min')
+        level2_feed = self.new_level2_feed()
+        level2_feed.level2_history_period = pd.Timedelta('2min')
 
         # Call
-        strategy.update_level2()
+        level2_feed.update_level2()
 
         self.assertListEqual(
             self.level2_buf["datetime"].tolist(),
-            strategy.level2["datetime"].tolist())
+            level2_feed.level2["datetime"].tolist())
 
     def test_on_level2_purge_all(self):
-        strategy = self.new_strategy()
-        strategy.level2_history_period = pd.Timedelta('0s')
+        level2_feed = self.new_level2_feed()
+        level2_feed.level2_history_period = pd.Timedelta('0s')
 
         # Call
-        strategy.update_level2()
+        level2_feed.update_level2()
 
         self.assertListEqual(
             [],
-            strategy.level2["datetime"].tolist())
+            level2_feed.level2["datetime"].tolist())
 
     def test_update_level2_should_reset_buf(self):
-        strategy = self.new_strategy()
-        strategy.level2_history_period = pd.Timedelta('1min')
+        level2_feed = self.new_level2_feed()
+        level2_feed.level2_history_period = pd.Timedelta('1min')
 
         # Call
-        strategy.update_level2()
+        level2_feed.update_level2()
 
-        self.assertTrue(strategy.level2_buf.empty)
+        self.assertTrue(level2_feed.level2_buf.empty)
