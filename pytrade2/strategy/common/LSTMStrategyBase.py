@@ -24,11 +24,11 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
 
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Reshape last features to lstm window"""
-        X = PredictBidAskFeatures.last_features_of(self.bid_ask,
+        X = PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
                                                    self.lstm_window_size,
-                                                   self.level2,
-                                                   self.candles_by_interval,
-                                                   self.candles_cnt_by_interval,
+                                                   self.level2_feed.level2,
+                                                   self.candles_feed.candles_by_interval,
+                                                   self.candles_feed.candles_cnt_by_interval,
                                                    past_window=self.past_window)
 
         if X.shape[0] <=0:

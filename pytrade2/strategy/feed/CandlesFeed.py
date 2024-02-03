@@ -16,6 +16,7 @@ class CandlesFeed:
 
         self.data_lock = data_lock
         self.candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
+        self.candles_feed.consumers.add(self)
         self.ticker = ticker
         self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
         self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()

@@ -31,10 +31,6 @@ class PredictBidAskStrategyBase(StrategyBase):
         self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
         self.level2_feed = Level2Feed(config,  exchange_provider, self.data_lock, self.new_data_event)
         self.bid_ask_feed = BidAskFeed(config,  exchange_provider, self.data_lock, self.new_data_event)
-        #CandlesFeed.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
-        #Level2Feed.__init__(self, config)
-        #BidAskFeed.__init__(self, config)
-
 
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
@@ -69,23 +65,11 @@ class PredictBidAskStrategyBase(StrategyBase):
         Attach to the feed and listen
         """
         exchange_name = self.config["pytrade2.exchange"]
-
-        # Create feed and broker
-        #self.websocket_feed = self.exchange_provider.websocket_feed(exchange_name)
-        #self.websocket_feed.consumers.add(self)
-        #self.candles_feed = self.exchange_provider.candles_feed(exchange_name)
-        #self.candles_feed.consumers.add(self)
-
         self.broker = self.exchange_provider.broker(exchange_name)
 
         self.candles_feed.read_candles()
 
         StrategyBase.run(self)
-
-        # Run the feed, listen events
-        #self.websocket_feed.run()
-        #self.candles_feed.run()
-        #self.candles_feed.candles_feed.run()
         self.broker.run()
 
     def is_alive(self):

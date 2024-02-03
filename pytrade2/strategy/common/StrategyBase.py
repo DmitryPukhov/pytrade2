@@ -1,10 +1,9 @@
 import gc
 import logging
 import multiprocessing
-import sys
 from datetime import datetime, timedelta
 from threading import Thread, Event, Timer
-from typing import Dict, Optional
+from typing import Dict
 
 import pandas as pd
 import tensorflow.python.keras.backend
