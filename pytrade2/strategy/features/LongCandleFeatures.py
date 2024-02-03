@@ -14,7 +14,7 @@ class LongCandleFeatures:
                             #level2_past_window: str,
                             target_period: str,
                             loss_min_coeff: float,
-                            profit_min_coeff: float) -> (pd.DataFrame, pd.DataFrame):
+                            profit_min_coeff: float) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
 
         # Candles + level2 features
         features = CandlesFeatures.candles_combined_features_of(candles_by_periods, cnt_by_period).dropna()
