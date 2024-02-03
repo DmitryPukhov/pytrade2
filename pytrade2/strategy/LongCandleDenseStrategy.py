@@ -60,6 +60,6 @@ class LongCandleDenseStrategy(LongCandleStrategyBase):
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
         # Load weights
-        self.load_last_model(model)
+        self.model_persister.load_last_model(model)
         model.summary()
         return model

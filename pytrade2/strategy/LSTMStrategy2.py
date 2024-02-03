@@ -25,6 +25,6 @@ class LSTMStrategy2(LSTMStrategyBase):
         model.add(Dense(y_size, activation='linear')) # linear for regression
         model.compile(optimizer='adam', loss='mae', metrics=['mse'])
         # Load weights
-        self.load_last_model(model)
+        self.model_persister.load_last_model(model)
         model.summary()
         return model
