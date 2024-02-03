@@ -17,8 +17,8 @@ from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
 from strategy.common.PersistableStateStrategy import PersistableStateStrategy
 from strategy.common.RiskManager import RiskManager
-from strategy.common.persist.DataPersister import DataPersister
-from strategy.common.persist.ModelPersister import ModelPersister
+from strategy.persist.DataPersister import DataPersister
+from strategy.persist.ModelPersister import ModelPersister
 
 
 class StrategyBase():
