@@ -57,10 +57,11 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         params = {"contract_code": ticker,
                   "period": interval,
                   "size": limit,
-                  "from": int(from_.timestamp()),
-                  "to": int(to.timestamp())
                   }
-
+        if from_:
+            params["from"] = int(from_.timestamp())
+        if to:
+            params["to"] = int(to.timestamp())
         res = self.rest_client.get(path, params)
 
         # Convert
