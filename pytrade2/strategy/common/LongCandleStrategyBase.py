@@ -33,7 +33,7 @@ class LongCandleStrategyBase(StrategyBase):
         self.candles_feed.candles_cnt_by_interval[self.target_period] += 1
         self.candles_feed.candles_history_cnt_by_interval[self.target_period] += 1
 
-        self.level2_feed = Level2Feed(config, self.data_lock, self.new_data_event)
+        self.level2_feed = Level2Feed(config, exchange_provider, self.data_lock, self.new_data_event)
         # CandlesFeed.__init__(self, config=config, ticker=self.ticker, exchange_provider=exchange_provider)
         #Level2Feed.__init__(self, config)
 

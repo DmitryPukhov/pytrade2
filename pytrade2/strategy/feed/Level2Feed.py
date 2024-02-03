@@ -2,9 +2,12 @@ import multiprocessing
 from typing import Dict, List
 import pandas as pd
 
+from exch.Exchange import Exchange
+
 
 class Level2Feed:
-    def __init__(self, cfg: Dict[str, str], data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
+    def __init__(self, cfg: Dict[str, str], exchange_provider: Exchange, data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
+        self.websocket_feed = exchange_provider.websocket_feed(cfg["pytrade2.exchange"])
         self.level2: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])
         self.level2_buf: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])  # Buffer
         self.level2_history_period = (pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))

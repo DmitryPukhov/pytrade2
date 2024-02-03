@@ -29,8 +29,8 @@ class PredictBidAskStrategyBase(StrategyBase):
 
         StrategyBase.__init__(self, config, exchange_provider)
         self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
-        self.level2_feed = Level2Feed(config,  self.data_lock, self.new_data_event)
-        self.bid_ask_feed = BidAskFeed(config,  self.data_lock, self.new_data_event)
+        self.level2_feed = Level2Feed(config,  exchange_provider, self.data_lock, self.new_data_event)
+        self.bid_ask_feed = BidAskFeed(config,  exchange_provider, self.data_lock, self.new_data_event)
         #CandlesFeed.__init__(self, config=config, ticker=self.ticker, candles_feed=self.candles_feed)
         #Level2Feed.__init__(self, config)
         #BidAskFeed.__init__(self, config)
@@ -85,7 +85,7 @@ class PredictBidAskStrategyBase(StrategyBase):
         # Run the feed, listen events
         #self.websocket_feed.run()
         #self.candles_feed.run()
-        self.candles_feed.candles_feed.run()
+        #self.candles_feed.candles_feed.run()
         self.broker.run()
 
     def is_alive(self):

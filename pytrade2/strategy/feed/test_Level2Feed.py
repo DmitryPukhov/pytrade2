@@ -1,6 +1,7 @@
 import multiprocessing
 from datetime import datetime
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 import pandas as pd
 
@@ -15,7 +16,7 @@ class TestLevel2Feed(TestCase):
     ], columns=["datetime"])
 
     def new_level2_feed(self):
-        level2_feed = Level2Feed({}, multiprocessing.RLock(), multiprocessing.Event())
+        level2_feed = Level2Feed({"pytrade2.exchange": "exchange1"}, MagicMock(), multiprocessing.RLock(), multiprocessing.Event())
         level2_feed.data_lock = multiprocessing.RLock()
 
         level2_feed.level2_buf = self.level2_buf

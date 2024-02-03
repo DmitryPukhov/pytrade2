@@ -3,9 +3,12 @@ from io import StringIO
 from typing import Dict, List
 import pandas as pd
 
+from exch.Exchange import Exchange
+
 
 class BidAskFeed:
-    def __init__(self, cfg: Dict[str, str], data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
+    def __init__(self, cfg: Dict[str, str], exchange_provider: Exchange, data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
+        self.websocket_feed = exchange_provider.websocket_feed(cfg["pytrade2.exchange"])
         self.bid_ask: pd.DataFrame = pd.DataFrame()
         self.bid_ask_buf: pd.DataFrame = pd.DataFrame()  # Buffer
 
