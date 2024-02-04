@@ -97,7 +97,7 @@ class CandlesFeed:
                 return False
         return True
 
-    def is_alive(self):
+    def is_alive(self, _):
         dt = datetime.now()
         for i, c in self.candles_by_interval.items():
             candle_max_delta = pd.Timedelta(i)

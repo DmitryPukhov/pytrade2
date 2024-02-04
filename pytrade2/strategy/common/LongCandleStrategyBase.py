@@ -1,5 +1,4 @@
 import logging
-import multiprocessing
 import time
 from io import StringIO
 from typing import Dict
@@ -13,7 +12,6 @@ from strategy.feed.CandlesFeed import CandlesFeed
 from strategy.feed.Level2Feed import Level2Feed
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LongCandleFeatures import LongCandleFeatures
-from threading import Event
 
 
 class LongCandleStrategyBase(StrategyBase):
@@ -40,20 +38,10 @@ class LongCandleStrategyBase(StrategyBase):
         logging.info(f"Target period: {self.target_period}")
 
     def get_report(self):
-        """ Short info for report """
-
         msg = StringIO()
-        # Broker report
-        if hasattr(self.broker, "get_report"):
-            msg.write(self.broker.get_report())
-
-        # msg.write("\n")
-        # msg.write(Level2Strategy.get_report(self))
-        msg.write("\n")
-        msg.write(self.candles_feed.get_report())
-
+        msg.write(super().get_report())
+        # Add balancer report to base report
         msg.write(self.learn_data_balancer.get_report())
-
         return msg.getvalue()
 
     def can_learn(self) -> bool:
@@ -80,14 +68,6 @@ class LongCandleStrategyBase(StrategyBase):
                                                                     self.stop_loss_min_coeff,
                                                                     self.profit_min_coeff)
         return x, y, x_wo_targets
-
-    # def apply_buffers(self):
-    #     # Append new data from buffers to main data frames
-    #     with (self.data_lock):
-    #         # Save raw buffers to history
-    #         save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_feed.candles_by_interval_buf.items()}
-    #         self.data_persister.save_last_data(self.ticker, save_dict)
-    #         self.candles_feed.apply_buf()
 
     def process_new_data(self):
         self.apply_buffers()
@@ -170,9 +150,6 @@ class LongCandleStrategyBase(StrategyBase):
                                      stop_loss_price=sl,
                                      take_profit_price=tp,
                                      trailing_delta=tdelta)
-
-    def is_alive(self):
-        return self.candles_feed.is_alive()
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
         # with self.data_lock:

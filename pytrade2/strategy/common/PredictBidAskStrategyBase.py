@@ -1,21 +1,17 @@
 import logging
-import multiprocessing
 import traceback
-from datetime import datetime
-from io import StringIO
-from threading import Event, Timer
-from typing import Dict, Optional
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 from numpy import ndarray
 
 from exch.Exchange import Exchange
+from strategy.common.StrategyBase import StrategyBase
+from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 from strategy.feed.BidAskFeed import BidAskFeed
 from strategy.feed.CandlesFeed import CandlesFeed
 from strategy.feed.Level2Feed import Level2Feed
-from strategy.common.StrategyBase import StrategyBase
-from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
 class PredictBidAskStrategyBase(StrategyBase):
@@ -35,49 +31,11 @@ class PredictBidAskStrategyBase(StrategyBase):
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
         self.past_window = config["pytrade2.strategy.past.window"]
-        self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
-        self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
 
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
 
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
-
-    def get_report(self):
-        """ Short info for report """
-
-        msg = StringIO()
-        # Broker report
-        if hasattr(self.broker, "get_report"):
-            msg.write(self.broker.get_report())
-        # BidAsk report
-        msg.write(self.bid_ask_feed.get_report())
-        msg.write("\n")
-        # Level2 report
-        msg.write(self.level2_feed.get_report())
-        msg.write("\n")
-        # Candles report
-        msg.write(self.candles_feed.get_report())
-        return msg.getvalue()
-
-    def is_alive(self):
-        maxdelta = self.history_min_window + pd.Timedelta("60s")
-        dt = datetime.utcnow()
-
-        if not self.bid_ask_feed.bid_ask.empty and dt - self.bid_ask_feed.bid_ask.index.max() > maxdelta:
-            is_alive = False
-        elif not self.level2_feed.level2.empty and dt - self.level2_feed.level2.index.max() > maxdelta:
-            is_alive = False
-        else:
-            is_alive = self.candles_feed.is_alive()
-        if not is_alive:
-            last_bid_ask = self.bid_ask_feed.bid_ask.index.max() if not self.bid_ask_feed.bid_ask.empty else None
-            last_level2 = self.level2_feed.level2.index.max() if not self.level2_feed.level2.empty else None
-            last_candles = [(i, c.index.max()) for i, c in self.candles_feed.candles_by_interval.items()]
-            logging.info(
-                f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
-                f"last candles: {last_candles}")
-        return is_alive
 
     def process_new_data(self):
         self.apply_buffers()

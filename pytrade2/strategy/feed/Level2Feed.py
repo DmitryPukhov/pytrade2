@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+from datetime import datetime
 from typing import Dict, List
 import pandas as pd
 
@@ -52,3 +53,6 @@ class Level2Feed:
                 f"last: {self.level2.index.max().strftime(time_format)}") \
             if not self.level2.empty \
             else "Level2 is empty"
+
+    def is_alive(self, maxdelta: pd.Timedelta):
+        return self.level2.empty or (datetime.utcnow() - self.level2.index.max() <= maxdelta)

@@ -2,6 +2,7 @@ import gc
 import logging
 import multiprocessing
 from datetime import datetime, timedelta
+from io import StringIO
 from threading import Thread, Event, Timer
 from typing import Dict, Optional
 
@@ -57,6 +58,8 @@ class StrategyBase():
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
         self.profit_min_coeff = config.get("pytrade2.strategy.profit.min.coeff", 0)
         self.profit_max_coeff = config.get("pytrade2.strategy.profit.max.coeff", float('inf'))
+        self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
+        self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
 
         self.trade_check_interval = timedelta(seconds=30)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
@@ -99,6 +102,28 @@ class StrategyBase():
              ("ymms", MinMaxScaler())])
         y_pipe.fit(y)
         return x_pipe, y_pipe
+
+    def is_alive(self):
+        maxdelta = self.history_min_window + pd.Timedelta("60s")
+        feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
+        is_alive = all([feed.is_alive(maxdelta) for feed in feeds])
+        if not is_alive:
+            logging.info(self.get_report())
+            logging.error(f"Strategy is not alive for {maxdelta}")
+        return is_alive
+
+    def get_report(self):
+        """ Short info for report """
+
+        msg = StringIO()
+        # Broker report
+        if hasattr(self.broker, "get_report"):
+            msg.write(self.broker.get_report())
+        # Feeds reports
+        for feed in filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
+            msg.write(feed.get_report())
+            msg.write("\n")
+        return msg.getvalue()
 
     def can_learn(self):
         raise NotImplementedError
@@ -190,9 +215,6 @@ class StrategyBase():
             Timer(self.learn_interval.seconds, self.learn).start()
 
     def create_model(self, x_size, y_size):
-        raise NotImplementedError()
-
-    def is_alive(self):
         raise NotImplementedError()
 
     def process_new_data(self):

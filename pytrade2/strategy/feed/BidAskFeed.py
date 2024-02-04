@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+from datetime import datetime
 from io import StringIO
 from typing import Dict, List, Optional
 import pandas as pd
@@ -50,3 +51,6 @@ class BidAskFeed:
             f"last: {self.bid_ask.index.max().strftime(time_format)}"
             if not self.bid_ask.empty else "is empty")
         return msg.getvalue()
+
+    def is_alive(self, maxdelta: pd.Timedelta):
+        return self.bid_ask.empty or (datetime.utcnow() - self.bid_ask.index.max() <= maxdelta)
