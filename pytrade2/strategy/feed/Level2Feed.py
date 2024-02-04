@@ -43,7 +43,7 @@ class Level2Feed:
             self.level2_buf = pd.DataFrame()
             # Purge old level2
             min_time = self.level2["datetime"].max() - self.history_max_window
-            self.level2 = self.level2[self.level2["datetime"] >= min_time]
+            self.level2 = self.level2[self.level2["datetime"] > min_time]
         return self.level2
 
     def get_report(self):
