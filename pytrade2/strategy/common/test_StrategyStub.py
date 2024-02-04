@@ -66,6 +66,7 @@ class StrategyStub(PredictBidAskStrategyBase):
 
                 "pytrade2.feed.candles.periods": "1min,5min",
                 "pytrade2.feed.candles.counts": "1,1",
+                "pytrade2.feed.candles.history.counts": "1,1",
                 "pytrade2.order.quantity": 0.001}
         PredictBidAskStrategyBase.__init__(self, conf, MagicMock())
         self.candles_feed = MagicMock()

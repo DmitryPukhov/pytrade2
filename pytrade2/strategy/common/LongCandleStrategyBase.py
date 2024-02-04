@@ -89,7 +89,7 @@ class LongCandleStrategyBase(StrategyBase):
     def process_prediction(self, y_pred: pd.DataFrame):
         signal = y_pred['signal'].iloc[-1]
 
-        if not signal:
+        if not signal: # signal = 0 => oom
             return
         sl, tp, tdelta = self.get_sl_tp_trdelta(signal)
         self.broker.create_cur_trade(symbol=self.ticker,
@@ -102,8 +102,8 @@ class LongCandleStrategyBase(StrategyBase):
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         x, y = LongCandleFeatures.features_targets_of(
-            self.candles_feed.candles_by_periods,
-            self.candles_feed.cnt_by_period,
+            self.candles_feed.candles_by_interval,
+            self.candles_feed.candles_cnt_by_interval,
             self.target_period,
             self.stop_loss_min_coeff,
             self.profit_min_coeff)

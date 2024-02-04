@@ -24,12 +24,12 @@ class CandlesFeed:
 
         periods = [s.strip() for s in str(config["pytrade2.feed.candles.periods"]).split(",")]
         counts = [int(s) for s in str(config["pytrade2.feed.candles.counts"]).split(",")]
-
+        history_counts = [int(s) for s in str(config["pytrade2.feed.candles.history.counts"]).split(",")]
         self.candles_cnt_by_interval = dict(zip(periods, counts))
-
+        self.candles_history_cnt_by_interval = dict(zip(periods, history_counts))
         history_window = config["pytrade2.strategy.history.max.window"]
         predict_window = config["pytrade2.strategy.predict.window"]
-        self.candles_history_cnt_by_interval = self.candles_history_cnts(periods, counts, history_window,
+        self.candles_history_cnt_by_interval = self.candles_history_cnts(periods, history_counts, history_window,
                                                                          predict_window)
 
     @staticmethod

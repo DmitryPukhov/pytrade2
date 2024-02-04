@@ -16,7 +16,7 @@ class LearnDataBalancer:
             # Not all 3 signals are present
             balanced_cnt = 0
 
-        balanced_y = pd.concat([y[y['signal'] == signal].tail(balanced_cnt) for signal in [-1,0,1]]).sort_index()
+        balanced_y = pd.concat([y[y['signal'] == signal].tail(balanced_cnt) for signal in [-1, 0, 1]]).sort_index()
         balanced_x = x[x.index.isin(balanced_y.index)]
 
         # Log each signal count
@@ -25,7 +25,7 @@ class LearnDataBalancer:
         for signal in [-1, 0, 1]:
             cnt_bal = len(balanced_y[balanced_y['signal'] == signal]) if not balanced_y.empty else 0
             msgs_bal.append(f"signal{signal}:{cnt_bal}")
-            cnt_unbal = len(y)
+            cnt_unbal = len(y[y['signal'] == signal])
             msgs_unbal.append(f"signal{signal}:{cnt_unbal}")
 
         logging.info(' '.join(msgs_bal))
