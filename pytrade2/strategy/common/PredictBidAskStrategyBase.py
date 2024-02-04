@@ -60,18 +60,6 @@ class PredictBidAskStrategyBase(StrategyBase):
         msg.write(self.candles_feed.get_report())
         return msg.getvalue()
 
-    def run(self):
-        """
-        Attach to the feed and listen
-        """
-        exchange_name = self.config["pytrade2.exchange"]
-        self.broker = self.exchange_provider.broker(exchange_name)
-
-        self.candles_feed.read_candles()
-
-        StrategyBase.run(self)
-        self.broker.run()
-
     def is_alive(self):
         maxdelta = self.history_min_window + pd.Timedelta("60s")
         dt = datetime.utcnow()
@@ -90,44 +78,6 @@ class PredictBidAskStrategyBase(StrategyBase):
                 f"isNow: {dt}, maxdelta: {maxdelta}, last bid ask: {last_bid_ask}, last level2: {last_level2},"
                 f"last candles: {last_candles}")
         return is_alive
-
-    def purge_all(self):
-        """ Purge old data to reduce memory usage"""
-        try:
-            with self.data_lock:
-                self.bid_ask_feed.bid_ask = self.purged(self.bid_ask_feed.bid_ask, "bid_ask")
-                # self.level2 = self.purged(self.level2, "level2")
-                self.fut_low_high = self.purged(self.fut_low_high, "fut_low_high")
-        finally:
-            if self.purge_interval:
-                Timer(self.purge_interval.seconds, self.purge_all).start()
-
-    def purged(self, df: Optional[pd.DataFrame], tag: str) -> Optional[pd.DataFrame]:
-        """
-        Purge data frame
-        """
-        purge_window = self.history_max_window
-        logging.debug(f"Purging old {tag} data using window {purge_window}")
-        if df is None or df.empty:
-            return df
-        left_bound = df.index.max() - pd.Timedelta(purge_window)
-        return df[df.index >= left_bound]
-
-    def apply_buffers(self):
-        # Append new data from buffers to main data frames
-        with (self.data_lock):
-            # Save raw buffers to history
-            # save_dict = {**{"raw_bid_ask": self.bid_ask_buf, "raw_level2": self.level2_buf},
-            #              **{f"raw_candles_{period}": buf for period, buf in self.candles_by_interval_buf.items()}}
-            # Level 2 is too big to save
-            save_dict = {**{"raw_bid_ask": self.bid_ask_feed.bid_ask_buf},
-                         **{f"raw_candles_{period}": buf for period, buf in self.candles_feed.candles_by_interval_buf.items()}}
-            self.data_persister.save_last_data(self.ticker, save_dict)
-
-            # Update data from buffers
-            self.bid_ask_feed.update_bid_ask()
-            self.level2_feed.update_level2()
-            self.candles_feed.update_candles()
 
     def process_new_data(self):
         self.apply_buffers()

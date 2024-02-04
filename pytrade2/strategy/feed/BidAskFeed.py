@@ -1,6 +1,7 @@
+import logging
 import multiprocessing
 from io import StringIO
-from typing import Dict, List
+from typing import Dict, List, Optional
 import pandas as pd
 
 from exch.Exchange import Exchange
@@ -26,8 +27,8 @@ class BidAskFeed:
 
         self.new_data_event.set()
 
-    def update_bid_ask(self):
-        """ Add buf to the data and purge old buf """
+    def apply_buf(self):
+        """ Add the buf to the data then clear the buf """
         if self.bid_ask_buf.empty:
             return
 
@@ -40,7 +41,6 @@ class BidAskFeed:
         return self.bid_ask
 
     def get_report(self):
-        """ Short info for report """
         time_format = '%Y-%m-%d %H:%M:%S'
         msg = StringIO()
         msg.write(f"\nBid ask ")

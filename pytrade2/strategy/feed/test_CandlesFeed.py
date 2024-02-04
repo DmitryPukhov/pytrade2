@@ -30,7 +30,7 @@ class TestCandlesFeed(TestCase):
         candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "close": 1}
         # Call
         candles_feed.on_candle(candle1)
-        candles_feed.update_candles()
+        candles_feed.apply_buf()
         candles = candles_feed.candles_by_interval["1min"]
         # Assert candle1
         self.assertEqual(1, len(candles))
@@ -44,7 +44,7 @@ class TestCandlesFeed(TestCase):
         candle2 = {"open_time": dt1, "close_time": dt2, "interval": "1min", "close": 2}
         # Call
         candles_feed.on_candle(candle2)
-        candles_feed.update_candles()
+        candles_feed.apply_buf()
         candles = candles_feed.candles_by_interval["1min"]
         # Assert candle 2
         self.assertEqual(1, len(candles))
@@ -60,7 +60,7 @@ class TestCandlesFeed(TestCase):
         candle3 = {"open_time": dt2, "close_time": dt3, "interval": "1min", "close": 3}
         # Call candle3
         candles_feed.on_candle(candle3)
-        candles_feed.update_candles()
+        candles_feed.apply_buf()
         candles = candles_feed.candles_by_interval["1min"]
         # Assert candle3
         self.assertEqual(2, len(candles))

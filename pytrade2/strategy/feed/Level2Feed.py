@@ -1,3 +1,4 @@
+import logging
 import multiprocessing
 from typing import Dict, List
 import pandas as pd
@@ -29,7 +30,7 @@ class Level2Feed:
 
         self.new_data_event.set()
 
-    def update_level2(self):
+    def apply_buf(self):
         """ Add level2 buf to level2 and purge old level2 """
         if self.level2_buf.empty:
             return

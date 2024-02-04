@@ -27,7 +27,7 @@ class TestLevel2Feed(TestCase):
         strategy.level2_history_period = pd.Timedelta('1min')
 
         # Call
-        strategy.update_level2()
+        strategy.apply_buf()
 
         # Should purge old
         self.assertListEqual(
@@ -41,7 +41,7 @@ class TestLevel2Feed(TestCase):
         level2_feed.level2_history_period = pd.Timedelta('2min')
 
         # Call
-        level2_feed.update_level2()
+        level2_feed.apply_buf()
 
         self.assertListEqual(
             self.level2_buf["datetime"].tolist(),
@@ -52,7 +52,7 @@ class TestLevel2Feed(TestCase):
         level2_feed.level2_history_period = pd.Timedelta('0s')
 
         # Call
-        level2_feed.update_level2()
+        level2_feed.apply_buf()
 
         self.assertListEqual(
             [],
@@ -63,6 +63,6 @@ class TestLevel2Feed(TestCase):
         level2_feed.level2_history_period = pd.Timedelta('1min')
 
         # Call
-        level2_feed.update_level2()
+        level2_feed.apply_buf()
 
         self.assertTrue(level2_feed.level2_buf.empty)

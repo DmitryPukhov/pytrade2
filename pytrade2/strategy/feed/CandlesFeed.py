@@ -64,7 +64,7 @@ class CandlesFeed:
 
         return msg.getvalue()
 
-    def update_candles(self):
+    def apply_buf(self):
         """ Combine candles with buffers"""
 
         with self.data_lock:
@@ -114,3 +114,5 @@ class CandlesFeed:
             end = start + timedelta(days=1)
             start_close_time = start  + period_delta
             yield start_close_time, end
+
+

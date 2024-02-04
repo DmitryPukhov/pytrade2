@@ -3,7 +3,7 @@ import logging
 import multiprocessing
 from datetime import datetime, timedelta
 from threading import Thread, Event, Timer
-from typing import Dict
+from typing import Dict, Optional
 
 import pandas as pd
 import tensorflow.python.keras.backend
@@ -24,10 +24,11 @@ class StrategyBase():
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
 
-        self.data_persister = DataPersister(config,  self.__class__.__name__)
-        self.model_persister = ModelPersister(config,  self.__class__.__name__)
+        self.data_persister = DataPersister(config, self.__class__.__name__)
+        self.model_persister = ModelPersister(config, self.__class__.__name__)
 
         self.risk_manager = None
+        self.candles_feed = self.bid_ask_feed = self.level2_feed = None
         self.config = config
         self.learn_data_balancer = LearnDataBalancer()
         self.tickers = self.config["pytrade2.tickers"].split(",")
@@ -38,9 +39,6 @@ class StrategyBase():
         self.amount_precision = config["pytrade2.amount.precision"]
         self.learn_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval']) \
             if 'pytrade2.strategy.learn.interval' in config else None
-        # Purge params
-        self.purge_interval = pd.Timedelta(config['pytrade2.strategy.purge.interval']) \
-            if 'pytrade2.strategy.purge.interval' in config else None
         self._wait_after_loss = pd.Timedelta(config["pytrade2.strategy.riskmanager.wait_after_loss"])
         self.exchange_provider = exchange_provider
         self.model = None
@@ -67,8 +65,6 @@ class StrategyBase():
 
         self.data_lock = multiprocessing.RLock()
         self.new_data_event: Event = Event()
-
-        #PersistableStateStrategy.__init__(self, config)
 
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
@@ -178,19 +174,20 @@ class StrategyBase():
         logging.info("End main processing loop")
 
     def run(self):
+        exchange_name = self.config["pytrade2.exchange"]
+        self.broker = self.exchange_provider.broker(exchange_name)
+        if self.candles_feed:
+            self.candles_feed.read_candles()
         self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
 
         # Start main processing loop
         Thread(target=self.processing_loop).start()
+        self.broker.run()
 
         # Start periodical jobs
         if self.learn_interval:
             logging.info(f"Starting periodical learning, interval: {self.learn_interval}")
             Timer(self.learn_interval.seconds, self.learn).start()
-
-        if self.purge_interval:
-            logging.info(f"Starting periodical purging, interval: {self.purge_interval}")
-            Timer(self.purge_interval.seconds, self.purge_all).start()
 
     def create_model(self, x_size, y_size):
         raise NotImplementedError()
@@ -201,9 +198,21 @@ class StrategyBase():
     def process_new_data(self):
         raise NotImplementedError()
 
-    def purge_all(self):
-        # If no data purging in child strategy, just not override this method
-        pass
-
     def apply_buffers(self):
-        pass
+        # Append new data from buffers to main data frames
+        with (self.data_lock):
+            save_dict = {}
+            # Form saving dict structure and copy from buffers to main datasets
+            if self.bid_ask_feed:
+                save_dict["raw_bid_ask"] = self.bid_ask_feed.bid_ask_buf
+                self.bid_ask_feed.apply_buf()
+            # save_dict = {**{"raw_bid_ask": self.bid_ask_feed.bid_ask_buf},
+            if self.candles_feed:
+                save_dict.update({f"raw_candles_{period}]": buf for period, buf in
+                                  self.candles_feed.candles_by_interval_buf.items()})
+                self.candles_feed.apply_buf()
+            if self.level2_feed:
+                # Don't call save_dict.update() because Level 2 is too big, don't save, just apply buf
+                self.level2_feed.apply_buf()
+
+            self.data_persister.save_last_data(self.ticker, save_dict)

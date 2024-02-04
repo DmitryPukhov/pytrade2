@@ -56,33 +56,12 @@ class LongCandleStrategyBase(StrategyBase):
 
         return msg.getvalue()
 
-    def run(self):
-        """
-        Attach to the feed and listen
-        """
-        exchange_name = self.config["pytrade2.exchange"]
-        self.broker = self.exchange_provider.broker(exchange_name)
-        self.candles_feed.read_candles()
-
-        StrategyBase.run(self)
-        self.broker.run()
-
-
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
         if self.candles_feed.has_all_candles():
             return True
         else:
             logging.info("Cannot learn, not enough data")
-        # no_candles = not self.has_all_candles()
-        # no_level2 = self.level2.empty
-        #
-        # if no_candles or no_level2:
-        #     logging.info(f"Can not learn because some datasets are empty. "
-        #                  f"level2.empty: {no_level2}, "
-        #                  f"candles.empty: {no_candles}")
-        #     return False
-        # return True
 
     def predict_last_signal(self, x):
         x_trans = self.X_pipe.transform(x)
@@ -102,22 +81,16 @@ class LongCandleStrategyBase(StrategyBase):
                                                                     self.profit_min_coeff)
         return x, y, x_wo_targets
 
-    def apply_buffers(self):
-        # Append new data from buffers to main data frames
-        with (self.data_lock):
-            # Save raw buffers to history
-            save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_feed.candles_by_interval_buf.items()}
-            self.data_persister.save_last_data(self.ticker, save_dict)
-            self.candles_feed.update_candles()
+    # def apply_buffers(self):
+    #     # Append new data from buffers to main data frames
+    #     with (self.data_lock):
+    #         # Save raw buffers to history
+    #         save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_feed.candles_by_interval_buf.items()}
+    #         self.data_persister.save_last_data(self.ticker, save_dict)
+    #         self.candles_feed.apply_buf()
 
     def process_new_data(self):
         self.apply_buffers()
-        #
-        # with (self.data_lock):
-        #     # Save raw candles to history
-        #     save_dict = {f"raw_candles_{period}": buf for period, buf in self.candles_feed.candles_by_interval_buf.items()}
-        #     self.data_persister.save_last_data(self.ticker, save_dict)
-        #     self.candles_feed.update_candles()
 
         x, y, x_wo_targets = self.features_targets()
 

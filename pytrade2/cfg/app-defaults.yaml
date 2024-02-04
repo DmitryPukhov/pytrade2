@@ -18,7 +18,6 @@ pytrade2.strategy: LongCandleDenseStrategy
 pytrade2.strategy.learn.interval: "20s"
 pytrade2.strategy.history.min.window: "3h"
 pytrade2.strategy.history.max.window: "24h"
-pytrade2.strategy.purge.interval: "60s"
 pytrade2.strategy.predict.window: "60s"
 pytrade2.strategy.past.window: "1min"
 
