@@ -43,13 +43,6 @@ class LongCandleStrategyBase(StrategyBase):
         msg.write(self.learn_data_balancer.get_report())
         return msg.getvalue()
 
-    def can_learn(self) -> bool:
-        """ Check preconditions for learning"""
-        if self.candles_feed.has_all_candles():
-            return True
-        else:
-            logging.info("Cannot learn, not enough data")
-
     def predict_last_signal(self, x):
         x_trans = self.X_pipe.transform(x)
         y_pred_raw = self.model.predict(x_trans, verbose=0)

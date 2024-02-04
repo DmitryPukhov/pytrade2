@@ -134,8 +134,14 @@ class StrategyBase():
             msg.write("\n")
         return msg.getvalue()
 
-    def can_learn(self):
-        raise NotImplementedError
+    def can_learn(self) -> bool:
+        """ Check preconditions for learning"""
+        feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
+        status = {feed.__class__.__name__: feed.has_min_history() for feed in feeds}
+        has_min_history = all([f for f in status.values()])
+        if not has_min_history:
+            logging.info(f"Can not learn because some datasets have not enough data. Filled status {status}")
+        return has_min_history
 
     def prepare_Xy(self):
         raise NotImplementedError("prepare_Xy")

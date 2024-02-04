@@ -19,8 +19,8 @@ class LearnDataBalancer:
         for signal in self.x_dict:
             msg.write(f"learn balanced {signal_names[signal]}: {len(self.x_dict[signal])} ")
             if not self.x_dict[signal].empty:
-                msg.write(f"from {self.x_dict[signal].index.min().floor('S')}"
-                          f" to {self.x_dict[signal].index.max().floor('S')}")
+                msg.write(f"from {self.x_dict[signal].index.min().floor('s')}"
+                          f" to {self.x_dict[signal].index.max().floor('s')}")
             msg.write("\n")
 
         return msg.getvalue()

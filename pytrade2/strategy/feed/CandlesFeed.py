@@ -90,7 +90,7 @@ class CandlesFeed:
             self.candles_by_interval_buf[period] = pd.concat([prev_buf, candle_df])
         self.new_data_event.set()
 
-    def has_all_candles(self):
+    def has_min_history(self):
         """ If gathered required history """
         for period, min_count in self.candles_cnt_by_interval.items():
             if period not in self.candles_by_interval or len(self.candles_by_interval[period]) < min_count:

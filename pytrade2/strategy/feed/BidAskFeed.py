@@ -14,9 +14,10 @@ class BidAskFeed:
         self.websocket_feed.consumers.add(self)
         self.bid_ask: pd.DataFrame = pd.DataFrame()
         self.bid_ask_buf: pd.DataFrame = pd.DataFrame()  # Buffer
-
-        self.bid_ask_history_period = (pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))
-                                      + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
+        self.history_min_window = (pd.Timedelta(cfg.get("pytrade2.strategy.history.min.window"))
+                                   + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
+        self.history_max_window = (pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))
+                                   + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
         self.data_lock = data_lock
         self.new_data_event = new_data_event
 
@@ -37,7 +38,7 @@ class BidAskFeed:
             self.bid_ask = pd.concat([df for df in [self.bid_ask, self.bid_ask_buf] if not df.empty]).sort_index()
             self.bid_ask_buf = pd.DataFrame()
             # Purge old data
-            min_time = self.bid_ask.index.max() - self.bid_ask_history_period
+            min_time = self.bid_ask.index.max() - self.history_max_window
             self.bid_ask = self.bid_ask[self.bid_ask.index > min_time]
         return self.bid_ask
 
@@ -54,3 +55,7 @@ class BidAskFeed:
 
     def is_alive(self, maxdelta: pd.Timedelta):
         return self.bid_ask.empty or (datetime.utcnow() - self.bid_ask.index.max() <= maxdelta)
+
+    def has_min_history(self):
+        interval = self.bid_ask.index.max() - self.bid_ask.index.min()
+        return interval >= self.history_min_window

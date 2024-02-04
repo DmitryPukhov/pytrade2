@@ -76,7 +76,7 @@ class TestCandlesFeed(TestCase):
         candles_feed.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         candles_feed.candles_by_interval = {}
 
-        self.assertFalse(candles_feed.has_all_candles())
+        self.assertFalse(candles_feed.has_min_history())
 
     def test_has_all_candles_enough_history(self):
         candles_feed = self.new_candles_feed()
@@ -84,7 +84,7 @@ class TestCandlesFeed(TestCase):
         candles_feed.candles_by_interval = {"1min": [{}, {}],
                                                      "5min": [{}, {}, {}]}
 
-        self.assertTrue(candles_feed.has_all_candles())
+        self.assertTrue(candles_feed.has_min_history())
 
     def test_has_all_candles_not_enough_history(self):
         candles_feed = self.new_candles_feed()
@@ -92,14 +92,14 @@ class TestCandlesFeed(TestCase):
         candles_feed.candles_by_interval = {"1min": [{}, {}],
                                                      "5min": [{}, {}]}
 
-        self.assertFalse(candles_feed.has_all_candles())
+        self.assertFalse(candles_feed.has_min_history())
 
     def test_has_all_candles_not_all_periods(self):
         candles_feed = self.new_candles_feed()
         candles_feed.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         candles_feed.candles_by_interval = {"1min": [{}, {}]}
 
-        self.assertFalse(candles_feed.has_all_candles())
+        self.assertFalse(candles_feed.has_min_history())
 
     def test_candles_history_counts(self):
         periods = ["1min", "5min"]

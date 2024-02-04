@@ -24,7 +24,7 @@ class TestLevel2Feed(TestCase):
 
     def test_on_level2_should_purge_old(self):
         strategy = self.new_level2_feed()
-        strategy.level2_history_period = pd.Timedelta('1min')
+        strategy.history_max_window = pd.Timedelta('1min')
 
         # Call
         strategy.apply_buf()
@@ -38,7 +38,7 @@ class TestLevel2Feed(TestCase):
 
     def test_on_level2_no_purge(self):
         level2_feed = self.new_level2_feed()
-        level2_feed.level2_history_period = pd.Timedelta('2min')
+        level2_feed.history_max_window = pd.Timedelta('2min')
 
         # Call
         level2_feed.apply_buf()
@@ -49,7 +49,7 @@ class TestLevel2Feed(TestCase):
 
     def test_on_level2_purge_all(self):
         level2_feed = self.new_level2_feed()
-        level2_feed.level2_history_period = pd.Timedelta('0s')
+        level2_feed.history_max_window = pd.Timedelta('0s')
 
         # Call
         level2_feed.apply_buf()
@@ -60,7 +60,7 @@ class TestLevel2Feed(TestCase):
 
     def test_update_level2_should_reset_buf(self):
         level2_feed = self.new_level2_feed()
-        level2_feed.level2_history_period = pd.Timedelta('1min')
+        level2_feed.history_max_window = pd.Timedelta('1min')
 
         # Call
         level2_feed.apply_buf()

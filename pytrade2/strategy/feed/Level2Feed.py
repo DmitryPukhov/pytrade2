@@ -13,8 +13,10 @@ class Level2Feed:
         self.websocket_feed.consumers.add(self)
         self.level2: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])
         self.level2_buf: pd.DataFrame = pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"])  # Buffer
-        self.level2_history_period = (pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))
-                                      + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
+        self.history_min_window = (pd.Timedelta(cfg.get("pytrade2.strategy.history.min.window"))
+                                   + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
+        self.history_max_window = (pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))
+                                   + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
         self.data_lock = data_lock
         self.new_data_event = new_data_event
 
@@ -40,7 +42,7 @@ class Level2Feed:
             self.level2 = pd.concat([df for df in [self.level2, self.level2_buf] if not df.empty])
             self.level2_buf = pd.DataFrame()
             # Purge old level2
-            min_time = self.level2["datetime"].max() - self.level2_history_period
+            min_time = self.level2["datetime"].max() - self.history_max_window
             self.level2 = self.level2[self.level2["datetime"] > min_time]
         return self.level2
 
@@ -56,3 +58,7 @@ class Level2Feed:
 
     def is_alive(self, maxdelta: pd.Timedelta):
         return self.level2.empty or (datetime.utcnow() - self.level2.index.max() <= maxdelta)
+
+    def has_min_history(self):
+        interval = self.level2.index.max() - self.level2.index.min()
+        return interval >= self.history_min_window
