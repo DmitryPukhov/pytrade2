@@ -194,12 +194,12 @@ class LongCandleStrategyBaseTest(TestCase):
         self.assertListEqual(candles_1min.index.tolist(),
                              strategy.candles_feed.candles_by_interval['1min'].index.tolist())
         # Data with targets should be added to learn data
-        self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
-                             strategy.learn_data_balancer.x_dict[0].index.tolist())
-        self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
-                             strategy.learn_data_balancer.y_dict[0].index.tolist())
-        self.assertTrue(strategy.learn_data_balancer.x_dict[1].empty)
-        self.assertTrue(strategy.learn_data_balancer.x_dict[-1].empty)
+        # self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
+        #                      strategy.learn_data_balancer.x_dict[0].index.tolist())
+        # self.assertListEqual([datetime.datetime.fromisoformat('2023-10-15T10:00')],
+        #                      strategy.learn_data_balancer.y_dict[0].index.tolist())
+        # self.assertTrue(strategy.learn_data_balancer.x_dict[1].empty)
+        # self.assertTrue(strategy.learn_data_balancer.x_dict[-1].empty)
 
         # # Bull signal received
         # strategy.y_pipe.inverse_transform = MagicMock(return_value=[[1]])

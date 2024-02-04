@@ -155,25 +155,6 @@ class PredictBidAskStrategyBase(StrategyBase):
         y_df["ask_max_fut"] = y_df["ask_min_fut"] + ask_spread_fut
         return X, y_df
 
-
-        # no_bidask = self.bid_ask_feed.bid_ask.empty
-        # no_candles = not self.candles_feed.has_min_history()
-        # no_level2 = self.level2_feed.level2.empty and self.level2_feed.level2_buf.empty
-        #
-        # if no_bidask or no_candles or no_level2:
-        #     logging.info(f"Can not learn because some datasets are empty. "
-        #                  f"level2.empty: {no_level2}, "
-        #                  f"candles.empty: {no_candles}")
-        #     return False
-        #
-        # # Check If we have enough data to learn
-        # interval = self.bid_ask_feed.bid_ask.index.max() - self.bid_ask_feed.bid_ask.index.min()
-        # if interval < self.history_min_window:
-        #     logging.info(
-        #         f"Can not learn because not enough history. We have {interval}, but we need {self.history_min_window}")
-        #     return False
-        # return True
-
     def prepare_last_X(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
         X = PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,

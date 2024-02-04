@@ -123,7 +123,7 @@ class TestLongCandleFeatures(TestCase):
         self.assertSequenceEqual([0], actual["signal"].tolist())
 
     def test_features_targets__same_index(self):
-        actual_features, actual_targets, actual_features_wo_targets = LongCandleFeatures.features_targets_of(
+        actual_features, actual_targets = LongCandleFeatures.features_targets_of(
             candles_by_periods={"1min": self.candles_1m_5(), "5min": self.candles_5m_5()},
             cnt_by_period={"1min": 2, "5min": 2},
             #level2=self.level2(),
@@ -134,7 +134,7 @@ class TestLongCandleFeatures(TestCase):
 
         self.assertSequenceEqual(actual_features.index.tolist(), actual_targets.index.tolist())
         self.assertEqual(2, len(actual_features))
-        self.assertEqual(1, len(actual_features_wo_targets))
+
 
     # def test_features_targets__should_get_last_level2(self):
     #     actual_features, actual_targets, actual_features_wo_targets = LongCandleFeatures.features_targets_of(

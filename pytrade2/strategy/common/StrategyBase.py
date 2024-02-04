@@ -45,7 +45,7 @@ class StrategyBase():
             self.level2_feed = Level2Feed(config,  exchange_provider, self.data_lock, self.new_data_event)
         if is_bid_ask_feed:
             self.bid_ask_feed = BidAskFeed(config,  exchange_provider, self.data_lock, self.new_data_event)
-        self.learn_data_balancer = LearnDataBalancer()
+        #self.learn_data_balancer = LearnDataBalancer()
         self.order_quantity = config["pytrade2.order.quantity"]
         logging.info(f"Order quantity: {self.order_quantity}")
         self.price_precision = config["pytrade2.price.precision"]
@@ -160,7 +160,6 @@ class StrategyBase():
             if len(train_X.index) >= self.min_xy_len:
                 if not (self.X_pipe and self.y_pipe):
                     self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
-
                 # Final scaling and normalization
                 self.X_pipe.fit(train_X)
                 self.y_pipe.fit(train_y)

@@ -8,6 +8,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 from exch.Exchange import Exchange
+from strategy.common.LearnDataBalancer import LearnDataBalancer
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LongCandleFeatures import LongCandleFeatures
 
@@ -40,7 +41,7 @@ class LongCandleStrategyBase(StrategyBase):
         msg = StringIO()
         msg.write(super().get_report())
         # Add balancer report to base report
-        msg.write(self.learn_data_balancer.get_report())
+        #msg.write(self.learn_data_balancer.get_report())
         return msg.getvalue()
 
     def predict_last_signal(self, x):
@@ -50,38 +51,27 @@ class LongCandleStrategyBase(StrategyBase):
         last_signal = y_pred_trans[-1][0] if y_pred_trans.size > 0 else 0
         return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
 
-    def features_targets(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+    def prepare_last_X(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         # level2_past__window = self.target_period
-        x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_feed.candles_by_interval,
-                                                                    self.candles_feed.candles_cnt_by_interval,
-                                                                    # self.level2,
-                                                                    # level2_past__window,
-                                                                    self.target_period,
-                                                                    self.stop_loss_min_coeff,
-                                                                    self.profit_min_coeff)
-        return x, y, x_wo_targets
+        return LongCandleFeatures.features_of(self.candles_feed.candles_by_interval,
+                                                                    self.candles_feed.candles_cnt_by_interval)
 
     def process_new_data(self):
         self.apply_buffers()
 
-        x, y, x_wo_targets = self.features_targets()
-
-        if x.empty or y.empty or x_wo_targets.empty:
+        x = self.prepare_last_X()
+        if x.empty:
             logging.info(f'Cannot process new data: features or targets are empty. ')
-            # f'Waiting {self.target_period} for next attempt')
-            # Wait until level2 data accumulated
-            # time.sleep(pd.Timedelta(self.target_period).seconds)
             return
 
         # We could calculate targets for x, so add x and targets to learn data
-        self.learn_data_balancer.add(x, y)
-        if not self.model:
-            self.model = self.create_model(len(x.columns), 3)  # y_size - one hot encoded signals: -1,0.1
-        if not (self.X_pipe and self.y_pipe):
-            self.X_pipe, self.y_pipe = self.create_pipe(x, y)
-
-        # Predict last signal
-        y_pred_last = self.predict_last_signal(x_wo_targets)
+        # if not self.model:
+        #     self.model = self.create_model(len(x.columns), 3)  # y_size - one hot encoded signals: -1,0.1
+        # if not (self.X_pipe and self.y_pipe):
+        #     self.X_pipe, self.y_pipe = self.create_pipe(x, y)
+        #
+        # # Predict last signal
+        y_pred_last = self.predict_last_signal(x)
         last_signal = y_pred_last['signal'].iloc[-1]
 
         # Buy or sell or skip
@@ -90,9 +80,9 @@ class LongCandleStrategyBase(StrategyBase):
         # Save to disk for analysis
         self.data_persister.save_last_data(self.ticker, {'y_pred': y_pred_last})
 
-        # Predict last signal for old x with y. To save and analyse actual and predicted values.
-        y_pred = self.predict_last_signal(x).join(y.tail(1), lsuffix='_pred', rsuffix='_actual')
-        self.data_persister.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
+        # # Predict last signal for old x with y. To save and analyse actual and predicted values.
+        # y_pred = self.predict_last_signal(x).join(y.tail(1), lsuffix='_pred', rsuffix='_actual')
+        # self.data_persister.save_last_data(self.ticker, {'x': x.tail(1), 'y': y_pred})
 
         # Delay before next processing cycle
         time.sleep(self.processing_interval.seconds)
@@ -144,25 +134,14 @@ class LongCandleStrategyBase(StrategyBase):
                                      trailing_delta=tdelta)
 
     def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
-        # with self.data_lock:
-        #     self.update_level2()
-        #     balanced_x, balanced_y = self.learn_data_balancer.pop_balanced_xy()
-        balanced_x, balanced_y = self.learn_data_balancer.pop_balanced_xy()
-
-        # Log each signal count
-        msgs_bal = ["Prepared balanced xy for learning. Balanced counts"]
-        msgs_unbal = ["Unbalanced left counts"]
-        for signal in [-1, 0, 1]:
-            cnt_bal = len(balanced_y[balanced_y['signal'] == signal]) if not balanced_y.empty else 0
-            msgs_bal.append(f"signal{signal}:{cnt_bal}")
-
-            cnt_unbal = len(self.learn_data_balancer.y_dict[signal])
-            msgs_unbal.append(f"signal{signal}:{cnt_unbal}")
-
-        logging.info(' '.join(msgs_bal))
-        logging.info(' '.join(msgs_unbal))
-
-        return balanced_x, balanced_y
+        x,y = LongCandleFeatures.features_targets_of(
+            self.candles_feed.candles_by_periods,
+            self.candles_feed.cnt_by_period,
+            self.target_period,
+            self.stop_loss_min_coeff,
+            self.profit_min_coeff)
+        # Balance by signal
+        return LearnDataBalancer.balanced(x,y)
 
     def generator_of(self, train_X, train_y):
         """ Data generator for learning """
