@@ -23,10 +23,7 @@ class PredictBidAskStrategyBase(StrategyBase):
 
         self.websocket_feed = None
 
-        StrategyBase.__init__(self, config, exchange_provider)
-        self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
-        self.level2_feed = Level2Feed(config,  exchange_provider, self.data_lock, self.new_data_event)
-        self.bid_ask_feed = BidAskFeed(config,  exchange_provider, self.data_lock, self.new_data_event)
+        StrategyBase.__init__(self, config, exchange_provider, True, True, True)
 
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]

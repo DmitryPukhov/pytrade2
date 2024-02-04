@@ -16,6 +16,9 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler
 from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
 from strategy.common.RiskManager import RiskManager
+from strategy.feed.BidAskFeed import BidAskFeed
+from strategy.feed.CandlesFeed import CandlesFeed
+from strategy.feed.Level2Feed import Level2Feed
 from strategy.persist.DataPersister import DataPersister
 from strategy.persist.ModelPersister import ModelPersister
 
@@ -23,17 +26,26 @@ from strategy.persist.ModelPersister import ModelPersister
 class StrategyBase():
     """ Any strategy """
 
-    def __init__(self, config: Dict, exchange_provider: Exchange):
+    def __init__(self, config: Dict, exchange_provider: Exchange, is_candles_feed: bool, is_bid_ask_feed:bool, is_level2_feed:bool):
 
         self.data_persister = DataPersister(config, self.__class__.__name__)
         self.model_persister = ModelPersister(config, self.__class__.__name__)
 
-        self.risk_manager = None
-        self.candles_feed = self.bid_ask_feed = self.level2_feed = None
         self.config = config
-        self.learn_data_balancer = LearnDataBalancer()
         self.tickers = self.config["pytrade2.tickers"].split(",")
         self.ticker = self.tickers[-1]
+
+        self.risk_manager = None
+        self.data_lock = multiprocessing.RLock()
+        self.new_data_event: Event = Event()
+        self.candles_feed = self.bid_ask_feed = self.level2_feed = None
+        if is_candles_feed:
+            self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
+        if is_level2_feed:
+            self.level2_feed = Level2Feed(config,  exchange_provider, self.data_lock, self.new_data_event)
+        if is_bid_ask_feed:
+            self.bid_ask_feed = BidAskFeed(config,  exchange_provider, self.data_lock, self.new_data_event)
+        self.learn_data_balancer = LearnDataBalancer()
         self.order_quantity = config["pytrade2.order.quantity"]
         logging.info(f"Order quantity: {self.order_quantity}")
         self.price_precision = config["pytrade2.price.precision"]
@@ -65,9 +77,6 @@ class StrategyBase():
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
         self.min_xy_len = 2
         self.X_pipe, self.y_pipe = None, None
-
-        self.data_lock = multiprocessing.RLock()
-        self.new_data_event: Event = Event()
 
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))

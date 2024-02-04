@@ -8,8 +8,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 from exch.Exchange import Exchange
-from strategy.feed.CandlesFeed import CandlesFeed
-from strategy.feed.Level2Feed import Level2Feed
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LongCandleFeatures import LongCandleFeatures
 
@@ -23,15 +21,16 @@ class LongCandleStrategyBase(StrategyBase):
 
         self.websocket_feed = None
 
-        StrategyBase.__init__(self, config, exchange_provider)
-        self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
+        StrategyBase.__init__(self, config=config,
+                              exchange_provider=exchange_provider,
+                              is_candles_feed=True,
+                              is_bid_ask_feed=False,
+                              is_level2_feed=True)
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
         self.candles_feed.candles_cnt_by_interval[self.target_period] += 1
         self.candles_feed.candles_history_cnt_by_interval[self.target_period] += 1
-
-        self.level2_feed = Level2Feed(config, exchange_provider, self.data_lock, self.new_data_event)
 
         self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
 
@@ -59,11 +58,11 @@ class LongCandleStrategyBase(StrategyBase):
         return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
 
     def features_targets(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
-        #level2_past__window = self.target_period
+        # level2_past__window = self.target_period
         x, y, x_wo_targets = LongCandleFeatures.features_targets_of(self.candles_feed.candles_by_interval,
                                                                     self.candles_feed.candles_cnt_by_interval,
-                                                                    #self.level2,
-                                                                    #level2_past__window,
+                                                                    # self.level2,
+                                                                    # level2_past__window,
                                                                     self.target_period,
                                                                     self.stop_loss_min_coeff,
                                                                     self.profit_min_coeff)
@@ -75,10 +74,10 @@ class LongCandleStrategyBase(StrategyBase):
         x, y, x_wo_targets = self.features_targets()
 
         if x.empty or y.empty or x_wo_targets.empty:
-            logging.info(
-                f'Cannot process new data: features or targets are empty. Waiting {self.target_period} for next attempt')
+            logging.info(f'Cannot process new data: features or targets are empty. ')
+            # f'Waiting {self.target_period} for next attempt')
             # Wait until level2 data accumulated
-            #time.sleep(pd.Timedelta(self.target_period).seconds)
+            # time.sleep(pd.Timedelta(self.target_period).seconds)
             return
 
         # We could calculate targets for x, so add x and targets to learn data
