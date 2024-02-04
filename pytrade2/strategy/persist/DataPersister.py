@@ -1,5 +1,4 @@
 import functools
-import glob
 import logging
 import os
 import threading
@@ -8,10 +7,9 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
+
 import boto3
 import pandas as pd
-from keras.models import Model
-import threading
 
 
 class DataPersister:

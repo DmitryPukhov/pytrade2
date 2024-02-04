@@ -1,17 +1,12 @@
 import logging
-import traceback
 from typing import Dict
 
-import numpy as np
 import pandas as pd
 from numpy import ndarray
 
 from exch.Exchange import Exchange
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
-from strategy.feed.BidAskFeed import BidAskFeed
-from strategy.feed.CandlesFeed import CandlesFeed
-from strategy.feed.Level2Feed import Level2Feed
 
 
 class PredictBidAskStrategyBase(StrategyBase):
@@ -34,8 +29,6 @@ class PredictBidAskStrategyBase(StrategyBase):
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
-
-
     def process_prediction(self, y_pred) -> int:
         """ Process last prediction, open a new order, save history if needed
         @:return open signal where signal can be 0,-1,1 """
@@ -46,9 +39,9 @@ class PredictBidAskStrategyBase(StrategyBase):
         # Update current trade status
         self.check_cur_trade()
 
-        bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = y_pred.loc[y_pred.index[-1], \
-            ["bid_min_fut", "bid_max_fut",
-             "ask_min_fut", "ask_max_fut"]]
+        bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = y_pred.loc[y_pred.index[-1],
+        ["bid_min_fut", "bid_max_fut",
+         "ask_min_fut", "ask_max_fut"]]
         open_signal = 0
         if not self.broker.cur_trade and self.risk_manager.can_trade():
             # Maybe open a new order

@@ -15,7 +15,7 @@ from strategy.features.LongCandleFeatures import LongCandleFeatures
 
 class LongCandleStrategyBase(StrategyBase):
     """
-    Predict long candle, classification model, target signals: -1, 0, 1
+    Predict long candle signal, classification model, target signals: -1, 0, 1
     """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
@@ -40,8 +40,6 @@ class LongCandleStrategyBase(StrategyBase):
     def get_report(self):
         msg = StringIO()
         msg.write(super().get_report())
-        # Add balancer report to base report
-        # msg.write(self.learn_data_balancer.get_report())
         return msg.getvalue()
 
     def predict(self, x):
@@ -52,7 +50,6 @@ class LongCandleStrategyBase(StrategyBase):
         return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
 
     def prepare_last_x(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
-        # level2_past__window = self.target_period
         return LongCandleFeatures.features_of(self.candles_feed.candles_by_interval,
                                               self.candles_feed.candles_cnt_by_interval)
 
@@ -63,11 +60,6 @@ class LongCandleStrategyBase(StrategyBase):
         time.sleep(self.processing_interval.seconds)
 
     def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
-        """
-        Stop loss is low of last candle
-        :return stop loss, take profit, trailing delta
-        """
-
         last_candle = self.candles_feed.candles_by_interval[self.target_period].iloc[-1]
         sl_delta_min = self.stop_loss_min_coeff * last_candle["close"]
         sl_delta_max = self.stop_loss_max_coeff * last_candle["close"]
@@ -100,8 +92,6 @@ class LongCandleStrategyBase(StrategyBase):
         if not signal:
             return
         sl, tp, tdelta = self.get_sl_tp_trdelta(signal)
-        # last_candle = self.candles_by_interval[self.target_period].iloc[-1]
-        # price = last_candle["close"]
         self.broker.create_cur_trade(symbol=self.ticker,
                                      direction=signal,
                                      quantity=self.order_quantity,
