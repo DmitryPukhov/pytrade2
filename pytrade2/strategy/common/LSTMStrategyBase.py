@@ -22,7 +22,7 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
         self.min_xy_len = self.lstm_window_size + 1
         logging.info(f"LSTM window size: {self.lstm_window_size}")
 
-    def prepare_last_X(self) -> (pd.DataFrame, ndarray):
+    def prepare_last_x(self) -> (pd.DataFrame, ndarray):
         """ Reshape last features to lstm window"""
         X = PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
                                                    self.lstm_window_size,

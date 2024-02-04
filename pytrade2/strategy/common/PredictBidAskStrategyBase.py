@@ -34,36 +34,9 @@ class PredictBidAskStrategyBase(StrategyBase):
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
-    def process_new_data(self):
-        self.apply_buffers()
 
-        if not self.bid_ask_feed.bid_ask.empty and not self.level2_feed.level2.empty and self.model \
-                and not self.is_processing and self.X_pipe and self.y_pipe:
-            try:
-                self.is_processing = True
-                # Predict
-                X, y = self.predict_low_high()
-                if X.empty:
-                    return
-                self.fut_low_high = y
 
-                # Open or close or do nothing
-                open_signal = self.process_new_prediction()
-                cur_trade_direction = self.broker.cur_trade.direction() if self.broker.cur_trade else 0
-                y[["predict_window", "open_signal", "cur_trade"]] = \
-                    [self.predict_window, open_signal, cur_trade_direction]
-
-                # Save to historical data
-                self.data_persister.save_last_data(self.ticker, {
-                    "x": X.tail(1),
-                    "y_pred": y.tail(1)
-                })
-            except Exception as e:
-                logging.error(f"{e}. Traceback: {traceback.format_exc()}")
-            finally:
-                self.is_processing = False
-
-    def process_new_prediction(self) -> int:
+    def process_prediction(self, y_pred) -> int:
         """ Process last prediction, open a new order, save history if needed
         @:return open signal where signal can be 0,-1,1 """
 
@@ -73,7 +46,7 @@ class PredictBidAskStrategyBase(StrategyBase):
         # Update current trade status
         self.check_cur_trade()
 
-        bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = self.fut_low_high.loc[self.fut_low_high.index[-1], \
+        bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = y_pred.loc[y_pred.index[-1], \
             ["bid_min_fut", "bid_max_fut",
              "ask_min_fut", "ask_max_fut"]]
         open_signal = 0
@@ -137,35 +110,34 @@ class PredictBidAskStrategyBase(StrategyBase):
             # No action
             return 0, None, None, None, None
 
-    def predict_low_high(self) -> (pd.DataFrame, pd.DataFrame):
+    def predict(self, x) -> (pd.DataFrame, pd.DataFrame):
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
-        X, X_prepared = self.prepare_last_X()
+        x_trans = self.X_pipe.transform(x)
+
         # Predict
-        y = self.model.predict(X_prepared, verbose=0) if not X.empty and X_prepared.size > 0 else np.array(
-            [np.nan, np.nan, np.nan, np.nan])
+        y = self.model.predict(x_trans, verbose=0)
         y = y.reshape((-1, 4))
 
         # Get prediction result
         y = self.y_pipe.inverse_transform(y)
         (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1]  # if y.shape[0] < 2 else y
-        y_df = self.bid_ask_feed.bid_ask.loc[X.index][["bid", "ask"]]
+        y_df = self.bid_ask_feed.bid_ask.loc[x.index][["bid", "ask"]]
         y_df["bid_max_fut"] = y_df["bid"] + bid_max_fut_diff
         y_df["bid_min_fut"] = y_df["bid_max_fut"] - bid_spread_fut
         y_df["ask_min_fut"] = y_df["ask"] + ask_min_fut_diff
         y_df["ask_max_fut"] = y_df["ask_min_fut"] + ask_spread_fut
-        return X, y_df
+        return y_df
 
-    def prepare_last_X(self) -> (pd.DataFrame, ndarray):
+    def prepare_last_x(self) -> (pd.DataFrame, ndarray):
         """ Get last X for prediction"""
-        X = PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
-                                                   1,  # For diff
-                                                   self.level2_feed.level2,
-                                                   self.candles_feed.candles_by_interval,
-                                                   self.candles_feed.candles_cnt_by_interval,
-                                                   past_window=self.past_window)
-        return X, (self.X_pipe.transform(X) if X.shape[0] else pd.DataFrame())
+        return PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
+                                                      1,  # For diff
+                                                      self.level2_feed.level2,
+                                                      self.candles_feed.candles_by_interval,
+                                                      self.candles_feed.candles_cnt_by_interval,
+                                                      past_window=self.past_window)
 
-    def prepare_Xy(self) -> (pd.DataFrame, pd.DataFrame):
+    def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         """ Prepare train data """
         with self.data_lock:
             # Copy data for this thread only

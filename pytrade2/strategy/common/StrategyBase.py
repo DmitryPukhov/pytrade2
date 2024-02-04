@@ -1,6 +1,7 @@
 import gc
 import logging
 import multiprocessing
+import traceback
 from datetime import datetime, timedelta
 from io import StringIO
 from threading import Thread, Event, Timer
@@ -143,7 +144,10 @@ class StrategyBase():
             logging.info(f"Can not learn because some datasets have not enough data. Filled status {status}")
         return has_min_history
 
-    def prepare_Xy(self):
+    def prepare_xy(self):
+        raise NotImplementedError("prepare_Xy")
+
+    def prepare_last_x(self):
         raise NotImplementedError("prepare_Xy")
 
     def learn(self):
@@ -153,7 +157,7 @@ class StrategyBase():
             if not self.can_learn():
                 return
 
-            train_X, train_y = self.prepare_Xy()
+            train_X, train_y = self.prepare_xy()
 
             logging.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]}")
@@ -231,8 +235,31 @@ class StrategyBase():
     def create_model(self, x_size, y_size):
         raise NotImplementedError()
 
+    def predict(self, x: pd.DataFrame):
+        raise  NotImplementedError()
+
     def process_new_data(self):
-        raise NotImplementedError()
+        self.apply_buffers()
+
+        if self.model and not self.is_processing:
+            try:
+                self.is_processing = True
+                x = self.prepare_last_x()
+                if x.empty:
+                    logging.info(f'Cannot process new data: features are empty. ')
+                    return
+                # Predict
+                y_pred = self.predict(x)
+
+                # Open or close or do nothing
+                self.process_prediction(y_pred)
+
+                # Save to disk for analysis
+                self.data_persister.save_last_data(self.ticker, {'y_pred': y_pred})
+            except Exception as e:
+                logging.error(f"{e}. Traceback: {traceback.format_exc()}")
+            finally:
+                self.is_processing = False
 
     def apply_buffers(self):
         # Append new data from buffers to main data frames

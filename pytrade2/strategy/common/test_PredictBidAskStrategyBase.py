@@ -35,7 +35,7 @@ class TestPredictBidAskStrategyBase(TestCase):
         strategy.X_pipe.fit(X)
         strategy.y_pipe.fit(y)
 
-        X, y = strategy.predict_low_high()
+        y = strategy.predict(X)
         self.assertEqual(y.index.to_pydatetime().tolist(), strategy.bid_ask_feed.bid_ask.tail(1).index.to_pydatetime().tolist())
 
     def test_open_signal_buy(self):
@@ -54,11 +54,11 @@ class TestPredictBidAskStrategyBase(TestCase):
     def test_process_new_prediction__should_buy(self):
         strategy = StrategyStub()
         strategy.bid_ask_feed.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
-        strategy.fut_low_high = pd.DataFrame(
+        y_pred = pd.DataFrame(
             [{"bid_min_fut": 9, "bid_max_fut": 19, "ask_min_fut": 11, "ask_max_fut": 11}])
 
         # Process: buy or sell or nothing
-        open_signal = strategy.process_new_prediction()
+        open_signal = strategy.process_prediction(y_pred)
 
         self.assertEqual(1, open_signal)
         # self.assertEqual(0, close_signal)
@@ -118,11 +118,11 @@ class TestPredictBidAskStrategyBase(TestCase):
     def test_process_new_prediction__should_sell(self):
         strategy = StrategyStub()
         strategy.bid_ask_feed.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
-        strategy.fut_low_high = pd.DataFrame(
+        y_pred = pd.DataFrame(
             [{"bid_min_fut": 0, "bid_max_fut": 0, "ask_min_fut": 2, "ask_max_fut": 12}])
 
         # Process: buy or sell or nothing
-        open_signal = strategy.process_new_prediction()
+        open_signal = strategy.process_prediction(y_pred)
         self.assertEqual(-1, open_signal)
 
         self.assertIsNotNone(strategy.broker.cur_trade)
