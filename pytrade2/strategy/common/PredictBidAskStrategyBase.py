@@ -103,7 +103,7 @@ class PredictBidAskStrategyBase(StrategyBase):
             # No action
             return 0, None, None, None, None
 
-    def predict(self, x) -> (pd.DataFrame, pd.DataFrame):
+    def predict(self, x) -> pd.DataFrame:
         # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
         x_trans = self.X_pipe.transform(x)
 

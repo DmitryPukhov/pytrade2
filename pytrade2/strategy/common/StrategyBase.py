@@ -7,6 +7,7 @@ from io import StringIO
 from threading import Thread, Event, Timer
 from typing import Dict, Optional
 
+import numpy as np
 import pandas as pd
 import tensorflow.python.keras.backend
 from keras.preprocessing.sequence import TimeseriesGenerator
@@ -169,10 +170,12 @@ class StrategyBase():
                 self.y_pipe.fit(train_y)
 
                 X_trans, y_trans = self.X_pipe.transform(train_X), self.y_pipe.transform(train_y)
+                # If x window transformation applied, x size reduced => adjust y
+                y_trans = y_trans[-X_trans.shape[0]:]
 
                 # Train
                 if not self.model:
-                    self.model = self.create_model(X_trans.shape[1], y_trans.shape[1])
+                    self.model = self.create_model(X_trans.shape[-1], y_trans.shape[-1])
                 # Generator produces error
                 # gen = self.generator_of(X_trans, y_trans)
                 # self.model.fit(gen)
@@ -245,7 +248,8 @@ class StrategyBase():
             try:
                 self.is_processing = True
                 x = self.prepare_last_x()
-                if x.empty:
+                # x can be dataframe or np array, check is it empty
+                if (hasattr(x, 'empty') and x.empty) or (hasattr(x, 'shape') and x.shape[0] == 0):
                     logging.info(f'Cannot process new data: features are empty. ')
                     return
                 # Predict
