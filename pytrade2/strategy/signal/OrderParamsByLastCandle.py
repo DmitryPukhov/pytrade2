@@ -3,25 +3,26 @@ import pandas as pd
 
 class OrderParamsByLastCandle:
     """ Fixed ratio sl/tp params, calculated from last candle"""
-    def __init__(self, config):
+    def __init__(self, profit_loss_ratio: float, stop_loss_min_coeff: float, stop_loss_max_coeff: float,
+                 take_profit_min_coeff: float, take_profit_max_coeff: float):
         # Expected profit/loss >= ratio means signal to trade
-        self.profit_loss_ratio = config.get("pytrade2.strategy.profitloss.ratio", 1)
+        self.profit_loss_ratio = profit_loss_ratio
 
         # stop loss should be above price * min_stop_loss_coeff
         # 0.00005 for BTCUSDT 30000 means 1,5
-        self.stop_loss_min_coeff = config.get("pytrade2.strategy.stoploss.min.coeff", 0)
+        self.stop_loss_min_coeff = stop_loss_min_coeff
 
         # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
-        self.stop_loss_max_coeff = config.get("pytrade2.strategy.stoploss.max.coeff", float('inf'))
+        self.stop_loss_max_coeff = stop_loss_max_coeff
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
-        self.profit_min_coeff = config.get("pytrade2.strategy.profit.min.coeff", 0)
-        self.profit_max_coeff = config.get("pytrade2.strategy.profit.max.coeff", float('inf'))
+        self.take_profit_min_coeff = take_profit_min_coeff
+        self.take_profit_max_coeff = take_profit_max_coeff
 
     def get_sl_tp_trdelta(self, signal: int, last_candle: pd.DataFrame) -> (float, float, float):
         sl_delta_min = self.stop_loss_min_coeff * last_candle["close"]
         sl_delta_max = self.stop_loss_max_coeff * last_candle["close"]
-        tp_delta_min = self.profit_min_coeff * last_candle["close"]
-        tp_delta_max = self.profit_max_coeff * last_candle["close"]
+        tp_delta_min = self.take_profit_min_coeff * last_candle["close"]
+        tp_delta_max = self.take_profit_max_coeff * last_candle["close"]
         tr_delta_min, tr_delta_max = sl_delta_min, sl_delta_max
         open_price = last_candle["close"]  # Order open price
 

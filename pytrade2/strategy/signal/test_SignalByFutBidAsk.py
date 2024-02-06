@@ -6,7 +6,8 @@ from strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
 class TestSignalByFutBidAsk(TestCase):
     @classmethod
     def signal_stub(cls):
-        signal = SignalByFutBidAsk({})
+        signal = SignalByFutBidAsk(profit_loss_ratio=1, stop_loss_min_coeff=0, stop_loss_max_coeff=float('inf'),
+                                   take_profit_min_coeff=0, take_profit_max_coeff=float('inf'))
         signal.profit_loss_ratio = 4
         return signal
 
@@ -28,7 +29,7 @@ class TestSignalByFutBidAsk(TestCase):
     def test_open_signal_should_not_buy_min_profit(self):
         # Strategy with profit/loss ratio = 4
         strategy = self.signal_stub()
-        strategy.profit_min_coeff = 0.5
+        strategy.take_profit_min_coeff = 0.5
 
         actual_signal, price, actual_loss, actual_profit, _ = strategy.get_signal_sl_tp_trdelta(bid=0, ask=100,
                                                                                                 bid_min_fut=100,
@@ -42,7 +43,7 @@ class TestSignalByFutBidAsk(TestCase):
     def test_open_signal_should_buy_gte_min_profit(self):
         # Strategy with profit/loss ratio = 4
         strategy = self.signal_stub()
-        strategy.profit_min_coeff = 0.5
+        strategy.take_profit_min_coeff = 0.5
         strategy.stop_loss_min_coeff = 0
 
         actual_signal, price, actual_loss, actual_profit, tp_delta = strategy.get_signal_sl_tp_trdelta(bid=0, ask=100,
@@ -55,7 +56,7 @@ class TestSignalByFutBidAsk(TestCase):
     def test_open_signal_buy_should_not_buy_min_loss(self):
         # Strategy with profit/loss ratio = 4
         strategy = self.signal_stub()
-        strategy.profit_min_coeff = 0.5
+        strategy.take_profit_min_coeff = 0.5
         strategy.stop_loss_min_coeff = 0.1
 
         actual_signal, price, actual_loss, actual_profit, _ = strategy.get_signal_sl_tp_trdelta(bid=0, ask=100,
@@ -98,7 +99,7 @@ class TestSignalByFutBidAsk(TestCase):
     def test_open_signal_should_not_sell_min_profit(self):
         # Strategy with profit/loss ratio = 4
         strategy = self.signal_stub()
-        strategy.profit_min_coeff = 0.5
+        strategy.take_profit_min_coeff = 0.5
 
         actual_signal, price, actual_loss, actual_profit, _ = strategy.get_signal_sl_tp_trdelta(bid=100, ask=100,
                                                                                                 bid_min_fut=100,
@@ -112,7 +113,7 @@ class TestSignalByFutBidAsk(TestCase):
     def test_open_signal_should_sell_le_min_profit(self):
         # Strategy with profit/loss ratio = 4
         strategy = self.signal_stub()
-        strategy.profit_min_coeff = 0.5
+        strategy.take_profit_min_coeff = 0.5
 
         actual_signal, price, actual_loss, actual_profit, tp_delta = strategy.get_signal_sl_tp_trdelta(bid=100, ask=100,
                                                                                                        bid_min_fut=100,
@@ -124,7 +125,7 @@ class TestSignalByFutBidAsk(TestCase):
     def test_open_signal_sell_should_not_sell_min_loss(self):
         # Strategy with profit/loss ratio = 4
         strategy = self.signal_stub()
-        strategy.profit_min_coeff = 0.5
+        strategy.take_profit_min_coeff = 0.5
         strategy.stop_loss_min_coeff = 0.1
 
         actual_signal, price, actual_loss, actual_profit, _ = strategy.get_signal_sl_tp_trdelta(bid=100, ask=100,

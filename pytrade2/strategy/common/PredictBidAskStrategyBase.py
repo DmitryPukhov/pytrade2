@@ -16,11 +16,11 @@ class PredictBidAskStrategyBase(StrategyBase):
     """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-
         self.websocket_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider, True, True, True)
-        self.signal_calc = SignalByFutBidAsk(config)
+        self.signal_calc = SignalByFutBidAsk(self.profit_loss_ratio, self.stop_loss_min_coeff, self.stop_loss_max_coeff,
+                                             self.profit_min_coeff, self.profit_max_coeff)
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
         self.past_window = config["pytrade2.strategy.past.window"]
@@ -36,17 +36,20 @@ class PredictBidAskStrategyBase(StrategyBase):
 
         bid = self.bid_ask_feed.bid_ask.loc[self.bid_ask_feed.bid_ask.index[-1], "bid"]
         ask = self.bid_ask_feed.bid_ask.loc[self.bid_ask_feed.bid_ask.index[-1], "ask"]
-        bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = y_pred.loc[y_pred.index[-1],
-        ["bid_min_fut", "bid_max_fut",
-         "ask_min_fut", "ask_max_fut"]]
+        bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = y_pred.loc[
+            y_pred.index[-1],
+            ["bid_min_fut", "bid_max_fut", "ask_min_fut", "ask_max_fut"]]
 
         # Maybe open a new order
-        open_signal, open_price, stop_loss, take_profit, tr_delta = self.signal_calc.get_signal_sl_tp_trdelta(bid, ask, bid_min_fut,
+        open_signal, open_price, stop_loss, take_profit, tr_delta = self.signal_calc.get_signal_sl_tp_trdelta(bid, ask,
+                                                                                                              bid_min_fut,
                                                                                                               bid_max_fut,
                                                                                                               ask_min_fut,
                                                                                                               ask_max_fut)
         if open_signal:
-            self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
+            self.broker.create_cur_trade(symbol=self.ticker,
+                                         direction=open_signal,
+                                         quantity=self.order_quantity,
                                          price=open_price,
                                          stop_loss_price=stop_loss,
                                          take_profit_price=take_profit,
