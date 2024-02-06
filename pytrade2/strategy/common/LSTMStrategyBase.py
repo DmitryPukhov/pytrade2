@@ -26,28 +26,6 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
         self.min_xy_len = self.lstm_window_size + 1
         logging.info(f"LSTM window size: {self.lstm_window_size}")
 
-    def prepare_last_x(self) -> pd.DataFrame:
-        """ Reshape last features to lstm window"""
-        x = PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
-                                                   self.lstm_window_size,
-                                                   self.level2_feed.level2,
-                                                   self.candles_feed.candles_by_interval,
-                                                   self.candles_feed.candles_cnt_by_interval,
-                                                   past_window=self.past_window)
-        return x
-    #
-    #     return x
-        # if X.shape[0] <= 0:
-        #     return X, np.empty((0, self.lstm_window_size, X.shape[1]))
-        #
-        # X_trans = self.X_pipe.transform(X)
-        #
-        # if math.prod(X_trans.shape) >= self.lstm_window_size * X_trans.shape[1]:
-        #     X_reshaped = np.reshape(X_trans, (-1, self.lstm_window_size, X_trans.shape[1]))
-        # else:
-        #     X_reshaped = np.empty((0, self.lstm_window_size, X_trans.shape[1]))
-        #
-        # return X, X_reshaped
 
     def generator_of(self, train_X, train_y):
         """ Learning data generator. Override here to return shapes with lstm window"""
@@ -81,3 +59,13 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
         strides = (arr.strides[0], arr.strides[0], arr.strides[1])
         windowed = np.lib.stride_tricks.as_strided(arr, shape=shape, strides=strides)
         return windowed
+
+    def prepare_last_x(self) -> pd.DataFrame:
+        """ Reshape last features to lstm window"""
+        x = PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
+                                                   self.lstm_window_size,
+                                                   self.level2_feed.level2,
+                                                   self.candles_feed.candles_by_interval,
+                                                   self.candles_feed.candles_cnt_by_interval,
+                                                   past_window=self.past_window)
+        return x

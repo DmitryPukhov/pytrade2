@@ -20,7 +20,6 @@ class LongCandleStrategyBase(StrategyBase):
     """
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-
         self.websocket_feed = None
 
         StrategyBase.__init__(self, config=config,
@@ -28,7 +27,9 @@ class LongCandleStrategyBase(StrategyBase):
                               is_candles_feed=True,
                               is_bid_ask_feed=False,
                               is_level2_feed=True)
-        self.signal_calc = OrderParamsByLastCandle(self.profit_loss_ratio, self.stop_loss_min_coeff, self.stop_loss_max_coeff, self.profit_min_coeff, self.profit_max_coeff)
+        self.signal_calc = OrderParamsByLastCandle(self.profit_loss_ratio, self.stop_loss_min_coeff,
+                                                   self.stop_loss_max_coeff, self.profit_min_coeff,
+                                                   self.profit_max_coeff)
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
@@ -44,12 +45,15 @@ class LongCandleStrategyBase(StrategyBase):
         msg.write(super().get_report())
         return msg.getvalue()
 
-    def predict(self, x):
-        x_trans = self.X_pipe.transform(x)
-        y_pred_raw = self.model.predict(x_trans, verbose=0)
-        y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
-        last_signal = y_pred_trans[-1][0] if y_pred_trans.size > 0 else 0
-        return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
+    def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
+        x, y = LongCandleFeatures.features_targets_of(
+            self.candles_feed.candles_by_interval,
+            self.candles_feed.candles_cnt_by_interval,
+            self.target_period,
+            self.stop_loss_min_coeff,
+            self.profit_min_coeff)
+        # Balance by signal
+        return LearnDataBalancer.balanced(x, y)
 
     def prepare_last_x(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         return LongCandleFeatures.features_of(self.candles_feed.candles_by_interval,
@@ -61,10 +65,17 @@ class LongCandleStrategyBase(StrategyBase):
         # Delay before next processing cycle
         time.sleep(self.processing_interval.seconds)
 
+    def predict(self, x):
+        x_trans = self.X_pipe.transform(x)
+        y_pred_raw = self.model.predict(x_trans, verbose=0)
+        y_pred_trans = self.y_pipe.inverse_transform(y_pred_raw)
+        last_signal = y_pred_trans[-1][0] if y_pred_trans.size > 0 else 0
+        return pd.DataFrame(data=[{"signal": last_signal}], index=x.tail(1).index)
+
     def process_prediction(self, y_pred: pd.DataFrame):
         signal = y_pred['signal'].iloc[-1]
 
-        if not signal: # signal = 0 => oom
+        if not signal:  # signal = 0 => oom
             return
         last_candle = self.candles_feed.candles_by_interval[self.target_period].iloc[-1]
         sl, tp, tdelta = self.signal_calc.get_sl_tp_trdelta(signal, last_candle)
@@ -75,16 +86,6 @@ class LongCandleStrategyBase(StrategyBase):
                                      stop_loss_price=sl,
                                      take_profit_price=tp,
                                      trailing_delta=tdelta)
-
-    def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
-        x, y = LongCandleFeatures.features_targets_of(
-            self.candles_feed.candles_by_interval,
-            self.candles_feed.candles_cnt_by_interval,
-            self.target_period,
-            self.stop_loss_min_coeff,
-            self.profit_min_coeff)
-        # Balance by signal
-        return LearnDataBalancer.balanced(x, y)
 
     def generator_of(self, train_X, train_y):
         """ Data generator for learning """

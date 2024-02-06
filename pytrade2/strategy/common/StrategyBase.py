@@ -5,9 +5,7 @@ import traceback
 from datetime import datetime, timedelta
 from io import StringIO
 from threading import Thread, Event, Timer
-from typing import Dict, Optional
-
-import numpy as np
+from typing import Dict
 import pandas as pd
 import tensorflow.python.keras.backend
 from keras.preprocessing.sequence import TimeseriesGenerator
@@ -28,7 +26,8 @@ from strategy.persist.ModelPersister import ModelPersister
 class StrategyBase():
     """ Any strategy """
 
-    def __init__(self, config: Dict, exchange_provider: Exchange, is_candles_feed: bool, is_bid_ask_feed:bool, is_level2_feed:bool):
+    def __init__(self, config: Dict, exchange_provider: Exchange, is_candles_feed: bool, is_bid_ask_feed: bool,
+                 is_level2_feed: bool):
 
         self.data_persister = DataPersister(config, self.__class__.__name__)
         self.model_persister = ModelPersister(config, self.__class__.__name__)
@@ -44,10 +43,10 @@ class StrategyBase():
         if is_candles_feed:
             self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
         if is_level2_feed:
-            self.level2_feed = Level2Feed(config,  exchange_provider, self.data_lock, self.new_data_event)
+            self.level2_feed = Level2Feed(config, exchange_provider, self.data_lock, self.new_data_event)
         if is_bid_ask_feed:
-            self.bid_ask_feed = BidAskFeed(config,  exchange_provider, self.data_lock, self.new_data_event)
-        #self.learn_data_balancer = LearnDataBalancer()
+            self.bid_ask_feed = BidAskFeed(config, exchange_provider, self.data_lock, self.new_data_event)
+        # self.learn_data_balancer = LearnDataBalancer()
         self.order_quantity = config["pytrade2.order.quantity"]
         logging.info(f"Order quantity: {self.order_quantity}")
         self.price_precision = config["pytrade2.price.precision"]
@@ -84,36 +83,46 @@ class StrategyBase():
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
-    def check_cur_trade(self):
-        """ Update cur trade if sl or tp reached """
-        if not self.broker.cur_trade:
-            return
+    def run(self):
+        exchange_name = self.config["pytrade2.exchange"]
+        self.broker = self.exchange_provider.broker(exchange_name)
+        if self.candles_feed:
+            self.candles_feed.read_candles()
+        self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
 
-        # Timeout from last check passed
-        if datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval:
-            self.broker.update_cur_trade_status()
-            self.last_trade_check_time = datetime.utcnow()
+        # Start main processing loop
+        Thread(target=self.processing_loop).start()
+        self.broker.run()
 
-    def generator_of(self, train_X, train_y):
-        """ Data generator for learning """
-        return TimeseriesGenerator(train_X, train_y, length=1)
+        # Start periodical jobs
+        if self.learn_interval:
+            logging.info(f"Starting periodical learning, interval: {self.learn_interval}")
+            Timer(self.learn_interval.seconds, self.learn).start()
 
-    def create_pipe(self, X, y) -> (Pipeline, Pipeline):
-        """ Create feature and target pipelines to use for transform and inverse transform """
+    def processing_loop(self):
+        logging.info("Starting processing loop")
 
-        time_cols = [col for col in X.columns if col.startswith("time")]
-        float_cols = list(set(X.columns) - set(time_cols))
+        # If alive is None, not started, so continue loop
+        is_alive = self.is_alive()
+        while is_alive or is_alive is None:
+            try:
+                # Wait for new data received
+                # while not self.new_data_event.is_set():
+                if self.new_data_event:
+                    self.new_data_event.wait()
+                    self.new_data_event.clear()
 
-        x_pipe = Pipeline(
-            [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
-             ("xmms", MinMaxScaler())])
-        x_pipe.fit(X)
+                # Learn and predict only if no gap between level2 and bidask
+                self.process_new_data()
 
-        y_pipe = Pipeline(
-            [("yrs", RobustScaler()),
-             ("ymms", MinMaxScaler())])
-        y_pipe.fit(y)
-        return x_pipe, y_pipe
+                # Refresh live status
+                is_alive = self.is_alive()
+            except Exception as e:
+                logging.exception(e)
+                logging.error("Exiting")
+                exit(1)
+
+        logging.info("End main processing loop")
 
     def is_alive(self):
         maxdelta = self.history_min_window + pd.Timedelta("60s")
@@ -137,6 +146,21 @@ class StrategyBase():
             msg.write("\n")
         return msg.getvalue()
 
+    def check_cur_trade(self):
+        """ Update cur trade if sl or tp reached """
+        if not self.broker.cur_trade:
+            return
+
+        # Timeout from last check passed
+        if datetime.utcnow() - self.last_trade_check_time >= self.trade_check_interval:
+            self.broker.update_cur_trade_status()
+            self.last_trade_check_time = datetime.utcnow()
+
+    def generator_of(self, train_X, train_y):
+        """ Data generator for learning """
+        return TimeseriesGenerator(train_X, train_y, length=1)
+
+
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
         feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
@@ -146,10 +170,27 @@ class StrategyBase():
             logging.info(f"Can not learn because some datasets have not enough data. Filled status {status}")
         return has_min_history
 
-    def prepare_xy(self):
-        raise NotImplementedError("prepare_Xy")
+    def create_model(self, x_size, y_size):
+        raise NotImplementedError()
 
-    def prepare_last_x(self):
+    def create_pipe(self, X, y) -> (Pipeline, Pipeline):
+        """ Create feature and target pipelines to use for transform and inverse transform """
+
+        time_cols = [col for col in X.columns if col.startswith("time")]
+        float_cols = list(set(X.columns) - set(time_cols))
+
+        x_pipe = Pipeline(
+            [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
+             ("xmms", MinMaxScaler())])
+        x_pipe.fit(X)
+
+        y_pipe = Pipeline(
+            [("yrs", RobustScaler()),
+             ("ymms", MinMaxScaler())])
+        y_pipe.fit(y)
+        return x_pipe, y_pipe
+
+    def prepare_xy(self):
         raise NotImplementedError("prepare_Xy")
 
     def learn(self):
@@ -195,52 +236,30 @@ class StrategyBase():
             if self.learn_interval:
                 Timer(self.learn_interval.seconds, self.learn).start()
 
-    def processing_loop(self):
-        logging.info("Starting processing loop")
-
-        # If alive is None, not started, so continue loop
-        is_alive = self.is_alive()
-        while is_alive or is_alive is None:
-            try:
-                # Wait for new data received
-                # while not self.new_data_event.is_set():
-                if self.new_data_event:
-                    self.new_data_event.wait()
-                    self.new_data_event.clear()
-
-                # Learn and predict only if no gap between level2 and bidask
-                self.process_new_data()
-
-                # Refresh live status
-                is_alive = self.is_alive()
-            except Exception as e:
-                logging.exception(e)
-                logging.error("Exiting")
-                exit(1)
-
-        logging.info("End main processing loop")
-
-    def run(self):
-        exchange_name = self.config["pytrade2.exchange"]
-        self.broker = self.exchange_provider.broker(exchange_name)
-        if self.candles_feed:
-            self.candles_feed.read_candles()
-        self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
-
-        # Start main processing loop
-        Thread(target=self.processing_loop).start()
-        self.broker.run()
-
-        # Start periodical jobs
-        if self.learn_interval:
-            logging.info(f"Starting periodical learning, interval: {self.learn_interval}")
-            Timer(self.learn_interval.seconds, self.learn).start()
-
-    def create_model(self, x_size, y_size):
-        raise NotImplementedError()
+    def prepare_last_x(self):
+        raise NotImplementedError("prepare_Xy")
 
     def predict(self, x: pd.DataFrame):
-        raise  NotImplementedError()
+        raise NotImplementedError()
+
+    def apply_buffers(self):
+        # Append new data from buffers to main data frames
+        with (self.data_lock):
+            save_dict = {}
+            # Form saving dict structure and copy from buffers to main datasets
+            if self.bid_ask_feed:
+                save_dict["raw_bid_ask"] = self.bid_ask_feed.bid_ask_buf
+                self.bid_ask_feed.apply_buf()
+            # save_dict = {**{"raw_bid_ask": self.bid_ask_feed.bid_ask_buf},
+            if self.candles_feed:
+                save_dict.update({f"raw_candles_{period}]": buf for period, buf in
+                                  self.candles_feed.candles_by_interval_buf.items()})
+                self.candles_feed.apply_buf()
+            if self.level2_feed:
+                # Don't call save_dict.update() because Level 2 is too big, don't save, just apply buf
+                self.level2_feed.apply_buf()
+
+            self.data_persister.save_last_data(self.ticker, save_dict)
 
     def process_new_data(self):
         self.apply_buffers()
@@ -268,25 +287,6 @@ class StrategyBase():
                 logging.error(f"{e}. Traceback: {traceback.format_exc()}")
             finally:
                 self.is_processing = False
-
-    def apply_buffers(self):
-        # Append new data from buffers to main data frames
-        with (self.data_lock):
-            save_dict = {}
-            # Form saving dict structure and copy from buffers to main datasets
-            if self.bid_ask_feed:
-                save_dict["raw_bid_ask"] = self.bid_ask_feed.bid_ask_buf
-                self.bid_ask_feed.apply_buf()
-            # save_dict = {**{"raw_bid_ask": self.bid_ask_feed.bid_ask_buf},
-            if self.candles_feed:
-                save_dict.update({f"raw_candles_{period}]": buf for period, buf in
-                                  self.candles_feed.candles_by_interval_buf.items()})
-                self.candles_feed.apply_buf()
-            if self.level2_feed:
-                # Don't call save_dict.update() because Level 2 is too big, don't save, just apply buf
-                self.level2_feed.apply_buf()
-
-            self.data_persister.save_last_data(self.ticker, save_dict)
 
     def process_prediction(self, y_pred):
         raise NotImplementedError()

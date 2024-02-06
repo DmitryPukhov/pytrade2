@@ -1,9 +1,7 @@
 import logging
 from typing import Dict
-
 import pandas as pd
 from numpy import ndarray
-
 from exch.Exchange import Exchange
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
@@ -30,6 +28,48 @@ class PredictBidAskStrategyBase(StrategyBase):
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
+    def prepare_last_x(self) -> (pd.DataFrame, ndarray):
+        """ Get last X for prediction"""
+        return PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
+                                                      1,  # For diff
+                                                      self.level2_feed.level2,
+                                                      self.candles_feed.candles_by_interval,
+                                                      self.candles_feed.candles_cnt_by_interval,
+                                                      past_window=self.past_window)
+
+    def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
+        """ Prepare train data """
+        with self.data_lock:
+            # Copy data for this thread only
+            bid_ask = self.bid_ask_feed.bid_ask.copy()
+            level2 = self.level2_feed.level2.copy()
+
+        return PredictBidAskFeatures.features_targets_of(
+            bid_ask,
+            level2,
+            self.candles_feed.candles_by_interval,
+            self.candles_feed.candles_cnt_by_interval,
+            self.predict_window,
+            self.past_window)
+
+    def predict(self, x) -> pd.DataFrame:
+        # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
+        x_trans = self.X_pipe.transform(x)
+
+        # Predict
+        y = self.model.predict(x_trans, verbose=0)
+        y = y.reshape((-1, 4))
+
+        # Get prediction result
+        y = self.y_pipe.inverse_transform(y)
+        (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1]  # if y.shape[0] < 2 else y
+        y_df = self.bid_ask_feed.bid_ask.loc[x.index][["bid", "ask"]]
+        y_df["bid_max_fut"] = y_df["bid"] + bid_max_fut_diff
+        y_df["bid_min_fut"] = y_df["bid_max_fut"] - bid_spread_fut
+        y_df["ask_min_fut"] = y_df["ask"] + ask_min_fut_diff
+        y_df["ask_max_fut"] = y_df["ask_min_fut"] + ask_spread_fut
+        return y_df
+
     def process_prediction(self, y_pred) -> int:
         """ Process last prediction, open a new order, save history if needed
         @:return open signal where signal can be 0,-1,1 """
@@ -55,45 +95,3 @@ class PredictBidAskStrategyBase(StrategyBase):
                                          take_profit_price=take_profit,
                                          trailing_delta=tr_delta)
         return open_signal
-
-    def predict(self, x) -> pd.DataFrame:
-        # X - features with absolute values, x_prepared - nd array fith final scaling and normalization
-        x_trans = self.X_pipe.transform(x)
-
-        # Predict
-        y = self.model.predict(x_trans, verbose=0)
-        y = y.reshape((-1, 4))
-
-        # Get prediction result
-        y = self.y_pipe.inverse_transform(y)
-        (bid_max_fut_diff, bid_spread_fut, ask_min_fut_diff, ask_spread_fut) = y[-1]  # if y.shape[0] < 2 else y
-        y_df = self.bid_ask_feed.bid_ask.loc[x.index][["bid", "ask"]]
-        y_df["bid_max_fut"] = y_df["bid"] + bid_max_fut_diff
-        y_df["bid_min_fut"] = y_df["bid_max_fut"] - bid_spread_fut
-        y_df["ask_min_fut"] = y_df["ask"] + ask_min_fut_diff
-        y_df["ask_max_fut"] = y_df["ask_min_fut"] + ask_spread_fut
-        return y_df
-
-    def prepare_last_x(self) -> (pd.DataFrame, ndarray):
-        """ Get last X for prediction"""
-        return PredictBidAskFeatures.last_features_of(self.bid_ask_feed.bid_ask,
-                                                      1,  # For diff
-                                                      self.level2_feed.level2,
-                                                      self.candles_feed.candles_by_interval,
-                                                      self.candles_feed.candles_cnt_by_interval,
-                                                      past_window=self.past_window)
-
-    def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
-        """ Prepare train data """
-        with self.data_lock:
-            # Copy data for this thread only
-            bid_ask = self.bid_ask_feed.bid_ask.copy()
-            level2 = self.level2_feed.level2.copy()
-
-        return PredictBidAskFeatures.features_targets_of(
-            bid_ask,
-            level2,
-            self.candles_feed.candles_by_interval,
-            self.candles_feed.candles_cnt_by_interval,
-            self.predict_window,
-            self.past_window)
