@@ -255,8 +255,11 @@ class StrategyBase():
                 # Predict
                 y_pred = self.predict(x)
 
-                # Open or close or do nothing
-                self.process_prediction(y_pred)
+                # Update current trade status
+                self.check_cur_trade()
+                if not self.broker.cur_trade and self.risk_manager.can_trade():
+                    # Open or close or do nothing
+                    self.process_prediction(y_pred)
 
                 # Save to disk for analysis
                 self.data_persister.save_last_data(self.ticker, {'y_pred': y_pred})
@@ -283,3 +286,6 @@ class StrategyBase():
                 self.level2_feed.apply_buf()
 
             self.data_persister.save_last_data(self.ticker, save_dict)
+
+    def process_prediction(self, y_pred):
+        raise NotImplementedError()

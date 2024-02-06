@@ -35,26 +35,21 @@ class PredictBidAskStrategyBase(StrategyBase):
 
         bid = self.bid_ask_feed.bid_ask.loc[self.bid_ask_feed.bid_ask.index[-1], "bid"]
         ask = self.bid_ask_feed.bid_ask.loc[self.bid_ask_feed.bid_ask.index[-1], "ask"]
-
-        # Update current trade status
-        self.check_cur_trade()
-
         bid_min_fut, bid_max_fut, ask_min_fut, ask_max_fut = y_pred.loc[y_pred.index[-1],
         ["bid_min_fut", "bid_max_fut",
          "ask_min_fut", "ask_max_fut"]]
-        open_signal = 0
-        if not self.broker.cur_trade and self.risk_manager.can_trade():
-            # Maybe open a new order
-            open_signal, open_price, stop_loss, take_profit, tr_delta = self.get_signal(bid, ask, bid_min_fut,
-                                                                                        bid_max_fut,
-                                                                                        ask_min_fut,
-                                                                                        ask_max_fut)
-            if open_signal:
-                self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
-                                             price=open_price,
-                                             stop_loss_price=stop_loss,
-                                             take_profit_price=take_profit,
-                                             trailing_delta=tr_delta)
+
+        # Maybe open a new order
+        open_signal, open_price, stop_loss, take_profit, tr_delta = self.get_signal(bid, ask, bid_min_fut,
+                                                                                    bid_max_fut,
+                                                                                    ask_min_fut,
+                                                                                    ask_max_fut)
+        if open_signal:
+            self.broker.create_cur_trade(symbol=self.ticker, direction=open_signal, quantity=self.order_quantity,
+                                         price=open_price,
+                                         stop_loss_price=stop_loss,
+                                         take_profit_price=take_profit,
+                                         trailing_delta=tr_delta)
         return open_signal
 
     def get_signal(self, bid: float, ask: float, bid_min_fut: float, bid_max_fut: float, ask_min_fut: float,
