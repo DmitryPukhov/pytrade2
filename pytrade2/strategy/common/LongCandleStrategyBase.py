@@ -11,6 +11,7 @@ from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LongCandleFeatures import LongCandleFeatures
+from strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
 
 
 class LongCandleStrategyBase(StrategyBase):
@@ -27,6 +28,7 @@ class LongCandleStrategyBase(StrategyBase):
                               is_candles_feed=True,
                               is_bid_ask_feed=False,
                               is_level2_feed=True)
+        self.signal_calc = OrderParamsByLastCandle(config)
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
@@ -59,39 +61,13 @@ class LongCandleStrategyBase(StrategyBase):
         # Delay before next processing cycle
         time.sleep(self.processing_interval.seconds)
 
-    def get_sl_tp_trdelta(self, signal: int) -> (float, float, float):
-        last_candle = self.candles_feed.candles_by_interval[self.target_period].iloc[-1]
-        sl_delta_min = self.stop_loss_min_coeff * last_candle["close"]
-        sl_delta_max = self.stop_loss_max_coeff * last_candle["close"]
-        tp_delta_min = self.profit_min_coeff * last_candle["close"]
-        tp_delta_max = self.profit_max_coeff * last_candle["close"]
-        tr_delta_min, tr_delta_max = sl_delta_min, sl_delta_max
-        open_price = last_candle["close"]  # Order open price
-
-        tr_delta = max(abs(last_candle["high"] - last_candle["low"]), tr_delta_min)  # trailing delta
-        tr_delta = min(tr_delta, tr_delta_max)
-        if signal == 1:
-            sl = min(last_candle["low"], open_price - sl_delta_min)
-            sl = max(sl, open_price - sl_delta_max)
-            tp = max(last_candle["high"], open_price + tp_delta_min)
-            tp = min(tp, open_price + tp_delta_max)
-        elif signal == -1:
-            sl = max(last_candle["high"], open_price + sl_delta_min)
-            sl = min(sl, open_price + sl_delta_max)
-            tp = min(last_candle["low"], open_price - tp_delta_min)
-            tp = max(tp, open_price - tp_delta_max)
-        else:
-            # Should never come here
-            return None
-
-        return sl, tp, tr_delta
-
     def process_prediction(self, y_pred: pd.DataFrame):
         signal = y_pred['signal'].iloc[-1]
 
         if not signal: # signal = 0 => oom
             return
-        sl, tp, tdelta = self.get_sl_tp_trdelta(signal)
+        last_candle = self.candles_feed.candles_by_interval[self.target_period].iloc[-1]
+        sl, tp, tdelta = self.signal_calc.get_sl_tp_trdelta(signal, last_candle)
         self.broker.create_cur_trade(symbol=self.ticker,
                                      direction=signal,
                                      quantity=self.order_quantity,

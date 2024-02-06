@@ -70,13 +70,13 @@ class StrategyStub(PredictBidAskStrategyBase):
                 "pytrade2.order.quantity": 0.001}
         PredictBidAskStrategyBase.__init__(self, conf, MagicMock())
         self.candles_feed = MagicMock()
-        self.profit_loss_ratio = 4
-        self.close_profit_loss_ratio = 2
+        # self.profit_loss_ratio = 4
+        # self.close_profit_loss_ratio = 2
         self.model = ModelStub()
         self.broker = BrokerStub()
         self.candles_feed = MagicMock()
         self.risk_manager = MagicMock()
-        self.min_stop_loss = 0
+        #self.min_stop_loss = 0
         self.max_stop_loss_coeff = float('inf')
         self.candles_feed.candles_by_interval = {"1min":
             pd.DataFrame([

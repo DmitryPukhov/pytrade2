@@ -72,6 +72,7 @@ class StrategyBase():
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
         self.profit_min_coeff = config.get("pytrade2.strategy.profit.min.coeff", 0)
         self.profit_max_coeff = config.get("pytrade2.strategy.profit.max.coeff", float('inf'))
+
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
 
