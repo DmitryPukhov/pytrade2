@@ -55,11 +55,9 @@ class LongCandleLgbStrategy(StrategyBase):
     def predict(self, x):
         x_trans = self.X_pipe.transform(x)
         y_arr = self.model.predict(x_trans)
-        y_arr = self.y_pipe.inverse_transform(y_arr).reshape((-1, 2))[-1]  # Last and only row
-        fut_low_diff, fut_high_diff = y_arr[0], y_arr[1]
-        last_candle = self.candles_feed.candles_by_interval[self.target_period].iloc[-1]
-        fut_low, fut_high = last_candle['low'] + fut_low_diff, last_candle['high'] + fut_high_diff
-
+        y_arr = self.y_pipe.inverse_transform(y_arr)
+        y_arr = y_arr.reshape((-1, 2))[-1]  # Last and only row
+        fut_low, fut_high = y_arr[0], y_arr[1]
         y_df = pd.DataFrame(data={'fut_low': fut_low, 'fut_high': fut_high}, index=x.tail(1).index)
         return y_df
 
