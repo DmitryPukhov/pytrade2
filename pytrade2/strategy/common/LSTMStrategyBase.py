@@ -26,11 +26,6 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
         self.min_xy_len = self.lstm_window_size + 1
         logging.info(f"LSTM window size: {self.lstm_window_size}")
 
-
-    def generator_of(self, train_X, train_y):
-        """ Learning data generator. Override here to return shapes with lstm window"""
-        return TimeseriesGenerator(train_X, train_y, length=self.lstm_window_size)
-
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
 

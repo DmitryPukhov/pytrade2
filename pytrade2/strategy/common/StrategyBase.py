@@ -156,11 +156,6 @@ class StrategyBase():
             self.broker.update_cur_trade_status()
             self.last_trade_check_time = datetime.utcnow()
 
-    def generator_of(self, train_X, train_y):
-        """ Data generator for learning """
-        return TimeseriesGenerator(train_X, train_y, length=1)
-
-
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
         feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
@@ -218,9 +213,6 @@ class StrategyBase():
                 # Train
                 if not self.model:
                     self.model = self.create_model(X_trans.shape[-1], y_trans.shape[-1])
-                # Generator produces error
-                # gen = self.generator_of(X_trans, y_trans)
-                # self.model.fit(gen)
                 self.model.fit(X_trans, y_trans)
 
                 # Save weights and xy new delta
