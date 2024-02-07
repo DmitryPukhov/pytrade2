@@ -1,7 +1,7 @@
 #!/bin/bash
 #DEFAULT_BOT_NAMES="longcandledensestrategy lstmstrategy2 lstmstrategy simplekerasstrategy"
 
-DEFAULT_BOT_NAMES='longcandledensestrategy simplekerasstrategy'
+DEFAULT_BOT_NAMES='longcandlesignalstrategy simplekerasstrategy'
 S3_DATA_URL='s3://pytrade2/data'
 VM_PUBLIC_IP="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
 VM_USER="yc-user"

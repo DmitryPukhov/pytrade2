@@ -16,11 +16,11 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  longcandledensestrategy:
-    container_name: longcandledensestrategy
+  longcandlesignalstrategy:
+    container_name: longcandlesignalstrategy
     extends:
       service: trade
-    command: python ./App.py --pytrade2.strategy LongCandleDenseStrategy
+    command: python ./App.py --pytrade2.strategy LongCandleSignalStrategy
 
   simplekerasstrategy:
     container_name: simplekerasstrategy

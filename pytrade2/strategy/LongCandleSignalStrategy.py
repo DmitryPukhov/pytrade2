@@ -2,22 +2,24 @@ import logging
 from typing import Dict
 
 import pandas as pd
+from keras import Sequential, Input
+from keras.layers import Dense, Dropout
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 
 from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
+from strategy.common.SignalStrategyBase import SignalStrategyBase
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LongCandleFeatures import LongCandleFeatures
 from strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
 
 
-class LongCandleStrategyBase(StrategyBase):
+class SignalSignalStrategy(SignalStrategyBase):
     """
-    Predict long candle signal, classification model, target signals: -1, 0, 1
-    """
-
+     Predict long candle signal, classification model, target signals: -1, 0, 1
+   """
     def __init__(self, config: Dict, exchange_provider: Exchange):
         self.websocket_feed = None
 
@@ -36,23 +38,6 @@ class LongCandleStrategyBase(StrategyBase):
         self.candles_feed.candles_history_cnt_by_interval[self.target_period] += 1
 
         logging.info(f"Target period: {self.target_period}")
-
-    def create_pipe(self, X, y) -> (Pipeline, Pipeline):
-        """ Create feature and target pipelines to use for transform and inverse transform """
-
-        time_cols = [col for col in X.columns if col.startswith("time") or col.endswith("time")]
-        float_cols = list(set(X.columns) - set(time_cols))
-
-        # Scale x
-        x_pipe = Pipeline(
-            [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
-             ("xmms", MinMaxScaler())])
-        x_pipe.fit(X)
-
-        # One hot encode y
-        y_pipe = Pipeline([('adjust_labels', OneHotEncoder(categories=[[-1, 0, 1]], sparse_output=False, drop=None))])
-        y_pipe.fit(y)
-        return x_pipe, y_pipe
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         x, y = LongCandleFeatures.features_targets_of(
@@ -89,4 +74,23 @@ class LongCandleStrategyBase(StrategyBase):
                                      stop_loss_price=sl,
                                      take_profit_price=tp,
                                      trailing_delta=tdelta)
+
+    def create_model(self, X_size, y_size):
+        model = Sequential()
+        model.add(Input(shape=(X_size,)))
+        model.add(Dense(64, activation='relu'))
+        model.add(Dropout(0.1))
+        model.add(Dense(512, activation='relu'))
+        model.add(Dropout(0.2))
+        model.add(Dense(128, activation='relu'))
+        model.add(Dropout(0.1))
+        model.add(Dense(32, activation='relu'))
+        model.add(Dropout(0.1))
+        model.add(Dense(y_size, activation='softmax'))
+        model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+
+        # Load weights
+        self.model_persister.load_last_model(model)
+        model.summary()
+        return model
 
