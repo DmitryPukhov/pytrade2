@@ -22,6 +22,7 @@ ta = ">=0.11.0"
 boto3= ">=1.28.60"
 botocore = ">=1.34.2"
 backend = "*"
+lightgbm = "*"
 
 [dev-packages]
 

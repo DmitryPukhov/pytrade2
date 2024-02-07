@@ -222,7 +222,8 @@ class StrategyBase():
                 self.model.fit(X_trans, y_trans)
 
                 # Save weights and xy new delta
-                self.model_persister.save_model(self.model)
+                # todo: uncomment
+                #self.model_persister.save_model(self.model)
 
                 # to avoid OOM
                 tensorflow.keras.backend.clear_session()
@@ -250,7 +251,7 @@ class StrategyBase():
                 self.bid_ask_feed.apply_buf()
             # save_dict = {**{"raw_bid_ask": self.bid_ask_feed.bid_ask_buf},
             if self.candles_feed:
-                save_dict.update({f"raw_candles_{period}]": buf for period, buf in
+                save_dict.update({f"raw_candles_{period}": buf for period, buf in
                                   self.candles_feed.candles_by_interval_buf.items()})
                 self.candles_feed.apply_buf()
             if self.level2_feed:

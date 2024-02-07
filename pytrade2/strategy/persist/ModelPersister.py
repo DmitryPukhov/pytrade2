@@ -27,25 +27,26 @@ class ModelPersister:
             Path(self.model_weights_dir).mkdir(parents=True, exist_ok=True)
 
     def load_last_model(self, model: Model):
-        saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
-        if saved_models:
-            try:
-                last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
-                logging.info(f"Load model from {last_model_path}")
-                model.load_weights(last_model_path)
-            except Exception as e:
-                logging.warning(f'Error loading last model. It\'s ok if the model architecture is changed. Error: {e}')
-                pass
-        else:
-            logging.info(f"No saved models in {self.model_weights_dir}")
+        if isinstance(model, Model):
+            saved_models = glob.glob(str(Path(self.model_weights_dir, "*.index")))
+            if saved_models:
+                try:
+                    last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
+                    logging.info(f"Load model from {last_model_path}")
+                    model.load_weights(last_model_path)
+                except Exception as e:
+                    logging.warning(f'Error loading last model. It\'s ok if the model architecture is changed. Error: {e}')
+                    pass
+            else:
+                logging.info(f"No saved models in {self.model_weights_dir}")
 
     def save_model(self, model):
+        if isinstance(model, Model):
+            model_path = str(Path(self.model_weights_dir, datetime.utcnow().isoformat()))
+            logging.debug(f"Save model to {model_path}")
+            model.save_weights(model_path)
 
-        model_path = str(Path(self.model_weights_dir, datetime.utcnow().isoformat()))
-        logging.debug(f"Save model to {model_path}")
-        model.save_weights(model_path)
-
-        self.purge_weights()
+            self.purge_weights()
 
     def purge_weights(self, keep_count=1):
         """
