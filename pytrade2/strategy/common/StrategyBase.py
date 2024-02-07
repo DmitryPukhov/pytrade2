@@ -2,6 +2,7 @@ import gc
 import logging
 import multiprocessing
 import traceback
+import time
 from datetime import datetime, timedelta
 from io import StringIO
 from threading import Thread, Event, Timer
@@ -80,6 +81,8 @@ class StrategyBase():
         self.min_xy_len = 2
         self.X_pipe, self.y_pipe = None, None
 
+        self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
+
         logging.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
@@ -115,6 +118,9 @@ class StrategyBase():
                 # Learn and predict only if no gap between level2 and bidask
                 self.process_new_data()
 
+                if self.processing_interval.total_seconds() > 0:
+                    # Delay before next processing cycle
+                    time.sleep(self.processing_interval.total_seconds())
                 # Refresh live status
                 is_alive = self.is_alive()
             except Exception as e:
