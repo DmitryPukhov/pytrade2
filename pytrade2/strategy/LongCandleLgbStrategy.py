@@ -91,8 +91,10 @@ class LongCandleLgbStrategy(StrategyBase):
         self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df, 'y_pred': y_pred})
 
     def create_model(self, X_size, y_size):
-        lgb_model = lgb.LGBMRegressor(verbose=-1)  # supress rubbish in log
+        model = self.model_persister.load_last_model(None)
+        if not model:
+            lgb_model = lgb.LGBMRegressor(verbose=-1)
+            model = MultiOutputRegressor(lgb_model)
 
-        model = MultiOutputRegressor(lgb_model)
-        logging.info(f'Created model: {model}')
+        logging.info(f'Created lgb model: {model}')
         return model

@@ -223,7 +223,7 @@ class StrategyBase():
 
                 # Save weights and xy new delta
                 # todo: uncomment
-                #self.model_persister.save_model(self.model)
+                self.model_persister.save_model(self.model)
 
                 # to avoid OOM
                 tensorflow.keras.backend.clear_session()
