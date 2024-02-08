@@ -62,9 +62,14 @@ class LongCandleLgbStrategy(StrategyBase):
         return y_df
 
     def process_prediction(self, y_pred: pd.DataFrame):
+
+        # Calc signal
         fut_low, fut_high = y_pred.loc[y_pred.index[-1], ["fut_low", "fut_high"]]
-        close, low, high = self.candles_feed.candles_by_interval[self.target_period][['close', 'low', 'high']].iloc[-1]
+        dt, close, low, high = \
+            self.candles_feed.candles_by_interval[self.target_period][['close_time', 'close', 'low', 'high']].iloc[-1]
         signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
+
+        # Trade
         if signal:
             self.broker.create_cur_trade(symbol=self.ticker,
                                          direction=signal,
@@ -74,8 +79,16 @@ class LongCandleLgbStrategy(StrategyBase):
                                          take_profit_price=tp,
                                          trailing_delta=None)
 
+        # Persist signal data for later analysis
+        signal_ext_df = pd.DataFrame(data=[{'signal': signal,
+                                            'close': close,
+                                            'stop_loss': sl,
+                                            'take_profit': tp}],
+                                     index=[dt])
+        self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df})
+
     def create_model(self, X_size, y_size):
-        lgb_model = lgb.LGBMRegressor(verbose=-1) # supress rubbish in log
+        lgb_model = lgb.LGBMRegressor(verbose=-1)  # supress rubbish in log
 
         model = MultiOutputRegressor(lgb_model)
         logging.info(f'Created model: {model}')
