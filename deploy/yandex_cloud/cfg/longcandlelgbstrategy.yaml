@@ -7,9 +7,9 @@ pytrade2.strategy.learn.interval: "5min"
 
 
 # Candles to learn on
-pytrade2.feed.candles.periods: 5min, 10min, 15min, 30min, 1h
-pytrade2.feed.candles.counts: 60, 60, 60, 60, 60
-pytrade2.feed.candles.history.counts: 10000, 10000, 10000, 10000, 10000
+pytrade2.feed.candles.periods: 5min, 15min, 30min, 60min
+pytrade2.feed.candles.counts: 60, 60, 60, 60
+pytrade2.feed.candles.history.counts: 10000, 10000, 10000, 10000
 
 # Candle to predict
 pytrade2.strategy.predict.window: "5min"
