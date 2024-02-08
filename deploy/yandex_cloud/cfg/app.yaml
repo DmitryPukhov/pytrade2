@@ -47,5 +47,7 @@ pytrade2.order.quantity: 1
 
 # Param not used anywhere
 #pytrade2.order.trailingstop: false
+pytrade2.broker.comissionpct: 0.012
+
 
 pytrade2.broker.trade.allow: false

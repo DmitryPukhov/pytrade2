@@ -14,3 +14,6 @@ huobi-sdk~=2.3.3
 boto3>=1.34.1; python_version >= '3.8'
 botocore>=1.34.1; python_version >= '3.8'
 ta~=0.11.0
+lightgbm~=4.3.0; python_version >= '3.6'
+
+
