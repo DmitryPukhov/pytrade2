@@ -88,7 +88,7 @@ class LongCandleLgbStrategy(StrategyBase):
                                             'stop_loss': sl,
                                             'take_profit': tp}],
                                      index=[dt])
-        self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df})
+        self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df, 'y_pred': y_pred})
 
     def create_model(self, X_size, y_size):
         lgb_model = lgb.LGBMRegressor(verbose=-1)  # supress rubbish in log
