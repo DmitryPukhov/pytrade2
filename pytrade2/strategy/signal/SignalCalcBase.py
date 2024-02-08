@@ -1,6 +1,6 @@
 class SignalCalcBase:
     def __init__(self, profit_loss_ratio: float, stop_loss_min_coeff: float, stop_loss_max_coeff: float,
-                 take_profit_min_coeff: float, take_profit_max_coeff: float):
+                 take_profit_min_coeff: float, take_profit_max_coeff: float, price_precision):
         self.profit_loss_ratio = profit_loss_ratio
 
         # stop loss should be above price * min_stop_loss_coeff
@@ -12,3 +12,5 @@ class SignalCalcBase:
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
         self.take_profit_min_coeff = take_profit_min_coeff
         self.take_profit_max_coeff = take_profit_max_coeff
+
+        self.price_precision = price_precision

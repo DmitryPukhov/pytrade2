@@ -18,7 +18,7 @@ class PredictBidAskStrategyBase(StrategyBase):
 
         StrategyBase.__init__(self, config, exchange_provider, True, True, True)
         self.signal_calc = SignalByFutBidAsk(self.profit_loss_ratio, self.stop_loss_min_coeff, self.stop_loss_max_coeff,
-                                             self.profit_min_coeff, self.profit_max_coeff)
+                                             self.profit_min_coeff, self.profit_max_coeff, self.price_precision)
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
         self.past_window = config["pytrade2.strategy.past.window"]

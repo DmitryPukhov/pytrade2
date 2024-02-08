@@ -26,7 +26,7 @@ class LongCandleLgbStrategy(StrategyBase):
         comissionpct = float(config.get('pytrade2.broker.comissionpct'))
         self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
                                               self.stop_loss_max_coeff, self.profit_min_coeff,
-                                              self.profit_max_coeff, comissionpct)
+                                              self.profit_max_coeff, comissionpct, self.price_precision)
 
         self.features_periods = [s.strip() for s in
                                  str(config["pytrade2.strategy.candles.features.periods"]).split(",")]
@@ -62,11 +62,11 @@ class LongCandleLgbStrategy(StrategyBase):
         return y_df
 
     def process_prediction(self, y_pred: pd.DataFrame):
-
         # Calc signal
         fut_low, fut_high = y_pred.loc[y_pred.index[-1], ["fut_low", "fut_high"]]
-        dt, close, low, high = \
-            self.candles_feed.candles_by_interval[self.target_period][['close_time', 'close', 'low', 'high']].iloc[-1]
+        dt, open_, high, low, close = \
+            self.candles_feed.candles_by_interval[self.target_period][
+                ['close_time', 'open', 'high', 'low', 'close']].iloc[-1]
         signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
 
         # Trade
@@ -81,6 +81,9 @@ class LongCandleLgbStrategy(StrategyBase):
 
         # Persist signal data for later analysis
         signal_ext_df = pd.DataFrame(data=[{'signal': signal,
+                                            'open': open_,
+                                            'high': high,
+                                            'low': low,
                                             'close': close,
                                             'stop_loss': sl,
                                             'take_profit': tp}],

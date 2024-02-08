@@ -3,6 +3,7 @@ from strategy.signal.SignalCalcBase import SignalCalcBase
 
 class SignalByFutBidAsk(SignalCalcBase):
     """ Use bid/ask prediction to calculate signal and order params"""
+
     #
     # def __init__(self, profit_loss_ratio: float, stop_loss_min_coeff: float, stop_loss_max_coeff: float,
     #              take_profit_min_coeff: float, take_profit_max_coeff: float):
@@ -54,13 +55,15 @@ class SignalByFutBidAsk(SignalCalcBase):
             stop_loss_adj = ask - abs(buy_loss) * 1.25
             tr_delta = abs(stop_loss_adj)
             # stop_loss_adj = min(stop_loss_adj, round(ask * (1 - self.stop_loss_min_coeff), self.price_precision))
-            return 1, ask, stop_loss_adj, ask + buy_profit, tr_delta
+            return 1, round(ask, self.price_precision), round(stop_loss_adj, self.price_precision), round(
+                ask + buy_profit, self.price_precision), round(tr_delta, self.price_precision)
         elif is_sell:
             # Sell and possibly fix the loss
             stop_loss_adj = bid + abs(sell_loss) * 1.25
             tr_delta = abs(stop_loss_adj)
             # stop_loss_adj = max(stop_loss_adj, round(bid * (1 + self.stop_loss_min_coeff), self.price_precision))
-            return -1, bid, stop_loss_adj, bid - sell_profit, tr_delta
+            return -1, round(bid, self.price_precision), round(stop_loss_adj, self.price_precision), round(
+                bid - sell_profit, self.price_precision), round(tr_delta, self.price_precision)
         else:
             # No action
             return 0, None, None, None, None

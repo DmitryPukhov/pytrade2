@@ -7,7 +7,7 @@ class TestOrderParamsByLastCandle(TestCase):
     @classmethod
     def new_signal_calc(cls):
         return OrderParamsByLastCandle(profit_loss_ratio=1, stop_loss_min_coeff=0, stop_loss_max_coeff=float('inf'),
-                                       take_profit_min_coeff=0, take_profit_max_coeff=float('inf'))
+                                       take_profit_min_coeff=0, take_profit_max_coeff=float('inf'), price_precision=0.2)
 
     def test_get_sl_tp_trdelta_buy(self):
         signal_calc = self.new_signal_calc()
