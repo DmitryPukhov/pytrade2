@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, re
 
 import pandas as pd
 from ta import trend, momentum, volume, others, volatility
@@ -8,14 +8,19 @@ from strategy.features.CandlesFeatures import CandlesFeatures
 
 class MultiIndiFeatures:
     """ Multiple TA indicators on multiple periods"""
+
     @staticmethod
-    def multi_indi_features(candles: pd.DataFrame, features_periods: List[str]):
+    def multi_indi_features(candles_by_periods: Dict[str, pd.DataFrame]):
         # Create time features
-        time_features = CandlesFeatures.time_features_of(candles)[['time_hour', 'time_minute']]
+        min_period = min(candles_by_periods.keys(), key=pd.Timedelta)
+
+        min_candles = candles_by_periods[min_period]
+        time_features = CandlesFeatures.time_features_of(min_candles)[['time_hour', 'time_minute']]
         # indi_features = pd.concat([indi_features] + [indicators_of(candles,period) for period in ['1min', '5min', '15min', '30min', '60min']], axis=1).ffill()
         # Enrich with columns from each period
         features = pd.concat(
-            [time_features] + [MultiIndiFeatures.indicators_of(candles, period) for period in features_periods],
+            [time_features] + [MultiIndiFeatures.indicators_of(candles, period) for period, candles in
+                               candles_by_periods.items()],
             axis=1).ffill().dropna()
         return features
 

@@ -28,9 +28,6 @@ class LongCandleLgbStrategy(StrategyBase):
                                               self.stop_loss_max_coeff, self.profit_min_coeff,
                                               self.profit_max_coeff, comissionpct, self.price_precision)
 
-        self.features_periods = [s.strip() for s in
-                                 str(config["pytrade2.strategy.candles.features.periods"]).split(",")]
-
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
@@ -40,7 +37,7 @@ class LongCandleLgbStrategy(StrategyBase):
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         # Candles with minimal period will be resampled in feature engineering
         candles = self.candles_feed.candles_by_interval[min(self.candles_feed.candles_by_interval)]
-        x = MultiIndiFeatures.multi_indi_features(candles, self.features_periods)
+        x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval)
 
         y = LowHighTargets.fut_lohi(candles, self.target_period)
         x = x[x.index.isin(y.index)]
@@ -48,8 +45,7 @@ class LongCandleLgbStrategy(StrategyBase):
         return x, y
 
     def prepare_last_x(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
-        candles = self.candles_feed.candles_by_interval[min(self.candles_feed.candles_by_interval)]
-        x = MultiIndiFeatures.multi_indi_features(candles, self.features_periods).tail(1)
+        x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval).tail(1)
         return x
 
     def predict(self, x):
