@@ -27,25 +27,10 @@ class CandlesFeed:
         history_counts = [int(s) for s in str(config["pytrade2.feed.candles.history.counts"]).split(",")]
         self.candles_cnt_by_interval = dict(zip(periods, counts))
         self.candles_history_cnt_by_interval = dict(zip(periods, history_counts))
-        history_window = config["pytrade2.strategy.history.max.window"]
-        predict_window = config["pytrade2.strategy.predict.window"]
-        self.candles_history_cnt_by_interval = self.candles_history_cnts(periods, history_counts, history_window,
-                                                                         predict_window)
-
-    @staticmethod
-    def candles_history_cnts(intervals, counts, history_window, predict_window) -> dict:
-        """ Calc how much candles of each interval to keep in history """
-
-        out = {}
-        for interval, count in zip(intervals, counts):
-            period_time = pd.Timedelta(interval) * count + pd.Timedelta(history_window) + pd.Timedelta(predict_window)
-            cnt = period_time // pd.Timedelta(interval) + 1  # 1 - for diff
-            out[interval] = cnt
-        return out
 
     def read_candles(self):
         # Produce initial candles
-        for period, cnt in self.candles_history_cnt_by_interval.items():
+        for period, cnt in self.candles_cnt_by_interval.items():
             # Read cnt + 1 extra for diff candles
             candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period, cnt)) \
                 .set_index("close_time", drop=False)

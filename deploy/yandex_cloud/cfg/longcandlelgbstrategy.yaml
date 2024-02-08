@@ -2,24 +2,30 @@ pytrade2.strategy: LongCandleLgbStrategy
 pytrade2.broker.trade.allow: false
 
 
-pytrade2.feed.candles.periods: 1min
-pytrade2.feed.candles.counts: 600
-
-pytrade2.strategy.history.min.window: "60min"
-
-pytrade2.strategy.history.max.window: "600min"
+pytrade2.strategy.processing.interval: "10 seconds"
 pytrade2.strategy.learn.interval: "5min"
 
-pytrade2.strategy.predict.window: "1min"
-pytrade2.strategy.past.window: "1min"
+
+# Candles to learn on
+pytrade2.feed.candles.periods: 5min, 10min, 15min, 30min, 1h
+pytrade2.feed.candles.counts: 60, 60, 60, 60, 60
+pytrade2.feed.candles.history.counts: 10000, 10000, 10000, 10000, 10000
+
+# Candle to predict
+pytrade2.strategy.predict.window: "5min"
 
 
-# 30K*0.001=30 USDT
-# For 30 USDT profit = 0.3 USDT
-pytrade2.strategy.profit.min.coeff: 0.002
-pytrade2.strategy.profit.max.coeff: 0.004
+#  comission_pct=0.012
+#  comission=(0.01*comission_pct)*2 # doubled because open and close trade
+#  comission = 0.00024
+#  min_profit_ratio = (comission) * 5 = 0,0012
+#  max_loss_ratio = comission * 10 = 0.0024
 
-# 30K*0.001=30 USDT
-# For 30 USDT loss 0.00 = 0.3 USDT
-pytrade2.strategy.stoploss.min.coeff: 0.002
-pytrade2.strategy.stoploss.max.coeff: 0.004
+# Signal parameters
+pytrade2.strategy.profitloss.ratio: 2
+pytrade2.strategy.profit.min.coeff: 0.0012
+pytrade2.strategy.stoploss.max.coeff: 0.0024
+
+# Adjust sl/tp parameters
+pytrade2.strategy.profit.max.coeff: 0.005
+pytrade2.strategy.stoploss.min.coeff: 0.00012

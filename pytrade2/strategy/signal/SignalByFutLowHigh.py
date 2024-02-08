@@ -19,14 +19,16 @@ class SignalByFutLowHigh(SignalCalcBase):
         # Ratio to open: generate signal if profit/loss > open ratio
         # open_ratio = 1
         min_profit = close * min(self.comission_pct * 0.01 * 2, self.take_profit_min_coeff)
+        max_profit_delta = close * self.take_profit_max_coeff
+        min_loss_delta = close * self.stop_loss_min_coeff
         max_loss = close * self.stop_loss_max_coeff
 
         # todo: calc signal here
         # Profit / loss > open ratio considering comission and minimal profit
         profit_sell = (low - fut_low) - comiss_abs
         loss_sell = (fut_high - low) + comiss_abs
-        signal_sell = (profit_sell > 0) & ((profit_sell / loss_sell) >= self.profit_loss_ratio) & (
-                profit_sell > min_profit) & (loss_sell < max_loss)
+        signal_sell = ((profit_sell > 0) & ((profit_sell / loss_sell) >= self.profit_loss_ratio) &
+                       (profit_sell > min_profit) & (loss_sell < max_loss))
 
         # Profit / loss > open ratio considering comission and minimal profit
         profit_buy = (fut_high - high) - comiss_abs
@@ -36,9 +38,15 @@ class SignalByFutLowHigh(SignalCalcBase):
 
         signal, sl, tp = 0, None, None
         if signal_buy and not signal_sell:
-            signal, sl, tp = 1, round(fut_low, self.price_precision), round(fut_high, self.price_precision)
+            # Apply minimal possible stop loss, maximum possible take profit
+            sl_adj = min(fut_low, close*(1-self.stop_loss_min_coeff))
+            tp_adj = min(fut_high, close*(1+self.take_profit_max_coeff))
+            signal, sl, tp = 1, round(sl_adj, self.price_precision), round(tp_adj, self.price_precision)
         elif signal_sell and not signal_buy:
-            signal, sl, tp = -1, round(fut_high, self.price_precision), round(fut_low, self.price_precision)
+            # Apply minimal possible stop loss, maximum possible take profit
+            sl_adj = max(fut_high, close*(1+self.stop_loss_min_coeff))
+            tp_adj = max(fut_low, close*(1-self.take_profit_max_coeff))
+            signal, sl, tp = -1, round(sl_adj, self.price_precision), round(tp_adj, self.price_precision)
         else:
             signal, sl, tp = 0, None, None
         return signal, sl, tp

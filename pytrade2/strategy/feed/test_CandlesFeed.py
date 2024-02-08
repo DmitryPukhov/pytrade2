@@ -102,21 +102,21 @@ class TestCandlesFeed(TestCase):
 
         self.assertFalse(candles_feed.has_min_history())
 
-    def test_candles_history_counts(self):
-        periods = ["1min", "5min"]
-        counts = [2, 2]
-        history_window = "10min"
-        predict_window = "1min"
-        actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
-        self.assertEqual({"1min": 14, "5min": 5}, actual)
+    # def test_candles_history_counts(self):
+    #     periods = ["1min", "5min"]
+    #     counts = [2, 2]
+    #     history_window = "10min"
+    #     predict_window = "1min"
+    #     actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
+    #     self.assertEqual({"1min": 14, "5min": 5}, actual)
 
-    def test_candles_history_counts__small_history(self):
-        periods = ["1min", "5min"]
-        counts = [2, 2]
-        history_window = "10s"
-        predict_window = "1s"
-        actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
-        self.assertEqual({"1min": 3, "5min": 3}, actual)
+    # def test_candles_history_counts__small_history(self):
+    #     periods = ["1min", "5min"]
+    #     counts = [2, 2]
+    #     history_window = "10s"
+    #     predict_window = "1s"
+    #     actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
+    #     self.assertEqual({"1min": 3, "5min": 3}, actual)
 
     def test_days_of_2(self):
         actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 2, '1min'))
