@@ -53,16 +53,18 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         y_arr = self.model.predict(x_trans)
         y_arr = self.y_pipe.inverse_transform(y_arr)
         y_arr = y_arr.reshape((-1, 2))[-1]  # Last and only row
-        fut_low, fut_high = y_arr[0], y_arr[1]
-        y_df = pd.DataFrame(data={'fut_low': fut_low, 'fut_high': fut_high}, index=x.tail(1).index)
+        fut_low_diff, fut_high_diff = y_arr[0], y_arr[1]
+        y_df = pd.DataFrame(data={'fut_low_diff': fut_low_diff, 'fut_high_diff': fut_high_diff}, index=x.tail(1).index)
         return y_df
 
     def process_prediction(self, y_pred: pd.DataFrame):
         # Calc signal
-        fut_low, fut_high = y_pred.loc[y_pred.index[-1], ["fut_low", "fut_high"]]
         dt, open_, high, low, close = \
             self.candles_feed.candles_by_interval[self.target_period][
                 ['close_time', 'open', 'high', 'low', 'close']].iloc[-1]
+        fut_low_diff, fut_high_diff = y_pred.loc[y_pred.index[-1], ["fut_low_diff", "fut_high_diff"]]
+        fut_low, fut_high = low + fut_low_diff, high + fut_high_diff
+
         # signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
         signal_ext = self.signal_calc.calc_signal_ext(close, low, high, fut_low, fut_high)
         signal, sl, tp = signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
