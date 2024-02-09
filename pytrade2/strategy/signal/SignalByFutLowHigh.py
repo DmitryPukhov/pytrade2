@@ -57,6 +57,8 @@ class SignalByFutLowHigh(SignalCalcBase):
             'close': round(close, self.price_precision),
             'low': round(low, self.price_precision),
             'high': round(high, self.price_precision),
+            'fut_low': round(fut_low, self.price_precision),
+            'fut_high': round(fut_high, self.price_precision),
             'signal_buy': signal_buy,
             'profit_buy': round(profit_buy, self.price_precision),
             'loss_buy': round(loss_buy, self.price_precision),
