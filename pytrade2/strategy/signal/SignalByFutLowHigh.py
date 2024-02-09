@@ -27,13 +27,13 @@ class SignalByFutLowHigh(SignalCalcBase):
         # todo: calc signal here
         # Profit / loss > open ratio considering comission and minimal profit
         profit_sell = (low - fut_low) - comiss_abs
-        loss_sell = (fut_high - low) + comiss_abs
+        loss_sell = max(0, fut_high - low) + comiss_abs
         signal_sell = ((profit_sell > 0) & ((profit_sell / loss_sell) >= self.profit_loss_ratio) &
                        (profit_sell > min_profit) & (loss_sell < max_loss))
 
         # Profit / loss > open ratio considering comission and minimal profit
         profit_buy = (fut_high - high) - comiss_abs
-        loss_buy = (high - fut_low) + comiss_abs
+        loss_buy = max(0, high - fut_low) + comiss_abs
         signal_buy = (profit_buy > 0) & ((profit_buy / loss_buy) >= self.profit_loss_ratio) & (
                 profit_buy > min_profit) & (loss_buy < max_loss)
 
