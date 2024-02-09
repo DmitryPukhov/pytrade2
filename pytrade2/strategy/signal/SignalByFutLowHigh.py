@@ -40,13 +40,13 @@ class SignalByFutLowHigh(SignalCalcBase):
         signal, sl, tp = 0, None, None
         if signal_buy and not signal_sell:
             # Apply minimal possible stop loss, maximum possible take profit
-            sl_adj = min(fut_low, close*(1-self.stop_loss_min_coeff))
-            tp_adj = min(fut_high, close*(1+self.take_profit_max_coeff))
+            sl_adj = min(fut_low, close * (1 - self.stop_loss_min_coeff))
+            tp_adj = min(fut_high, close * (1 + self.take_profit_max_coeff))
             signal, sl, tp = 1, round(sl_adj, self.price_precision), round(tp_adj, self.price_precision)
         elif signal_sell and not signal_buy:
             # Apply minimal possible stop loss, maximum possible take profit
-            sl_adj = max(fut_high, close*(1+self.stop_loss_min_coeff))
-            tp_adj = max(fut_low, close*(1-self.take_profit_max_coeff))
+            sl_adj = max(fut_high, close * (1 + self.stop_loss_min_coeff))
+            tp_adj = max(fut_low, close * (1 - self.take_profit_max_coeff))
             signal, sl, tp = -1, round(sl_adj, self.price_precision), round(tp_adj, self.price_precision)
         else:
             signal, sl, tp = 0, None, None
@@ -54,18 +54,18 @@ class SignalByFutLowHigh(SignalCalcBase):
             'signal': signal,
             'sl': sl,
             'tp': tp,
-            'close': close,
-            'low': low,
-            'high': high,
-            'profit_buy': profit_buy,
-            'loss_buy': loss_buy,
+            'close': round(close, self.price_precision),
+            'low': round(low, self.price_precision),
+            'high': round(high, self.price_precision),
             'signal_buy': signal_buy,
-            'profit_sell': profit_sell,
-            'loss_sell': loss_sell,
+            'profit_buy': round(profit_buy, self.price_precision),
+            'loss_buy': round(loss_buy, self.price_precision),
             'signal_sell': signal_sell,
-            'min_profit': min_profit,
-            'max_loss': max_loss,
-            'profit_loss_ratio': self.profit_loss_ratio,
-            'comiss_abs': comiss_abs
+            'profit_sell': round(profit_sell, self.price_precision),
+            'loss_sell': round(loss_sell, self.price_precision),
+            'min_profit': round(min_profit, self.price_precision),
+            'max_loss': round(max_loss, self.price_precision),
+            'profit_loss_ratio': round(self.profit_loss_ratio, self.price_precision),
+            'comiss_abs': round(comiss_abs, self.price_precision)
         }
-        #return signal, sl, tp, profit_buy, loss_buy, signal_buy, profit_sell, loss_sell, signal_sell, min_profit, max_loss, self.profit_loss_ratio
+        # return signal, sl, tp, profit_buy, loss_buy, signal_buy, profit_sell, loss_sell, signal_sell, min_profit, max_loss, self.profit_loss_ratio
