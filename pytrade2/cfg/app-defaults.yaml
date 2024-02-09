@@ -14,7 +14,7 @@ pytrade2.strategy.riskmanager.wait_after_loss: 5m
 pytrade2.price.precision: 1
 pytrade2.amount.precision: 1
 
-pytrade2.strategy: LongCandleDenseStrategy
+pytrade2.strategy: LgbLowHighRegressionStrategy
 pytrade2.strategy.learn.interval: "20s"
 pytrade2.strategy.history.min.window: "3h"
 pytrade2.strategy.history.max.window: "24h"

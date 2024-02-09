@@ -13,7 +13,7 @@ from strategy.features.LongCandleFeatures import LongCandleFeatures
 from strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
 
 
-class SignalStrategyBase(StrategyBase):
+class SignalClassificationStrategyBase(StrategyBase):
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """

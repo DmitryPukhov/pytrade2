@@ -6,15 +6,15 @@ from unittest import TestCase
 import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
-from test_StrategyStub import StrategyStub
+from test_StrategyStub import RegressionStrategyStub
 from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
-class TestPredictBidAskStrategyBase(TestCase):
+class TestBidAskRegressionStrategyBase(TestCase):
 
     def test_predict_low_high__should_predict_last(self):
         # Strategy wrapper
-        strategy = StrategyStub()
+        strategy = RegressionStrategyStub()
         # Set bidask and level2, received by strategy from broker
         strategy.bid_ask_feed.bid_ask = pd.DataFrame([
             {"datetime": datetime.fromisoformat("2023-03-17 15:56:01"), "symbol": "asset1",
@@ -40,7 +40,7 @@ class TestPredictBidAskStrategyBase(TestCase):
 
 
     def test_process_new_prediction__should_buy(self):
-        strategy = StrategyStub()
+        strategy = RegressionStrategyStub()
         strategy.bid_ask_feed.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
         y_pred = pd.DataFrame(
             [{"bid_min_fut": 9, "bid_max_fut": 19, "ask_min_fut": 11, "ask_max_fut": 11}])
@@ -54,7 +54,7 @@ class TestPredictBidAskStrategyBase(TestCase):
         self.assertEqual(1, strategy.broker.cur_trade.direction())
 
     def test_process_new_prediction__should_sell(self):
-        strategy = StrategyStub()
+        strategy = RegressionStrategyStub()
         strategy.bid_ask_feed.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])
         y_pred = pd.DataFrame(
             [{"bid_min_fut": 0, "bid_max_fut": 0, "ask_min_fut": 2, "ask_max_fut": 12}])

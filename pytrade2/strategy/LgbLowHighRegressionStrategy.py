@@ -10,7 +10,7 @@ from strategy.features.MultiIndiFeatures import MultiIndiFeatures
 from strategy.signal.SignalByFutLowHigh import SignalByFutLowHigh
 
 
-class LongCandleLgbStrategy(StrategyBase):
+class LgbLowHighRegressionStrategy(StrategyBase):
     """
      Lgb regression, multiple indicators are features, predicts low/high
    """

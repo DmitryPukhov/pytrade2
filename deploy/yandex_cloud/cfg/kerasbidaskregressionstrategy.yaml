@@ -1,4 +1,4 @@
-pytrade2.strategy: SimpleKerasStrategy
+pytrade2.strategy: KerasBidAskRegressionStrategy
 
 #pytrade2.exchange.huobi.market.client.url: "https://api.huobi.pro/v2"
 #pytrade2.exchange.huobi.market.client.url: "https://api.huobi.pro"

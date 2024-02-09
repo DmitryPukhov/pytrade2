@@ -1,6 +1,6 @@
 #!/bin/bash
 
-bot_name=${1?"Please provide bot name. Example: $0 lstmstrategy"} # arg1 is a bot name
+bot_name=${1?"Please provide bot name. Example: $0 lstmbidaskregressionstrategy"} # arg1 is a bot name
 . deploy_lib.sh
 
 echo "Restarting bot $bot_name at $VM_PUBLIC_IP machine"

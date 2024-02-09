@@ -10,13 +10,13 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 
 from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
-from strategy.common.SignalStrategyBase import SignalStrategyBase
+from strategy.common.SignalClassificationStrategyBase import SignalClassificationStrategyBase
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LongCandleFeatures import LongCandleFeatures
 from strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
 
 
-class SignalSignalStrategy(SignalStrategyBase):
+class KerasLowHighClassificationStrategy(SignalClassificationStrategyBase):
     """
      Predict long candle signal, classification model, target signals: -1, 0, 1
    """

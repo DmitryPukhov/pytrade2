@@ -1,10 +1,10 @@
 from keras import Sequential
 from keras.layers import Dense, Dropout, LSTM
 
-from strategy.common.LSTMStrategyBase import LSTMStrategyBase
+from strategy.common.LSTMBidAskRegressionStrategyBase import LSTMBidAskRegressionStrategyBase
 
 
-class LSTMStrategy(LSTMStrategyBase):
+class LSTMBidAskRegressionStrategy1(LSTMBidAskRegressionStrategyBase):
     """
     LSTM Neural network with minimum layers
     """

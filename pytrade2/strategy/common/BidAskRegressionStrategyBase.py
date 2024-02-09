@@ -8,7 +8,7 @@ from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 from strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
 
 
-class PredictBidAskStrategyBase(StrategyBase):
+class BidAskRegressionStrategyBase(StrategyBase):
     """
     Listen price data from web socket, predict future low/high
     """

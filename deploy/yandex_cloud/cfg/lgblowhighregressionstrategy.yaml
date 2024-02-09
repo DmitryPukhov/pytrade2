@@ -1,4 +1,4 @@
-pytrade2.strategy: LongCandleLgbStrategy
+pytrade2.strategy: LgbLowHighRegressionStrategy
 pytrade2.broker.trade.allow: false
 
 

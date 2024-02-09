@@ -1,4 +1,4 @@
-pytrade2.strategy: LongCandleSignalStrategy
+pytrade2.strategy: KerasLowHighClassificationStrategy
 pytrade2.broker.trade.allow: false
 
 

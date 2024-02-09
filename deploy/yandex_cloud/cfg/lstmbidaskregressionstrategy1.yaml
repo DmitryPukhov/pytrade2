@@ -1,4 +1,4 @@
-pytrade2.strategy: LSTMStrategy
+pytrade2.strategy: LSTMBidAskRegressionStrategy
 
 pytrade2.strategy.lstm.window.size: 10
 pytrade2.broker.trade.allow: false

@@ -16,32 +16,32 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  longcandlelgbstrategy:
-    container_name: longcandlelgbstrategy
+  lgblowhighregressionstrategy:
+    container_name: lgblowhighregressionstrategy
     extends:
       service: trade
-    command: python ./App.py --pytrade2.strategy LongCandleLgbStrategy
+    command: python ./App.py --pytrade2.strategy LgbLowHighRegressionStrategy
 #
-#  longcandlesignalstrategy:
-#    container_name: longcandlesignalstrategy
+#  keraslowhighclassificationstrategy:
+#    container_name: keraslowhighclassificationstrategy
 #    extends:
 #      service: trade
-#    command: python ./App.py --pytrade2.strategy LongCandleSignalStrategy
+#    command: python ./App.py --pytrade2.strategy KerasLowHighClassificationStrategy
 #
-#  simplekerasstrategy:
-#    container_name: simplekerasstrategy
+#  kerasbidaskregressionstrategy:
+#    container_name: kerasbidaskregressionstrategy
 #    extends:
 #      service: trade
-#    command: python ./App.py --pytrade2.strategy SimpleKerasStrategy
+#    command: python ./App.py --pytrade2.strategy KerasBidAskRegressionStrategy
 
-#  lstmstrategy:
-#    container_name: lstmstrategy
+#  lstmbidaskregressionstrategy:
+#    container_name: lstmbidaskregressionstrategy
 #    extends:
 #      service: trade
-#    command: python ./App.py --pytrade2.strategy LSTMStrategy
+#    command: python ./App.py --pytrade2.strategy LSTMBidAskRegressionStrategy
 #
-#  lstmstrategy2:
-#    container_name: lstmstrategy2
+#  lstmbidaskregressionstrategy2:
+#    container_name: lstmbidaskregressionstrategy2
 #    extends:
 #      service: trade
-#    command: python ./App.py --pytrade2.strategy LSTMStrategy2
+#    command: python ./App.py --pytrade2.strategy LSTMBidAskRegressionStrategy2

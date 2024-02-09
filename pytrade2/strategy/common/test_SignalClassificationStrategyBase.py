@@ -3,10 +3,10 @@ import threading
 from unittest import TestCase
 from unittest.mock import MagicMock
 import pandas as pd
-from strategy.common.SignalStrategyBase import SignalStrategyBase
+from strategy.common.SignalClassificationStrategyBase import SignalClassificationStrategyBase
 
 
-class SignalStrategyBaseTest(TestCase):
+class SignalClassificationStrategyBaseTest(TestCase):
 
     def new_strategy(self):
         conf = {"pytrade2.tickers": "test", "pytrade2.strategy.learn.interval.sec": 60,
@@ -28,7 +28,7 @@ class SignalStrategyBaseTest(TestCase):
 
         # LongCandleStrategyBase.__init__ = MagicMock(return_value=None)
         threading.Timer = MagicMock()
-        strategy = SignalStrategyBase(conf, MagicMock(), False, False, False)
+        strategy = SignalClassificationStrategyBase(conf, MagicMock(), False, False, False)
         strategy.candles_feed = MagicMock()
         strategy.level2_feed = MagicMock()
         strategy.model = MagicMock()

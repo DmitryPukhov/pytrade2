@@ -8,7 +8,7 @@ from keras.preprocessing.sequence import TimeseriesGenerator
 from numpy import ndarray
 
 from exch.Exchange import Exchange
-from strategy.common.PredictBidAskStrategyBase import PredictBidAskStrategyBase
+from strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
 from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 from sklearn.compose import ColumnTransformer
@@ -16,11 +16,11 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, FunctionTransformer
 
 
-class LSTMStrategyBase(PredictBidAskStrategyBase):
+class LSTMBidAskRegressionStrategyBase(BidAskRegressionStrategyBase):
     """ LSTM Strategies base class with lstm window support"""
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
-        PredictBidAskStrategyBase.__init__(self, config=config, exchange_provider=exchange_provider)
+        BidAskRegressionStrategyBase.__init__(self, config=config, exchange_provider=exchange_provider)
         # lstm window
         self.lstm_window_size = config["pytrade2.strategy.lstm.window.size"]
         self.min_xy_len = self.lstm_window_size + 1
@@ -36,7 +36,7 @@ class LSTMStrategyBase(PredictBidAskStrategyBase):
             ("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
              ("xmms", MinMaxScaler()),
              ("reshape",
-              FunctionTransformer(LSTMStrategyBase.reshape_x,
+              FunctionTransformer(LSTMBidAskRegressionStrategyBase.reshape_x,
                                   kw_args={'window_shape': (self.lstm_window_size, len(X.columns))}))
              ])
         x_pipe.fit(X)

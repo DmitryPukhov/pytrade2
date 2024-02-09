@@ -28,7 +28,7 @@ class DevTool():
         HuobiBrokerHbdm.sub_events = None
 
         # Read config
-        strategy = "LongCandleSignalStrategy"
+        strategy = "KerasLowHighClassificationStrategy"
         yccfgdir = "../deploy/yandex_cloud/secret"
         devcfgdir = "../pytrade2/cfg"
         cfgpaths = [f"{devcfgdir}/app-defaults.yaml", f"{yccfgdir}/{strategy.lower()}.yaml"]

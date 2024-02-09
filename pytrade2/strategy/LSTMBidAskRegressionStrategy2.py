@@ -1,10 +1,10 @@
 from keras import Sequential
 from keras.layers import Dense, Dropout, LSTM
 
-from strategy.common.LSTMStrategyBase import LSTMStrategyBase
+from strategy.common.LSTMBidAskRegressionStrategyBase import LSTMBidAskRegressionStrategyBase
 
 
-class LSTMStrategy2(LSTMStrategyBase):
+class LSTMBidAskRegressionStrategy2(LSTMBidAskRegressionStrategyBase):
     """
     LSTM experimental with more layers
     """

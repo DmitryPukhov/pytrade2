@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from strategy.common.test_StrategyStub import StrategyStub
+from strategy.common.test_StrategyStub import RegressionStrategyStub
 from strategy.feed.CandlesFeed import CandlesFeed
 
 

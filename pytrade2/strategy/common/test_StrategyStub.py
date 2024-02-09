@@ -8,7 +8,7 @@ import pandas as pd
 
 from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
 from model.Trade import Trade
-from strategy.common.PredictBidAskStrategyBase import PredictBidAskStrategyBase
+from strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
 
 
 class ModelStub:
@@ -48,7 +48,7 @@ class BrokerStub(BinanceBrokerSpot):
         self.cur_trade, self.prev_trade = None, self.cur_trade
 
 
-class StrategyStub(PredictBidAskStrategyBase):
+class RegressionStrategyStub(BidAskRegressionStrategyBase):
     """ Strategy wrapper for tests """
 
     def __init__(self):
@@ -68,7 +68,7 @@ class StrategyStub(PredictBidAskStrategyBase):
                 "pytrade2.feed.candles.counts": "1,1",
                 "pytrade2.feed.candles.history.counts": "1,1",
                 "pytrade2.order.quantity": 0.001}
-        PredictBidAskStrategyBase.__init__(self, conf, MagicMock())
+        BidAskRegressionStrategyBase.__init__(self, conf, MagicMock())
         self.candles_feed = MagicMock()
         # self.profit_loss_ratio = 4
         # self.close_profit_loss_ratio = 2
