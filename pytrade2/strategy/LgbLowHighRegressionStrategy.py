@@ -63,7 +63,9 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         dt, open_, high, low, close = \
             self.candles_feed.candles_by_interval[self.target_period][
                 ['close_time', 'open', 'high', 'low', 'close']].iloc[-1]
-        signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
+        #signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
+        signal_ext = self.signal_calc.calc_signal_ext(close, low, high, fut_low, fut_high)
+        signal, sl, tp = signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
 
         # Trade
         if signal:
@@ -76,13 +78,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                          trailing_delta=None)
 
         # Persist signal data for later analysis
-        signal_ext_df = pd.DataFrame(data=[{'signal': signal,
-                                            'open': open_,
-                                            'high': high,
-                                            'low': low,
-                                            'close': close,
-                                            'stop_loss': sl,
-                                            'take_profit': tp}],
+        signal_ext_df = pd.DataFrame(data=[signal_ext],
                                      index=[dt])
         self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df, 'y_pred': y_pred})
 

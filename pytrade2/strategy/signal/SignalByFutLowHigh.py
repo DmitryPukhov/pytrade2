@@ -11,16 +11,17 @@ class SignalByFutLowHigh(SignalCalcBase):
         self.comission_pct = comission_pct
 
     def calc_signal(self, close, low, high, fut_low, fut_high) -> (int, float, float):
+        signal_ext = self.calc_signal_ext(close, low, high, fut_low, fut_high)
+        return signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
+
+    def calc_signal_ext(self, close, low, high, fut_low, fut_high) -> (int, float, float):
         """ @:return Signal, stop loss, take profit """
         # BTC-USDT 40 000 * 1% = 400
         # BTC-USDT 40 000 * 0.012% = 40 * 0.012 = 4,8
         # comission = comission_pct*0.01
         comiss_abs = close * self.comission_pct * 0.01 * 2
         # Ratio to open: generate signal if profit/loss > open ratio
-        # open_ratio = 1
         min_profit = close * min(self.comission_pct * 0.01 * 2, self.take_profit_min_coeff)
-        max_profit_delta = close * self.take_profit_max_coeff
-        min_loss_delta = close * self.stop_loss_min_coeff
         max_loss = close * self.stop_loss_max_coeff
 
         # todo: calc signal here
@@ -49,4 +50,22 @@ class SignalByFutLowHigh(SignalCalcBase):
             signal, sl, tp = -1, round(sl_adj, self.price_precision), round(tp_adj, self.price_precision)
         else:
             signal, sl, tp = 0, None, None
-        return signal, sl, tp
+        return {
+            'signal': signal,
+            'sl': sl,
+            'tp': tp,
+            'close': close,
+            'low': low,
+            'high': high,
+            'profit_buy': profit_buy,
+            'loss_buy': loss_buy,
+            'signal_buy': signal_buy,
+            'profit_sell': profit_sell,
+            'loss_sell': loss_sell,
+            'signal_sell': signal_sell,
+            'min_profit': min_profit,
+            'max_loss': max_loss,
+            'profit_loss_ratio': self.profit_loss_ratio,
+            'comiss_abs': comiss_abs
+        }
+        #return signal, sl, tp, profit_buy, loss_buy, signal_buy, profit_sell, loss_sell, signal_sell, min_profit, max_loss, self.profit_loss_ratio
