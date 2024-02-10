@@ -12,7 +12,8 @@ from exch.Exchange import Exchange
 class CandlesFeed:
     """ Decorator for strategies. Reads candles from exchange """
 
-    def __init__(self, config, ticker: str, exchange_provider: Exchange, data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
+    def __init__(self, config, ticker: str, exchange_provider: Exchange, data_lock: multiprocessing.RLock,
+                 new_data_event: multiprocessing.Event):
 
         self.data_lock = data_lock
         self.candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
@@ -59,7 +60,9 @@ class CandlesFeed:
                 # candles + buf
                 candles = self.candles_by_interval.get(period, pd.DataFrame())
                 candles = pd.concat([df for df in [candles, buf] if not df.empty]).set_index("close_time", drop=False)
-                candles = candles.resample(period).last().sort_index().tail(
+                candles = candles.resample(period).agg(
+                    {'open_time': 'first', 'close_time': 'last', 'open': 'first', 'high': 'max', 'low': 'min',
+                     'close': 'last', 'vol': 'max'}).sort_index().tail(
                     self.candles_history_cnt_by_interval[period])
 
                 self.candles_by_interval[period] = candles
@@ -95,9 +98,8 @@ class CandlesFeed:
     def last_days(to: datetime, days, period: str) -> [(datetime, datetime)]:
         period_delta = timedelta(seconds=pd.Timedelta(period).total_seconds())
         for i in list(range(days)):
-            start = datetime.combine(to.replace(hour=0, minute=0, second=0, microsecond=0)-timedelta(days=i), time.min)
+            start = datetime.combine(to.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=i),
+                                     time.min)
             end = start + timedelta(days=1)
-            start_close_time = start  + period_delta
+            start_close_time = start + period_delta
             yield start_close_time, end
-
-
