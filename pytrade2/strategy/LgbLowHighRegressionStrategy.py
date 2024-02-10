@@ -35,13 +35,17 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         logging.info(f"Target period: {self.target_period}")
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
-        # Candles with minimal period will be resampled in feature engineering
-        candles = self.candles_feed.candles_by_interval[min(self.candles_feed.candles_by_interval)]
+
         x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval)
 
+        # Candles with minimal period
+        min_period = min(self.candles_feed.candles_by_interval.keys(), key=pd.Timedelta)
+        candles = self.candles_feed.candles_by_interval[min_period]
         y = LowHighTargets.fut_lohi(candles, self.target_period)
+
+        # y has less items because of diff()
         x = x[x.index.isin(y.index)]
-        # Balance by signal
+
         return x, y
 
     def prepare_last_x(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
