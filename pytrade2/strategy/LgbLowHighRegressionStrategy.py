@@ -83,7 +83,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         Metrics.gauge(self, f"_pred_last_fut_low_diff").set(fut_low_diff)
         Metrics.gauge(self, f"_pred_last_fut_high_diff").set(fut_high_diff)
         Metrics.gauge(self, f"_pred_last_close_time").set(close_time.value)
-        Metrics.gauge(self, "_pred_last_time").set(dt)
+        Metrics.gauge(self, "_pred_last_time").set_to_current_time()
 
         # Trade
         if signal:
