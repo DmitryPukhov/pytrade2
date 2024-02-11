@@ -13,6 +13,7 @@ from typing import Dict
 import pandas as pd
 import yaml
 
+from Metrics import Metrics
 from exch.Exchange import Exchange
 
 
@@ -181,4 +182,5 @@ class App:
 
 
 if __name__ == "__main__":
+    Metrics.start_http_server()
     App().run()

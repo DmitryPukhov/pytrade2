@@ -1,8 +1,13 @@
 import logging
+import time
+from datetime import datetime
 from typing import Dict
 import lightgbm as lgb
 import pandas as pd
+from prometheus_client import Gauge
 from sklearn.multioutput import MultiOutputRegressor
+
+from Metrics import Metrics
 from exch.Exchange import Exchange
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LowHighTargets import LowHighTargets
@@ -31,7 +36,6 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
-
         logging.info(f"Target period: {self.target_period}")
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
@@ -53,6 +57,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         return x
 
     def predict(self, x):
+        self.data_persister.save_last_data(self.ticker, {'x': x})
+
         x_trans = self.X_pipe.transform(x)
         y_arr = self.model.predict(x_trans)
         y_arr = self.y_pipe.inverse_transform(y_arr)
@@ -63,7 +69,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
     def process_prediction(self, y_pred: pd.DataFrame):
         # Calc signal
-        dt, open_, high, low, close = \
+        close_time, open_, high, low, close = \
             self.candles_feed.candles_by_interval[self.target_period][
                 ['close_time', 'open', 'high', 'low', 'close']].iloc[-1]
         fut_low_diff, fut_high_diff = y_pred.loc[y_pred.index[-1], ["fut_low_diff", "fut_high_diff"]]
@@ -71,7 +77,13 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
         # signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
         signal_ext = self.signal_calc.calc_signal_ext(close, low, high, fut_low, fut_high)
-        signal, sl, tp = signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
+        dt, signal, sl, tp = signal_ext['datetime'], signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
+
+        Metrics.counter(self, f"pred_signal_{signal}_cnt").inc(1)
+        Metrics.gauge(self, f"_pred_last_fut_low_diff").set(fut_low_diff)
+        Metrics.gauge(self, f"_pred_last_fut_high_diff").set(fut_high_diff)
+        Metrics.gauge(self, f"_pred_last_close_time").set(close_time.value)
+        Metrics.gauge(self, "_pred_last_time").set(dt)
 
         # Trade
         if signal:
@@ -84,8 +96,10 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                          trailing_delta=None)
 
         # Persist signal data for later analysis
-        signal_df = pd.DataFrame(data=[{'signal': signal, 'sl': sl, 'tp': tp}], index=[dt])
-        signal_ext_df = pd.DataFrame(data=[signal_ext], index=[dt])
+        signal_df = pd.DataFrame(
+            data=[{'datetime': dt, 'signal': signal, 'sl': sl, 'tp': tp, 'close_time': close_time}]).set_index(
+            'datetime')
+        signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
 
         self.data_persister.save_last_data(self.ticker,
                                            {'signal': signal_df, 'signal_ext': signal_ext_df, 'y_pred': y_pred})

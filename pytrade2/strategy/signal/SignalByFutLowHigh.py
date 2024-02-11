@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from strategy.signal.SignalCalcBase import SignalCalcBase
 
 
@@ -51,6 +53,7 @@ class SignalByFutLowHigh(SignalCalcBase):
         else:
             signal, sl, tp = 0, None, None
         return {
+            'datetime': datetime.now(),
             'signal': signal,
             'sl': sl,
             'tp': tp,
