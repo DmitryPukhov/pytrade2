@@ -12,7 +12,7 @@ import tensorflow.python.keras.backend
 from keras.preprocessing.sequence import TimeseriesGenerator
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import RobustScaler, MinMaxScaler
+from sklearn.preprocessing import RobustScaler, MinMaxScaler, StandardScaler, MaxAbsScaler
 
 from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
@@ -181,13 +181,13 @@ class StrategyBase():
         float_cols = list(set(X.columns) - set(time_cols))
 
         x_pipe = Pipeline(
-            [("xscaler", ColumnTransformer([("xrs", RobustScaler(), float_cols)], remainder="passthrough")),
-             ("xmms", MinMaxScaler())])
+            [("xscaler", ColumnTransformer([("xrs", StandardScaler(), float_cols)], remainder="passthrough")),
+             ("xmms", MaxAbsScaler())])
         x_pipe.fit(X)
 
         y_pipe = Pipeline(
-            [("yrs", RobustScaler()),
-             ("ymms", MinMaxScaler())])
+            [("yrs", StandardScaler()),
+             ("ymms", MaxAbsScaler())])
         y_pipe.fit(y)
         return x_pipe, y_pipe
 

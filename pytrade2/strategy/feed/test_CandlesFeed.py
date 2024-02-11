@@ -28,7 +28,7 @@ class TestCandlesFeed(TestCase):
 
         # Candle 1 received
         dt1 = datetime(year=2023, month=6, day=28, hour=9, minute=52)
-        candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "close": 1}
+        candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "open":1, "high": 1, "low": 1, "close": 1, "vol": 1}
         # Call
         candles_feed.on_candle(candle1)
         candles_feed.apply_buf()
