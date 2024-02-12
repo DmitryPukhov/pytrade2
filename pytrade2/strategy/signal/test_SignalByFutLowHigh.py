@@ -20,35 +20,56 @@ class TestSignalByFutLowHigh(TestCase):
         # Strategy with profit/loss ratio = 4
         calc = self.signal_stub()
 
-        signal, sl, tp = calc.calc_signal(100, 90, 110, 100, 200)
+        signal, sl, tp = calc.calc_signal(100, 99, 104)
         self.assertEqual(1, signal)
-        self.assertEqual(100, sl)
-        self.assertEqual(200, tp)
+        self.assertEqual(99, sl)
+        self.assertEqual(104, tp)
 
-    def test_get_signal_buy_tp_sl_ratio(self):
+    def test_get_signal_buy_sl_min(self):
+        # Strategy with profit/loss ratio = 4
+        calc = self.signal_stub()
+        calc.stop_loss_min_coeff = 0.02
+
+        signal, sl, tp = calc.calc_signal(100, 99, 104)
+        self.assertEqual(1, signal)
+        self.assertEqual(98, sl)  # sl =  close * (1-stop_loss_min_coeff)
+        self.assertEqual(104, tp)
+
+    def test_get_signal_buy_tp_max(self):
+        # Strategy with profit/loss ratio = 4
+        calc = self.signal_stub()
+        calc.take_profit_max_coeff = 0.02
+
+        signal, sl, tp = calc.calc_signal(100, 99, 104)
+        self.assertEqual(1, signal)
+        self.assertEqual(99, sl)  # sl =  close * (1-stop_loss_min_coeff)
+        self.assertEqual(102, tp)
+
+    def test_get_signal_sell(self):
         # Strategy with profit/loss ratio = 4
         calc = self.signal_stub()
 
-        # pessimistic  buy loss = high-fut_low = 101-98 = 3, buy profit = fut_high-high=113-101=12, ratio=12/3=4 - buy
-        signal, sl, tp = calc.calc_signal(100, 99, 101, 98, 113)
-        self.assertEqual(1, signal)
-        self.assertEqual(98, sl)
-        self.assertEqual(113, tp)
-
-        # fut_high decreased below tp/sl ratio
-        signal, sl, tp = calc.calc_signal(100, 99, 101, 98, 112)
-        self.assertEqual(0, signal)
-
-    def test_get_signal_sell_tp_sl_ratio(self):
-        # Strategy with profit/loss ratio = 4
-        calc = self.signal_stub()
-
-        # pessimistic  sell loss = fut_high-low = 102-99=3, sell profit = low-fut_low = 99-86=12, tp/sl = 4 ok
-        signal, sl, tp = calc.calc_signal(100, 99, 101, 87, 102)
+        signal, sl, tp = calc.calc_signal(100, 96, 101)
         self.assertEqual(-1, signal)
-        self.assertEqual(102, sl)
-        self.assertEqual(87, tp)
+        self.assertEqual(101, sl)
+        self.assertEqual(96, tp)
 
-        # fut_low increased, tp/sl ratio is bad for sell
-        signal, sl, tp = calc.calc_signal(100, 99, 101, 88, 102)
-        self.assertEqual(0, signal)
+    def test_get_signal_sell_sl_min(self):
+        # Strategy with profit/loss ratio = 4
+        calc = self.signal_stub()
+        calc.stop_loss_min_coeff = 0.02
+
+        signal, sl, tp = calc.calc_signal(100, 96, 101)
+        self.assertEqual(-1, signal)
+        self.assertEqual(102, sl)  # sl =  close * (1+stop_loss_min_coeff)
+        self.assertEqual(96, tp)
+
+    def test_get_signal_sell_tp_max(self):
+        # Strategy with profit/loss ratio = 4
+        calc = self.signal_stub()
+        calc.take_profit_max_coeff = 0.02
+
+        signal, sl, tp = calc.calc_signal(100, 96, 101)
+        self.assertEqual(-1, signal)
+        self.assertEqual(101, sl)  # sl =  close * (1-stop_loss_min_coeff)
+        self.assertEqual(98, tp)

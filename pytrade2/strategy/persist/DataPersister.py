@@ -52,7 +52,7 @@ class DataPersister:
             self.db_path = str(Path(self.data_dir, tag, f"{tag}.db"))
 
         self.last_save_time = datetime.utcnow()
-        # Save data each 10 seconds
+        # Periodically save data
         self.save_interval: timedelta = timedelta(seconds=60)
         self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
         self.last_learn_saved_index = datetime.min

@@ -76,7 +76,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         fut_low, fut_high = low + fut_low_diff, high + fut_high_diff
 
         # signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
-        signal_ext = self.signal_calc.calc_signal_ext(close, low, high, fut_low, fut_high)
+        signal_ext = self.signal_calc.calc_signal_ext(close, fut_low, fut_high)
         dt, signal, sl, tp = signal_ext['datetime'], signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
 
         Metrics.counter(self, f"pred_signal_{signal}_cnt").inc(1)
