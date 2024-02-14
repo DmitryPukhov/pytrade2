@@ -45,6 +45,15 @@ class TestSignalByFutLowHigh(TestCase):
         self.assertEqual(99, sl)  # sl =  close * (1-stop_loss_min_coeff)
         self.assertEqual(102, tp)
 
+    def test_get_signal_buy_gap_up(self):
+        # Strategy with profit/loss ratio = 4
+        calc = self.signal_stub()
+
+        signal, sl, tp = calc.calc_signal(100, 101, 102)
+        self.assertEqual(1, signal)
+        self.assertEqual(100, sl)
+        self.assertEqual(102, tp)
+
     def test_get_signal_sell(self):
         # Strategy with profit/loss ratio = 4
         calc = self.signal_stub()
@@ -72,4 +81,13 @@ class TestSignalByFutLowHigh(TestCase):
         signal, sl, tp = calc.calc_signal(100, 96, 101)
         self.assertEqual(-1, signal)
         self.assertEqual(101, sl)  # sl =  close * (1-stop_loss_min_coeff)
+        self.assertEqual(98, tp)
+
+    def test_get_signal_sell_gap_down(self):
+        # Strategy with profit/loss ratio = 4
+        calc = self.signal_stub()
+
+        signal, sl, tp = calc.calc_signal(100, 99, 98)
+        self.assertEqual(-1, signal)
+        self.assertEqual(100, sl)
         self.assertEqual(98, tp)
