@@ -1,23 +1,13 @@
 import argparse
-import importlib
 import logging.config
-import os
-import signal
-import sys
-import threading
-from collections import defaultdict
-import time
-from datetime import datetime, date
+from datetime import datetime
 from pathlib import Path
-from pprint import pprint
 from typing import Dict
-
-import pandas as pd
-import yaml
 
 from App import App
 from exch.Exchange import Exchange
 from strategy.feed.CandlesFeed import CandlesFeed
+from strategy.feed.CandlesDownloader import CandlesDownloader
 
 
 class DataDownloadApp(App):
@@ -38,6 +28,8 @@ class DataDownloadApp(App):
 
         to = self.config.get("to")
         self.to = datetime.fromisoformat(to) if to else datetime.now()
+
+
 
         # self.from_ = datetime.fromisoformat(self.config["from"]) if "from" in self.config \
         #     else datetime.combine(datetime.today(), datetime.min.time())
@@ -60,26 +52,12 @@ class DataDownloadApp(App):
 
     def run(self):
         logging.info(f"Start downloading data to {self.download_dir}")
-        feed = self.exchange_provider.candles_feed()
         period = "1min"
-        intervals = CandlesFeed.last_days(self.to, self.days, period)
-        for start, end in intervals:
-            # Get candles for the day from the service
-            candles_raw = feed.read_candles(ticker=self.ticker,
-                                            interval=period,
-                                            limit=None,
-                                            from_=start,
-                                            to=end)
+        feed = self.exchange_provider.candles_feed()
+        candles_downloader = CandlesDownloader(self.config, feed)
+        intervals = CandlesDownloader.last_days(self.to, self.days, period)
 
-            candles = pd.DataFrame(candles_raw).set_index("close_time")
-            # Save to file system
-            file_name = f"{start.date()}_{self.ticker}_candles_{period}.csv"
-            file_path = Path(self.download_dir, f"{file_name}")
-            candles.to_csv(str(file_path),
-                           header=True,
-                           mode='w')
-            logging.info(f"{period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
-        logging.info(f"Downloading of {self.days} days completed")
+        candles_downloader.download_intervals(intervals)
 
 
 if __name__ == "__main__":

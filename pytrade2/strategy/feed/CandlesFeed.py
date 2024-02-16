@@ -94,12 +94,4 @@ class CandlesFeed:
                 return False
         return True
 
-    @staticmethod
-    def last_days(to: datetime, days, period: str) -> [(datetime, datetime)]:
-        period_delta = timedelta(seconds=pd.Timedelta(period).total_seconds())
-        for i in list(range(days)):
-            start = datetime.combine(to.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=i),
-                                     time.min)
-            end = start + timedelta(days=1)
-            start_close_time = start + period_delta
-            yield start_close_time, end
+
