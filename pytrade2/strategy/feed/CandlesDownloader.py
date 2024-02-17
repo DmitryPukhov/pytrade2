@@ -13,9 +13,9 @@ class CandlesDownloader:
     Download 1min candles to history to data/common
     """
 
-    def __init__(self, config: Dict, candles_feed):
+    def __init__(self, config: Dict, exchange_candles_feed):
         self.config = config
-        self.feed = candles_feed
+        self.exchange_candles_feed = exchange_candles_feed
         data_dir = Path(self.config["pytrade2.data.dir"])
         self.download_dir = Path(data_dir, "common", "candles")
         self.download_dir.mkdir(parents=True, exist_ok=True)
@@ -36,22 +36,25 @@ class CandlesDownloader:
     def download_candles_inc(self):
         start = self.get_start_date()
         end = datetime.today()
+        logging.info(f"Downloading new candles from {start} to {end}")
         intervals = self.date_intervals(start, end)
+        logging.info(f"{len(intervals)} days will be downloaded")
         self.download_intervals(intervals)
 
     def download_intervals(self, intervals: List[Tuple[datetime, datetime]]):
-        """ @:param intervals: [<from>, <to>] """
-
-        logging.info(f"Start downloading data to {self.download_dir}")
+        """ Download 1 minite candles to history data. Other periods should be resampled from 1min if needed by strategy
+         @:param intervals: [<from>, <to>] one interval - one day (2024-02-17 00:01, 2024-02-18 00:00)
+         """
+        logging.info(f"Start downloading candles to {self.download_dir}")
         period = "1min"
 
         for start, end in intervals:
             # Get candles for the day from the service
-            candles_raw = self.feed.read_candles(ticker=self.ticker,
-                                                 interval=period,
-                                                 limit=None,
-                                                 from_=start,
-                                                 to=end)
+            candles_raw = self.exchange_candles_feed.read_candles(ticker=self.ticker,
+                                                                  interval=period,
+                                                                  limit=None,
+                                                                  from_=start,
+                                                                  to=end)
 
             candles = pd.DataFrame(candles_raw).set_index("close_time")
             # Save to file system
