@@ -23,6 +23,8 @@ class App:
     """
 
     def __init__(self):
+        pd.options.mode.copy_on_write = True
+
         # Suppress tensorflow log rubbish
         os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "1")
 

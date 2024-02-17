@@ -48,9 +48,9 @@ class CandlesFeatures:
 
     @staticmethod
     def time_features_of(df: pd.DataFrame):
-        # dt = df.index.to_frame()["close_time"].dt
+        #dt = df.index.to_frame()["close_time"].dt
         dt = df.index
-        df.loc[dt, "time_hour"] = dt.hour
-        df.loc[dt, "time_minute"] = dt.minute
-        df.loc[dt, "time_second"] = dt.second
+        df["time_hour"] = dt.hour
+        df["time_minute"] = dt.minute
+        df["time_second"] = dt.second
         return df

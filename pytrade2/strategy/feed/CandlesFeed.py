@@ -17,7 +17,6 @@ class CandlesFeed:
 
     def __init__(self, config, ticker: str, exchange_provider: Exchange, data_lock: multiprocessing.RLock,
                  new_data_event: multiprocessing.Event, tag):
-
         self.data_lock = data_lock
         self.exchange_candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
         self.exchange_candles_feed.consumers.add(self)
