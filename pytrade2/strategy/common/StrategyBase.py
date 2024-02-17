@@ -99,10 +99,10 @@ class StrategyBase():
         self.broker.run()
 
         self.learn()
-        # Start periodical jobs
-        if self.learn_interval:
-            logging.info(f"Starting periodical learning, interval: {self.learn_interval}")
-            Timer(self.learn_interval.seconds, self.learn).start()
+        # # Start periodical jobs
+        # if self.learn_interval:
+        #     logging.info(f"Starting periodical learning, interval: {self.learn_interval}")
+        #     Timer(self.learn_interval.seconds, self.learn).start()
 
     def processing_loop(self):
         logging.info("Starting processing loop")
