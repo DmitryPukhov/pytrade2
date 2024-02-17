@@ -1,12 +1,15 @@
 import logging
 import multiprocessing
+import os
 from datetime import datetime, date, time, timedelta, timezone
 from io import StringIO
-from typing import Dict
+from pathlib import Path
+from typing import Dict, Tuple
 import pytz
 import pandas as pd
 
 from exch.Exchange import Exchange
+from strategy.feed.CandlesDownloader import CandlesDownloader
 
 
 class CandlesFeed:
@@ -16,8 +19,10 @@ class CandlesFeed:
                  new_data_event: multiprocessing.Event):
 
         self.data_lock = data_lock
-        self.candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
-        self.candles_feed.consumers.add(self)
+        self.exchange_candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
+        self.exchange_candles_feed.consumers.add(self)
+        self.downloader = CandlesDownloader(config, self.exchange_candles_feed)
+
         self.ticker = ticker
         self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
         self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
@@ -30,13 +35,28 @@ class CandlesFeed:
         self.candles_history_cnt_by_interval = dict(zip(periods, history_counts))
 
     def read_candles(self):
+        # Download history to common folder. Minimal period to be resampled during merge later
+        self.downloader.download_candles_inc()
+        candles_min = self.read_candles_downloaded()
+
         # Produce initial candles
         for period, cnt in self.candles_cnt_by_interval.items():
             # Read cnt + 1 extra for diff candles
-            candles = pd.DataFrame(self.candles_feed.read_candles(self.ticker, period, cnt)) \
+            candles = pd.DataFrame(self.exchange_candles_feed.read_candles(self.ticker, period, cnt)) \
                 .set_index("close_time", drop=False)
             logging.debug(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
+
+    def read_candles_downloaded(self):
+        """ Read 1min candles from downloaded folder. Do not resample to other periods here. """
+        candles_dir = self.downloader.download_dir
+        period = self.downloader.period
+        days = self.downloader.days
+        files = sorted([f for f in os.listdir(candles_dir) if f'_candles_{period}' in f])
+        # Read last days' files to one dataframe
+        df = pd.concat([pd.read_csv(Path(candles_dir, fname), parse_dates=["open_time", "close_time"]) for fname in files[-days:]])
+        df.set_index("close_time", drop=False)
+        return df
 
     def get_report(self):
         if not self.candles_by_interval:
@@ -93,5 +113,3 @@ class CandlesFeed:
                 # If double candle interval passed, and we did not get a new candle, we are dead
                 return False
         return True
-
-

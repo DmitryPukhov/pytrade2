@@ -21,21 +21,26 @@ class CandlesDownloader:
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.ticker = self.config["pytrade2.tickers"].split(",")[-1]
         self.period = "1min"
-        self.days = config.get("pytrade2.feed.candles.history.download.days", 10)
+        self.days = config.get("pytrade2.feed.candles.history.download.days", 2)
 
     def get_start_date(self):
         """ In candles data folder find last file and parse date from it''s name"""
 
         files = os.listdir(self.download_dir)
-        if not files:
-            return datetime.today() - timedelta(self.days)
-        last_file = Path(max(files)).name
-        last_date = datetime.fromisoformat(last_file[:10])
-        return last_date + timedelta(days=1)
+        if files:
+            last_file = Path(max(files)).name
+            last_date = datetime.fromisoformat(last_file[:10])
+        else:
+            last_date = datetime.now() - timedelta(self.days)
+        # Force to start of the day
+        last_date = datetime.combine(last_date.date(), datetime.min.time())
+        return last_date
 
     def download_candles_inc(self):
+        # Start date is parsed from last existing file. Last day file can be uncompleted, so download it again.
         start = self.get_start_date()
-        end = datetime.today()
+        end = datetime.today() + timedelta(days=1)
+
         logging.info(f"Downloading new candles from {start} to {end}")
         intervals = self.date_intervals(start, end)
         logging.info(f"{len(intervals)} days will be downloaded")
