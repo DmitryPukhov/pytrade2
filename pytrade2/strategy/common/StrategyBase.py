@@ -98,6 +98,7 @@ class StrategyBase():
         Thread(target=self.processing_loop).start()
         self.broker.run()
 
+        self.learn()
         # Start periodical jobs
         if self.learn_interval:
             logging.info(f"Starting periodical learning, interval: {self.learn_interval}")
