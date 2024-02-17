@@ -53,7 +53,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         return x, y
 
     def prepare_last_x(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
-        x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval).tail(1)
+        x = MultiIndiFeatures.multi_indi_features_last(self.candles_feed.candles_by_interval)
         return x
 
     def predict(self, x):

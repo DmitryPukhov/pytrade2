@@ -10,6 +10,12 @@ class MultiIndiFeatures:
     """ Multiple TA indicators on multiple periods"""
 
     @staticmethod
+    def multi_indi_features_last(candles_by_periods: Dict[str, pd.DataFrame], n=1):
+        max_candles = 52  # Ichimoku period is last
+        last_candles_by_periods = {period: candles.tail(max_candles) for period, candles in candles_by_periods.items()}
+        return MultiIndiFeatures.multi_indi_features(last_candles_by_periods).tail(n)
+
+    @staticmethod
     def multi_indi_features(candles_by_periods: Dict[str, pd.DataFrame]):
         # Create time features
         min_period = min(candles_by_periods.keys(), key=pd.Timedelta)
@@ -21,7 +27,7 @@ class MultiIndiFeatures:
         features = pd.concat(
             [time_features] + [MultiIndiFeatures.indicators_of(candles, period) for period, candles in
                                candles_by_periods.items()],
-            axis=1).ffill().dropna()
+            axis=1).sort_index().ffill().dropna()
         return features
 
     @staticmethod
