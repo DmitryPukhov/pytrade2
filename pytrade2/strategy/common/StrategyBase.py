@@ -29,9 +29,9 @@ class StrategyBase():
 
     def __init__(self, config: Dict, exchange_provider: Exchange, is_candles_feed: bool, is_bid_ask_feed: bool,
                  is_level2_feed: bool):
-
-        self.data_persister = DataPersister(config, self.__class__.__name__)
-        self.model_persister = ModelPersister(config, self.__class__.__name__)
+        strategy_name = self.__class__.__name__
+        self.data_persister = DataPersister(config, strategy_name)
+        self.model_persister = ModelPersister(config, strategy_name)
 
         self.config = config
         self.tickers = self.config["pytrade2.tickers"].split(",")
@@ -42,7 +42,8 @@ class StrategyBase():
         self.new_data_event: Event = Event()
         self.candles_feed = self.bid_ask_feed = self.level2_feed = None
         if is_candles_feed:
-            self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event)
+            self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event,
+                                            strategy_name)
         if is_level2_feed:
             self.level2_feed = Level2Feed(config, exchange_provider, self.data_lock, self.new_data_event)
         if is_bid_ask_feed:

@@ -13,11 +13,11 @@ class CandlesDownloader:
     Download 1min candles to history to data/common
     """
 
-    def __init__(self, config: Dict, exchange_candles_feed):
+    def __init__(self, config: Dict, exchange_candles_feed, tag: str):
         self.config = config
         self.exchange_candles_feed = exchange_candles_feed
         data_dir = Path(self.config["pytrade2.data.dir"])
-        self.download_dir = Path(data_dir, "common", "candles")
+        self.download_dir = Path(data_dir, tag, "candles")
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.ticker = self.config["pytrade2.tickers"].split(",")[-1]
         self.period = "1min"

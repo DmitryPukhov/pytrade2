@@ -16,12 +16,12 @@ class CandlesFeed:
     """ Decorator for strategies. Reads candles from exchange """
 
     def __init__(self, config, ticker: str, exchange_provider: Exchange, data_lock: multiprocessing.RLock,
-                 new_data_event: multiprocessing.Event):
+                 new_data_event: multiprocessing.Event, tag):
 
         self.data_lock = data_lock
         self.exchange_candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
         self.exchange_candles_feed.consumers.add(self)
-        self.downloader = CandlesDownloader(config, self.exchange_candles_feed)
+        self.downloader = CandlesDownloader(config, self.exchange_candles_feed, tag)
 
         self.ticker = ticker
         self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
@@ -37,13 +37,23 @@ class CandlesFeed:
     def read_candles(self):
         # Download history to common folder. Minimal period to be resampled during merge later
         self.downloader.download_candles_inc()
-        candles_min = self.read_candles_downloaded()
+        candles_1min = self.read_candles_downloaded()
 
         # Produce initial candles
         for period, cnt in self.candles_cnt_by_interval.items():
             # Read cnt + 1 extra for diff candles
-            candles = pd.DataFrame(self.exchange_candles_feed.read_candles(self.ticker, period, cnt)) \
+            candles_new = pd.DataFrame(self.exchange_candles_feed.read_candles(self.ticker, period, cnt)) \
                 .set_index("close_time", drop=False)
+
+            candles_history = candles_1min.resample(period).agg({'open_time': 'first',
+                                                         'close_time': 'last',
+                                                         'open': 'first',
+                                                         'high': 'max',
+                                                         'low': 'min',
+                                                         'close': 'last'})
+            candles_history = candles_history[candles_history.index < candles_new.index.min()]
+            candles = pd.concat([candles_history, candles_new])
+
             logging.debug(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
 
@@ -54,8 +64,9 @@ class CandlesFeed:
         days = self.downloader.days
         files = sorted([f for f in os.listdir(candles_dir) if f'_candles_{period}' in f])
         # Read last days' files to one dataframe
-        df = pd.concat([pd.read_csv(Path(candles_dir, fname), parse_dates=["open_time", "close_time"]) for fname in files[-days:]])
-        df.set_index("close_time", drop=False)
+        df = pd.concat(
+            [pd.read_csv(Path(candles_dir, fname), parse_dates=["open_time", "close_time"]) for fname in files[-days:]])
+        df = df.set_index("close_time", drop=False)
         return df
 
     def get_report(self):
