@@ -230,6 +230,7 @@ class StrategyBase():
                 # to avoid OOM
                 tensorflow.keras.backend.clear_session()
                 gc.collect()
+                logging.info("Learning completed")
 
             else:
                 logging.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
