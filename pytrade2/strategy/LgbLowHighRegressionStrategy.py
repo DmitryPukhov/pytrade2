@@ -100,6 +100,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         signal_df = pd.DataFrame(
             data=[{'datetime': dt, 'signal': signal, 'sl': sl, 'tp': tp, 'close_time': close_time}]).set_index(
             'datetime')
+
+        y_pred["datetime"] = dt
         signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
 
         self.data_persister.save_last_data(self.ticker,
