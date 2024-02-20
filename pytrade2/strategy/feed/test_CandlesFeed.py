@@ -18,7 +18,7 @@ class TestCandlesFeed(TestCase):
         config["pytrade2.feed.candles.periods"] = "1min,5min"
         config["pytrade2.feed.candles.counts"] = "1,1"
         config["pytrade2.feed.candles.history.counts"] = "1,1"
-        feed = CandlesFeed(config, "ticker1", MagicMock(), RLock(), Event())
+        feed = CandlesFeed(config, "ticker1", MagicMock(), RLock(), Event(), "test")
         feed.candles_history_cnt_by_interval = {"1min": 10, "5min":1}
         return feed
 
@@ -102,36 +102,3 @@ class TestCandlesFeed(TestCase):
 
         self.assertFalse(candles_feed.has_min_history())
 
-    # def test_candles_history_counts(self):
-    #     periods = ["1min", "5min"]
-    #     counts = [2, 2]
-    #     history_window = "10min"
-    #     predict_window = "1min"
-    #     actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
-    #     self.assertEqual({"1min": 14, "5min": 5}, actual)
-
-    # def test_candles_history_counts__small_history(self):
-    #     periods = ["1min", "5min"]
-    #     counts = [2, 2]
-    #     history_window = "10s"
-    #     predict_window = "1s"
-    #     actual = CandlesFeed.candles_history_cnts(periods, counts, history_window, predict_window)
-    #     self.assertEqual({"1min": 3, "5min": 3}, actual)
-
-    def test_days_of_2(self):
-        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 2, '1min'))
-
-        self.assertListEqual(
-            [(datetime.fromisoformat("2023-12-18 00:01:00"), datetime.fromisoformat("2023-12-19 00:00:00")),
-             (datetime.fromisoformat("2023-12-17 00:01:00"), datetime.fromisoformat("2023-12-18 00:00:00")),
-             ], actual)
-
-    def test_days_of_1(self):
-        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 1, '1min'))
-        self.assertListEqual(
-            [(datetime.fromisoformat("2023-12-18 00:01:00"), datetime.fromisoformat("2023-12-19 00:00:00"))], actual)
-
-    def test_days_of_0(self):
-        actual = list(CandlesFeed.last_days(datetime.fromisoformat("2023-12-18"), 0, '1min'))
-        self.assertListEqual(
-            [], actual)

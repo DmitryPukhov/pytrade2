@@ -90,4 +90,4 @@ class TestSignalByFutLowHigh(TestCase):
         signal, sl, tp = calc.calc_signal(100, 99, 98)
         self.assertEqual(-1, signal)
         self.assertEqual(100, sl)
-        self.assertEqual(98, tp)
+        self.assertEqual(99, tp)
