@@ -206,7 +206,7 @@ class StrategyBase():
             train_X, train_y = self.prepare_xy()
 
             logging.info(
-                f"Learning on last data. Train data len: {train_X.shape[0]}")
+                f"Learning on last data. Train data len: {train_X.shape[0]} from {min(train_X.index)} to {max(train_X.index)}")
             if len(train_X.index) >= self.min_xy_len:
                 if not (self.X_pipe and self.y_pipe):
                     self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
