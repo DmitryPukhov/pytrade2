@@ -51,15 +51,15 @@ class App:
         # Header
         exchange_name = self.config["pytrade2.exchange"].split(".")[-1]
         strategy_name = self.config["pytrade2.strategy"]
-        header = f"\n--------- {exchange_name} {strategy_name} report --------------\n"
-
+        header = f"\n--------- {exchange_name} {strategy_name} report --------------"
+        status = f"Strategy is alive: {self.strategy.is_alive()}"
         report = self.strategy.get_report()
 
         # Footer
-        footer = "\n".ljust(len(header), "-") + "\n"
+        footer = "\n".rjust(len(header), "-")
 
         # Write to log
-        self._logger.info(header + report + footer)
+        self._logger.info("\n".join([header, status, report, footer]))
 
         # Schedule next report
         threading.Timer(self._log_report_interval_sec, self.log_report).start()
@@ -177,7 +177,7 @@ class App:
             self._logger.error(f"Strategy seems to be dead, exiting")
             os.kill(os.getpid(), signal.SIGINT)
         else:
-            self._logger.info(f"Strategy is alive")
+            self._logger.debug(f"Strategy is alive")
             # Schedule next check
             threading.Timer(60, self.watchdog_check).start()
 

@@ -151,7 +151,7 @@ class StrategyBase:
         # Feeds reports
         for feed in filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
             msg.write(feed.get_report())
-            msg.write("\n")
+            #msg.write("\n")
         return msg.getvalue()
 
     def check_cur_trade(self):
