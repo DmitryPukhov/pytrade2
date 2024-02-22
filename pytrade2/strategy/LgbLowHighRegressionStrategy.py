@@ -1,10 +1,8 @@
 import logging
-import time
-from datetime import datetime
 from typing import Dict
+
 import lightgbm as lgb
 import pandas as pd
-from prometheus_client import Gauge
 from sklearn.multioutput import MultiOutputRegressor
 
 from Metrics import Metrics
@@ -93,7 +91,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         Metrics.gauge(self, "_pred_last_time").set_to_current_time()
 
         # Trade
-        if signal:
+        if signal and not self.broker.cur_trade and self.risk_manager.can_trade():
             self.broker.create_cur_trade(symbol=self.ticker,
                                          direction=signal,
                                          quantity=self.order_quantity,
