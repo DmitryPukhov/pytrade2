@@ -13,7 +13,7 @@ prepare_tmp_config(){
    echo "Preparing pytrade2 config"
    # cfg from pytrade2 project is already there
    rm "$TMP_DIR/pytrade2/pytrade2/cfg/app-dev.yaml"
-   rm "$TMP_DIR/pytrade2/pytrade2/cfg/log-dev.cfg"
+   rm "$TMP_DIR/pytrade2/pytrade2/cfg/log-dev.yaml"
    tmp_cfg_dir=./tmp/pytrade2/pytrade2/cfg/
    # Copy app.yaml and strategies yamls
    files=$(ls ./cfg/*.yaml)

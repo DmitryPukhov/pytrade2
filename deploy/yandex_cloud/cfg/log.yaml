@@ -2,14 +2,14 @@ version: 1
 handlers:
   consoleHandler:
     class: logging.StreamHandler
-    level: NOTSET
+    level: DEBUG
     formatter: simpleFormatter
     stream: ext://sys.stdout
 
 formatters:
   simpleFormatter:
     format: "%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s"
-    datefmt: "%Y-%m-%d %H:%M:%s"
+    date_fmt: "%Y-%m-%d %H:%M:%s"
 
 loggers:
   root:
@@ -17,10 +17,5 @@ loggers:
     handlers: [consoleHandler]
   HuobiBrokerHbdm:
     level: DEBUG
-    handlers: [consoleHandler]
-    propagate: no
-
-  LgbLowHighRegressionStrategy:
-    level: INFO
     handlers: [consoleHandler]
     propagate: no
