@@ -19,7 +19,7 @@ pytrade2.strategy.history.min.window: "5min"
 pytrade2.strategy.history.max.window: "15min"
 pytrade2.strategy.predict.window: "5min"
 pytrade2.strategy.past.window: "5min"
-pytrade2.strategy.riskmanager.wait_after_loss: 5m
+pytrade2.strategy.riskmanager.wait_after_loss: 60min
 
 pytrade2.feed.candles.periods: 5min, 15min
 pytrade2.feed.candles.counts: 5, 5

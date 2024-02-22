@@ -22,11 +22,11 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
     def __init__(self, config: Dict, exchange_provider: Exchange):
         self.websocket_feed = None
-
+        # Candles feed for data, bid ask feed for trailing stop support
         StrategyBase.__init__(self, config=config,
                               exchange_provider=exchange_provider,
                               is_candles_feed=True,
-                              is_bid_ask_feed=False,
+                              is_bid_ask_feed=True,
                               is_level2_feed=False)
         comissionpct = float(config.get('pytrade2.broker.comissionpct'))
         self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
@@ -37,6 +37,10 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
         logging.info(f"Target period: {self.target_period}")
+
+    def can_learn(self) -> bool:
+        # Only candles feed is for data. Bid ask feed is for trailing stop support, don't check it.
+        return self.candles_feed.has_min_history()
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
 
@@ -78,8 +82,10 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         # signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
         signal_ext = self.signal_calc.calc_signal_ext(close, fut_low, fut_high)
         dt, signal, sl, tp = signal_ext['datetime'], signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
+        tr_delta = abs(close - sl) if sl else None
         signal_name = {1: "buy", -1: "sell", 0: "oom"}[signal]
 
+        # Metrics
         Metrics.counter(self, f"pred_signal_{signal_name}_cnt").inc(1)
         Metrics.gauge(self, f"_pred_last_fut_low_diff").set(fut_low_diff)
         Metrics.gauge(self, f"_pred_last_fut_high_diff").set(fut_high_diff)
@@ -94,11 +100,11 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                          price=close,
                                          stop_loss_price=sl,
                                          take_profit_price=tp,
-                                         trailing_delta=None)
+                                         trailing_delta=tr_delta)
 
         # Persist signal data for later analysis
         signal_df = pd.DataFrame(
-            data=[{'datetime': dt, 'signal': signal, 'sl': sl, 'tp': tp, 'close_time': close_time}]).set_index(
+            data=[{'datetime': dt, 'signal': signal, 'sl': sl, 'tp': tp, 'tr_delta': tr_delta, 'close_time': close_time}]).set_index(
             'datetime')
 
         y_pred["datetime"] = dt
