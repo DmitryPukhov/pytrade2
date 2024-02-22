@@ -7,7 +7,6 @@ import sys
 import threading
 from collections import defaultdict
 import time
-from pprint import pprint
 from typing import Dict
 
 import pandas as pd
@@ -43,7 +42,7 @@ class App:
         # Load config, set up logging
         self.config = self._load_config()
 
-        self._log_report_interval_sec = 60
+        self._log_report_interval_sec = 300
         self._logger.info("App initialized")
 
     def log_report(self):
@@ -163,10 +162,9 @@ class App:
         """
         self.strategy = self._create_strategy()
 
-        self.log_report()
-
         # Watchdog starts after initial interval
         threading.Timer(60, self.watchdog_check).start()
+        threading.Timer(60, self.log_report).start()
 
         # Run and wait until the end
         self.strategy.run()
