@@ -23,7 +23,6 @@ class App:
     """
 
     def __init__(self):
-        self._logger = logging.getLogger(self.__class__.__name__)
         pd.options.mode.copy_on_write = True
 
         # Suppress tensorflow log rubbish
@@ -32,7 +31,7 @@ class App:
         os.environ['TZ'] = 'UTC'
         time.tzset()
         self._init_logger()
-        
+
         self._logger.info(f"\n--------------------------------------------------------------"
                        f"\n--------------   Starting pytrade2 App   ---------------------"
                        f"\n--------------------------------------------------------------")
@@ -74,6 +73,7 @@ class App:
             cfgdict = self._read_config_file(cfgpath)
             if cfgdict:
                 logging.config.dictConfig(cfgdict)
+        self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.info("Logging configured")
 
     def _read_config_file(self, path: str, required=False):
