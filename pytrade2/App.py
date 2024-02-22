@@ -23,6 +23,7 @@ class App:
     """
 
     def __init__(self):
+        self._logger = logging.getLogger(self.__class__.__name__)
         pd.options.mode.copy_on_write = True
 
         # Suppress tensorflow log rubbish
@@ -32,7 +33,7 @@ class App:
         time.tzset()
         self._init_logger()
         
-        logging.info(f"\n--------------------------------------------------------------"
+        self._logger.info(f"\n--------------------------------------------------------------"
                        f"\n--------------   Starting pytrade2 App   ---------------------"
                        f"\n--------------------------------------------------------------")
         # For pandas printing to log
@@ -44,7 +45,7 @@ class App:
         self.config = self._load_config()
 
         self._log_report_interval_sec = 60
-        logging.info("App initialized")
+        self._logger.info("App initialized")
 
     def log_report(self):
         """ Periodically report to log"""
@@ -60,7 +61,7 @@ class App:
         footer = "\n".ljust(len(header), "-") + "\n"
 
         # Write to log
-        logging.info(header + report + footer)
+        self._logger.info(header + report + footer)
 
         # Schedule next report
         threading.Timer(self._log_report_interval_sec, self.log_report).start()
@@ -68,12 +69,12 @@ class App:
     def _init_logger(self):
         # Ensure logging directory exists
         # os.makedirs(logdir, exist_ok=True)
-        cfgpaths = ["cfg/log.cfg", "cfg/log-dev.cfg"]
+        cfgpaths = ["cfg/log.yaml", "cfg/log-dev.yaml"]
         for cfgpath in cfgpaths:
-            if os.path.exists(cfgpath):
-                logging.config.fileConfig(cfgpath)
-                self._logger = logging.getLogger(__name__)
-                self._logger.info(f"Logging configured from {cfgpath}")
+            cfgdict = self._read_config_file(cfgpath)
+            if cfgdict:
+                logging.config.dictConfig(cfgdict)
+        self._logger.info("Logging configured")
 
     def _read_config_file(self, path: str, required=False):
         if os.path.exists(path):
@@ -120,7 +121,7 @@ class App:
         config.update(args)
         config["pytrade2.strategy"] = final_strategy
 
-        logging.info(self._config_msg(config))
+        self._logger.info(self._config_msg(config))
 
         return config
 
@@ -151,7 +152,7 @@ class App:
 
         strategy_file = f"strategy." + self.config["pytrade2.strategy"]
         strategy_class_name = strategy_file.split(".")[-1]
-        logging.info(f"Running the strategy: {strategy_file}")
+        self._logger.info(f"Running the strategy: {strategy_file}")
         module = importlib.import_module(strategy_file, strategy_class_name)
         strategy = getattr(module, strategy_class_name)(config=self.config, exchange_provider=exchange)
         return strategy
@@ -170,15 +171,15 @@ class App:
         # Run and wait until the end
         self.strategy.run()
 
-        logging.info("Started the app")
+        self._logger.info("Started the app")
 
     def watchdog_check(self):
         """ If not alive, reset websocket feed"""
         if not self.strategy.is_alive():
-            logging.error(f"Strategy seems to be dead, exiting")
+            self._logger.error(f"Strategy seems to be dead, exiting")
             os.kill(os.getpid(), signal.SIGINT)
         else:
-            logging.info(f"Strategy is alive")
+            self._logger.info(f"Strategy is alive")
             # Schedule next check
             threading.Timer(60, self.watchdog_check).start()
 

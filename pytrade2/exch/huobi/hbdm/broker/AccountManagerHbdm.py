@@ -23,7 +23,7 @@ class AccountManagerHbdm(AccountManagerBase):
         params = {"op": "sub", "topic": f"accounts_cross.usdt"}
         # For accounts_cross.usdt topic will be just accounts_cross
         self._ws_client.add_consumer("accounts_cross", params, self)
-        logging.info(f"Account manager subscribed to all events needed")
+        self._logger.info(f"Account manager subscribed to all events needed")
 
     def on_socket_data(self, topic, msg: {}):
         """ Got subscribed data from socket"""
@@ -31,13 +31,13 @@ class AccountManagerHbdm(AccountManagerBase):
             with self.account_lock:
 
                 if self.cur_balance != msg["data"][-1]["margin_static"]:
-                    logging.debug(f"Got websocket message, topic: {topic}, msg: {msg}")
+                    self._logger.debug(f"Got websocket message, topic: {topic}, msg: {msg}")
                     # If balance changed, append to the buffer
                     balance_data = list(self.event_to_list(msg))
                     self._buffer.extend(balance_data)
                     self.cur_balance = balance_data[-1]["balance"]
         except Exception as e:
-            logging.error(e)
+            self._logger.error(e)
 
     def event_to_list(self, msg: {}) -> [{}]:
         """ Convert huobi model to dictionary for pd dataframe"""
@@ -49,12 +49,12 @@ class AccountManagerHbdm(AccountManagerBase):
         """ Read new balance from huobi, write to output directory """
         try:
             res = self._rest_client.post("/linear-swap-api/v1/swap_balance_valuation", {"valuation_asset": "USDT"})
-            logging.debug(f"Got new balance: {res}")
+            self._logger.debug(f"Got new balance: {res}")
             self._buffer.extend(self.response_to_list(res))
             # Write and clean the buffer
             self.write()
         except Exception as e:
-            logging.error(e)
+            self._logger.error(e)
 
     @staticmethod
     def response_to_list(response: dict) -> [{}]:

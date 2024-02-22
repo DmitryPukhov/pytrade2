@@ -51,7 +51,7 @@ class DataDownloadApp(App):
         return vars(parser.parse_args())
 
     def run(self):
-        logging.info(f"Start downloading data to {self.download_dir}")
+        self._logger.info(f"Start downloading data to {self.download_dir}")
         period = "1min"
         feed = self.exchange_provider.candles_feed()
         candles_downloader = CandlesDownloader(self.config, feed, "common")

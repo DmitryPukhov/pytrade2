@@ -14,7 +14,7 @@ class BinanceBrokerSpot(BrokerSpotBase):
     """ Trading functions for Binance """
 
     def __init__(self, client: Client, config: Dict[str, str]):
-        
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.client: Client = client
         super().__init__(config)
 
@@ -31,7 +31,7 @@ class BinanceBrokerSpot(BrokerSpotBase):
             quantity=quantity,
             timeInForce="FOK"  # Fill or kill
         )
-        logging.debug(f"Create main order raw response: {res}")
+        self._logger.debug(f"Create main order raw response: {res}")
 
         # Return the result
         trade: Optional[Trade] = None
@@ -58,7 +58,7 @@ class BinanceBrokerSpot(BrokerSpotBase):
             stopPrice=stop_loss_price,
             stopLimitPrice=stop_loss_limit_price,
             stopLimitTimeInForce='GTC')
-        logging.debug(f"Stop loss / take profit order raw response: {res}")
+        self._logger.debug(f"Stop loss / take profit order raw response: {res}")
         oco_res = self.client.get_oco_order(orderListId=str(res["orderListId"]))
         sl_tp_order_ids = ",".join([str(sl_tp_order["orderId"]) for sl_tp_order in oco_res["orders"]])
         base_trade.stop_loss_order_id = sl_tp_order_ids
@@ -80,7 +80,7 @@ class BinanceBrokerSpot(BrokerSpotBase):
             price=stop_loss_limit_price,  # Order executed with this price or better (ideally stopPrice)
             trailingDelta=200,  # 200 bips=2%
             timeInForce="GTC")
-        logging.debug(f"Stop loss order raw response: {res}")
+        self._logger.debug(f"Stop loss order raw response: {res}")
         sl_order_id = str(res["orderId"])
         base_trade.stop_loss_order_id = sl_order_id
         base_trade.stop_loss_price = stop_loss_price
@@ -95,7 +95,7 @@ class BinanceBrokerSpot(BrokerSpotBase):
             type="MARKET",
             quantity=trade.quantity
         )
-        logging.debug(f"Closing order raw response: {res}")
+        self._logger.debug(f"Closing order raw response: {res}")
         # Set current trade closure fields
         if res["status"] == "FILLED":
             trade.close_order_id = str(res["orderId"])
@@ -144,7 +144,7 @@ class BinanceBrokerSpot(BrokerSpotBase):
                 msg.write(f"Opened order: {order['side']} {order['symbol']}, id: {order['orderId']}, "
                           f"price: {order['price']}, time: {order_time}\n")
         except Exception as e:
-            logging.error(f"Error reporting opened orders: {e}")
+            self._logger.error(f"Error reporting opened orders: {e}")
 
         try:
             # Account balance
@@ -152,6 +152,6 @@ class BinanceBrokerSpot(BrokerSpotBase):
                 if float(b["free"]) > 0 or b["locked"] > 0:
                     msg.write(f"{b['asset']} free: {b['free']}, locked: {b['locked']}\n")
         except Exception as e:
-            logging.error(f"Error reporting account info: {e}")
+            self._logger.error(f"Error reporting account info: {e}")
 
         return msg.getvalue()

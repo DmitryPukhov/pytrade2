@@ -28,17 +28,17 @@ class BrokerSpotBase(Broker):
         Binance does not support that in single order, so make 2 orders: main and stoploss/takeprofit
         """
         if not self.allow_trade:
-            logging.debug("Trading is not allowed")
+            self._logger.debug("Trading is not allowed")
             return None
 
         with self.trade_lock:
 
             if self.cur_trade:
-                logging.error(f"Cannot create current trade: another current trade already exists: {self.cur_trade}")
+                self._logger.error(f"Cannot create current trade: another current trade already exists: {self.cur_trade}")
                 return None
 
             if not self.allow_trade:
-                # logging.debug(f"Trading is not allowed. "
+                # self._logger.debug(f"Trading is not allowed. "
                 #                 f"{symbol} {Trade.order_side_names[direction]} order at {price} will not be executed.")
                 return
 
@@ -55,7 +55,7 @@ class BrokerSpotBase(Broker):
 
             # Main order
             try:
-                logging.info(
+                self._logger.info(
                     f"Creating order. Asset:{symbol}  direction:{direction}, price: {price}  quantity: {quantity},"
                     f" stop loss: {stop_loss_price}, take profit: {take_profit_price}")
                 self.cur_trade = self.create_main_trade_part(symbol=symbol,
@@ -86,7 +86,7 @@ class BrokerSpotBase(Broker):
                 self.cur_trade = sl_tp_trade
             except Exception as e:
                 # If sl/tp order exception, close main order
-                logging.error(f"Order creation error: {e} ")
+                self._logger.error(f"Order creation error: {e} ")
                 if self.cur_trade:
                     self.close_cur_trade()
 
@@ -97,7 +97,7 @@ class BrokerSpotBase(Broker):
 
                 if not self.cur_trade.close_order_id:
                     # If order is not closed by error
-                    logging.info(f"Created new trade: {self.cur_trade}")
+                    self._logger.info(f"Created new trade: {self.cur_trade}")
                 # else:
                 #     # If order is closed by error
                 #     self.cur_trade = None
@@ -106,30 +106,30 @@ class BrokerSpotBase(Broker):
 
     def close_cur_trade(self):
         if not self.allow_trade:
-            logging.debug("Trading is not allowed")
+            self._logger.debug("Trading is not allowed")
             return
 
         with self.trade_lock:
             try:
-                logging.info(f"Closing current trade:{self.cur_trade}")
+                self._logger.info(f"Closing current trade:{self.cur_trade}")
                 self.cur_trade.status = TradeStatus.closing
 
                 # Call exchange broker to close the order
                 self.create_closing_order()
                 self.db_session.commit()
                 if self.cur_trade.status == TradeStatus.closed:
-                    logging.info(f"Closed current trade:{self.cur_trade}")
+                    self._logger.info(f"Closed current trade:{self.cur_trade}")
                     self.cur_trade, self.prev_trade = None, self.cur_trade
                 else:
-                    logging.debug(f"Current trade not closed immediately: {self.cur_trade}")
+                    self._logger.debug(f"Current trade not closed immediately: {self.cur_trade}")
 
             except Exception as e:
-                logging.error(f"Cannot close cur trade {self.cur_trade}. Error: {e}")
+                self._logger.error(f"Cannot close cur trade {self.cur_trade}. Error: {e}")
 
     def create_main_trade_part(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Main buy or sell order. Stop loss and take profit will be set later. """
         if not self.allow_trade:
-            logging.info("Trading in not allowed")
+            self._logger.info("Trading in not allowed")
             return None
         with self.trade_lock:
             trade = self.create_order(
@@ -139,9 +139,9 @@ class BrokerSpotBase(Broker):
                 quantity=quantity
             )
             if trade:
-                logging.info(f"Created main order {trade}")
+                self._logger.info(f"Created main order {trade}")
             else:
-                logging.info(f"Cannot create main {symbol} direction: {direction}, price: {price}, that's ok.")
+                self._logger.info(f"Cannot create main {symbol} direction: {direction}, price: {price}, that's ok.")
             return trade
 
     def create_sl_tp_trade_part(self, base_trade: Trade, stop_loss_price: float, take_profit_price: float) -> \
@@ -151,7 +151,7 @@ class BrokerSpotBase(Broker):
          @:return order list id for sl/tp orders
          """
         if not self.allow_trade:
-            logging.info("Trading in not allowed")
+            self._logger.info("Trading in not allowed")
             return None
 
         with self.trade_lock:
@@ -160,7 +160,7 @@ class BrokerSpotBase(Broker):
             stop_loss_limit_price = round(
                 stop_loss_price - base_trade.direction() * base_trade.open_price * limit_ratio,
                 self.price_precision)
-            logging.info(
+            self._logger.info(
                 f"Creating stop loss and take profit order, base order: {base_trade.side} {base_trade.ticker}, base_price={base_trade.open_price}, stop_loss_adj={stop_loss_price},"
                 f" stop_loss_limit_price={stop_loss_limit_price}, take_profit_adj={take_profit_price}")
             return self.create_sl_tp_order(base_trade=base_trade,
@@ -170,7 +170,7 @@ class BrokerSpotBase(Broker):
 
     def create_sl_trade_part(self, base_trade: Trade, stop_loss_price: float) -> Optional[Trade]:
         if not self.allow_trade:
-            logging.debug("Trading is not allowed")
+            self._logger.debug("Trading is not allowed")
             return None
 
         with self.trade_lock:
@@ -178,7 +178,7 @@ class BrokerSpotBase(Broker):
             stop_loss_limit_price = round(stop_loss_price - (base_trade.open_price - stop_loss_price),
                                           self.price_precision)
 
-            logging.info(
+            self._logger.info(
                 f"Creating stop loss order. Base order: {base_trade.side} {base_trade.ticker}, "
                 f"stop_loss={stop_loss_price}, stop_loss_limit_price={stop_loss_limit_price}")
 
@@ -203,18 +203,18 @@ class BrokerSpotBase(Broker):
             self.update_cur_trade_status()
             if self.cur_trade:
                 if self.cur_trade.status != TradeStatus.opened:
-                    logging.info(f"Fixing bad trade: {self.cur_trade}")
+                    self._logger.info(f"Fixing bad trade: {self.cur_trade}")
                     if self.cur_trade.status == TradeStatus.closed:
-                        logging.info(f"Bad trade was already closed, maybe final update not received. "
+                        self._logger.info(f"Bad trade was already closed, maybe final update not received. "
                                        f"Just set closed status to the order.")
                         self.cur_trade.status = TradeStatus.closed
                         self.db_session.commit()
                         self.cur_trade, self.prev_trade = None, self.cur_trade
                     else:
-                        logging.info(f"Bad trade will be closed: {self.cur_trade}")
+                        self._logger.info(f"Bad trade will be closed: {self.cur_trade}")
                         self.close_cur_trade()
                 if self.cur_trade and self.cur_trade.status != TradeStatus.opened:
-                    logging.error(f"Cannot fix bad trade: {self.cur_trade}")
+                    self._logger.error(f"Cannot fix bad trade: {self.cur_trade}")
 
     def create_order(self, symbol, direction, price, quantity):
         raise NotImplementedError()

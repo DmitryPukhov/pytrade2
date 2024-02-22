@@ -14,12 +14,12 @@ class BinanceCandlesFeed:
     candle_columns = ["close_time", "open", "high", "low", "close", "vol"]
 
     def __init__(self, spot_client: Client):
-        
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.spot_client: Client = spot_client
 
     def read_candles(self, ticker, interval, limit):
         """ Read candles from Binance """
-        logging.debug(f"Reading {limit} last {ticker} {interval} candles from binance")
+        self._logger.debug(f"Reading {limit} last {ticker} {interval} candles from binance")
 
         # Call binance client
         raw_candles = self.spot_client.klines(symbol=ticker,

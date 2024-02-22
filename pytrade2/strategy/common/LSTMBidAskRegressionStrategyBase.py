@@ -24,7 +24,7 @@ class LSTMBidAskRegressionStrategyBase(BidAskRegressionStrategyBase):
         # lstm window
         self.lstm_window_size = config["pytrade2.strategy.lstm.window.size"]
         self.min_xy_len = self.lstm_window_size + 1
-        logging.info(f"LSTM window size: {self.lstm_window_size}")
+        self._logger.info(f"LSTM window size: {self.lstm_window_size}")
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """

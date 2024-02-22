@@ -14,6 +14,7 @@ class CandlesDownloader:
     """
 
     def __init__(self, config: Dict, exchange_candles_feed, tag: str):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.exchange_candles_feed = exchange_candles_feed
         data_dir = Path(self.config["pytrade2.data.dir"])
@@ -41,16 +42,16 @@ class CandlesDownloader:
         start = self.get_start_date()
         end = datetime.today() + timedelta(days=1)
 
-        logging.info(f"Downloading new candles from {start} to {end}")
+        self._logger.info(f"Downloading new candles from {start} to {end}")
         intervals = self.date_intervals(start, end)
-        logging.info(f"{len(intervals)} days will be downloaded")
+        self._logger.info(f"{len(intervals)} days will be downloaded")
         self.download_intervals(intervals)
 
     def download_intervals(self, intervals: List[Tuple[datetime, datetime]]):
         """ Download 1 minite candles to history data. Other periods should be resampled from 1min if needed by strategy
          @:param intervals: [<from>, <to>] one interval - one day (2024-02-17 00:01, 2024-02-18 00:00)
          """
-        logging.info(f"Start downloading candles to {self.download_dir}")
+        self._logger.info(f"Start downloading candles to {self.download_dir}")
         period = "1min"
 
         for start, end in intervals:
@@ -68,9 +69,9 @@ class CandlesDownloader:
             candles.to_csv(str(file_path),
                            header=True,
                            mode='w')
-            logging.info(
+            self._logger.info(
                 f"{period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
-        logging.info(f"Downloading of {self.days} days completed")
+        self._logger.info(f"Downloading of {self.days} days completed")
 
     @staticmethod
     def date_intervals(from_: datetime, to: datetime, period="1d"):

@@ -34,7 +34,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
-        logging.info(f"Target period: {self.target_period}")
+        self._logger.info(f"Target period: {self.target_period}")
 
     def can_learn(self) -> bool:
         # Only candles feed is for data. Bid ask feed is for trailing stop support, don't check it.
@@ -117,5 +117,5 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             lgb_model = lgb.LGBMRegressor(verbose=-1)
             model = MultiOutputRegressor(lgb_model)
 
-        logging.info(f'Created lgb model: {model}')
+        self._logger.info(f'Created lgb model: {model}')
         return model

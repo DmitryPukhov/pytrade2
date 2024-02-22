@@ -58,7 +58,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
             TakeProfitSupport._sub_events(self, symbol)
             self.account_manager.sub_events()
 
-            logging.debug(f"Subscribed to order update events for {symbol}")
+            self._logger.debug(f"Subscribed to order update events for {symbol}")
 
     def create_order(self, symbol: str, direction: int, price: float, quantity: float) -> Optional[Trade]:
         """ Make the order, return filled trade for the order"""
@@ -86,7 +86,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                 price=price,
                 source=OrderSource.API
             )
-            logging.debug(f"Created order with id:{order_id}")
+            self._logger.debug(f"Created order with id:{order_id}")
 
             # Create trade to return
             order = self.trade_client.get_order(order_id)
@@ -132,7 +132,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
 
             sl_tp_order = self.trade_client.get_order(sl_tp_order_id)
             if sl_tp_order.state != OrderState.CANCELED:
-                logging.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
+                self._logger.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
                 base_trade.stop_loss_order_id = str(sl_tp_order_id)
                 base_trade.stop_loss_price = float(stop_loss_price)
                 base_trade.take_profit_price = float(take_profit_price)
@@ -161,7 +161,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                 stop_price=stop_loss_price,
                 source=OrderSource.API)
 
-            logging.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
+            self._logger.debug(f"Created sl/tp order, id: {sl_tp_order_id}")
             base_trade.stop_loss_order_id = str(sl_tp_order_id)
             base_trade.stop_loss_price = stop_loss_price
             return base_trade
@@ -178,14 +178,14 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                 try:
                     self.trade_client.cancel_order(symbol=trade.ticker, order_id=trade.stop_loss_order_id)
                 except Exception as e:
-                    logging.error(
+                    self._logger.error(
                         f"Cannot cancel stop loss order, maybe stop loss already cancelled. Trade: {trade}, error:{e}")
 
             # Close main order
             # Get latest price to use in the order
             md = self.market_client.get_market_detail_merged(trade.ticker)
             lastbid, lastask = float(md.bid[0]), float(md.ask[0])
-            logging.debug(f"Got last {trade.ticker} bid: {lastbid}, ask: {lastask}")
+            self._logger.debug(f"Got last {trade.ticker} bid: {lastbid}, ask: {lastask}")
 
             base_direction = Trade.order_side_codes[trade.side]
             if base_direction == 1:
@@ -199,7 +199,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
             else:
                 close_order_type = None
 
-            logging.debug(
+            self._logger.debug(
                 f"Creating {trade.ticker} {close_order_type} order to close main one, quantity: {trade.quantity}, price: {price}")
             close_order_id = self.trade_client.create_order(
                 symbol=trade.ticker,
@@ -214,13 +214,13 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
             # Get closure order details
             close_order = self.trade_client.get_order(close_order_id)
             if close_order.state == OrderState.FILLED:
-                logging.debug(f"Closure order {trade.close_order_id} at price {close_order.price} filled. "
+                self._logger.debug(f"Closure order {trade.close_order_id} at price {close_order.price} filled. "
                                 f"Filled amount: {close_order.filled_amount}, cache amount: {close_order.filled_cash_amount}")
                 trade.close_price = float(close_order.price)
                 trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
 
                 # Final closure will be not here but when  on_order_update event triggered
-            logging.info(f"Created closure order: {trade}")
+            self._logger.info(f"Created closure order: {trade}")
             self.db_session.commit()
             return trade
 
@@ -233,12 +233,12 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
 
         with self.trade_lock:
             try:
-                logging.debug(f"Updating current trade status")
+                self._logger.debug(f"Updating current trade status")
                 # Closing order or stop loss order
                 close_order_id = int(
                     self.cur_trade.close_order_id if self.cur_trade.close_order_id else self.cur_trade.stop_loss_order_id)
                 close_order = self.trade_client.get_order(order_id=close_order_id)
-                logging.debug(
+                self._logger.debug(
                     f"Got stop loss or closing order from exchange: {close_order.symbol}, {close_order.state}")
                 # If sl or close order filled, update
                 if close_order.state == OrderState.FILLED:
@@ -247,16 +247,16 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                     self.cur_trade.close_price = float(close_order.price)
                     self.cur_trade.close_time = datetime.utcfromtimestamp(close_order.finished_at / 1000.0)
                     self.cur_trade.status = TradeStatus.closed
-                    logging.info(f"Current trade is closed: {self.cur_trade}")
+                    self._logger.info(f"Current trade is closed: {self.cur_trade}")
 
                     self.db_session.commit()
                     self.cur_trade, self.prev_trade = None, self.cur_trade
 
             except Exception as e:
-                logging.error(f"Error updating status of the trade: {self.cur_trade}. Error: {e}")
+                self._logger.error(f"Error updating status of the trade: {self.cur_trade}. Error: {e}")
 
     def on_trade_client_error(self, ex):
-        logging.error(HuobiTools.format_exception("Trade client", ex))
+        self._logger.error(HuobiTools.format_exception("Trade client", ex))
 
     def on_order_update(self, event: OrderUpdateEvent):
         """ Update current trade prices from filled main or sl/tp order"""
@@ -264,11 +264,11 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
         with self.trade_lock:
             try:
                 order = event.data
-                logging.debug(f"{order.symbol} {order.type} update event. Order id:{order.orderId}, "
+                self._logger.debug(f"{order.symbol} {order.type} update event. Order id:{order.orderId}, "
                                 f"status:{order.orderStatus} price: {order.tradePrice}, trade time: {order.tradeTime}")
                 if not self.cur_trade or order.orderStatus != OrderState.FILLED:
                     # This update is not about filling current trade
-                    logging.debug(f"This update of order with id:{order.orderId} "
+                    self._logger.debug(f"This update of order with id:{order.orderId} "
                                     f"is not about final filling current trade: {self.cur_trade}")
                     return
                 order_time = datetime.utcfromtimestamp(order.tradeTime / 1000.0)
@@ -277,7 +277,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                     self.cur_trade.open_price = float(order.tradePrice)
                     self.cur_trade.open_time = order_time
                     self.cur_trade.status = TradeStatus.opened
-                    logging.info(f"Got current trade opened event: {self.cur_trade}")
+                    self._logger.info(f"Got current trade opened event: {self.cur_trade}")
                     # Save to db
                     self.db_session.commit()
                 elif self.cur_trade.stop_loss_order_id == str(order.orderId) or self.cur_trade.close_order_id == str(
@@ -288,13 +288,13 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                     self.cur_trade.status = TradeStatus.closed  # Final closure is here
                     # Save to db
                     self.db_session.commit()
-                    logging.info(f"Got current trade closed event: {self.cur_trade}")
+                    self._logger.info(f"Got current trade closed event: {self.cur_trade}")
                     self.cur_trade = None
                 else:
-                    logging.debug(f"This update of order id: {order.orderId} "
+                    self._logger.debug(f"This update of order id: {order.orderId} "
                                     f"is not opening or closing cur trade: {self.cur_trade}")
             except Exception as ex:
-                logging.error(f"on_order_update error:{ex}")
+                self._logger.error(f"on_order_update error:{ex}")
 
     def get_report(self):
         """ Short info for report """
@@ -312,7 +312,7 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                               f"created:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
                     msg.write("\n")
         except Exception as e:
-            logging.error(f"Error reporting opened orders: {e}")
+            self._logger.error(f"Error reporting opened orders: {e}")
 
         try:
             # Account balance
@@ -321,6 +321,6 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
                 [f"{b.currency} amount: {b.balance}, type: {b.type}" for b in balance if float(b.balance) > 0])
             msg.write(actual_balance)
         except Exception as e:
-            logging.error(f"Error reporting account info: {e}")
+            self._logger.error(f"Error reporting account info: {e}")
 
         return msg.getvalue()

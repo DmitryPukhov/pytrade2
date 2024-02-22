@@ -37,7 +37,7 @@ class KerasLowHighClassificationStrategy(SignalClassificationStrategyBase):
         self.candles_feed.candles_cnt_by_interval[self.target_period] += 1
         self.candles_feed.candles_history_cnt_by_interval[self.target_period] += 1
 
-        logging.info(f"Target period: {self.target_period}")
+        self._logger.info(f"Target period: {self.target_period}")
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         x, y = LongCandleFeatures.features_targets_of(

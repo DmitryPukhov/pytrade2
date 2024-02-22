@@ -1,6 +1,10 @@
+import logging
+
+
 class SignalCalcBase:
     def __init__(self, profit_loss_ratio: float, stop_loss_min_coeff: float, stop_loss_max_coeff: float,
                  take_profit_min_coeff: float, take_profit_max_coeff: float, price_precision):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.profit_loss_ratio = profit_loss_ratio
 
         # stop loss should be above price * min_stop_loss_coeff

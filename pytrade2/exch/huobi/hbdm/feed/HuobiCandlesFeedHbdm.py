@@ -14,6 +14,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
     """
 
     def __init__(self, config: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
+        self._logger = logging.getLogger(self.__class__.__name__)
         super().__init__(config, rest_client, ws_client)
         self.periods = [s.strip() for s in str(self.config["pytrade2.feed.candles.periods"]).split(",")]
         self.counts = [int(s) for s in str(self.config["pytrade2.feed.candles.counts"]).split(",")]
@@ -21,7 +22,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         self.sub_events()
 
     def sub_events(self):
-        logging.info(f"Subscribing to {','.join(self.periods)} candles of {','.join(self.tickers)}")
+        self._logger.info(f"Subscribing to {','.join(self.periods)} candles of {','.join(self.tickers)}")
         for ticker in self.tickers:
             for period in self.periods:
                 topic = f"market.{ticker}.kline.{period}"
@@ -36,7 +37,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
             for consumer in self.consumers:
                 consumer.on_candle(candle)
         except Exception as e:
-            logging.error(e)
+            self._logger.error(e)
 
     @staticmethod
     def raw_socket_msg_to_candle(msg):

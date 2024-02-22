@@ -10,7 +10,8 @@ class Exchange:
     """ Provides binance or huobi exchange with broker and feed support"""
 
     def __init__(self, config: Dict[str, str]):
-        
+        self._logger = logging.getLogger(self.__class__.__name__)
+
         self.config = config
         self.exchanges = defaultdict()
 
@@ -21,7 +22,7 @@ class Exchange:
             # Create exchange
             exchange_class_name = exch_name.split(".")[-1]
             exchange_file = f"exch.{exch_name}"
-            logging.info(f"Providing exchange: {exchange_file}")
+            self._logger.info(f"Providing exchange: {exchange_file}")
             module = importlib.import_module(exchange_file, exchange_class_name)
             exchange_object = getattr(module, exchange_class_name)(config=self.config)
             self.exchanges[exch_name] = exchange_object

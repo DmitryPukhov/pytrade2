@@ -12,9 +12,8 @@ class BinanceWebsocketFeed:
     """
 
     def __init__(self, config: dict, websocket_client: SpotWebsocketClient):
-
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.consumers = []
-        
         self.tickers = config["pytrade2.tickers"].split(",")
         self.websocket_client = websocket_client
         self.last_subscribe_time: datetime = datetime.datetime.min
@@ -35,7 +34,7 @@ class BinanceWebsocketFeed:
         """ Level2 stream stops after some time of work, refresh subscription """
         if datetime.datetime.utcnow() - self.last_subscribe_time >= self.subscribe_interval:
             for i, ticker in enumerate(self.tickers):
-                logging.debug(f"Refreshing subscription to data streams for {ticker}. "
+                self._logger.debug(f"Refreshing subscription to data streams for {ticker}. "
                                 f"Refresh interval: {self.subscribe_interval}")
                 # Bid/ask
                 self.websocket_client.book_ticker(id=i, symbol=ticker, callback=self.ticker_callback)
@@ -53,7 +52,7 @@ class BinanceWebsocketFeed:
             # Refresh stream subscriptions if refresh interval passed
             self.refresh_streams()
         except Exception as e:
-            logging.error(e)
+            self._logger.error(e)
 
     def ticker_callback(self, msg):
         if "result" in msg and not msg["result"]:
@@ -62,7 +61,7 @@ class BinanceWebsocketFeed:
             for consumer in [c for c in self.consumers if hasattr(c, 'on_ticker')]:
                 consumer.on_ticker(self.rawticker2model(msg))
         except Exception as e:
-            logging.error(e)
+            self._logger.error(e)
 
     @staticmethod
     def rawticker2model(msg: Dict) -> Dict:

@@ -17,6 +17,7 @@ class CandlesFeed:
 
     def __init__(self, config, ticker: str, exchange_provider: Exchange, data_lock: multiprocessing.RLock,
                  new_data_event: multiprocessing.Event, tag):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.data_lock = data_lock
         self.exchange_candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
         self.exchange_candles_feed.consumers.add(self)
@@ -53,7 +54,7 @@ class CandlesFeed:
             candles_history = candles_history[candles_history.index < candles_new.index.min()]
             candles = pd.concat([candles_history, candles_new])
 
-            logging.debug(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
+            self._logger.debug(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
 
     def read_candles_downloaded(self):
@@ -102,7 +103,7 @@ class CandlesFeed:
         candle_df = pd.DataFrame([candle]).set_index("close_time", drop=False)
         with (self.data_lock):
             period = str(candle["interval"])
-            logging.debug(f"Got {period} candle: {candle}")
+            self._logger.debug(f"Got {period} candle: {candle}")
             prev_buf = self.candles_by_interval_buf.get(period, pd.DataFrame())
             # Add to buffer
             self.candles_by_interval_buf[period] = pd.concat([prev_buf, candle_df])

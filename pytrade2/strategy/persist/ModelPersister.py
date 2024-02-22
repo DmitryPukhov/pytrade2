@@ -22,6 +22,7 @@ class ModelPersister:
     """ Read/write model weights"""
 
     def __init__(self, config: Dict, tag: str):
+        self._logger = logging.getLogger(self.__class__.__name__)
 
         # Directory for model weights and price data
         self.data_dir = config["pytrade2.data.dir"]
@@ -34,23 +35,23 @@ class ModelPersister:
         try:
             saved_models = glob.glob(str(Path(self.model_dir, "*.*")))
             if not saved_models:
-                logging.info(f"No saved models in {self.model_dir}")
+                self._logger.info(f"No saved models in {self.model_dir}")
                 return model
 
             if isinstance(model, Model):
                 saved_models = glob.glob(str(Path(self.model_dir, "*.index")))
                 # Load keras
                 last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
-                logging.info(f"Load keras model from {last_model_path}")
+                self._logger.info(f"Load keras model from {last_model_path}")
                 model.load_weights(last_model_path)
             else:
                 last_model_path = str(sorted(saved_models)[-1])
-                logging.info(f"Load lgb model from {last_model_path}")
+                self._logger.info(f"Load lgb model from {last_model_path}")
                 with open(last_model_path, 'rb') as f:
                     model = pickle.load(f)
 
         except Exception as e:
-            logging.warning(f'Error loading last model. It\'s ok if the model architecture is changed. Error: {e}')
+            self._logger.warning(f'Error loading last model. It\'s ok if the model architecture is changed. Error: {e}')
 
         return model
 
@@ -58,7 +59,7 @@ class ModelPersister:
         model_path = str(Path(self.model_dir, datetime.utcnow().isoformat()))
         if isinstance(model, Model):
             # Save keras
-            logging.debug(f"Save keras model to {model_path}")
+            self._logger.debug(f"Save keras model to {model_path}")
             model.save_weights(model_path)
 
         elif isinstance(model, MultiOutputRegressor) and isinstance(model.estimator, LGBMRegressor):
@@ -66,7 +67,7 @@ class ModelPersister:
             model_path += "_lgb.pkl"
             with open(model_path,'wb') as f:
                 pickle.dump(model,f)
-                logging.debug(f"Saved lgb  model to {model_path}")
+                self._logger.debug(f"Saved lgb  model to {model_path}")
 
         self.purge_old_models()
 
@@ -80,4 +81,4 @@ class ModelPersister:
             purge_files = sorted(files, reverse=True)[keep_files_count:]
             for file in purge_files:
                 os.remove(os.path.join(self.model_dir, file))
-            logging.debug(f"Purged {len(purge_files)} files in {self.model_dir}")
+            self._logger.debug(f"Purged {len(purge_files)} files in {self.model_dir}")

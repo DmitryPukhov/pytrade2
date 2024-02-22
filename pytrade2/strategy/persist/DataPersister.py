@@ -28,6 +28,7 @@ class DataPersister:
         threading._threading_atexits.append(call)
 
     def __init__(self, config: Dict, tag: str):
+        self._logger = logging.getLogger(self.__class__.__name__)
         # Hack to fix boto3 issue https://bugs.python.org/issue42647
         threading._register_atexit = self._register_atexit
 
@@ -57,18 +58,17 @@ class DataPersister:
         self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
         self.last_learn_saved_index = datetime.min
 
-    @staticmethod
-    def purge_data_files(data_dir):
+    def purge_data_files(self, data_dir):
         """ Keep only last day """
 
         files = os.listdir(data_dir)
         if files:
             keep_prefix = max(files)[:10]  # last yyyy-mm-dd prefix
-            logging.debug(f"Purging files in {data_dir}, keep only {keep_prefix}")
+            self._logger.debug(f"Purging files in {data_dir}, keep only {keep_prefix}")
             for f in files:
                 if not f.startswith(keep_prefix):
                     f = os.path.join(data_dir, f)
-                    logging.debug(f"Purging {f}")
+                    self._logger.debug(f"Purging {f}")
                     os.remove(f)
 
     def save_last_data(self, ticker: str,  # X_last: pd.DataFrame, y_pred_last: pd.DataFrame,
@@ -93,7 +93,7 @@ class DataPersister:
             time = self.data_bufs[data_tag].index[-1]
             file_name = f"{pd.to_datetime(time).date()}_{ticker}_{data_tag}"
             file_path = Path(self.model_Xy_dir, f"{file_name}.csv")
-            logging.debug(f"Saving last {data_tag} data to {file_path}")
+            self._logger.debug(f"Saving last {data_tag} data to {file_path}")
             self.data_bufs[data_tag].to_csv(str(file_path),
                                             header=not file_path.exists(),
                                             mode='a')
@@ -116,7 +116,7 @@ class DataPersister:
         if not self.s3_enabled:
             return
         if not os.path.exists(datapath):
-            logging.info(f"{datapath} does not exist, cannot upload it to s3")
+            self._logger.info(f"{datapath} does not exist, cannot upload it to s3")
             return
 
         if compress:
@@ -129,12 +129,12 @@ class DataPersister:
 
         # Upload
         s3datapath = str(datapath).lstrip("../")
-        logging.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
+        self._logger.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
 
         session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
         s3 = session.resource(service_name='s3', endpoint_url=self.s3_endpoint_url)  # error is here
         s3.meta.client.upload_file(datapath, self.s3_bucket, s3datapath)
-        logging.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
+        self._logger.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
 
         # Delete temp zip
         if compress:

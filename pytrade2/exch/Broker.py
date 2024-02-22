@@ -14,6 +14,8 @@ from model.TradeStatus import TradeStatus
 
 class Broker:
     def __init__(self, config: dict):
+        self._logger = logging.getLogger(self.__class__.__name__)
+
         self.price_precision = config["pytrade2.price.precision"]
         self.fee: float = 0
         self.cur_trade: Optional[Trade] = None
@@ -30,12 +32,12 @@ class Broker:
         # Load saved opened trade
         self.cur_trade = self.read_last_opened_trade()
         if self.cur_trade:
-            logging.info(f"Loaded previously opened current trade: {self.cur_trade}")
+            self._logger.info(f"Loaded previously opened current trade: {self.cur_trade}")
             if self.allow_trade:
                 self.fix_cur_trade()
         else:
-            logging.info("Opened trades not found")
-        logging.info(f"Completed init broker.")
+            self._logger.info("Opened trades not found")
+        self._logger.info(f"Completed init broker.")
 
     def __init_db__(self, config: Dict[str, str]):
         # Create database
@@ -43,7 +45,7 @@ class Broker:
         data_dir = config["pytrade2.data.dir"] + "/" + strategy
         Path(data_dir).mkdir(parents=True, exist_ok=True)
         db_path = f"{data_dir}/{strategy}.db"
-        logging.info(f"Init database, path: {db_path}")
+        self._logger.info(f"Init database, path: {db_path}")
         engine = create_engine(f"sqlite:///{db_path}")
         Trade.metadata.create_all(engine)
         self.db_session = sessionmaker(engine)()

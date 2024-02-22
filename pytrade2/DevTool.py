@@ -104,7 +104,7 @@ if __name__ == "__main__":
 
     # Open
     low, high = DevTool.get_last_lowhigh()
-    # logging.debug(f"Last low:{low}, high:{high}")
+    # self._logger.debug(f"Last low:{low}, high:{high}")
     broker.create_cur_trade(symbol="BTC-USDT",
                             direction=1,
                             quantity=1,

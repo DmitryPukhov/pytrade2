@@ -25,7 +25,7 @@ class BidAskRegressionStrategyBase(StrategyBase):
 
         self.fut_low_high: pd.DataFrame = pd.DataFrame()
 
-        logging.info("Strategy parameters:\n" + "\n".join(
+        self._logger.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
     def prepare_last_x(self) -> (pd.DataFrame, ndarray):

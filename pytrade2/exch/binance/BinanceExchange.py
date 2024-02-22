@@ -10,7 +10,7 @@ from exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 
 class BinanceExchange:
     def __init__(self, config: dict):
-        
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.config = config
 
         # Attrs for lazy initialization
@@ -49,7 +49,7 @@ class BinanceExchange:
         if not self.__spot_client:
             key, secret = self.config["pytrade2.exchange.binance.connector.key"], self.config["pytrade2.exchange.binance.connector.secret"]
             url = self.config["pytrade2.exchange.binance.spot.url"]
-            logging.info(
+            self._logger.info(
                 f"Init binance client, url: {url}, key: ***{key[-3:]}, secret: ***{secret[-3:]}")
             self.__spot_client: Spot = Spot(key=key, secret=secret, base_url=url, timeout=10)
         return self.__spot_client

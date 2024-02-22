@@ -8,8 +8,8 @@ from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
 class HuobiFeedBase:
 
     def __init__(self, config: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
+        self._logger = logging.getLogger(self.__class__.__name__)
         self.consumers = set()
-        
         self.tickers = config["pytrade2.tickers"].lower().split(",")
         self._client = ws_client
         self.rest_client = rest_client

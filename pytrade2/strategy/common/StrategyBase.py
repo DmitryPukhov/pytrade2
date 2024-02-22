@@ -24,11 +24,13 @@ from strategy.persist.DataPersister import DataPersister
 from strategy.persist.ModelPersister import ModelPersister
 
 
-class StrategyBase():
+class StrategyBase:
     """ Any strategy """
 
     def __init__(self, config: Dict, exchange_provider: Exchange, is_candles_feed: bool, is_bid_ask_feed: bool,
                  is_level2_feed: bool):
+        self._logger = logging.getLogger(self.__class__.__name__)
+
         strategy_name = self.__class__.__name__
         self.data_persister = DataPersister(config, strategy_name)
         self.model_persister = ModelPersister(config, strategy_name)
@@ -50,7 +52,7 @@ class StrategyBase():
             self.bid_ask_feed = BidAskFeed(config, exchange_provider, self.data_lock, self.new_data_event)
         # self.learn_data_balancer = LearnDataBalancer()
         self.order_quantity = config["pytrade2.order.quantity"]
-        logging.info(f"Order quantity: {self.order_quantity}")
+        self._logger.info(f"Order quantity: {self.order_quantity}")
         self.price_precision = config["pytrade2.price.precision"]
         self.amount_precision = config["pytrade2.amount.precision"]
         self.learn_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval']) \
@@ -84,7 +86,7 @@ class StrategyBase():
 
         self.processing_interval = pd.Timedelta(config.get('pytrade2.strategy.processing.interval', '30 seconds'))
 
-        logging.info("Strategy parameters:\n" + "\n".join(
+        self._logger.info("Strategy parameters:\n" + "\n".join(
             [f"{key}: {value}" for key, value in self.config.items() if key.startswith("pytrade2.strategy.")]))
 
     def run(self):
@@ -101,11 +103,11 @@ class StrategyBase():
         self.learn()
         # # Start periodical jobs
         # if self.learn_interval:
-        #     logging.info(f"Starting periodical learning, interval: {self.learn_interval}")
+        #     self._logger.info(f"Starting periodical learning, interval: {self.learn_interval}")
         #     Timer(self.learn_interval.seconds, self.learn).start()
 
     def processing_loop(self):
-        logging.info("Starting processing loop")
+        self._logger.info("Starting processing loop")
 
         # If alive is None, not started, so continue loop
         is_alive = self.is_alive()
@@ -127,18 +129,18 @@ class StrategyBase():
                 is_alive = self.is_alive()
             except Exception as e:
                 logging.exception(e)
-                logging.error("Exiting")
+                self._logger.error("Exiting")
                 exit(1)
 
-        logging.info("End main processing loop")
+        self._logger.info("End main processing loop")
 
     def is_alive(self):
         maxdelta = self.history_min_window + pd.Timedelta("60s")
         feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
         is_alive = all([feed.is_alive(maxdelta) for feed in feeds])
         if not is_alive:
-            logging.info(self.get_report())
-            logging.error(f"Strategy is not alive for {maxdelta}")
+            self._logger.info(self.get_report())
+            self._logger.error(f"Strategy is not alive for {maxdelta}")
         return is_alive
 
     def get_report(self):
@@ -170,7 +172,7 @@ class StrategyBase():
         status = {feed.__class__.__name__: feed.has_min_history() for feed in feeds}
         has_min_history = all([f for f in status.values()])
         if not has_min_history:
-            logging.info(f"Can not learn because some datasets have not enough data. Filled status {status}")
+            self._logger.info(f"Can not learn because some datasets have not enough data. Filled status {status}")
         return has_min_history
 
     def create_model(self, x_size, y_size):
@@ -199,13 +201,13 @@ class StrategyBase():
     def learn(self):
         try:
             self.apply_buffers()
-            logging.debug("Learning")
+            self._logger.debug("Learning")
             if not self.can_learn():
                 return
 
             train_X, train_y = self.prepare_xy()
 
-            logging.info(
+            self._logger.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]} from {min(train_X.index)} to {max(train_X.index)}")
             if len(train_X.index) >= self.min_xy_len:
                 if not (self.X_pipe and self.y_pipe):
@@ -230,10 +232,10 @@ class StrategyBase():
                 # to avoid OOM
                 tensorflow.keras.backend.clear_session()
                 gc.collect()
-                logging.info("Learning completed")
+                self._logger.info("Learning completed")
 
             else:
-                logging.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
+                self._logger.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
         finally:
             if self.learn_interval:
                 Timer(self.learn_interval.seconds, self.learn).start()
@@ -272,7 +274,7 @@ class StrategyBase():
                 x = self.prepare_last_x()
                 # x can be dataframe or np array, check is it empty
                 if (hasattr(x, 'empty') and x.empty) or (hasattr(x, 'shape') and x.shape[0] == 0):
-                    logging.info(f'Cannot process new data: features are empty. ')
+                    self._logger.info(f'Cannot process new data: features are empty. ')
                     return
                 # Predict
                 y_pred = self.predict(x)
@@ -286,7 +288,7 @@ class StrategyBase():
                 # Save to disk for analysis
                 self.data_persister.save_last_data(self.ticker, {'y_pred': y_pred})
             except Exception as e:
-                logging.error(f"{e}. Traceback: {traceback.format_exc()}")
+                self._logger.error(f"{e}. Traceback: {traceback.format_exc()}")
             finally:
                 self.is_processing = False
 
