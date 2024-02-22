@@ -62,6 +62,7 @@ class Broker:
 
         # Opened trade
         msg.write(f"Current trade: {self.cur_trade}\n")
+        msg.write(f"Previous trade: {self.prev_trade}\n")
         return msg.getvalue()
 
     def create_cur_trade(self, symbol: str, direction: int,
