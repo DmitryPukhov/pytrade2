@@ -95,6 +95,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         Metrics.gauge(self, "_pred_last_time").set_to_current_time()
 
         risk_manager_ok = self.risk_manager.can_trade()
+        signal_ext['status'] = 'unknown'
+        signal_ext['open_price'] = None
         if not risk_manager_ok:
             signal_ext["status"] = "risk_manager_oom"
         cur_trade_ok = self.broker.cur_trade is None
@@ -122,7 +124,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         # Persist the data for later analysis
         y_pred["datetime"] = dt
         signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
-        self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df, 'y_pred': y_pred})
+        self.data_persister.save_last_data(self.ticker, {'signal_status': signal_ext_df, 'y_pred': y_pred})
 
     def create_model(self, X_size, y_size):
         model = self.model_persister.load_last_model(None)
