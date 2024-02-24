@@ -78,8 +78,13 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
         # signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
         signal_ext = self.signal_calc.calc_signal_ext(close, fut_low, fut_high)
-        dt, signal, sl, tp = signal_ext['datetime'], signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
+        dt, signal, price, sl, tp = (signal_ext['datetime'],
+                                     signal_ext['signal'],
+                                     signal_ext['price'],
+                                     signal_ext['sl'],
+                                     signal_ext['tp'])
         tr_delta = abs(close - sl) if sl else None
+        signal_ext['tr_delta'] = tr_delta
         signal_name = {1: "buy", -1: "sell", 0: "oom"}[signal]
 
         # Metrics
@@ -94,21 +99,16 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             self.broker.create_cur_trade(symbol=self.ticker,
                                          direction=signal,
                                          quantity=self.order_quantity,
-                                         price=close,
+                                         price=price,
                                          stop_loss_price=sl,
                                          take_profit_price=tp,
                                          trailing_delta=tr_delta)
-
-        # Persist signal data for later analysis
-        signal_df = pd.DataFrame(
-            data=[{'datetime': dt, 'signal': signal, 'sl': sl, 'tp': tp, 'tr_delta': tr_delta, 'close_time': close_time}]).set_index(
-            'datetime')
-
+        if self.broker.cur_trade:
+            signal_ext['open_price'] = self.broker.cur_trade.open_price
+        # Persist the data for later analysis
         y_pred["datetime"] = dt
         signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
-
-        self.data_persister.save_last_data(self.ticker,
-                                           {'signal': signal_df, 'signal_ext': signal_ext_df, 'y_pred': y_pred})
+        self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df, 'y_pred': y_pred})
 
     def create_model(self, X_size, y_size):
         model = self.model_persister.load_last_model(None)

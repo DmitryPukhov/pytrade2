@@ -16,7 +16,7 @@ class SignalByFutLowHigh(SignalCalcBase):
         signal_ext = self.calc_signal_ext(close, fut_low, fut_high)
         return signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
 
-    def calc_signal_ext(self, close, fut_low, fut_high) -> (int, float, float):
+    def calc_signal_ext(self, close, fut_low, fut_high) -> {}:
         """ @:return Signal, stop loss, take profit """
         # BTC-USDT 40 000 * 1% = 400
         # BTC-USDT 40 000 * 0.012% = 40 * 0.012 = 4,8
@@ -58,7 +58,7 @@ class SignalByFutLowHigh(SignalCalcBase):
             'signal': signal,
             'sl': sl,
             'tp': tp,
-            'close': round(close, self.price_precision),
+            'price': round(close, self.price_precision),
             'fut_low': round(fut_low, self.price_precision),
             'fut_high': round(fut_high, self.price_precision),
             'signal_buy': signal_buy,
