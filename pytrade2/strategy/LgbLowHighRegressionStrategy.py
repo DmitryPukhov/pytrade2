@@ -94,8 +94,17 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         Metrics.gauge(self, f"_pred_last_close_time").set(close_time.value)
         Metrics.gauge(self, "_pred_last_time").set_to_current_time()
 
+        risk_manager_ok = self.risk_manager.can_trade()
+        if not risk_manager_ok:
+            signal_ext["status"] = "risk_manager_oom"
+        cur_trade_ok = self.broker.cur_trade is None
+        if not cur_trade_ok:
+            signal_ext["status"] = "already_in_market"
+        if signal == 0:
+            signal_ext["status"] = "signal_oom"
+
         # Trade
-        if signal and not self.broker.cur_trade and self.risk_manager.can_trade():
+        if signal and cur_trade_ok and risk_manager_ok:
             self.broker.create_cur_trade(symbol=self.ticker,
                                          direction=signal,
                                          quantity=self.order_quantity,
@@ -103,8 +112,13 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                          stop_loss_price=sl,
                                          take_profit_price=tp,
                                          trailing_delta=tr_delta)
-        if self.broker.cur_trade:
-            signal_ext['open_price'] = self.broker.cur_trade.open_price
+            if self.broker.cur_trade:
+                signal_ext['open_price'] = self.broker.cur_trade.open_price
+                signal_ext['status'] = 'order_created'
+            else:
+                signal_ext['open_price'] = None
+                signal_ext['status'] = 'order_not_created'
+
         # Persist the data for later analysis
         y_pred["datetime"] = dt
         signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
