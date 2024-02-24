@@ -42,7 +42,7 @@ class CandlesDownloader:
         start = self.get_start_date()
         end = datetime.today() + timedelta(days=1)
 
-        self._logger.info(f"Downloading new candles from {start} to {end}")
+        self._logger.info(f"Downloading new candles from {start} to {end}. Total days: {self.days}")
         intervals = self.date_intervals(start, end)
         self._logger.info(f"{len(intervals)} days will be downloaded")
         self.download_intervals(intervals)
@@ -71,7 +71,7 @@ class CandlesDownloader:
                            mode='w')
             self._logger.info(
                 f"{period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
-        self._logger.info(f"Downloading of {self.days} days completed")
+        self._logger.info(f"Downloading of {len(intervals)} intervals completed")
 
     @staticmethod
     def date_intervals(from_: datetime, to: datetime, period="1d"):
