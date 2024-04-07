@@ -71,7 +71,7 @@ class CandlesDownloader:
                            mode='w')
             self._logger.info(
                 f"{period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
-        self._logger.info(f"Downloading of {len(intervals)} intervals completed")
+        self._logger.info(f"Downloading of {len(list(intervals))} intervals completed")
 
     @staticmethod
     def date_intervals(from_: datetime, to: datetime, period="1d"):
