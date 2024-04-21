@@ -4,7 +4,7 @@ import pandas as pd
 from ta import trend, momentum, volume, others, volatility
 
 from strategy.features.CandlesFeatures import CandlesFeatures
-
+from strategy.features.LowHighTargets import LowHighTargets
 
 class MultiIndiFeatures:
     """ Multiple TA indicators on multiple periods"""
@@ -14,6 +14,17 @@ class MultiIndiFeatures:
         max_candles = 52  # Ichimoku period is last
         last_candles_by_periods = {period: candles.tail(max_candles) for period, candles in candles_by_periods.items()}
         return MultiIndiFeatures.multi_indi_features(last_candles_by_periods).tail(n)
+
+    @staticmethod
+    def multi_indi_features_targets(candles_by_periods: Dict[str, pd.DataFrame], target_period, drop_features_wo_targets = True):
+        features = MultiIndiFeatures.multi_indi_features(candles_by_periods)
+        targets = LowHighTargets.fut_lohi(candles_by_periods[target_period], target_period)
+        if drop_features_wo_targets:
+            common_index = features.index.intersection(targets.index)
+            features = features.loc[common_index]
+            targets = targets.loc[common_index]
+
+        return features, targets
 
     @staticmethod
     def multi_indi_features(candles_by_periods: Dict[str, pd.DataFrame]):
