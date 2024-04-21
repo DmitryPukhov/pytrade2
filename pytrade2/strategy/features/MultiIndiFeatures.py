@@ -34,10 +34,10 @@ class MultiIndiFeatures:
     def ichimoku_of(candles: pd.DataFrame, period: str = ''):
         df = pd.DataFrame()
         ichimoku = trend.IchimokuIndicator(candles['high'], candles['low'])
-        df[f'ichimoku_base_line_{period}'] = ichimoku.ichimoku_base_line()
-        df[f'ichimoku_conversion_line_{period}'] = ichimoku.ichimoku_conversion_line()
-        df[f'ichimoku_a_{period}'] = ichimoku.ichimoku_a()
-        df[f'ichimoku_b_{period}'] = ichimoku.ichimoku_b()
+        df[f'ichimoku_base_line_{period}_diff'] = ichimoku.ichimoku_base_line().diff()
+        df[f'ichimoku_conversion_line_{period}_diff'] = ichimoku.ichimoku_conversion_line().diff()
+        df[f'ichimoku_a_{period}_diff'] = ichimoku.ichimoku_a().diff()
+        df[f'ichimoku_b_{period}_diff'] = ichimoku.ichimoku_b().diff()
         return df
 
     @staticmethod
