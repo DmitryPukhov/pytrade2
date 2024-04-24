@@ -1,6 +1,7 @@
+import logging
 from typing import Dict
 
-from prometheus_client import start_http_server, Summary, Gauge, Counter
+from prometheus_client import start_http_server, Gauge, Counter
 
 
 class Metrics:
@@ -9,7 +10,11 @@ class Metrics:
 
     @staticmethod
     def start_http_server(port=8000):
-        start_http_server(port)
+        start_http_server(port,
+                          certfile="cfg/pytrade2.server.crt",
+                          keyfile="cfg/pytrade2.server.key",
+                          client_auth_required=True)
+        logging.info(f"Prometheus started at localhost:{port}")
 
     @classmethod
     def name_of(cls, source, suffix):

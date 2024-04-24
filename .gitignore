@@ -1,4 +1,6 @@
 # Config files
+*.crt
+*.key
 /pytrade2/cfg/app.yaml
 tmp
 _trial_temp
