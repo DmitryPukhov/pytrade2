@@ -4,7 +4,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 from exch.huobi.hbdm.broker.TrailingStopSupport import TrailingStopSupport
-from model.Trade import Trade
+from datamodel.Trade import Trade
 
 
 class TestTrailingStopSupport(TestCase):

@@ -6,8 +6,8 @@ from typing import Dict, Optional
 from binance.spot import Spot as Client
 
 from exch.BrokerSpotBase import BrokerSpotBase
-from model.Trade import Trade
-from model.TradeStatus import TradeStatus
+from datamodel.Trade import Trade
+from datamodel.TradeStatus import TradeStatus
 
 
 class BinanceBrokerSpot(BrokerSpotBase):

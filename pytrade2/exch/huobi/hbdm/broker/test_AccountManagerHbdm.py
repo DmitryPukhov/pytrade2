@@ -5,7 +5,7 @@ import pandas as pd
 
 from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
-from model.Trade import Trade
+from datamodel.Trade import Trade
 
 
 class TestHuobiBrokerHbdm(TestCase):

@@ -9,7 +9,7 @@ from exch.huobi.hbdm.broker.OrderFollower import OrderFollower
 from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
 from exch.huobi.hbdm.broker.TrailingStopSupport import TrailingStopSupport
 from exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
-from model.Trade import Trade
+from datamodel.Trade import Trade
 
 
 class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):

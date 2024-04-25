@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
-from model.Trade import Trade
+from datamodel.Trade import Trade
 from strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
 
 

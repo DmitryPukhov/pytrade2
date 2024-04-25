@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
 
-from model.Trade import Trade
+from datamodel.Trade import Trade
 
 
 class TestOrderCreator(TestCase):

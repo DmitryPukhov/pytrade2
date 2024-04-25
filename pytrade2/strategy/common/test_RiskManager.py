@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 
 from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
-from model.Trade import Trade
+from datamodel.Trade import Trade
 from strategy.common.RiskManager import RiskManager
 
 

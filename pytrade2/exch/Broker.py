@@ -8,8 +8,8 @@ from typing import Optional, Dict
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from model.Trade import Trade
-from model.TradeStatus import TradeStatus
+from datamodel.Trade import Trade
+from datamodel.TradeStatus import TradeStatus
 
 
 class Broker:

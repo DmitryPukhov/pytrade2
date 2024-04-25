@@ -8,8 +8,8 @@ from huobi.model.market import TradeDetail
 from huobi.model.market.trade_detail_event import TradeDetailEvent
 
 from exch.huobi.HuobiTools import HuobiTools
-from model.Trade import Trade
-from model.TradeStatus import TradeStatus
+from datamodel.Trade import Trade
+from datamodel.TradeStatus import TradeStatus
 
 
 class TakeProfitSupport:

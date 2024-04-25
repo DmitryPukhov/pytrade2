@@ -3,7 +3,7 @@ from threading import RLock
 from unittest.mock import Mock
 from huobi.model.market import TradeDetailEvent, TradeDetail
 from exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
-from model.Trade import Trade
+from datamodel.Trade import Trade
 
 
 class TestTakeProfitSupport(unittest.TestCase):

@@ -16,8 +16,8 @@ from exch.BrokerSpotBase import BrokerSpotBase
 from exch.huobi.HuobiTools import HuobiTools
 from exch.huobi.spot.broker.AccountManagerSpot import AccountManagerSpot
 from exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
-from model.Trade import Trade
-from model.TradeStatus import TradeStatus
+from datamodel.Trade import Trade
+from datamodel.TradeStatus import TradeStatus
 
 
 class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):

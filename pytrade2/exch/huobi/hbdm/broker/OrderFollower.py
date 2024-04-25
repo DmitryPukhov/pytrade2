@@ -11,8 +11,8 @@ from sqlalchemy.orm.session import Session
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
-from model.Trade import Trade
-from model.TradeStatus import TradeStatus
+from datamodel.Trade import Trade
+from datamodel.TradeStatus import TradeStatus
 
 
 class OrderFollower:
