@@ -21,7 +21,7 @@ services:
     command: python ./App.py --strategy None
     restart: always
     ports:
-      - '8000:8000'
+      - 5000:5000
     logging:
       options:
         max-size: "10m"
@@ -60,3 +60,4 @@ services:
 
 networks:
   pytrade2:
+    name: pytrade2

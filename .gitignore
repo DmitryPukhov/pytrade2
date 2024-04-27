@@ -1,4 +1,5 @@
 # Config files
+*.secret
 *.crt
 *.key
 /pytrade2/cfg/app.yaml

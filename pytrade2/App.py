@@ -160,6 +160,9 @@ class App:
         """
         Application entry point
         """
+        Metrics.auth_token = self.config.get("pytrade2.prometheus.token")
+
+        Metrics.start_http_server()
         self.strategy = self._create_strategy()
 
         # Watchdog starts after initial interval
@@ -183,5 +186,4 @@ class App:
 
 
 if __name__ == "__main__":
-    Metrics.start_http_server()
     App().run()

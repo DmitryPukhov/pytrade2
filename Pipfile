@@ -24,6 +24,8 @@ botocore = ">=1.34.2"
 backend = "*"
 lightgbm = "*"
 prometheus-client = "*"
+flask = "*"
+
 
 [dev-packages]
 

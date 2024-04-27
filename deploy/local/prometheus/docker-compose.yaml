@@ -7,7 +7,6 @@ services:
       - "9090:9090"
     volumes:
       - ./etc/prometheus:/etc/prometheus
-
     command:
       - '--config.file=/etc/prometheus/prometheus.yaml'
       - '--storage.tsdb.path=/prometheus'
@@ -16,21 +15,10 @@ services:
     networks:
       - pytrade2
 
-#
-#  node-exporter:
-#    image: prom/node-exporter:latest
-#    container_name: node-exporter
-#    expose:
-#      - "9100"
-#    volumes:
-#      - "/proc:/host/proc:ro"
-#      - "/sys:/host/sys:ro"
-#      - "/:/rootfs:ro"
-#    networks:
-#      - pytrade2
 
 networks:
   pytrade2:
+    external: true
 
 volumes:
   prometheus_data:
