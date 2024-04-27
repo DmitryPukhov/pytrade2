@@ -3,7 +3,7 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'pytrade2'
+  - job_name: 'pytrade2.lgblowhighregressionstrategy'
     bearer_token_file: pytrade2.secret
     static_configs:
       - targets: ['lgblowhighregressionstrategy:5000']
