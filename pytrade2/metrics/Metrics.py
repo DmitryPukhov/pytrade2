@@ -56,7 +56,7 @@ class Metrics:
 
     @classmethod
     def name_of(cls, source, suffix):
-        return f'pytrade2_{Metrics.app_name}_{source.__class__.__name__.lower()}_{suffix}'
+        return f'pytrade2_{Metrics.app_name.lower()}_{source.__class__.__name__.lower()}_{suffix}'
 
     @classmethod
     def gauge(cls, source, suffix) -> Gauge:
