@@ -53,8 +53,8 @@ class MetricServer:
     @require_api_token
     def info():
         """ Flask endpoint for configuration"""
-        logging.info(f"Got request: {str(request.args.to_dict())}")
-        logging.info(f"Will return app info: {MetricServer.app_config}")
+        logging.debug(f"Got request: {str(request.args.to_dict())}")
+        logging.debug(f"Will return app info: {MetricServer.app_config}")
         return json.dumps(MetricServer.app_config)
 
     @staticmethod
