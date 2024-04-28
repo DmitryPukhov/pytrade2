@@ -11,6 +11,8 @@ from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
 from exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
 from datamodel.Trade import Trade
+from metrics.MetricNames import MetricNames
+from metrics.Metrics import Metrics
 
 
 class TrailingStopSupport:
@@ -97,6 +99,7 @@ class TrailingStopSupport:
         if "status" in sl_res and sl_res["status"] == "ok":
             self.cur_trade.take_profit_price = new_tp
             self.db_session.commit()
+            Metrics.gauge(MetricNames.Broker.Trade.trade_tp).set(self.cur_trade.take_profit_price)
         else:
             self._logger.error(f"Error moving trailing stop: ${sl_res}")
 

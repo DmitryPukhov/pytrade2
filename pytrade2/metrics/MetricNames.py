@@ -23,7 +23,8 @@ class MetricNames:
             order_create_error = "order_create_error"
 
         class Trade:
-            trade_price = "trade_price"
+            trade_open_price = "trade_open_price"
+            trade_close_price = "trade_close_price"
             trade_sl = "trade_sl"
             trade_tp = "trade_tp"
             trade_tr_delta = "trade_tr_delta"
