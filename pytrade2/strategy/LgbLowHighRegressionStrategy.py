@@ -87,16 +87,16 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         signal_ext['tr_delta'] = tr_delta
 
         # Metrics
-        Metrics.gauge(self, MetricNames.Signal.signal).set(signal)
-        Metrics.gauge(self, MetricNames.Signal.signal_time).set(dt)
+        Metrics.gauge(self, MetricNames.Strategy.Signal.signal).set(signal)
+        Metrics.gauge(self, MetricNames.Strategy.Signal.signal_time).set(dt)
 
-        Metrics.gauge(self, MetricNames.Signal.signal_sl).set(sl)
-        Metrics.gauge(self, MetricNames.Signal.signal_tp).set(tp)
-        Metrics.gauge(self, MetricNames.Signal.signal_tr_delta).set(tr_delta)
+        Metrics.gauge(self, MetricNames.Strategy.Signal.signal_sl).set(sl)
+        Metrics.gauge(self, MetricNames.Strategy.Signal.signal_tp).set(tp)
+        Metrics.gauge(self, MetricNames.Strategy.Signal.signal_tr_delta).set(tr_delta)
 
-        Metrics.gauge(self, MetricNames.Prediction.pred_fut_low_diff).set(fut_low_diff)
-        Metrics.gauge(self, MetricNames.Prediction.pred_fut_high_diff).set(fut_high_diff)
-        Metrics.gauge(self, MetricNames.Prediction.pred_time).set(close_time.value)
+        Metrics.gauge(self, MetricNames.Strategy.Prediction.pred_fut_low_diff).set(fut_low_diff)
+        Metrics.gauge(self, MetricNames.Strategy.Prediction.pred_fut_high_diff).set(fut_high_diff)
+        Metrics.gauge(self, MetricNames.Strategy.Prediction.pred_time).set(close_time.value)
 
         risk_manager_ok = self.risk_manager.can_trade()
         signal_ext['status'] = None

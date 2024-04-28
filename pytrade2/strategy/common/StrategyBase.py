@@ -14,6 +14,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, StandardScaler, MaxAbsScaler
 
 from exch.Exchange import Exchange
+from metrics.MetricNames import MetricNames
+from metrics.Metrics import Metrics
 from strategy.common.RiskManager import RiskManager
 from strategy.feed.BidAskFeed import BidAskFeed
 from strategy.feed.CandlesFeed import CandlesFeed
@@ -204,6 +206,12 @@ class StrategyBase:
                 return
 
             train_X, train_y = self.prepare_xy()
+
+            # Metrics
+            train_period = train_X.index.to_series().ptp()
+            Metrics.gauge(self, MetricNames.Strategy.Learn.train_period).set(train_period)
+            test_period = train_y.index.to_series().ptp()
+            Metrics.gauge(self, MetricNames.Strategy.Learn.test_period).set(test_period)
 
             self._logger.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]} from {min(train_X.index)} to {max(train_X.index)}")
