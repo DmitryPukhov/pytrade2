@@ -11,14 +11,11 @@ from metrics.Metrics import Metrics
 class MetricServer:
     """Work with Prometheus metrics"""
 
+    # Metric names to refer from the app
     metrics:Metrics = None
+
     # token value to expect in header Authorization: Bearer <auth_token>
     auth_token = None
-    #
-    # # Metrics
-    # gauges: Dict[str, Gauge] = {}
-    # counters: Dict[str, Counter] = {}
-    # summaries: Dict[str, Summary] = {}
 
     # Flask app to expose metrics endpoint
     app = Flask("pytrade2")
@@ -53,27 +50,3 @@ class MetricServer:
         threading.Thread(target=MetricServer.app.run, kwargs={"host": "0.0.0.0", "port": 5000}).start()
         logging.info("Prometheus started")
 
-    # @classmethod
-    # def name_of(cls, source, suffix):
-    #     return f'pytrade2_{MetricServer.app_name.lower()}_{source.__class__.__name__.lower()}_{suffix}'
-    #
-    # @classmethod
-    # def gauge(cls, source, suffix) -> Gauge:
-    #     name = cls.name_of(source, suffix)
-    #     if name not in cls.gauges:
-    #         cls.gauges[name] = Gauge(name, name)
-    #     return cls.gauges[name]
-    #
-    # @classmethod
-    # def counter(cls, source, suffix) -> Counter:
-    #     name = cls.name_of(source, suffix)
-    #     if name not in cls.counters:
-    #         cls.counters[name] = Counter(name, name)
-    #     return cls.counters[name]
-    #
-    # @classmethod
-    # def summary(cls, source, suffix) -> Summary:
-    #     name = cls.name_of(source, suffix)
-    #     if name not in cls.summaries:
-    #         cls.summaries[name] = Summary(name, name)
-    #     return cls.summaries[name]

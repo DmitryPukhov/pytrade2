@@ -87,9 +87,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         signal_ext['tr_delta'] = tr_delta
 
         # Metrics
-
         MetricServer.metrics.strategy.signal.signal.set(signal)
-
         if signal:
             MetricServer.metrics.strategy.signal.signal_price.set(price)
             MetricServer.metrics.strategy.signal.signal_sl.set(sl)

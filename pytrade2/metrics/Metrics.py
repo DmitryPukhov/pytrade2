@@ -2,6 +2,8 @@ from prometheus_client import Gauge
 
 
 class Metrics:
+    """Prometheus Metric collectors: gauges, counters."""
+
     def __init__(self, app_name: str, strategy_name: str):
         app_name, strategy_name = app_name.lower(), strategy_name.lower()
         self.strategy = Metrics.Strategy(app_name, strategy_name)
@@ -34,7 +36,7 @@ class Metrics:
         class Signal:
             def __init__(self, app_name: str, strategy: str):
                 self.signal = Gauge("strategy_signal", "strategy_signal", namespace=app_name, subsystem=strategy)
-                # signal_time = "strategy_signal_time"
+
                 self.signal_price = Gauge("strategy_signal_price", "strategy_signal_price", namespace=app_name,
                                           subsystem=strategy)
                 self.signal_sl = Gauge("strategy_signal_sl", "strategy_signal_sl", namespace=app_name,
