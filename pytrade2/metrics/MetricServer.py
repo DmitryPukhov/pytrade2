@@ -12,7 +12,7 @@ class MetricServer:
     """Work with Prometheus metrics"""
 
     # Metric names to refer from the app
-    metrics:Metrics = None
+    metrics: Metrics = None
 
     # token value to expect in header Authorization: Bearer <auth_token>
     auth_token = None
@@ -49,4 +49,3 @@ class MetricServer:
         """ Start Flask thread to expose metrics to prometheus server."""
         threading.Thread(target=MetricServer.app.run, kwargs={"host": "0.0.0.0", "port": 5000}).start()
         logging.info("Prometheus started")
-

@@ -14,6 +14,24 @@ class Metrics:
             self.learn = Metrics.Strategy.Learn(app_name, strategy)
             self.prediction = Metrics.Strategy.Prediction(app_name, strategy)
             self.signal = Metrics.Strategy.Signal(app_name, strategy)
+            self.feed = Metrics.Strategy.Feed(app_name, strategy)
+
+        class Feed:
+            def __init__(self, app_name: str, strategy: str):
+                self.candles = Metrics.Strategy.Feed.Candles(app_name, strategy)
+
+            class Candles:
+                def __init__(self, app_name: str, strategy: str):
+                    self.open = Gauge("strategy_feed_candles_open",
+                                      "Candles", namespace=app_name, subsystem=strategy)
+                    self.high = Gauge("strategy_feed_candles_high",
+                                      "Candles", namespace=app_name, subsystem=strategy)
+                    self.low = Gauge("strategy_feed_candles_low",
+                                     "Candles", namespace=app_name, subsystem=strategy)
+                    self.close = Gauge("strategy_feed_candles_close",
+                                       "Candles", namespace=app_name, subsystem=strategy)
+                    self.vol = Gauge("strategy_feed_candles_vol",
+                                     "Candles", namespace=app_name, subsystem=strategy)
 
         class Learn:
             def __init__(self, app_name: str, strategy: str):

@@ -88,6 +88,11 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
         # Metrics
         MetricServer.metrics.strategy.signal.signal.set(signal)
+        MetricServer.metrics.strategy.feed.candles.open.set(open_)
+        MetricServer.metrics.strategy.feed.candles.high.set(high)
+        MetricServer.metrics.strategy.feed.candles.low.set(low)
+        MetricServer.metrics.strategy.feed.candles.close.set(close)
+
         if signal:
             MetricServer.metrics.strategy.signal.signal_price.set(price)
             MetricServer.metrics.strategy.signal.signal_sl.set(sl)

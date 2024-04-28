@@ -76,7 +76,7 @@
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -104,23 +104,33 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 13,
+        "h": 8,
+        "w": 12,
         "x": 11,
         "y": 0
       },
-      "id": 1,
+      "id": 7,
       "options": {
+        "candleStyle": "candles",
+        "colorStrategy": "open-close",
+        "colors": {
+          "down": "red",
+          "up": "green"
+        },
+        "fields": {
+          "close": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_close{instance=\"lgblowhighregressionstrategy:5000\", job=\"pytrade2.lgblowhighregressionstrategy\"}",
+          "high": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_high{instance=\"lgblowhighregressionstrategy:5000\", job=\"pytrade2.lgblowhighregressionstrategy\"}",
+          "low": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_low{instance=\"lgblowhighregressionstrategy:5000\", job=\"pytrade2.lgblowhighregressionstrategy\"}",
+          "open": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_open{instance=\"lgblowhighregressionstrategy:5000\", job=\"pytrade2.lgblowhighregressionstrategy\"}"
+        },
+        "includeAllFields": false,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "mode": "candles"
       },
       "targets": [
         {
@@ -129,14 +139,50 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_accountmanagerhbdm_account_balance",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_open",
+          "hide": false,
           "instant": false,
           "range": true,
-          "refId": "A"
+          "refId": "open"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "builder",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_high",
+          "hide": false,
+          "instant": false,
+          "range": true,
+          "refId": "high"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "builder",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_low",
+          "hide": false,
+          "instant": false,
+          "range": true,
+          "refId": "low"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "builder",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_close",
+          "instant": false,
+          "range": true,
+          "refId": "close"
         }
       ],
-      "title": "Account balance",
-      "type": "timeseries"
+      "title": "Candles",
+      "type": "candlestick"
     },
     {
       "datasource": {
@@ -195,7 +241,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_lgblowhighregressionstrategy_strategy_learn_train_period_sec",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_learn_train_period_sec",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -298,7 +344,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_lgblowhighregressionstrategy_strategy_learn_train_exec_duration_sec",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_learn_train_exec_duration_sec",
           "instant": false,
           "range": true,
           "refId": "A"
@@ -409,13 +455,105 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_lgblowhighregressionstrategy_strategy_signal",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_signal",
           "instant": false,
           "range": true,
           "refId": "A"
         }
       ],
       "title": "Signal",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 13,
+        "x": 11,
+        "y": 8
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "builder",
+          "expr": "pytrade2_lgblowhighregressionstrategy_broker_account_balance",
+          "instant": false,
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Account balance",
       "type": "timeseries"
     },
     {
@@ -501,7 +639,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_lgblowhighregressionstrategy_pred_fut_low_diff",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_pred_fut_low_diff",
           "instant": false,
           "legendFormat": "{{label_name}}",
           "range": true,
@@ -513,7 +651,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_lgblowhighregressionstrategy_pred_fut_high_diff",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_pred_fut_high_diff",
           "hide": false,
           "instant": false,
           "range": true,
@@ -539,6 +677,6 @@
   "timezone": "",
   "title": "pytrade2 strategy",
   "uid": "a52cb481-45c0-48d1-a9ac-64a7092950f0",
-  "version": 12,
+  "version": 14,
   "weekStart": ""
 }
