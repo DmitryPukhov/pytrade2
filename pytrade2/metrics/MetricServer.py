@@ -14,13 +14,13 @@ class MetricServer:
 
     # Metric names to refer from the app
     metrics: Metrics = None
-    app_info: dict[str, any] = {}
+    app_config: dict[str, any] = {}
 
     # token value to expect in header Authorization: Bearer <auth_token>
     auth_token = None
-
+    app_name = "pytrade2"
     # Flask app to expose metrics endpoint
-    app = Flask("pytrade2")
+    app = Flask(app_name)
     prometheus_wsgi_app = make_wsgi_app()
 
     @staticmethod
@@ -54,8 +54,8 @@ class MetricServer:
     def info():
         """ Flask endpoint for configuration"""
         logging.info(f"Got request: {str(request.args.to_dict())}")
-        logging.info(f"Will return app info: {MetricServer.app_info}")
-        return json.dumps(MetricServer.app_info)
+        logging.info(f"Will return app info: {MetricServer.app_config}")
+        return json.dumps(MetricServer.app_config)
 
     @staticmethod
     def start_http_server():

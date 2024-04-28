@@ -129,17 +129,28 @@ class App:
 
     @staticmethod
     def _config_msg(config):
-        """ Pring config parameters to log
+        """ Print config parameters to log
         """
+
+        # def secured_key_val(key, value):
+        #     if any([key.endswith(suffix) for suffix in [".secret", ".key", ".access_key", ".secret_key"]]):
+        #         value = "***" + value[-3:]
+        #     return (key, value)
+
+        # secured_conf = [secured_key_val(key, config[key]) for key in sorted(config) if key.startswith("pytrade2")]
+        secured_conf = App.secured_config(config)
+        msg = "\n" + "\n".join([f"{key}: {val}" for key, val in secured_conf])
+        return msg
+
+    @staticmethod
+    def secured_config(config):
 
         def secured_key_val(key, value):
             if any([key.endswith(suffix) for suffix in [".secret", ".key", ".access_key", ".secret_key"]]):
                 value = "***" + value[-3:]
             return (key, value)
 
-        secured_conf = [secured_key_val(key, config[key]) for key in sorted(config) if key.startswith("pytrade2")]
-        msg = "\n" + "\n".join([f"{key}: {val}" for key, val in secured_conf])
-        return msg
+        return [secured_key_val(key, config[key]) for key in sorted(config) if key.startswith("pytrade2")]
 
     def _parse_args(self) -> Dict[str, str]:
         """ Parse command line arguments"""
@@ -168,8 +179,8 @@ class App:
 
         # Create prometheus metrics endpoint
         MetricServer.metrics = Metrics("pytrade2", self.strategy.__class__.__name__)
-        MetricServer.app_info = {key: value for key, value in self.config.items() if
-                                 key in self.strategy.get_report_keys()}
+        MetricServer.app_config = {key: val for key, val in self.secured_config(self.config) if
+                                   key.startswith("pytrade2")}
         MetricServer.auth_token = self.config.get("pytrade2.prometheus.token")
         MetricServer.start_http_server()
 
