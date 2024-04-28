@@ -8,6 +8,7 @@ from datamodel.Trade import Trade
 
 
 class TestTrailingStopSupport(TestCase):
+    MetricServer = MagicMock()
 
     @staticmethod
     def tss_mock():

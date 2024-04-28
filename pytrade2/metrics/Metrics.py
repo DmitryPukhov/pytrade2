@@ -94,6 +94,6 @@ class Metrics:
                 self.trade_tp = Gauge("broker_trade_tp", "trade_tp", namespace=app_name, subsystem=strategy)
                 self.trade_tr_delta = Gauge("broker_trade_tr_delta", "trade_tr_delta", namespace=app_name,
                                             subsystem=strategy)
-                self.trade_opened_flag = Gauge("broker_trade_opened_flag", "1 if is in trade, 0 if out of market",
-                                               namespace=app_name,
-                                               subsystem=strategy)
+                self.is_in_trade = Gauge("broker_is_in_trade", "1 if is in trade, 0 if out of market",
+                                         namespace=app_name,
+                                         subsystem=strategy)

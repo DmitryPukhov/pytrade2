@@ -216,7 +216,7 @@ class OrderCreator:
                 self.db_session.commit()
 
                 MetricServer.metrics.broker.order.order_created.set(1)
-                MetricServer.metrics.broker.trade.trade_opened_flag.set(1)
+                MetricServer.metrics.broker.trade.is_in_trade.set(1)
                 MetricServer.metrics.broker.trade.trade_open_price.set(self.cur_trade.open_price)
                 MetricServer.metrics.broker.trade.trade_sl.set(self.cur_trade.stop_loss_price)
                 MetricServer.metrics.broker.trade.trade_tp.set(self.cur_trade.take_profit_price)

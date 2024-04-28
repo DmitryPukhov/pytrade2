@@ -1,14 +1,18 @@
 from datetime import datetime, timezone, timedelta
 from unittest import TestCase
+from unittest.mock import MagicMock
 
 import pandas as pd
 
 from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
 from exch.huobi.hbdm.broker.OrderFollower import OrderFollower
 from datamodel.Trade import Trade
+from metrics.MetricServer import MetricServer
 
 
 class TestOrderManager(TestCase):
+
+    MetricServer.metrics = MagicMock()
 
     def test_update_trade_opened_event(self):
         dt = datetime(year=2023, month=6, day=12, hour=13, minute=16, second=1, tzinfo=timezone.utc)
