@@ -91,6 +91,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         # Metrics.gauge(self, MetricNames.Strategy.Signal.signal_time).set(dt)
 
         if signal:
+            Metrics.gauge(self, MetricNames.Strategy.Signal.signal_price).set(price)
             Metrics.gauge(self, MetricNames.Strategy.Signal.signal_sl).set(sl)
             Metrics.gauge(self, MetricNames.Strategy.Signal.signal_tp).set(tp)
             Metrics.gauge(self, MetricNames.Strategy.Signal.signal_tr_delta).set(tr_delta)

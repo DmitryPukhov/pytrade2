@@ -3,7 +3,7 @@ import threading
 from functools import wraps
 from typing import Dict
 
-from prometheus_client import Gauge, Counter
+from prometheus_client import Gauge, Counter, Summary
 from flask import Flask, request, abort
 from prometheus_client import make_wsgi_app
 
@@ -20,6 +20,7 @@ class Metrics:
     # Metrics
     gauges: Dict[str, Gauge] = {}
     counters: Dict[str, Counter] = {}
+    summaries: Dict[str, Summary] = {}
 
     # Flask app to expose metrics endpoint
     app = Flask("pytrade2")
@@ -71,3 +72,10 @@ class Metrics:
         if name not in cls.counters:
             cls.counters[name] = Counter(name, name)
         return cls.counters[name]
+
+    @classmethod
+    def summary(cls, source, suffix) -> Summary:
+        name = cls.name_of(source, suffix)
+        if name not in cls.summaries:
+            cls.summaries[name] = Summary(name, name)
+        return cls.summaries[name]

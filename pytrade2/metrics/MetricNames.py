@@ -2,7 +2,8 @@ class MetricNames:
     class Strategy:
         class Learn:
             train_period_sec = "strategy_learn_train_period_sec"
-            test_period_sec = "strategy_learn_train_period_sec"
+            train_exec_duration_sec = "strategy_learn_train_exec_duration_sec"
+            test_period_sec = "strategy_learn_test_period_sec"
 
         class Prediction:
             pred_fut_low_diff = "pred_fut_low_diff"

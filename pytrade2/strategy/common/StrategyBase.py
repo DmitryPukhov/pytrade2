@@ -210,12 +210,13 @@ class StrategyBase:
             # Metrics
             train_period_sec = (train_X.index.max() - train_X.index.min()).total_seconds()
             Metrics.gauge(self, MetricNames.Strategy.Learn.train_period_sec).set(train_period_sec)
-            test_period_sec = (train_y.index.max() - train_y.index.min()).total_seconds()
-            Metrics.gauge(self, MetricNames.Strategy.Learn.test_period_sec).set(test_period_sec)
+            # test_period_sec = (train_y.index.max() - train_y.index.min()).total_seconds()
+            # Metrics.gauge(self, MetricNames.Strategy.Learn.test_period_sec).set(test_period_sec)
 
             self._logger.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]} from {min(train_X.index)} to {max(train_X.index)}")
             if len(train_X.index) >= self.min_xy_len:
+                start_time = datetime.utcnow()
                 if not (self.X_pipe and self.y_pipe):
                     self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
                 # Final scaling and normalization
@@ -239,6 +240,8 @@ class StrategyBase:
                 tensorflow.keras.backend.clear_session()
                 gc.collect()
                 self._logger.info("Learning completed")
+                learn_duration = datetime.utcnow() - start_time
+                Metrics.gauge(self, MetricNames.Strategy.Learn.train_exec_duration_sec).set(learn_duration.total_seconds())
 
             else:
                 self._logger.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
