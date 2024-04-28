@@ -96,8 +96,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             MetricServer.metrics.strategy.signal.signal_tp.set(tp)
             MetricServer.metrics.strategy.signal.signal_tr_delta.set(tr_delta)
 
-        MetricServer.metrics.strategy.signal.pred_fut_low_diff.set(fut_low_diff)
-        MetricServer.metrics.strategy.signal.pred_fut_high_diff.set(fut_high_diff)
+        MetricServer.metrics.strategy.prediction.pred_fut_low_diff.set(fut_low_diff)
+        MetricServer.metrics.strategy.prediction.pred_fut_high_diff.set(fut_high_diff)
 
         risk_manager_ok = self.risk_manager.can_trade()
         signal_ext['status'] = None
