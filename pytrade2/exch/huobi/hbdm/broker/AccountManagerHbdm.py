@@ -5,8 +5,7 @@ from typing import Optional
 from exch.AccountManagerBase import AccountManagerBase
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
-from metrics.MetricNames import MetricNames
-from metrics.Metrics import Metrics
+from metrics.MetricServer import MetricServer
 
 
 class AccountManagerHbdm(AccountManagerBase):
@@ -38,7 +37,7 @@ class AccountManagerHbdm(AccountManagerBase):
                     balance_data = list(self.event_to_list(msg))
                     self._buffer.extend(balance_data)
                     self.cur_balance = balance_data[-1]["balance"]
-                    Metrics.gauge(self, MetricNames.Broker.Account.balance).set(self.cur_balance)
+                    MetricServer.metrics.broker.account.balance.set(self.cur_balance)
         except Exception as e:
             self._logger.error(e)
 

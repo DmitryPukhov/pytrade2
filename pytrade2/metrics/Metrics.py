@@ -1,81 +1,75 @@
-import logging
-import threading
-from functools import wraps
-from typing import Dict
-
-from prometheus_client import Gauge, Counter, Summary
-from flask import Flask, request, abort
-from prometheus_client import make_wsgi_app
-
+from prometheus_client import Gauge
 
 class Metrics:
-    """Work with Prometheus metrics"""
 
-    # Will be set to strategy name by app
-    app_name = None
+    class Strategy:
+        def __init__(self, app_name: str, strategy: str):
+            self.learn = Metrics.Strategy.Learn(app_name, strategy)
+            self.prediction = Metrics.Strategy.Prediction(app_name, strategy)
+            self.signal = Metrics.Strategy.Signal(app_name, strategy)
 
-    # token value to expect in header Authorization: Bearer <auth_token>
-    auth_token = None
+        class Learn:
+            def __init__(self, app_name: str, strategy: str):
+                self.train_period_sec = Gauge("strategy_learn_train_period_sec",
+                                              "History amount to use for train", namespace=app_name, subsystem=strategy)
+                self.train_exec_duration_sec = Gauge("strategy_learn_train_exec_duration_sec",
+                                                     "Model fit() process duration", namespace=app_name,
+                                                     subsystem=strategy)
 
-    # Metrics
-    gauges: Dict[str, Gauge] = {}
-    counters: Dict[str, Counter] = {}
-    summaries: Dict[str, Summary] = {}
+        class Prediction:
+            def __init__(self, app_name: str, strategy: str):
+                self.pred_fut_low_diff = Gauge("strategy_pred_fut_low_diff", "pred_fut_low_diff", namespace=app_name,
+                                               subsystem=strategy)
+                self.pred_fut_high_diff = Gauge("strategy_pred_fut_high_diff", "pred_fut_high_diff", namespace=app_name,
+                                                subsystem=strategy)
+                # pred_time = "pred_time"
+                self.pred_cur_time = Gauge("strategy_pred_cur_time", "pred_cur_time", namespace=app_name,
+                                           subsystem=strategy)
 
-    # Flask app to expose metrics endpoint
-    app = Flask("pytrade2")
-    prometheus_wsgi_app = make_wsgi_app()
+        class Signal:
+            def __init__(self, app_name: str, strategy: str):
+                self.signal = Gauge("strategy_signal", "strategy_signal", namespace=app_name, subsystem=strategy)
+                # signal_time = "strategy_signal_time"
+                self.signal_price = Gauge("strategy_signal_price", "strategy_signal_price", namespace=app_name,
+                                          subsystem=strategy)
+                self.signal_sl = Gauge("strategy_signal_sl", "strategy_signal_sl", namespace=app_name,
+                                       subsystem=strategy)
+                self.signal_tp = Gauge("strategy_signal_tp", "strategy_signal_tp", namespace=app_name,
+                                       subsystem=strategy)
+                self.signal_tr_delta = Gauge("strategy_signal_tr_delta", "strategy_signal_tr_delta", namespace=app_name,
+                                             subsystem=strategy)
 
-    @staticmethod
-    def require_api_token(func):
-        """ Authorization to secure metrics endpoind. """
+    class Broker:
+        def __init__(self, namespace: str, strategy: str):
+            self.account = Metrics.Broker.Account(namespace, strategy)
+            self.order = Metrics.Broker.Order(namespace, strategy)
+            self.trade = Metrics.Broker.Trade(namespace, strategy)
 
-        @wraps(func)
-        def check_token(*args, **kwargs):
-            auth_token = request.headers.get("Authorization", "").lstrip("Bearer ")
-            if (Metrics.auth_token != auth_token):
-                # Kick off who not authorized
-                abort(401)
+        class Account:
+            def __init__(self, app_name: str, strategy: str):
+                self.balance = Gauge("broker_account_balance", "account_balance", namespace=app_name,
+                                     subsystem=strategy)
 
-            # Otherwise just send them where they wanted to go
-            return func(*args, **kwargs)
+        class Order:
+            def __init__(self, app_name: str, strategy: str):
+                self.order_create_ok = Gauge("broker_order_create_ok", "order_create_ok", namespace=app_name,
+                                             subsystem=strategy)
+                self.order_create_not_filled = Gauge("broker_order_create_not_filled", "order_create_not_filled",
+                                                     namespace=app_name, subsystem=strategy)
+                self.order_create_error = Gauge("broker_order_create_error", "order_create_error", namespace=app_name,
+                                                subsystem=strategy)
 
-        return check_token
-
-    @staticmethod
-    @app.route("/metrics")
-    @require_api_token
-    def metrics():
-        """ Flask endpoint for metrics"""
-        return Metrics.prometheus_wsgi_app
-
-    @staticmethod
-    def start_http_server():
-        """ Start Flask thread to expose metrics to prometheus server."""
-        threading.Thread(target=Metrics.app.run, kwargs={"host": "0.0.0.0", "port": 5000}).start()
-        logging.info("Prometheus started")
-
-    @classmethod
-    def name_of(cls, source, suffix):
-        return f'pytrade2_{Metrics.app_name.lower()}_{source.__class__.__name__.lower()}_{suffix}'
-
-    @classmethod
-    def gauge(cls, source, suffix) -> Gauge:
-        name = cls.name_of(source, suffix)
-        if name not in cls.gauges:
-            cls.gauges[name] = Gauge(name, name)
-        return cls.gauges[name]
-
-    @classmethod
-    def counter(cls, source, suffix) -> Counter:
-        name = cls.name_of(source, suffix)
-        if name not in cls.counters:
-            cls.counters[name] = Counter(name, name)
-        return cls.counters[name]
-
-    @classmethod
-    def summary(cls, source, suffix) -> Summary:
-        name = cls.name_of(source, suffix)
-        if name not in cls.summaries:
-            cls.summaries[name] = Summary(name, name)
-        return cls.summaries[name]
+        class Trade:
+            def __init__(self, app_name: str, strategy: str):
+                self.trade_open_price = Gauge("broker_trade_open_price", "trade_open_price", namespace=app_name,
+                                              subsystem=strategy)
+                self.trade_close_price = Gauge("broker_trade_close_price", "trade_close_price", namespace=app_name,
+                                               subsystem=strategy)
+                self.trade_sl = Gauge("broker_trade_sl", "trade_sl", namespace=app_name, subsystem=strategy)
+                self.trade_tp = Gauge("broker_trade_tp", "trade_tp", namespace=app_name, subsystem=strategy)
+                self.trade_tr_delta = Gauge("broker_trade_tr_delta", "trade_tr_delta", namespace=app_name,
+                                            subsystem=strategy)
+    #
+    def __init__(self, app_name: str, strategy_name: str):
+        self.strategy = Metrics.Strategy(app_name, strategy_name)
+        self.broker = Metrics.Broker(app_name, strategy_name)

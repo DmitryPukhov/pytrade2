@@ -12,8 +12,11 @@ from typing import Dict
 import pandas as pd
 import yaml
 
-from metrics.Metrics import Metrics
+from metrics.MetricServer import MetricServer
+
 from exch.Exchange import Exchange
+from metrics.MetricServer import MetricServer
+from metrics.Metrics import Metrics
 
 
 class App:
@@ -162,12 +165,10 @@ class App:
         """
         self.strategy = self._create_strategy()
 
-        # Create metrics
-        Metrics.auth_token = self.config.get("pytrade2.prometheus.token")
-        Metrics.app_name = self.strategy.__class__.__name__
-        Metrics.start_http_server()
-
-
+        # Create prometheus metrics endpoint
+        MetricServer.metrics = Metrics("pytrade2", self.strategy.__class__.__name__)
+        MetricServer.auth_token = self.config.get("pytrade2.prometheus.token")
+        MetricServer.start_http_server()
 
         # Watchdog starts after initial interval
         threading.Timer(60, self.watchdog_check).start()

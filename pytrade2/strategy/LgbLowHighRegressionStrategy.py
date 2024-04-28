@@ -1,11 +1,11 @@
 from typing import Dict
 
+
 import lightgbm as lgb
 import pandas as pd
 from sklearn.multioutput import MultiOutputRegressor
 
-from metrics.MetricNames import MetricNames
-from metrics.Metrics import Metrics
+from metrics.MetricServer import MetricServer
 from exch.Exchange import Exchange
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LowHighTargets import LowHighTargets
@@ -87,18 +87,17 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         signal_ext['tr_delta'] = tr_delta
 
         # Metrics
-        Metrics.gauge(self, MetricNames.Strategy.Signal.signal).set(signal)
-        # Metrics.gauge(self, MetricNames.Strategy.Signal.signal_time).set(dt)
+
+        MetricServer.metrics.strategy.signal.signal.set(signal)
 
         if signal:
-            Metrics.gauge(self, MetricNames.Strategy.Signal.signal_price).set(price)
-            Metrics.gauge(self, MetricNames.Strategy.Signal.signal_sl).set(sl)
-            Metrics.gauge(self, MetricNames.Strategy.Signal.signal_tp).set(tp)
-            Metrics.gauge(self, MetricNames.Strategy.Signal.signal_tr_delta).set(tr_delta)
+            MetricServer.metrics.strategy.signal.signal_price.set(price)
+            MetricServer.metrics.strategy.signal.signal_sl.set(sl)
+            MetricServer.metrics.strategy.signal.signal_tp.set(tp)
+            MetricServer.metrics.strategy.signal.signal_tr_delta.set(tr_delta)
 
-        Metrics.gauge(self, MetricNames.Strategy.Prediction.pred_fut_low_diff).set(fut_low_diff)
-        Metrics.gauge(self, MetricNames.Strategy.Prediction.pred_fut_high_diff).set(fut_high_diff)
-        # Metrics.gauge(self, MetricNames.Strategy.Prediction.pred_time).set(close_time.value)
+        MetricServer.metrics.strategy.signal.pred_fut_low_diff.set(fut_low_diff)
+        MetricServer.metrics.strategy.signal.pred_fut_high_diff.set(fut_high_diff)
 
         risk_manager_ok = self.risk_manager.can_trade()
         signal_ext['status'] = None

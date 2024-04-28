@@ -13,8 +13,7 @@ from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
 from datamodel.Trade import Trade
 from datamodel.TradeStatus import TradeStatus
-from metrics.MetricNames import MetricNames
-from metrics.Metrics import Metrics
+from metrics.MetricServer import MetricServer
 
 
 class OrderFollower:
@@ -51,7 +50,7 @@ class OrderFollower:
         trade.close_order_id = str(raw["order_id"])
         trade.close_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
         trade.status = TradeStatus.closed
-        Metrics.gauge(OrderFollower.__name__, MetricNames.Broker.Trade.trade_close_price).set(trade.close_price)
+        MetricServer.metrics.broker.trade.trade_close_price.set(trade.close_price)
 
     def update_cur_trade_status(self):
         with self.trade_lock:

@@ -12,8 +12,7 @@ from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from datamodel.Trade import Trade
 from datamodel.TradeStatus import TradeStatus
-from metrics.MetricNames import MetricNames
-from metrics.Metrics import Metrics
+from metrics.MetricServer import MetricServer
 
 
 class OrderCreator:
@@ -198,7 +197,7 @@ class OrderCreator:
                 trade = self.res2trade(info)
 
                 if trade.status != TradeStatus.opened:
-                    Metrics.gauge(self, MetricNames.Broker.Order.order_create_not_filled).set(1)
+                    MetricServer.metrics.broker.order.order_create_not_filled.set(1)
                     self._logger.info("Order not filled, that's ok.")
                     return None
 
@@ -216,11 +215,11 @@ class OrderCreator:
                 self.db_session.add(self.cur_trade)
                 self.db_session.commit()
 
-                Metrics.gauge(self, MetricNames.Broker.Order.order_create_ok)
-                Metrics.gauge(self, MetricNames.Broker.Trade.trade_open_price).set(self.cur_trade.open_price)
-                Metrics.gauge(self, MetricNames.Broker.Trade.trade_sl).set(self.cur_trade.stop_loss_price)
-                Metrics.gauge(self, MetricNames.Broker.Trade.trade_tp).set(self.cur_trade.take_profit_price)
-                Metrics.gauge(self, MetricNames.Broker.Trade.trade_tr_delta).set(self.cur_trade.trailing_delta)
+                MetricServer.metrics.broker.order.order_create_ok.set(1)
+                MetricServer.metrics.broker.trade.trade_open_price.set(self.cur_trade.open_price)
+                MetricServer.metrics.broker.trade.trade_sl.set(self.cur_trade.stop_loss_price)
+                MetricServer.metrics.broker.trade.trade_tp.set(self.cur_trade.take_profit_price)
+                MetricServer.metrics.broker.trade.trade_tr_delta.set(self.cur_trade.trailing_delta)
 
                 self._logger.info(f"Opened trade: {self.cur_trade}")
             else:
