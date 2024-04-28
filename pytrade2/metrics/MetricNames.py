@@ -1,18 +1,18 @@
 class MetricNames:
     class Strategy:
         class Learn:
-            train_period = "strategy_learn_train_period"
-            test_period = "strategy_learn_train_period"
+            train_period_sec = "strategy_learn_train_period_sec"
+            test_period_sec = "strategy_learn_train_period_sec"
 
         class Prediction:
             pred_fut_low_diff = "pred_fut_low_diff"
             pred_fut_high_diff = "pred_fut_high_diff"
-            pred_time = "pred_time"
+            #pred_time = "pred_time"
             pred_cur_time = "pred_cur_time"
 
         class Signal:
             signal = "strategy_signal"
-            signal_time = "strategy_signal_time"
+            #signal_time = "strategy_signal_time"
             signal_price = "strategy_signal_price"
             signal_sl = "strategy_signal_sl"
             signal_tp = "strategy_signal_tp"

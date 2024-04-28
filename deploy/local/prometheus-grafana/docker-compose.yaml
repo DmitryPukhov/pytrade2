@@ -21,6 +21,7 @@ services:
     volumes:
 #      - ~/prometheus-grafana/grafana/grafana.ini:/etc/grafana/grafana.ini
       - ./grafana/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - pytrade2-grafana:/var/lib/grafana
     ports:
       - 3000:3000
     links:
@@ -28,9 +29,11 @@ services:
     networks:
       - pytrade2
 
+
 networks:
   pytrade2:
     external: true
 
 volumes:
   prometheus_data:
+  pytrade2-grafana:

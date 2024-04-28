@@ -11,6 +11,9 @@ from prometheus_client import make_wsgi_app
 class Metrics:
     """Work with Prometheus metrics"""
 
+    # Will be set to strategy name by app
+    app_name = None
+
     # token value to expect in header Authorization: Bearer <auth_token>
     auth_token = None
 
@@ -53,7 +56,7 @@ class Metrics:
 
     @classmethod
     def name_of(cls, source, suffix):
-        return f'pytrade2_{source.__class__.__name__.lower()}_{suffix}'
+        return f'pytrade2_{Metrics.app_name}_{source.__class__.__name__.lower()}_{suffix}'
 
     @classmethod
     def gauge(cls, source, suffix) -> Gauge:

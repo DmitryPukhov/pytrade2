@@ -11,7 +11,7 @@ import pandas as pd
 import tensorflow.python.keras.backend
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import RobustScaler, MinMaxScaler, StandardScaler, MaxAbsScaler
+from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 
 from exch.Exchange import Exchange
 from metrics.MetricNames import MetricNames
@@ -153,7 +153,7 @@ class StrategyBase:
         # Feeds reports
         for feed in filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
             msg.write(feed.get_report())
-            #msg.write("\n")
+            # msg.write("\n")
         return msg.getvalue()
 
     def check_cur_trade(self):
@@ -208,10 +208,10 @@ class StrategyBase:
             train_X, train_y = self.prepare_xy()
 
             # Metrics
-            train_period = train_X.index.to_series().ptp()
-            Metrics.gauge(self, MetricNames.Strategy.Learn.train_period).set(train_period)
-            test_period = train_y.index.to_series().ptp()
-            Metrics.gauge(self, MetricNames.Strategy.Learn.test_period).set(test_period)
+            train_period_sec = (train_X.index.max() - train_X.index.min()).total_seconds()
+            Metrics.gauge(self, MetricNames.Strategy.Learn.train_period_sec).set(train_period_sec)
+            test_period_sec = (train_y.index.max() - train_y.index.min()).total_seconds()
+            Metrics.gauge(self, MetricNames.Strategy.Learn.test_period_sec).set(test_period_sec)
 
             self._logger.info(
                 f"Learning on last data. Train data len: {train_X.shape[0]} from {min(train_X.index)} to {max(train_X.index)}")
@@ -280,7 +280,7 @@ class StrategyBase:
                 x = self.prepare_last_x()
                 # x can be dataframe or np array, check is it empty
                 if (hasattr(x, 'empty') and x.empty) or (hasattr(x, 'shape') and x.shape[0] == 0):
-                    self._logger.info(f'Cannot process new data: features are empty. ')
+                    self._logger.info('Cannot process new data: features are empty. ')
                     return
                 # Predict
                 y_pred = self.predict(x)
