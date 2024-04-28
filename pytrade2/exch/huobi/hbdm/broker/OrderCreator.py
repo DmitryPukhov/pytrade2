@@ -198,7 +198,7 @@ class OrderCreator:
                 trade = self.res2trade(info)
 
                 if trade.status != TradeStatus.opened:
-                    Metrics.gauge(MetricNames.Broker.Order.order_create_not_filled).set(1)
+                    Metrics.gauge(self, MetricNames.Broker.Order.order_create_not_filled).set(1)
                     self._logger.info("Order not filled, that's ok.")
                     return None
 
@@ -216,11 +216,11 @@ class OrderCreator:
                 self.db_session.add(self.cur_trade)
                 self.db_session.commit()
 
-                Metrics.gauge(MetricNames.Broker.Order.order_create_ok)
-                Metrics.gauge(MetricNames.Broker.Trade.trade_open_price).set(self.cur_trade.open_price)
-                Metrics.gauge(MetricNames.Broker.Trade.trade_sl).set(self.cur_trade.stop_loss_price)
-                Metrics.gauge(MetricNames.Broker.Trade.trade_tp).set(self.cur_trade.take_profit_price)
-                Metrics.gauge(MetricNames.Broker.Trade.trade_tr_delta).set(self.cur_trade.trailing_delta)
+                Metrics.gauge(self, MetricNames.Broker.Order.order_create_ok)
+                Metrics.gauge(self, MetricNames.Broker.Trade.trade_open_price).set(self.cur_trade.open_price)
+                Metrics.gauge(self, MetricNames.Broker.Trade.trade_sl).set(self.cur_trade.stop_loss_price)
+                Metrics.gauge(self, MetricNames.Broker.Trade.trade_tp).set(self.cur_trade.take_profit_price)
+                Metrics.gauge(self, MetricNames.Broker.Trade.trade_tr_delta).set(self.cur_trade.trailing_delta)
 
                 self._logger.info(f"Opened trade: {self.cur_trade}")
             else:

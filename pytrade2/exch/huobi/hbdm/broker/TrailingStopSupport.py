@@ -99,7 +99,7 @@ class TrailingStopSupport:
         if "status" in sl_res and sl_res["status"] == "ok":
             self.cur_trade.take_profit_price = new_tp
             self.db_session.commit()
-            Metrics.gauge(MetricNames.Broker.Trade.trade_tp).set(self.cur_trade.take_profit_price)
+            Metrics.gauge(self, MetricNames.Broker.Trade.trade_tp).set(self.cur_trade.take_profit_price)
         else:
             self._logger.error(f"Error moving trailing stop: ${sl_res}")
 

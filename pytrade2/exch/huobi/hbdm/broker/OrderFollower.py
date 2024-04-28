@@ -51,7 +51,7 @@ class OrderFollower:
         trade.close_order_id = str(raw["order_id"])
         trade.close_time = datetime.utcfromtimestamp(raw["update_time"] / 1000)
         trade.status = TradeStatus.closed
-        Metrics.gauge(MetricNames.Broker.Trade.trade_close_price).set(trade.close_price)
+        Metrics.gauge(OrderFollower.__name__, MetricNames.Broker.Trade.trade_close_price).set(trade.close_price)
 
     def update_cur_trade_status(self):
         with self.trade_lock:
