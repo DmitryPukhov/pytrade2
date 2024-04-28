@@ -3,6 +3,7 @@ from prometheus_client import Gauge
 
 class Metrics:
     def __init__(self, app_name: str, strategy_name: str):
+        app_name, strategy_name = app_name.lower(), strategy_name.lower()
         self.strategy = Metrics.Strategy(app_name, strategy_name)
         self.broker = Metrics.Broker(app_name, strategy_name)
 
