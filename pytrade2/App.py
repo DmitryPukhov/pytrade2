@@ -12,7 +12,7 @@ from typing import Dict
 import pandas as pd
 import yaml
 
-from Metrics import Metrics
+from metrics.Metrics import Metrics
 from exch.Exchange import Exchange
 
 

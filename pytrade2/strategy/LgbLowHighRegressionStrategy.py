@@ -1,11 +1,11 @@
-import logging
 from typing import Dict
 
 import lightgbm as lgb
 import pandas as pd
 from sklearn.multioutput import MultiOutputRegressor
 
-from Metrics import Metrics
+from metrics.MetricNames import MetricNames
+from metrics.Metrics import Metrics
 from exch.Exchange import Exchange
 from strategy.common.StrategyBase import StrategyBase
 from strategy.features.LowHighTargets import LowHighTargets
@@ -85,14 +85,13 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                      signal_ext['tp'])
         tr_delta = abs(close - sl) if sl else None
         signal_ext['tr_delta'] = tr_delta
-        signal_name = {1: "buy", -1: "sell", 0: "oom"}[signal]
 
         # Metrics
-        Metrics.counter(self, f"pred_signal_{signal_name}_cnt").inc(1)
-        Metrics.gauge(self, f"_pred_last_fut_low_diff").set(fut_low_diff)
-        Metrics.gauge(self, f"_pred_last_fut_high_diff").set(fut_high_diff)
-        Metrics.gauge(self, f"_pred_last_close_time").set(close_time.value)
-        Metrics.gauge(self, "_pred_last_time").set_to_current_time()
+        Metrics.gauge(self, MetricNames.Prediction.pred_signal).set(signal)
+        Metrics.gauge(self, MetricNames.Prediction.pred_fut_low_diff).set(fut_low_diff)
+        Metrics.gauge(self, MetricNames.Prediction.pred_fut_high_diff).set(fut_high_diff)
+        Metrics.gauge(self, MetricNames.Prediction.pred_time).set(close_time.value)
+        Metrics.gauge(self, MetricNames.Prediction.pred_cur_time).set_to_current_time()
 
         risk_manager_ok = self.risk_manager.can_trade()
         signal_ext['status'] = None

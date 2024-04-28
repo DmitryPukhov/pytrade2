@@ -12,6 +12,8 @@ from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
 from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
 from datamodel.Trade import Trade
 from datamodel.TradeStatus import TradeStatus
+from metrics.MetricNames import MetricNames
+from metrics.Metrics import Metrics
 
 
 class OrderCreator:
@@ -196,7 +198,8 @@ class OrderCreator:
                 trade = self.res2trade(info)
 
                 if trade.status != TradeStatus.opened:
-                    self._logger.info(f"Order not filled, that's ok.")
+                    Metrics.gauge(MetricNames.Broker.Order.order_create_not_filled).set(1)
+                    self._logger.info("Order not filled, that's ok.")
                     return None
 
                 self.cur_trade = trade
@@ -212,6 +215,8 @@ class OrderCreator:
                 # Save current trade to db
                 self.db_session.add(self.cur_trade)
                 self.db_session.commit()
+
+                Metrics.gauge(MetricNames.Broker.Order.order_create_ok)
                 self._logger.info(f"Opened trade: {self.cur_trade}")
             else:
                 self._logger.error(f"Error creating order: {res}")
