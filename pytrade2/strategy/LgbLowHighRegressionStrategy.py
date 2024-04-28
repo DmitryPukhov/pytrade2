@@ -1,6 +1,5 @@
 from typing import Dict
 
-
 import lightgbm as lgb
 import pandas as pd
 from sklearn.multioutput import MultiOutputRegressor
@@ -34,6 +33,14 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
         self._logger.info(f"Target period: {self.target_period}")
+
+    def get_report_keys(self):
+        return sorted(super().get_report_keys() +
+                      ["pytrade2.feed.candles.periods", "pytrade2.feed.candles.counts",
+                       "pytrade2.strategy.profitloss.ratio", "pytrade2.strategy.predict.window",
+                       "pytrade2.strategy.profit.min.coeff", "pytrade2.strategy.profit.max.coeff",
+                       "pytrade2.strategy.stoploss.min.coeff", "pytrade2.strategy.stoploss.max.coeff"
+                       ])
 
     def can_learn(self) -> bool:
         # Only candles feed is for data. Bid ask feed is for trailing stop support, don't check it.

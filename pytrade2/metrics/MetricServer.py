@@ -1,3 +1,4 @@
+import json
 import logging
 import threading
 from functools import wraps
@@ -13,6 +14,7 @@ class MetricServer:
 
     # Metric names to refer from the app
     metrics: Metrics = None
+    app_info: dict[str, any] = {}
 
     # token value to expect in header Authorization: Bearer <auth_token>
     auth_token = None
@@ -43,6 +45,17 @@ class MetricServer:
     def metrics():
         """ Flask endpoint for metrics"""
         return MetricServer.prometheus_wsgi_app
+
+    @staticmethod
+    @app.route("/info/query", methods=['GET', 'POST'])
+    @app.route("/info/metrics", methods=['GET', 'POST'])
+    @app.route("/info", methods=['GET', 'POST'])
+    @require_api_token
+    def info():
+        """ Flask endpoint for configuration"""
+        logging.info(f"Got request: {str(request.args.to_dict())}")
+        logging.info(f"Will return app info: {MetricServer.app_info}")
+        return json.dumps(MetricServer.app_info)
 
     @staticmethod
     def start_http_server():

@@ -142,6 +142,10 @@ class StrategyBase:
             self._logger.error(f"Strategy is not alive for {maxdelta}")
         return is_alive
 
+    def get_report_keys(self):
+        """ Short info for UI"""
+        return ["pytrade2.strategy", "pytrade2.tickers", "pytrade2.broker.trade.allow"]
+
     def get_report(self):
         """ Short info for report """
 

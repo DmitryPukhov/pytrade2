@@ -24,8 +24,30 @@
   "panels": [
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "marcusolsson-json-datasource",
+        "uid": "cc73c080-6458-4491-a0bb-d79c5727ef7a"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
       },
       "gridPos": {
         "h": 2,
@@ -33,18 +55,194 @@
         "x": 0,
         "y": 0
       },
-      "id": 6,
+      "id": 9,
       "options": {
-        "code": {
-          "language": "plaintext",
-          "showLineNumbers": false,
-          "showMiniMap": false
+        "inlineEditing": true,
+        "root": {
+          "background": {
+            "color": {
+              "fixed": "transparent"
+            },
+            "image": {
+              "fixed": ""
+            }
+          },
+          "border": {
+            "color": {
+              "fixed": "dark-green"
+            }
+          },
+          "constraint": {
+            "horizontal": "left",
+            "vertical": "top"
+          },
+          "elements": [
+            {
+              "background": {
+                "color": {
+                  "field": "pytrade2.strategy",
+                  "fixed": "#D9D9D9"
+                }
+              },
+              "border": {
+                "color": {
+                  "fixed": "dark-green"
+                }
+              },
+              "config": {
+                "align": "center",
+                "color": {
+                  "fixed": "#000000"
+                },
+                "size": 20,
+                "text": {
+                  "field": "pytrade2.strategy",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "valign": "middle"
+              },
+              "constraint": {
+                "horizontal": "left",
+                "vertical": "top"
+              },
+              "name": "Strategy",
+              "placement": {
+                "height": 34,
+                "left": 9,
+                "top": 7,
+                "width": 325
+              },
+              "type": "metric-value"
+            },
+            {
+              "background": {
+                "color": {
+                  "field": "pytrade2.broker.trade.allow",
+                  "fixed": "#D9D9D9"
+                }
+              },
+              "border": {
+                "color": {
+                  "fixed": "dark-green"
+                }
+              },
+              "config": {
+                "align": "center",
+                "color": {
+                  "fixed": "#000000"
+                },
+                "size": 20,
+                "text": {
+                  "field": "pytrade2.broker.trade.allow",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "valign": "middle"
+              },
+              "constraint": {
+                "horizontal": "left",
+                "vertical": "top"
+              },
+              "name": "trade allow",
+              "placement": {
+                "height": 30,
+                "left": 466,
+                "top": 11,
+                "width": 66
+              },
+              "type": "metric-value"
+            },
+            {
+              "background": {
+                "color": {
+                  "fixed": "transparent"
+                }
+              },
+              "border": {
+                "color": {
+                  "fixed": "dark-green"
+                }
+              },
+              "config": {
+                "align": "center",
+                "color": {
+                  "fixed": "rgb(204, 204, 220)"
+                },
+                "size": 16,
+                "text": {
+                  "fixed": "Allow trade"
+                },
+                "valign": "middle"
+              },
+              "constraint": {
+                "horizontal": "left",
+                "vertical": "top"
+              },
+              "name": "Element 4",
+              "placement": {
+                "height": 50,
+                "left": 356,
+                "top": 1,
+                "width": 100
+              },
+              "type": "text"
+            }
+          ],
+          "name": "Element 1714330977722",
+          "placement": {
+            "height": 100,
+            "left": 0,
+            "top": 0,
+            "width": 100
+          },
+          "type": "frame"
         },
-        "content": "# LGBLowHighRegression strategy",
-        "mode": "markdown"
+        "showAdvancedTypes": true
       },
       "pluginVersion": "10.0.3",
-      "type": "text"
+      "targets": [
+        {
+          "cacheDurationSeconds": 300,
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "cc73c080-6458-4491-a0bb-d79c5727ef7a"
+          },
+          "fields": [
+            {
+              "jsonPath": "$[pytrade2.strategy]"
+            }
+          ],
+          "method": "GET",
+          "queryParams": "",
+          "refId": "Strategy",
+          "urlPath": ""
+        },
+        {
+          "cacheDurationSeconds": 300,
+          "datasource": {
+            "type": "marcusolsson-json-datasource",
+            "uid": "cc73c080-6458-4491-a0bb-d79c5727ef7a"
+          },
+          "fields": [
+            {
+              "jsonPath": "$[pytrade2.broker.trade.allow]"
+            }
+          ],
+          "hide": false,
+          "method": "GET",
+          "queryParams": "",
+          "refId": "Allow trade",
+          "urlPath": ""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {}
+        }
+      ],
+      "type": "canvas"
     },
     {
       "datasource": {
@@ -771,6 +969,6 @@
   "timezone": "",
   "title": "pytrade2 strategy",
   "uid": "a52cb481-45c0-48d1-a9ac-64a7092950f0",
-  "version": 15,
+  "version": 16,
   "weekStart": ""
 }

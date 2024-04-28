@@ -15,8 +15,8 @@ import yaml
 from metrics.MetricServer import MetricServer
 
 from exch.Exchange import Exchange
-from metrics.MetricServer import MetricServer
 from metrics.Metrics import Metrics
+from strategy.common.StrategyBase import StrategyBase
 
 
 class App:
@@ -34,9 +34,9 @@ class App:
         time.tzset()
         self._init_logger()
 
-        self._logger.info(f"\n--------------------------------------------------------------"
-                       f"\n--------------   Starting pytrade2 App   ---------------------"
-                       f"\n--------------------------------------------------------------")
+        self._logger.info("\n--------------------------------------------------------------"
+                          "\n--------------   Starting pytrade2 App   ---------------------"
+                          "\n--------------------------------------------------------------")
         # For pandas printing to log
         pd.set_option('display.max_colwidth', None)
         pd.set_option('display.max_columns', None)
@@ -131,6 +131,7 @@ class App:
     def _config_msg(config):
         """ Pring config parameters to log
         """
+
         def secured_key_val(key, value):
             if any([key.endswith(suffix) for suffix in [".secret", ".key", ".access_key", ".secret_key"]]):
                 value = "***" + value[-3:]
@@ -148,11 +149,11 @@ class App:
         parser.add_argument('--config', help='Additional config file')
         return vars(parser.parse_args())
 
-    def _create_strategy(self):
+    def _create_strategy(self) -> StrategyBase:
         """ Create strategy class"""
         exchange = Exchange(self.config)
 
-        strategy_file = f"strategy." + self.config["pytrade2.strategy"]
+        strategy_file = "strategy." + self.config["pytrade2.strategy"]
         strategy_class_name = strategy_file.split(".")[-1]
         self._logger.info(f"Running the strategy: {strategy_file}")
         module = importlib.import_module(strategy_file, strategy_class_name)
@@ -167,6 +168,8 @@ class App:
 
         # Create prometheus metrics endpoint
         MetricServer.metrics = Metrics("pytrade2", self.strategy.__class__.__name__)
+        MetricServer.app_info = {key: value for key, value in self.config.items() if
+                                 key in self.strategy.get_report_keys()}
         MetricServer.auth_token = self.config.get("pytrade2.prometheus.token")
         MetricServer.start_http_server()
 
@@ -182,10 +185,10 @@ class App:
     def watchdog_check(self):
         """ If not alive, reset websocket feed"""
         if not self.strategy.is_alive():
-            self._logger.error(f"Strategy seems to be dead, exiting")
+            self._logger.error("Strategy seems to be dead, exiting")
             os.kill(os.getpid(), signal.SIGINT)
         else:
-            self._logger.debug(f"Strategy is alive")
+            self._logger.debug("Strategy is alive")
             # Schedule next check
             threading.Timer(60, self.watchdog_check).start()
 
