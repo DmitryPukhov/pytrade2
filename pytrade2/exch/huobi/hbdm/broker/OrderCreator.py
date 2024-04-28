@@ -217,6 +217,11 @@ class OrderCreator:
                 self.db_session.commit()
 
                 Metrics.gauge(MetricNames.Broker.Order.order_create_ok)
+                Metrics.gauge(MetricNames.Broker.Trade.trade_price).set(self.cur_trade.open_price)
+                Metrics.gauge(MetricNames.Broker.Trade.trade_sl).set(self.cur_trade.stop_loss_price)
+                Metrics.gauge(MetricNames.Broker.Trade.trade_tp).set(self.cur_trade.take_profit_price)
+                Metrics.gauge(MetricNames.Broker.Trade.trade_tr_delta).set(self.cur_trade.trailing_delta)
+
                 self._logger.info(f"Opened trade: {self.cur_trade}")
             else:
                 self._logger.error(f"Error creating order: {res}")

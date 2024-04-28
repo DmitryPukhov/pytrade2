@@ -1,19 +1,14 @@
-import logging
-import math
 from typing import Dict
 
 import numpy as np
 import pandas as pd
-from keras.preprocessing.sequence import TimeseriesGenerator
-from numpy import ndarray
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import RobustScaler, MinMaxScaler, FunctionTransformer
 
 from exch.Exchange import Exchange
 from strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
 from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
-
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import RobustScaler, MinMaxScaler, FunctionTransformer
 
 
 class LSTMBidAskRegressionStrategyBase(BidAskRegressionStrategyBase):
