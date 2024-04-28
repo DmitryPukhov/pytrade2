@@ -77,8 +77,8 @@ class Metrics:
 
         class Order:
             def __init__(self, app_name: str, strategy: str):
-                self.order_create_ok = Gauge("broker_order_create_ok", "order_create_ok", namespace=app_name,
-                                             subsystem=strategy)
+                self.order_created = Gauge("broker_order_create_ok", "order_create_ok", namespace=app_name,
+                                           subsystem=strategy)
                 self.order_create_not_filled = Gauge("broker_order_create_not_filled", "order_create_not_filled",
                                                      namespace=app_name, subsystem=strategy)
                 self.order_create_error = Gauge("broker_order_create_error", "order_create_error", namespace=app_name,
@@ -94,3 +94,6 @@ class Metrics:
                 self.trade_tp = Gauge("broker_trade_tp", "trade_tp", namespace=app_name, subsystem=strategy)
                 self.trade_tr_delta = Gauge("broker_trade_tr_delta", "trade_tr_delta", namespace=app_name,
                                             subsystem=strategy)
+                self.trade_opened_flag = Gauge("broker_trade_opened_flag", "1 if is in trade, 0 if out of market",
+                                               namespace=app_name,
+                                               subsystem=strategy)

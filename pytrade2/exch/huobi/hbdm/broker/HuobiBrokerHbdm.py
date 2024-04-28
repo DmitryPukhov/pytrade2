@@ -10,6 +10,7 @@ from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
 from exch.huobi.hbdm.broker.TrailingStopSupport import TrailingStopSupport
 from exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
 from datamodel.Trade import Trade
+from metrics.MetricServer import MetricServer
 
 
 class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
@@ -52,7 +53,10 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
 
         self.account_manager.refresh_balance()
 
+        # Initial set current trade if it is opened
         self.update_cur_trade_status()
+        if self.cur_trade:
+            MetricServer.metrics.broker.trade.trade_opened_flag.set(1)
 
     def sub_events(self):
         """ Subscribe account and order events """
