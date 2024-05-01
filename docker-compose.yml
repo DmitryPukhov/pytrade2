@@ -13,6 +13,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - .env
     networks:
       - pytrade2
     volumes:
@@ -21,7 +23,7 @@ services:
     command: python ./App.py --strategy None
     restart: always
     ports:
-      - 5000:5000
+      - 8000:5000
     logging:
       options:
         max-size: "10m"
@@ -30,6 +32,9 @@ services:
   lgblowhighregressionstrategy:
     container_name: lgblowhighregressionstrategy
     hostname: lgblowhighregressionstrategy
+    env_file:
+      - .lgblowhighregressionstrategy.env
+
     extends:
       service: trade
     command: python ./App.py --pytrade2.strategy LgbLowHighRegressionStrategy
@@ -61,3 +66,4 @@ services:
 networks:
   pytrade2:
     name: pytrade2
+    external: true

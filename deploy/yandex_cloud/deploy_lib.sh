@@ -45,6 +45,16 @@ prepare_tmp(){
   echo "Copying pytrade2 to tmp"
   cp -r "$PYTRADE2_DIR/pytrade2" "$TMP_DIR/pytrade2"
 
+
+  # Copy .env files
+  find "$PYTRADE2_DIR"/.*.env -exec cp -r {} "$TMP_DIR/pytrade2/" \;
+  cp -r "$PYTRADE2_DIR/.yandex-cloud.env" "$TMP_DIR/pytrade2/.env"
+
+  # Copy mlflow dockers
+  mkdir -p "$TMP_DIR/pytrade2/deploy/docker"
+  cp -r "$PYTRADE2_DIR/deploy/docker/mlflow" "$TMP_DIR/pytrade2/deploy/docker/mlflow"
+  rm -r "$TMP_DIR/pytrade2/deploy/docker/mlflow/mlruns"
+
   # Clean caches
   prepare_tmp_clean_cache
   # Compose configs in tmp
@@ -64,6 +74,9 @@ copy_to_remote() {
 copy_to_remote_config() {
   echo "Copy pytrade2 config to $VM_PUBLIC_IP"
   rsync -v -r "$TMP_DIR/pytrade2/pytrade2/cfg/" $VM_USER@"$VM_PUBLIC_IP":/home/$VM_USER/pytrade2/pytrade2/cfg
+  echo "Copy pytrade2 env files to $VM_PUBLIC_IP"
+  scp "$TMP_DIR/pytrade2/.env" $VM_USER@"$VM_PUBLIC_IP":/home/$VM_USER/pytrade2/.env
+  find "$TMP_DIR"/pytrade2/.*.env -exec scp {} $VM_USER@"$VM_PUBLIC_IP":/home/$VM_USER/pytrade2/ \;
 }
 
 
@@ -81,16 +94,16 @@ build_baremetal() {
     ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo pip install -r requirements.txt"
 }
 
-bots_up() {
-  bot_names=$1
-  echo "Starting bot $bot_names at $VM_PUBLIC_IP machine"
-  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker compose up $bot_names &"
+dockers_up() {
+  dockers=$1
+  echo "Starting bot $dockers at $VM_PUBLIC_IP machine"
+  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker compose up $dockers &"
 }
 
-bots_down() {
-  bot_names=$1
-  echo "Stopping bot $bot_names at $VM_PUBLIC_IP machine"
-  #ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker compose down $bot_names"
-  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker stop $bot_names"
-  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker rm $bot_names"
+dockers_down() {
+  dockers=$1
+  echo "Stopping bot $dockers at $VM_PUBLIC_IP machine"
+  #ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker compose down $dockers"
+  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker stop $dockers"
+  ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo docker rm $dockers"
 }

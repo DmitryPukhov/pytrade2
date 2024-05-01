@@ -1,4 +1,4 @@
-version: '3'
+version: '3.9'
 
 services:
   mlflow:
@@ -16,3 +16,7 @@ services:
     volumes:
       - ./mlruns:/mlruns
       - ./mlflow_auth_config.ini:/mlflow_auth_config.ini
+
+networks:
+  pytrade2:
+    name: pytrade2

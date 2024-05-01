@@ -1,4 +1,5 @@
 # Config files
+*.env
 *.secret
 *.crt
 *.key
