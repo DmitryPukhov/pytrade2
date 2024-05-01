@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: 'pytrade2.lgblowhighregressionstrategy'
     bearer_token_file: pytrade2.secret
     static_configs:
-      - targets: ['lgblowhighregressionstrategy:5000']
+      - targets: ['lgblowhighregressionstrategy:8000']
 
   - job_name: 'prometheus'
     static_configs:

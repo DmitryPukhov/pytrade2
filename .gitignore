@@ -1,4 +1,6 @@
 # Config files
+mlruns
+mlartifacts
 *.env
 *.secret
 *.crt

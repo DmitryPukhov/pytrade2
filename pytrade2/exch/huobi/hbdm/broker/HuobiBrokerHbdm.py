@@ -16,7 +16,8 @@ from metrics.MetricServer import MetricServer
 class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
     """ Huobi derivatives market broker"""
 
-    def __init__(self, conf: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient, ws_feed: HuobiWebSocketFeedHbdm):
+    def __init__(self, conf: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient,
+                 ws_feed: HuobiWebSocketFeedHbdm):
         self._logger = logging.getLogger(self.__class__.__name__)
 
         OrderCreator.__init__(self, conf)
@@ -26,7 +27,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
 
         self.tickers = conf["pytrade2.tickers"].lower().split(",")
         self.fee = float(conf["pytrade2.exchange.huobi.hbdm.fee"])
-        
+
         self.ws_client, self.ws_feed, self.rest_client = ws_client, ws_feed, rest_client
 
         # This mode means that sell closes previous buy and vice versa
@@ -103,31 +104,3 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
         except Exception as e:
             self._logger.error(f"Socket message processing error: {e}")
 
-    def get_report(self):
-        """ Short info for report """
-
-        # Form message string
-        msg = StringIO()
-        msg.write(super().get_report())
-        try:
-            # Report balance
-            res = self.rest_client.post("/linear-swap-api/v1/swap_balance_valuation", {"valuation_asset": "USDT"})
-            if res["status"] == "error":
-                raise Exception(res["err_msg"])
-            msg.writelines([f'Balance {b["valuation_asset"]}: {b["balance"]}\n' for b in res["data"]])
-
-            # Report positions
-            res = self.rest_client.post("/linear-swap-api/v1/swap_cross_account_info", {"margin_account": "USDT"})
-            if res["status"] == "error":
-                raise Exception(res["err_msg"])
-            data = res["data"]
-            for dataitem in data:
-                for c in [c for c in dataitem["futures_contract_detail"] if c["margin_position"] != 0]:
-                    currency = c['trade_partition']
-                    msg.write(f"Position {c['contract_code']}: {c['margin_position']} {currency}, "
-                              f"frozen:{c['margin_frozen']} {currency}, "
-                              f"available: {c['margin_available']} {currency}\n")
-        except Exception as e:
-            self._logger.error(f"Error reporting broker info: {e}")
-
-        return msg.getvalue()

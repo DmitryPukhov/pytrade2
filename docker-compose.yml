@@ -1,15 +1,15 @@
 version: "3.9"
 services:
 
-#  grafana:
-#    image: grafana/grafana-enterprise
-#    container_name: grafana
-#    restart: unless-stopped
-#    ports:
-#      - '3000:3000'
+  #  grafana:
+  #    image: grafana/grafana-enterprise
+  #    container_name: grafana
+  #    restart: unless-stopped
+  #    ports:
+  #      - '3000:3000'
 
   trade:
-    profiles: []
+    profiles: [ ]
     build:
       context: .
       dockerfile: Dockerfile
@@ -22,8 +22,6 @@ services:
       - ./pytrade2/cfg:/pytrade2/cfg
     command: python ./App.py --strategy None
     restart: always
-    ports:
-      - 8000:5000
     logging:
       options:
         max-size: "10m"
@@ -34,7 +32,8 @@ services:
     hostname: lgblowhighregressionstrategy
     env_file:
       - .lgblowhighregressionstrategy.env
-
+    ports:
+      - 8000:8000 # for prometheus metrics
     extends:
       service: trade
     command: python ./App.py --pytrade2.strategy LgbLowHighRegressionStrategy

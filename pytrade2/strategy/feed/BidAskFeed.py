@@ -42,17 +42,6 @@ class BidAskFeed:
             self.bid_ask = self.bid_ask[self.bid_ask.index > min_time]
         return self.bid_ask
 
-    def get_report(self):
-        time_format = '%Y-%m-%d %H:%M:%S'
-        msg = StringIO()
-        msg.write(f"\nBid ask ")
-        msg.write(
-            f"cnt:{self.bid_ask.index.size}, "
-            f"first:{self.bid_ask.index.min().strftime(time_format)}, "
-            f"last: {self.bid_ask.index.max().strftime(time_format)}"
-            if not self.bid_ask.empty else "is empty")
-        return msg.getvalue()
-
     def is_alive(self, maxdelta: pd.Timedelta):
         return self.bid_ask.empty or (datetime.utcnow() - self.bid_ask.index.max() <= maxdelta)
 

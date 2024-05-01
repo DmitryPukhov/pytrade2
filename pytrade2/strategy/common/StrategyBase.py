@@ -4,7 +4,6 @@ import multiprocessing
 import traceback
 import time
 from datetime import datetime, timedelta
-from io import StringIO
 from threading import Thread, Event, Timer
 from typing import Dict
 import pandas as pd
@@ -32,6 +31,7 @@ class StrategyBase:
 
         strategy_name = self.__class__.__name__
         self.data_persister = DataPersister(config, strategy_name)
+        self.model_name = strategy_name.rstrip("Strategy")
         self.model_persister = ModelPersister(config, strategy_name)
 
         self.config = config
@@ -72,8 +72,8 @@ class StrategyBase:
         # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
         self.stop_loss_max_coeff = config.get("pytrade2.strategy.stoploss.max.coeff", float('inf'))
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
-        self.profit_min_coeff = config.get("pytrade2.strategy.profit.min.coeff", 0)
-        self.profit_max_coeff = config.get("pytrade2.strategy.profit.max.coeff", float('inf'))
+        self.take_profit_min_coeff = config.get("pytrade2.strategy.take.profit.min.coeff", 0)
+        self.take_profit_max_coeff = config.get("pytrade2.strategy.take.profit.max.coeff", float('inf'))
 
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
@@ -142,18 +142,22 @@ class StrategyBase:
             self._logger.error(f"Strategy is not alive for {maxdelta}")
         return is_alive
 
-    def get_report(self):
+    def get_info(self) -> dict:
+        """ Short info for """
+        ...
+
+    def get_report(self) -> dict:
         """ Short info for report """
 
-        msg = StringIO()
+        report = {}
         # Broker report
         if hasattr(self.broker, "get_report"):
-            msg.write(self.broker.get_report())
+            report.update(self.broker.get_report())
         # Feeds reports
         for feed in filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
-            msg.write(feed.get_report())
+            report.update(feed.get_report())
             # msg.write("\n")
-        return msg.getvalue()
+        return report
 
     def check_cur_trade(self):
         """ Update cur trade if sl or tp reached """
@@ -224,9 +228,15 @@ class StrategyBase:
                 # If x window transformation applied, x size reduced => adjust y
                 y_trans = y_trans[-X_trans.shape[0]:]
 
-                # Train
+                # Get or create model, parameters
                 if not self.model:
-                    self.model = self.create_model(X_trans.shape[-1], y_trans.shape[-1])
+                    self.model, params = self.model_persister.get_last_trade_ready_model(self.model_name)
+                    if not self.model:
+                        self.model = self.create_model(X_trans.shape[-1], y_trans.shape[-1])
+                    if params:
+                        self.apply_params(params)
+
+                # Train
                 self.model.fit(X_trans, y_trans)
 
                 # Save weights and xy new delta
@@ -245,6 +255,10 @@ class StrategyBase:
         finally:
             if self.learn_interval:
                 Timer(self.learn_interval.seconds, self.learn).start()
+
+    def apply_params(self, params: dict) -> None:
+        """ After last model and params read from mlflow, apply params to strategy"""
+        ...
 
     def prepare_last_x(self):
         raise NotImplementedError("prepare_Xy")

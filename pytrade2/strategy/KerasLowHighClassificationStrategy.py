@@ -29,8 +29,8 @@ class KerasLowHighClassificationStrategy(SignalClassificationStrategyBase):
                               is_bid_ask_feed=False,
                               is_level2_feed=True)
         self.signal_calc = OrderParamsByLastCandle(self.profit_loss_ratio, self.stop_loss_min_coeff,
-                                                   self.stop_loss_max_coeff, self.profit_min_coeff,
-                                                   self.profit_max_coeff)
+                                                   self.stop_loss_max_coeff, self.take_profit_min_coeff,
+                                                   self.take_profit_max_coeff)
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
@@ -45,7 +45,7 @@ class KerasLowHighClassificationStrategy(SignalClassificationStrategyBase):
             self.candles_feed.candles_cnt_by_interval,
             self.target_period,
             self.stop_loss_min_coeff,
-            self.profit_min_coeff)
+            self.take_profit_min_coeff)
         # Balance by signal
         return LearnDataBalancer.balanced(x, y)
 

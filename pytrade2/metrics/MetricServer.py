@@ -15,6 +15,7 @@ class MetricServer:
     # Metric names to refer from the app
     metrics: Metrics = None
     app_config: dict[str, any] = {}
+    app_params: dict[str, any] = {}
 
     # token value to expect in header Authorization: Bearer <auth_token>
     auth_token = None
@@ -47,18 +48,29 @@ class MetricServer:
         return MetricServer.prometheus_wsgi_app
 
     @staticmethod
-    @app.route("/info/query", methods=['GET', 'POST'])
-    @app.route("/info/metrics", methods=['GET', 'POST'])
-    @app.route("/info", methods=['GET', 'POST'])
+    @app.route("/app_config/query", methods=['GET', 'POST'])
+    @app.route("/app_config/metrics", methods=['GET', 'POST'])
+    @app.route("/app_config", methods=['GET', 'POST'])
     @require_api_token
-    def info():
+    def app_config():
         """ Flask endpoint for configuration"""
         logging.debug(f"Got request: {str(request.args.to_dict())}")
         logging.debug(f"Will return app info: {MetricServer.app_config}")
         return json.dumps(MetricServer.app_config)
 
     @staticmethod
+    @app.route("/app_params/query", methods=['GET', 'POST'])
+    @app.route("/app_params/metrics", methods=['GET', 'POST'])
+    @app.route("/app_params", methods=['GET', 'POST'])
+    @require_api_token
+    def app_params():
+        """ Flask endpoint for configuration"""
+        logging.debug(f"Got request: {str(request.args.to_dict())}")
+        logging.debug(f"Will return app info: {MetricServer.app_params}")
+        return json.dumps(MetricServer.app_config)
+
+    @staticmethod
     def start_http_server():
         """ Start Flask thread to expose metrics to prometheus server."""
-        threading.Thread(target=MetricServer.app.run, kwargs={"host": "0.0.0.0", "port": 5000}).start()
+        threading.Thread(target=MetricServer.app.run, kwargs={"host": "0.0.0.0", "port": 8000}).start()
         logging.info("Prometheus started")

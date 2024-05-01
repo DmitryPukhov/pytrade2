@@ -296,31 +296,3 @@ class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):
             except Exception as ex:
                 self._logger.error(f"on_order_update error:{ex}")
 
-    def get_report(self):
-        """ Short info for report """
-
-        # Form message string
-        msg = StringIO()
-        msg.write(super().get_report())
-
-        try:
-            # Opened orders
-            for symbol in self.subscribed_symbols:
-                opened_orders = self.trade_client.get_open_orders(symbol=symbol, account_id=self.account_id)
-                for order in opened_orders:
-                    msg.write(f"Opened order: {symbol}, id: {order.id}, type:{order.type}, state: {order.state}, "
-                              f"created:{pd.to_datetime(order.created_at, unit='ms')}, price:{order.price}")
-                    msg.write("\n")
-        except Exception as e:
-            self._logger.error(f"Error reporting opened orders: {e}")
-
-        try:
-            # Account balance
-            balance = self.account_client.get_balance(self.account_id)
-            actual_balance = "\n".join(
-                [f"{b.currency} amount: {b.balance}, type: {b.type}" for b in balance if float(b.balance) > 0])
-            msg.write(actual_balance)
-        except Exception as e:
-            self._logger.error(f"Error reporting account info: {e}")
-
-        return msg.getvalue()

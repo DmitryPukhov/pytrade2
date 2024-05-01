@@ -1,22 +1,18 @@
-import functools
 import glob
 import logging
 import os
-import threading
-import zipfile
-from collections import defaultdict
-from datetime import datetime, timedelta
+import pickle
+from datetime import datetime
 from pathlib import Path
 from typing import Dict
-import boto3
-import pandas as pd
-from keras.models import Model
-import threading
 
+import mlflow.sklearn
+from keras.models import Model
 from lightgbm import LGBMRegressor
 from sklearn.multioutput import MultiOutputRegressor
-import lightgbm as lgb
-import pickle
+
+from mlflow import MlflowClient
+
 
 class ModelPersister:
     """ Read/write model weights"""
@@ -30,6 +26,7 @@ class ModelPersister:
             # weights dir
             self.model_dir = str(Path(self.data_dir, tag, "model"))
             Path(self.model_dir).mkdir(parents=True, exist_ok=True)
+        self.mlflow_client = MlflowClient()
 
     def load_last_model(self, model: Model):
         try:
@@ -65,8 +62,8 @@ class ModelPersister:
         elif isinstance(model, MultiOutputRegressor) and isinstance(model.estimator, LGBMRegressor):
             # Save lgb
             model_path += "_lgb.pkl"
-            with open(model_path,'wb') as f:
-                pickle.dump(model,f)
+            with open(model_path, 'wb') as f:
+                pickle.dump(model, f)
                 self._logger.debug(f"Saved lgb  model to {model_path}")
 
         self.purge_old_models()
@@ -82,3 +79,24 @@ class ModelPersister:
             for file in purge_files:
                 os.remove(os.path.join(self.model_dir, file))
             self._logger.debug(f"Purged {len(purge_files)} files in {self.model_dir}")
+
+    def get_last_trade_ready_model(self, model_name, load_func=mlflow.sklearn.load_model) -> (any, dict):
+        """ Load latest model and it's params from mlflow. The model should be tagged trade_ready. """
+        trade_ready_tag = "trade_ready"
+        self._logger.info(f"Getting latest trade ready model: {model_name} from {self.mlflow_client.tracking_uri}")
+        # Get last trade ready model version, tagged as trade ready
+        model_versions = self.mlflow_client.search_model_versions(
+            f"name = '{model_name}' and tag.{trade_ready_tag} = '1'",
+            order_by=["version_number desc"], max_results=1)
+        if not model_versions:
+            self._logger.info(f"Model: {model_name} not found")
+            return None, None
+        model_version = model_versions.pop()
+        self._logger.info(f"Got model: {model_version.source}")
+        model = load_func(model_version.source)
+
+        # Get run parameters
+        params = self.mlflow_client.get_run(model_version.run_id).data.params
+        self._logger.info(f"Got strategy parameters: {params}")
+
+        return model, params

@@ -127,31 +127,3 @@ class BinanceBrokerSpot(BrokerSpotBase):
         if self.cur_trade.status == TradeStatus.closed:
                 self.cur_trade, self.prev_trade = None, self.cur_trade
 
-    def get_report(self):
-        """ Short info for report """
-
-        # Form message string
-        msg = StringIO()
-        msg.write(f"Allow trade: {self.allow_trade}\n")
-
-        # Opened trade
-        msg.write(f"Current trade: {self.cur_trade}\n")
-
-        try:
-            # Opened orders
-            for order in self.client.get_open_orders():
-                order_time = datetime.utcfromtimestamp(order["time"] / 1000.0)
-                msg.write(f"Opened order: {order['side']} {order['symbol']}, id: {order['orderId']}, "
-                          f"price: {order['price']}, time: {order_time}\n")
-        except Exception as e:
-            self._logger.error(f"Error reporting opened orders: {e}")
-
-        try:
-            # Account balance
-            for b in self.client.account()["balances"]:
-                if float(b["free"]) > 0 or b["locked"] > 0:
-                    msg.write(f"{b['asset']} free: {b['free']}, locked: {b['locked']}\n")
-        except Exception as e:
-            self._logger.error(f"Error reporting account info: {e}")
-
-        return msg.getvalue()

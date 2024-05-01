@@ -48,16 +48,6 @@ class Level2Feed:
             self.level2 = self.level2[self.level2["datetime"] > min_time]
         return self.level2
 
-    def get_report(self):
-        """ Short info for report """
-        time_format = '%Y-%m-%d %H:%M:%S'
-
-        return (f"Level2 cnt:{len(self.level2)}, "
-                f"first: {self.level2.index.min().strftime(time_format)}, "
-                f"last: {self.level2.index.max().strftime(time_format)}") \
-            if not self.level2.empty \
-            else "Level2 is empty"
-
     def is_alive(self, maxdelta: pd.Timedelta):
         return self.level2.empty or (datetime.utcnow() - self.level2.index.max() <= maxdelta)
 

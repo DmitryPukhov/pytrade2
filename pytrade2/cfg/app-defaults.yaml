@@ -33,8 +33,8 @@ pytrade2.strategy.stoploss.max.coeff: 0.005
 
 # Take profit or start trailing stop for buy order if price above open price * (1+coeff)
 # 0.01 for BTCUSDT 30 000 would be 300. For some strategies this is point for starting trailing stop, not take profit
-pytrade2.strategy.profit.min.coeff: 0.005
-pytrade2.strategy.profit.max.coeff: 0.005
+pytrade2.strategy.take.profit.min.coeff: 0.005
+pytrade2.strategy.take.profit.max.coeff: 0.005
 
 pytrade2.strategy.profitloss.ratio: 4
 

@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, timedelta
-from io import StringIO
 from pathlib import Path
 from threading import RLock
 from typing import Optional, Dict
@@ -23,7 +22,7 @@ class Broker:
         self.trade_lock: RLock = RLock()
         self.config = config
         self.amount_precision = config["pytrade2.amount.precision"]
-        
+
         self.min_trade_interval = timedelta(seconds=10)
         self.last_trade_time = datetime.utcnow() - self.min_trade_interval
         self.allow_trade = config.get("pytrade2.broker.trade.allow", False)
@@ -37,7 +36,7 @@ class Broker:
                 self.fix_cur_trade()
         else:
             self._logger.info("Opened trades not found")
-        self._logger.info(f"Completed init broker.")
+        self._logger.info("Completed init broker.")
 
     def __init_db__(self, config: Dict[str, str]):
         # Create database
@@ -55,15 +54,12 @@ class Broker:
 
     def get_report(self):
         """ Short info for report """
-
-        # Form message string
-        msg = StringIO()
-        msg.write(f"Allow trade: {self.allow_trade}\n")
-
-        # Opened trade
-        msg.write(f"Current trade: {self.cur_trade}\n")
-        msg.write(f"Previous trade: {self.prev_trade}\n")
-        return msg.getvalue()
+        prefix = self.__class__.__name__.lower()
+        return {
+            f"{prefix}_trade_allow": {self.allow_trade},
+            # Opened trade
+            f"{prefix}_trade_current": {self.cur_trade},
+            f"{prefix}_trade_prev": {self.prev_trade}}
 
     def create_cur_trade(self, symbol: str, direction: int,
                          quantity: float,

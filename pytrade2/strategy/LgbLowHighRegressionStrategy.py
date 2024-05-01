@@ -24,13 +24,14 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                               is_candles_feed=True,
                               is_bid_ask_feed=False,
                               is_level2_feed=False)
-        comissionpct = float(config.get('pytrade2.broker.comissionpct'))
+        self.comissionpct = float(config.get('pytrade2.broker.comissionpct'))
         self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
-                                              self.stop_loss_max_coeff, self.profit_min_coeff,
-                                              self.profit_max_coeff, comissionpct, self.price_precision)
+                                              self.stop_loss_max_coeff, self.take_profit_min_coeff,
+                                              self.take_profit_max_coeff, self.comissionpct, self.price_precision)
 
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
+        self.model_name = "MultiOutputRegressorLgb"
         self.target_period = predict_window
         self._logger.info(f"Target period: {self.target_period}")
 
@@ -134,10 +135,34 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df, 'y_pred': y_pred})
 
     def create_model(self, X_size, y_size):
-        model = self.model_persister.load_last_model(None)
-        if not model:
-            lgb_model = lgb.LGBMRegressor(verbose=-1)
-            model = MultiOutputRegressor(lgb_model)
 
-        self._logger.info(f'Created lgb model: {model}')
-        return model
+        # model, params = self.model_persister.get_last_trade_ready_model(self.model_name)
+        # model = self.model_persister.load_last_model(None)
+        if not self.model:
+            lgb_model = lgb.LGBMRegressor(verbose=-1)
+            self.model = MultiOutputRegressor(lgb_model)
+
+        self._logger.info(f'Created lgb model: {self.model}')
+        return self.model
+
+    def apply_params(self, params: dict) -> None:
+        """ After last model and params read from mlflow, apply params to strategy"""
+        self._logger.info("Applying new params")
+
+        # Update settings from params
+        keys = {
+            "profit_loss_ratio",
+            "stop_loss_min_coeff",
+            "stop_loss_max_coeff",
+            "take_profit_min_coeff",
+            "take_profit_max_coeff"}
+        for param_name in keys:
+            setattr(self, param_name, float(params[param_name]))
+
+        # Signal calculator should be recreated with new params
+        self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
+                                              self.stop_loss_max_coeff, self.take_profit_min_coeff,
+                                              self.take_profit_max_coeff, self.comissionpct, self.price_precision)
+
+        # Update metrics server with new app params
+        MetricServer.app_params = {key: val for key, val in params.items() if key in keys}

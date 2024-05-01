@@ -57,12 +57,13 @@ class App:
         header = f"\n--------- {exchange_name} {strategy_name} report --------------"
         status = f"Strategy is alive: {self.strategy.is_alive()}"
         report = self.strategy.get_report()
+        report_str = "\n".join(f"{key}: {val}" for key, val in report.items())
 
         # Footer
         footer = "\n".rjust(len(header), "-")
 
         # Write to log
-        self._logger.info("\n".join([header, status, report, footer]))
+        self._logger.info("\n".join([header, status, report_str, footer]))
 
         # Schedule next report
         threading.Timer(self._log_report_interval_sec, self.log_report).start()
