@@ -1,5 +1,5 @@
 pytrade2.strategy: LgbLowHighRegressionStrategy
-pytrade2.broker.trade.allow: true
+pytrade2.broker.trade.allow: false
 
 
 pytrade2.strategy.processing.interval: "30 seconds"
@@ -29,3 +29,9 @@ pytrade2.strategy.stoploss.max.coeff: 0.0024
 # Adjust sl/tp parameters
 pytrade2.strategy.profit.max.coeff: 0.005
 pytrade2.strategy.stoploss.min.coeff: 0.00012
+
+
+
+pytrade2.s3.enabled: false
+
+

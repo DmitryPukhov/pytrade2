@@ -45,28 +45,7 @@ class App:
         # Load config, set up logging
         self.config = self._load_config()
 
-        self._log_report_interval_sec = 300
         self._logger.info("App initialized")
-
-    def log_report(self):
-        """ Periodically report to log"""
-
-        # Header
-        exchange_name = self.config["pytrade2.exchange"].split(".")[-1]
-        strategy_name = self.config["pytrade2.strategy"]
-        header = f"\n--------- {exchange_name} {strategy_name} report --------------"
-        status = f"Strategy is alive: {self.strategy.is_alive()}"
-        report = self.strategy.get_report()
-        report_str = "\n".join(f"{key}: {val}" for key, val in report.items())
-
-        # Footer
-        footer = "\n".rjust(len(header), "-")
-
-        # Write to log
-        self._logger.info("\n".join([header, status, report_str, footer]))
-
-        # Schedule next report
-        threading.Timer(self._log_report_interval_sec, self.log_report).start()
 
     def _init_logger(self):
         # Ensure logging directory exists
@@ -187,7 +166,6 @@ class App:
 
         # Watchdog starts after initial interval
         threading.Timer(60, self.watchdog_check).start()
-        threading.Timer(60, self.log_report).start()
 
         # Run and wait until the end
         self.strategy.run()

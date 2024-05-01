@@ -67,7 +67,7 @@ class MetricServer:
         """ Flask endpoint for configuration"""
         logging.debug(f"Got request: {str(request.args.to_dict())}")
         logging.debug(f"Will return app info: {MetricServer.app_params}")
-        return json.dumps(MetricServer.app_config)
+        return json.dumps(MetricServer.app_params)
 
     @staticmethod
     def start_http_server():
