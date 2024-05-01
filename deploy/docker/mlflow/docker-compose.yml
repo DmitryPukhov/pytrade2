@@ -13,6 +13,8 @@ services:
       sh -c "pip install boto3 &&
       MLFLOW_AUTH_CONFIG_PATH=/mlflow_auth_config.ini mlflow server --host 0.0.0.0 --default-artifact-root s3://pytrade2/mlartifacts --artifacts-destination s3://pytrade2/mlartifacts --app-name basic-auth" 
 
+    networks:
+      - pytrade2
     volumes:
       - ./mlruns:/mlruns
       - ./mlflow_auth_config.ini:/mlflow_auth_config.ini
