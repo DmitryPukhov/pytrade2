@@ -80,11 +80,12 @@ class ModelPersister:
                 os.remove(os.path.join(self.model_dir, file))
             self._logger.debug(f"Purged {len(purge_files)} files in {self.model_dir}")
 
-    def get_last_trade_ready_model(self, model_name, load_func=mlflow.sklearn.load_model) -> (any, dict):
-        """ Load latest model and it's params from mlflow. The model should be tagged trade_ready. """
-        model, params = None, None
+    def get_last_trade_ready_model(self, model_name, load_func=mlflow.sklearn.load_model) -> (any, any, dict):
+        """ Load latest model and it's params from mlflow. The model should be tagged trade_ready.
+        :return model, mlflow ModelVersion, params"""
+        model, model_version, params = None, None, None
         try:
-            trade_ready_tag = "trade_ready"
+            trade_ready_tag = "is_trade_ready"
             self._logger.info(f"Getting latest trade ready model: {model_name} from {self.mlflow_client.tracking_uri}")
             # Get last trade ready model version, tagged as trade ready
             model_versions = self.mlflow_client.search_model_versions(
@@ -103,4 +104,4 @@ class ModelPersister:
         except Exception as e:
             self._logger.error(e)
 
-        return model, params
+        return model, model_version, params

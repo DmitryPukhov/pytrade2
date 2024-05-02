@@ -55,18 +55,20 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
     def prepare_last_x(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         with self.data_lock:
-            x = MultiIndiFeatures.multi_indi_features_last(self.candles_feed.candles_by_interval)
+            x = MultiIndiFeatures.multi_indi_features_last(
+                self.candles_feed.candles_by_interval) if self.candles_feed.candles_by_interval else pd.DataFrame.empty
         return x
 
     def predict(self, x):
         self.data_persister.save_last_data(self.ticker, {'x': x})
-
-        x_trans = self.X_pipe.transform(x)
-        y_arr = self.model.predict(x_trans)
-        y_arr = self.y_pipe.inverse_transform(y_arr)
-        y_arr = y_arr.reshape((-1, 2))[-1]  # Last and only row
-        fut_low_diff, fut_high_diff = y_arr[0], y_arr[1]
-        y_df = pd.DataFrame(data={'fut_low_diff': fut_low_diff, 'fut_high_diff': fut_high_diff}, index=x.tail(1).index)
+        with self.data_lock:
+            x_trans = self.X_pipe.transform(x)
+            y_arr = self.model.predict(x_trans)
+            y_arr = self.y_pipe.inverse_transform(y_arr)
+            y_arr = y_arr.reshape((-1, 2))[-1]  # Last and only row
+            fut_low_diff, fut_high_diff = y_arr[0], y_arr[1]
+            y_df = pd.DataFrame(data={'fut_low_diff': fut_low_diff, 'fut_high_diff': fut_high_diff},
+                                index=x.tail(1).index)
         return y_df
 
     def process_prediction(self, y_pred: pd.DataFrame):
@@ -161,15 +163,16 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             setattr(self, param_name, float(params[param_name]))
 
         with self.data_lock:
+            self.target_period = params["target_period"]
             # Candles feed reconfigure
-            self.candles_feed.apply_history_days(int(params["history_days"]))
-            self.candles_feed.apply_periods_counts(params["features_candles_periods"],
-                                                   params["features_candles_counts"])
+            self.candles_feed.apply_periods_counts(params["features_candles_periods"].lstrip("[").rstrip("]"),
+                                                   params["features_candles_counts"].lstrip("[").rstrip("]"))
 
             # Signal calculator should be recreated with new params
             self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
                                                   self.stop_loss_max_coeff, self.take_profit_min_coeff,
                                                   self.take_profit_max_coeff, self.comissionpct, self.price_precision)
+            self.candles_feed.apply_history_days(int(params["history_days"]))
 
         # Update metrics server with new app params
         MetricServer.app_params = {key: val for key, val in params.items() if key in keys}

@@ -33,6 +33,8 @@ class StrategyBase:
         self.data_persister = DataPersister(config, strategy_name)
         self.model_name = strategy_name.rstrip("Strategy")
         self.model_persister = ModelPersister(config, strategy_name)
+        self.params: dict = {}
+        self.model_version = {}
 
         self.config = config
         self.tickers = self.config["pytrade2.tickers"].split(",")
@@ -154,7 +156,8 @@ class StrategyBase:
         if hasattr(self.broker, "get_report"):
             report.update(self.broker.get_report())
         # Feeds reports
-        for feed in filter(lambda f: hasattr(f, "get_report"), [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
+        for feed in filter(lambda f: hasattr(f, "get_report"),
+                           [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
             report.update(feed.get_report())
             # msg.write("\n")
         return report
@@ -177,6 +180,23 @@ class StrategyBase:
         if not has_min_history:
             self._logger.info(f"Can not learn because some datasets have not enough data. Filled status {status}")
         return has_min_history
+
+    def update_model(self):
+        """ Read last trade ready model from mlflow"""
+
+        model, model_version, params = self.model_persister.get_last_trade_ready_model(self.model_name)
+        is_model_changed = model and model_version and (model_version != self.model_version)
+        is_params_changed = params and (params != self.params)
+        # Set model if changaed
+        if is_model_changed:
+            self._logger.info(f"Updating model {self.model_name} from v{self.model_version} to {model_version}")
+            self.model, self.model_version = model, model_version
+
+        # Set params i
+        if is_params_changed:
+            self._logger.info("Updating model params")
+            self.apply_params(params)
+            self.params = params
 
     def create_model(self, x_size, y_size):
         raise NotImplementedError()
@@ -203,7 +223,12 @@ class StrategyBase:
 
     def learn(self):
         try:
-            self.apply_buffers()
+
+            with self.data_lock:
+                # Update model and clear buffers
+                self.apply_buffers()
+                self.update_model()
+
             self._logger.debug("Learning")
             if not self.can_learn():
                 return
@@ -230,11 +255,7 @@ class StrategyBase:
 
                 # Get or create model, parameters
                 if not self.model:
-                    self.model, params = self.model_persister.get_last_trade_ready_model(self.model_name)
-                    if not self.model:
-                        self.model = self.create_model(X_trans.shape[-1], y_trans.shape[-1])
-                    if params:
-                        self.apply_params(params)
+                    self.model = self.create_model(X_trans.shape[-1], y_trans.shape[-1])
 
                 # Train
                 self.model.fit(X_trans, y_trans)
@@ -286,7 +307,8 @@ class StrategyBase:
             self.data_persister.save_last_data(self.ticker, save_dict)
 
     def process_new_data(self):
-        self.apply_buffers()
+        with self.data_lock:
+            self.apply_buffers()
 
         if self.model and not self.is_processing:
             try:

@@ -50,14 +50,15 @@ class CandlesFeed:
                 self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
 
                 # If changed, redownload candles
+                self.candles_by_interval_buf = dict() # reset buf
                 self.read_candles()
 
     @staticmethod
     def candles_cnt_by_interval_of(periods_str: str, counts_str: str):
         """ Create dictionary of candles_cnt_by_interval from periods like M1, M5 and counts like 10, 20"""
 
-        periods = [s.strip() for s in periods_str.split(",")]
-        counts = [int(s) for s in counts_str.split(",")]
+        periods = [s.strip() for s in periods_str.replace("'", "").split(",")]
+        counts = [int(s) for s in counts_str.replace("'", "").split(",")]
 
         return dict(zip(periods, counts))
 
@@ -103,7 +104,7 @@ class CandlesFeed:
 
         with (self.data_lock):
             for period, buf in self.candles_by_interval_buf.items():
-                if buf.empty:
+                if buf.empty or period not in self.candles_cnt_by_interval:
                     continue
                 # candles + buf
                 candles = self.candles_by_interval.get(period, pd.DataFrame())
@@ -116,9 +117,12 @@ class CandlesFeed:
                 self.candles_by_interval_buf[period] = pd.DataFrame()
 
     def on_candle(self, candle: {}):
+        period = str(candle["interval"])
+        if period not in self.candles_cnt_by_interval:
+            return
         candle_df = pd.DataFrame([candle]).set_index("close_time", drop=False)
         with (self.data_lock):
-            period = str(candle["interval"])
+
             self._logger.debug(f"Got {period} candle: {candle}")
             prev_buf = self.candles_by_interval_buf.get(period, pd.DataFrame())
             # Add to buffer
