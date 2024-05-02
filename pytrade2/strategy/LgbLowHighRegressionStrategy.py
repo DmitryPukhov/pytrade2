@@ -40,21 +40,22 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         return self.candles_feed.has_min_history()
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
+        with self.data_lock:
+            x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval)
 
-        x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval)
+            # Candles with minimal period
+            min_period = min(self.candles_feed.candles_by_interval.keys(), key=pd.Timedelta)
+            candles = self.candles_feed.candles_by_interval[min_period]
+            y = LowHighTargets.fut_lohi(candles, self.target_period)
 
-        # Candles with minimal period
-        min_period = min(self.candles_feed.candles_by_interval.keys(), key=pd.Timedelta)
-        candles = self.candles_feed.candles_by_interval[min_period]
-        y = LowHighTargets.fut_lohi(candles, self.target_period)
-
-        # y has less items because of diff()
-        x = x[x.index.isin(y.index)]
+            # y has less items because of diff()
+            x = x[x.index.isin(y.index)]
 
         return x, y
 
     def prepare_last_x(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
-        x = MultiIndiFeatures.multi_indi_features_last(self.candles_feed.candles_by_interval)
+        with self.data_lock:
+            x = MultiIndiFeatures.multi_indi_features_last(self.candles_feed.candles_by_interval)
         return x
 
     def predict(self, x):
