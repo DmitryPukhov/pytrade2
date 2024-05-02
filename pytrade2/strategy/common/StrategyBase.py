@@ -307,12 +307,11 @@ class StrategyBase:
             self.data_persister.save_last_data(self.ticker, save_dict)
 
     def process_new_data(self):
-        with self.data_lock:
-            self.apply_buffers()
 
         if self.model and not self.is_processing:
             try:
                 self.is_processing = True
+                self.apply_buffers()
                 x = self.prepare_last_x()
                 # x can be dataframe or np array, check is it empty
                 if (hasattr(x, 'empty') and x.empty) or (hasattr(x, 'shape') and x.shape[0] == 0):
