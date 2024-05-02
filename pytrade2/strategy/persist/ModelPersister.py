@@ -82,21 +82,25 @@ class ModelPersister:
 
     def get_last_trade_ready_model(self, model_name, load_func=mlflow.sklearn.load_model) -> (any, dict):
         """ Load latest model and it's params from mlflow. The model should be tagged trade_ready. """
-        trade_ready_tag = "trade_ready"
-        self._logger.info(f"Getting latest trade ready model: {model_name} from {self.mlflow_client.tracking_uri}")
-        # Get last trade ready model version, tagged as trade ready
-        model_versions = self.mlflow_client.search_model_versions(
-            f"name = '{model_name}' and tag.{trade_ready_tag} = '1'",
-            order_by=["version_number desc"], max_results=1)
-        if not model_versions:
-            self._logger.info(f"Model: {model_name} not found")
-            return None, None
-        model_version = model_versions.pop()
-        self._logger.info(f"Got model: {model_version.source}")
-        model = load_func(model_version.source)
+        model, params = None, None
+        try:
+            trade_ready_tag = "trade_ready"
+            self._logger.info(f"Getting latest trade ready model: {model_name} from {self.mlflow_client.tracking_uri}")
+            # Get last trade ready model version, tagged as trade ready
+            model_versions = self.mlflow_client.search_model_versions(
+                f"name = '{model_name}' and tag.{trade_ready_tag} = '1'",
+                order_by=["version_number desc"], max_results=1)
+            if model_versions:
+                model_version = model_versions.pop()
+                self._logger.info(f"Got model: {model_version.source}")
+                model = load_func(model_version.source)
 
-        # Get run parameters
-        params = self.mlflow_client.get_run(model_version.run_id).data.params
-        self._logger.info(f"Got strategy parameters: {params}")
+                # Get run parameters
+                params = self.mlflow_client.get_run(model_version.run_id).data.params
+                self._logger.info(f"Got strategy parameters: {params}")
+            else:
+                self._logger.info(f"Model: {model_name} not found")
+        except Exception as e:
+            self._logger.error(e)
 
         return model, params
