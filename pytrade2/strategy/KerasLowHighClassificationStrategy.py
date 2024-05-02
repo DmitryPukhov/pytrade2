@@ -35,7 +35,6 @@ class KerasLowHighClassificationStrategy(SignalClassificationStrategyBase):
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
         self.candles_feed.candles_cnt_by_interval[self.target_period] += 1
-        self.candles_feed.candles_history_cnt_by_interval[self.target_period] += 1
 
         self._logger.info(f"Target period: {self.target_period}")
 

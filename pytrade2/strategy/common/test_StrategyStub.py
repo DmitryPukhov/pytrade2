@@ -66,7 +66,7 @@ class RegressionStrategyStub(BidAskRegressionStrategyBase):
 
                 "pytrade2.feed.candles.periods": "1min,5min",
                 "pytrade2.feed.candles.counts": "1,1",
-                "pytrade2.feed.candles.history.counts": "1,1",
+                "pytrade2.feed.candles.history.days": "1",
                 "pytrade2.order.quantity": 0.001}
         BidAskRegressionStrategyBase.__init__(self, conf, MagicMock())
         self.candles_feed = MagicMock()

@@ -1,11 +1,9 @@
 import logging
 import multiprocessing
 import os
-from datetime import datetime, date, time, timedelta, timezone
-from io import StringIO
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, Tuple
-import pytz
+from typing import Dict
 import pandas as pd
 
 from exch.Exchange import Exchange
@@ -28,14 +26,37 @@ class CandlesFeed:
         self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
         self.new_data_event = new_data_event
 
-        periods = [s.strip() for s in str(config["pytrade2.feed.candles.periods"]).split(",")]
-        counts = [int(s) for s in str(config["pytrade2.feed.candles.counts"]).split(",")]
-        history_counts = [int(s) for s in str(config["pytrade2.feed.candles.history.counts"]).split(",")]
-        self.candles_cnt_by_interval = dict(zip(periods, counts))
-        self.candles_history_cnt_by_interval = dict(zip(periods, history_counts))
+        periods = config["pytrade2.feed.candles.periods"]
+        counts = config["pytrade2.feed.candles.counts"]
+        self.candles_cnt_by_interval = self.candles_cnt_by_interval_of(periods, counts)
+
+    def apply_periods_counts(self, periods_str: str, counts_str: str):
+        new_counts = self.candles_cnt_by_interval_of(periods_str, counts_str)
+
+        if self.candles_cnt_by_interval != new_counts:
+            # If changed, reload all candles
+            with self.data_lock:
+                self._logger.info(f"Applying candles counts to {new_counts}. Resetting accumulated data.")
+                self.candles_cnt_by_interval = new_counts
+                # Clear candles and buffers
+                self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
+                self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
+
+                # If changed, redownload candles
+                self.read_candles()
+
+    @staticmethod
+    def candles_cnt_by_interval_of(periods_str: str, counts_str: str):
+        """ Create dictionary of candles_cnt_by_interval from periods like M1, M5 and counts like 10, 20"""
+
+        periods = [s.strip() for s in periods_str.split(",")]
+        counts = [int(s) for s in counts_str.split(",")]
+
+        return dict(zip(periods, counts))
 
     def read_candles(self):
         # Download history to common folder. Minimal period to be resampled during merge later
+        # downloader is already configured with history days to download
         self.downloader.download_candles_inc()
         candles_1min = self.read_candles_downloaded()
 
@@ -46,11 +67,11 @@ class CandlesFeed:
                 .set_index("close_time", drop=False)
 
             candles_history = candles_1min.resample(period).agg({'open_time': 'first',
-                                                         'close_time': 'last',
-                                                         'open': 'first',
-                                                         'high': 'max',
-                                                         'low': 'min',
-                                                         'close': 'last'})
+                                                                 'close_time': 'last',
+                                                                 'open': 'first',
+                                                                 'high': 'max',
+                                                                 'low': 'min',
+                                                                 'close': 'last'})
             candles_history = candles_history[candles_history.index < candles_new.index.min()]
             candles = pd.concat([candles_history, candles_new])
 
@@ -72,7 +93,7 @@ class CandlesFeed:
     def apply_buf(self):
         """ Combine candles with buffers"""
 
-        with self.data_lock:
+        with (self.data_lock):
             for period, buf in self.candles_by_interval_buf.items():
                 if buf.empty:
                     continue
@@ -81,8 +102,7 @@ class CandlesFeed:
                 candles = pd.concat([df for df in [candles, buf] if not df.empty]).set_index("close_time", drop=False)
                 candles = candles.resample(period).agg(
                     {'open_time': 'first', 'close_time': 'last', 'open': 'first', 'high': 'max', 'low': 'min',
-                     'close': 'last', 'vol': 'max'}).sort_index().tail(
-                    self.candles_history_cnt_by_interval[period])
+                     'close': 'last', 'vol': 'max'}).sort_index()
 
                 self.candles_by_interval[period] = candles
                 self.candles_by_interval_buf[period] = pd.DataFrame()

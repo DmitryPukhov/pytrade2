@@ -159,10 +159,14 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         for param_name in keys:
             setattr(self, param_name, float(params[param_name]))
 
-        # Signal calculator should be recreated with new params
-        self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
-                                              self.stop_loss_max_coeff, self.take_profit_min_coeff,
-                                              self.take_profit_max_coeff, self.comissionpct, self.price_precision)
+        with self.data_lock:
+            self.candles_feed.apply_periods_counts(params["features_candles_periods"],
+                                                   params["features_candles_counts"])
+
+            # Signal calculator should be recreated with new params
+            self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
+                                                  self.stop_loss_max_coeff, self.take_profit_min_coeff,
+                                                  self.take_profit_max_coeff, self.comissionpct, self.price_precision)
 
         # Update metrics server with new app params
         MetricServer.app_params = {key: val for key, val in params.items() if key in keys}

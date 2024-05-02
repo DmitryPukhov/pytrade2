@@ -29,8 +29,6 @@ class DataDownloadApp(App):
         to = self.config.get("to")
         self.to = datetime.fromisoformat(to) if to else datetime.now()
 
-
-
         # self.from_ = datetime.fromisoformat(self.config["from"]) if "from" in self.config \
         #     else datetime.combine(datetime.today(), datetime.min.time())
         # self.to = datetime.fromisoformat(self.config["to"]) if "to" in self.config \
