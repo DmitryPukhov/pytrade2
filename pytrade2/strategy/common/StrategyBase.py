@@ -154,7 +154,7 @@ class StrategyBase:
         if hasattr(self.broker, "get_report"):
             report.update(self.broker.get_report())
         # Feeds reports
-        for feed in filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
+        for feed in filter(lambda f: hasattr(f, "get_report"), [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
             report.update(feed.get_report())
             # msg.write("\n")
         return report

@@ -48,7 +48,7 @@ prepare_tmp(){
 
   # Copy .env files
   find "$PYTRADE2_DIR"/.*.env -exec cp -r {} "$TMP_DIR/pytrade2/" \;
-  cp -r "$PYTRADE2_DIR/.yandex-cloud.env" "$TMP_DIR/pytrade2/.env"
+  cp -r "$PYTRADE2_DIR/yandex-cloud.env" "$TMP_DIR/pytrade2/.env"
 
   # Copy mlflow dockers
   mkdir -p "$TMP_DIR/pytrade2/deploy/docker"

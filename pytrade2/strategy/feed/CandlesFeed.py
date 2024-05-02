@@ -30,7 +30,14 @@ class CandlesFeed:
         counts = config["pytrade2.feed.candles.counts"]
         self.candles_cnt_by_interval = self.candles_cnt_by_interval_of(periods, counts)
 
+    def apply_history_days(self, history_days: int):
+        """History days parameter changed, load absent"""
+        self._logger.info(f"Applying new history days param: {history_days}")
+        self.downloader.days = history_days
+        self.downloader.download_absent_days(datetime.now())
+
     def apply_periods_counts(self, periods_str: str, counts_str: str):
+        """Candles configuration changed: periods, counts, reload them"""
         new_counts = self.candles_cnt_by_interval_of(periods_str, counts_str)
 
         if self.candles_cnt_by_interval != new_counts:
@@ -58,6 +65,7 @@ class CandlesFeed:
         # Download history to common folder. Minimal period to be resampled during merge later
         # downloader is already configured with history days to download
         self.downloader.download_candles_inc()
+        self.downloader.download_absent_days(datetime.now())
         candles_1min = self.read_candles_downloaded()
 
         # Produce initial candles

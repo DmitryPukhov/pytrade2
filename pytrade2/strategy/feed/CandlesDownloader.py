@@ -1,5 +1,4 @@
 import logging.config
-import logging.config
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -37,6 +36,12 @@ class CandlesDownloader:
         last_date = datetime.combine(last_date.date(), datetime.min.time())
         return last_date
 
+    def download_absent_days(self, to: datetime):
+        """Update absent days in history"""
+        # Daily intervals and file names
+        intervals = self.last_days(to, self.days, self.period)
+        self.download_intervals(intervals, skip_existing=True)
+
     def download_candles_inc(self):
         # Start date is parsed from last existing file. Last day file can be uncompleted, so download it again.
         start = self.get_start_date()
@@ -45,32 +50,35 @@ class CandlesDownloader:
         self._logger.info(f"Downloading new candles from {start} to {end}. Total days: {self.days}")
         intervals = self.date_intervals(start, end)
         self._logger.info(f"{len(intervals)} days will be downloaded")
-        self.download_intervals(intervals)
+        self.download_intervals(intervals, False)
 
-    def download_intervals(self, intervals: List[Tuple[datetime, datetime]]):
+    def download_intervals(self, intervals: List[Tuple[datetime, datetime]], skip_existing=False):
         """ Download 1 minite candles to history data. Other periods should be resampled from 1min if needed by strategy
-         @:param intervals: [<from>, <to>] one interval - one day (2024-02-17 00:01, 2024-02-18 00:00)
+         :param intervals: [<from>, <to>] one interval - one day (2024-02-17 00:01, 2024-02-18 00:00)
+         :param skip_existing: if file exists, don't download it again
          """
         self._logger.info(f"Start downloading candles to {self.download_dir}")
-        period = "1min"
 
         for start, end in intervals:
+            file_name = f"{start.date()}_{self.ticker}_candles_{self.period}.csv"
+            file_path = Path(self.download_dir, f"{file_name}")
+            if file_path.exists() and skip_existing:
+                continue
+
             # Get candles for the day from the service
             candles_raw = self.exchange_candles_feed.read_candles(ticker=self.ticker,
-                                                                  interval=period,
+                                                                  interval=self.period,
                                                                   limit=None,
                                                                   from_=start,
                                                                   to=end)
 
             candles = pd.DataFrame(candles_raw).set_index("close_time")
             # Save to file system
-            file_name = f"{start.date()}_{self.ticker}_candles_{period}.csv"
-            file_path = Path(self.download_dir, f"{file_name}")
             candles.to_csv(str(file_path),
                            header=True,
                            mode='w')
             self._logger.info(
-                f"{period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
+                f"{self.period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
         self._logger.info(f"Downloading of {len(list(intervals))} intervals completed")
 
     @staticmethod
@@ -84,7 +92,7 @@ class CandlesDownloader:
         return intervals_pairs
 
     @staticmethod
-    def last_days(to: datetime, days, period="1min") -> [(datetime, datetime)]:
+    def last_days(to: datetime, days, period="1min") -> list[tuple[datetime, datetime]]:
         period_delta = timedelta(seconds=pd.Timedelta(period).total_seconds())
         for i in list(range(days)):
             start = to.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=i)

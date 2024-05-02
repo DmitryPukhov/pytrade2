@@ -160,6 +160,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             setattr(self, param_name, float(params[param_name]))
 
         with self.data_lock:
+            # Candles feed reconfigure
+            self.candles_feed.apply_history_days(int(params["history_days"]))
             self.candles_feed.apply_periods_counts(params["features_candles_periods"],
                                                    params["features_candles_counts"])
 
