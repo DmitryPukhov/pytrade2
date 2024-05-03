@@ -28,7 +28,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
                                               self.stop_loss_max_coeff, self.take_profit_min_coeff,
                                               self.take_profit_max_coeff, self.comissionpct, self.price_precision)
-
+        self._logger.info(f"SignalCalc: {self.signal_calc}")
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
         self.model_name = "MultiOutputRegressorLgb"
@@ -172,6 +172,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
                                                   self.stop_loss_max_coeff, self.take_profit_min_coeff,
                                                   self.take_profit_max_coeff, self.comissionpct, self.price_precision)
+            self._logger.info(f"Updated signal calc: {self.signal_calc}")
             self.candles_feed.apply_history_days(int(params["history_days"]))
 
         # Update metrics server with new app params

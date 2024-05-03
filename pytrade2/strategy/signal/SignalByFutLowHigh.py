@@ -12,6 +12,9 @@ class SignalByFutLowHigh(SignalCalcBase):
                          take_profit_max_coeff, price_presision)
         self.comission_pct = comission_pct
 
+    def __str__(self):
+        return f"{self.__class__}: {self.__dict__}"
+
     def calc_signal(self, close, fut_low, fut_high) -> (int, float, float):
         signal_ext = self.calc_signal_ext(close, fut_low, fut_high)
         return signal_ext['signal'], signal_ext['sl'], signal_ext['tp']
