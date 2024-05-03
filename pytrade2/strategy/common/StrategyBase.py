@@ -223,11 +223,9 @@ class StrategyBase:
 
     def learn(self):
         try:
-
-            with self.data_lock:
-                # Update model and clear buffers
-                self.apply_buffers()
-                self.update_model()
+            # Update model and clear buffers
+            self.apply_buffers()
+            self.update_model()
 
             self._logger.debug("Learning")
             if not self.can_learn():
