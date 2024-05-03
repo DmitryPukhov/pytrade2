@@ -688,17 +688,17 @@
           "up": "green"
         },
         "fields": {
-          "close": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_close{instance=\"lgblowhighregressionstrategy:5000\", job=\"pytrade2.lgblowhighregressionstrategy\"}",
-          "high": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_high{instance=\"lgblowhighregressionstrategy:5000\", job=\"pytrade2.lgblowhighregressionstrategy\"}",
-          "low": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_low{instance=\"lgblowhighregressionstrategy:5000\", job=\"pytrade2.lgblowhighregressionstrategy\"}",
-          "open": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_open{instance=\"lgblowhighregressionstrategy:5000\", job=\"pytrade2.lgblowhighregressionstrategy\"}"
+          "close": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_close",
+          "high": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_high",
+          "low": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_low",
+          "open": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_open"
         },
         "includeAllFields": false,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": false
         },
         "mode": "candles"
       },
@@ -1148,13 +1148,13 @@
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-30m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "pytrade2 strategy",
   "uid": "a52cb481-45c0-48d1-a9ac-64a7092950f0",
-  "version": 21,
+  "version": 23,
   "weekStart": ""
 }
