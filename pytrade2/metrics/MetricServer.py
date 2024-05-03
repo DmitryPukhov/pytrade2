@@ -27,7 +27,7 @@ class MetricServer:
     @staticmethod
     def require_api_token(func):
         """ Authorization to secure metrics endpoind. """
-
+        return func
         @wraps(func)
         def check_token(*args, **kwargs):
             auth_token = request.headers.get("Authorization", "").lstrip("Bearer ")
@@ -52,7 +52,7 @@ class MetricServer:
     @app.route("/app_config/metrics", methods=['GET', 'POST'])
     @app.route("/app_config", methods=['GET', 'POST'])
     @require_api_token
-    def app_config():
+    def get_app_config():
         """ Flask endpoint for configuration"""
         logging.debug(f"Got request: {str(request.args.to_dict())}")
         logging.debug(f"Will return app info: {MetricServer.app_config}")
@@ -63,7 +63,7 @@ class MetricServer:
     @app.route("/app_params/metrics", methods=['GET', 'POST'])
     @app.route("/app_params", methods=['GET', 'POST'])
     @require_api_token
-    def app_params():
+    def get_app_params():
         """ Flask endpoint for configuration"""
         logging.debug(f"Got request: {str(request.args.to_dict())}")
         logging.debug(f"Will return app info: {MetricServer.app_params}")
