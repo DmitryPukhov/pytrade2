@@ -32,6 +32,6 @@ pytrade2.strategy.stoploss.min.coeff: 0.00012
 
 
 
-pytrade2.s3.enabled: false
+pytrade2.s3.enabled: true
 
 
