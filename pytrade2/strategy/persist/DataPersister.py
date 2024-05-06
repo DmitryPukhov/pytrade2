@@ -54,7 +54,7 @@ class DataPersister:
 
         self.last_save_time = datetime.utcnow()
         # Periodically save data
-        self.save_interval: timedelta = timedelta(seconds=60)
+        self.save_interval: timedelta = timedelta(seconds=1)  # 60
         self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
         self.last_learn_saved_index = datetime.min
 
@@ -133,9 +133,9 @@ class DataPersister:
         s3datapath = str(datapath).lstrip("../")
         self._logger.debug(f"Uploading {datapath} to s3://{self.s3_bucket}/{s3datapath}")
 
-        session = boto3.Session(aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
-        s3 = session.resource(service_name='s3', endpoint_url=self.s3_endpoint_url)  # error is here
-        s3.meta.client.upload_file(datapath, self.s3_bucket, s3datapath)
+        s3 = boto3.client(service_name='s3', endpoint_url=self.s3_endpoint_url, aws_access_key_id=self.s3_access_key,
+                          aws_secret_access_key=self.s3_secret_key)
+        s3.upload_file(datapath, self.s3_bucket, s3datapath)
         self._logger.debug(f"Uploaded s3://{self.s3_bucket}/{s3datapath}")
 
         # Delete temp zip

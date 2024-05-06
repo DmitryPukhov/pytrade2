@@ -60,6 +60,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         return x
 
     def predict(self, x):
+        # Save to buffer, actual persist by schedule of data persister
         self.data_persister.save_last_data(self.ticker, {'x': x})
         with self.data_lock:
             x_trans = self.X_pipe.transform(x)
