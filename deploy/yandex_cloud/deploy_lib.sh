@@ -26,6 +26,10 @@ prepare_tmp_config(){
    # Copy log.cfg
    files=$(ls ./cfg/*.cfg)
    for f in $files; do cp -v -f $f $tmp_cfg_dir; done
+
+   # copy yandex cloud env file
+   cp -r "$PYTRADE2_DIR/yandex-cloud.env" "$TMP_DIR/pytrade2/.env"
+
 }
 
 prepare_tmp_clean_cache(){
@@ -51,8 +55,8 @@ prepare_tmp(){
   cp -r "$PYTRADE2_DIR/yandex-cloud.env" "$TMP_DIR/pytrade2/.env"
 
   # Copy mlflow dockers
-  mkdir -p "$TMP_DIR/pytrade2/deploy/docker"
-  cp -r "$PYTRADE2_DIR/deploy/docker/mlflow" "$TMP_DIR/pytrade2/deploy/docker/mlflow"
+  mkdir -p "$TMP_DIR/pytrade2/deploy"
+  cp -r "$PYTRADE2_DIR/deploy/docker" "$TMP_DIR/pytrade2/deploy"
   rm -r "$TMP_DIR/pytrade2/deploy/docker/mlflow/mlruns"
 
   # Clean caches

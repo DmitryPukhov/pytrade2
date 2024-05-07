@@ -1,4 +1,4 @@
-version: '3'
+version: '3.9'
 services:
   prometheus:
     image: prom/prometheus:latest
@@ -13,6 +13,9 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/prometheus/console_libraries'
       - '--web.console.templates=/prometheus/consoles'
+    env_file:
+      - ../../../.env
+
     networks:
       - pytrade2
 
@@ -29,10 +32,10 @@ services:
     networks:
       - pytrade2
 
-
 networks:
   pytrade2:
-
+    name: pytrade2
+    external: true
 volumes:
   prometheus_data:
   pytrade2-grafana:
