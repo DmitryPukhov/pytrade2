@@ -1,9 +1,10 @@
-import functools
+import concurrent.futures.thread
 import logging
 import os
 import threading
 import zipfile
 from collections import defaultdict
+
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict
@@ -11,26 +12,17 @@ from typing import Dict
 import boto3
 import pandas as pd
 
+from strategy.persist.Boto3Hack import Boto3Hack
+
 
 class DataPersister:
     """ Save the data to local fs, copy to s3"""
 
-    @classmethod
-    def _register_atexit(cls, func, *arg, **kwargs):
-        """
-        Hack to fix boto3 threading issue: https://bugs.python.org/issue42647
-        """
-        # This code is commented to fix boto3 error
-        # if threading._SHUTTING_DOWN:
-        #     raise RuntimeError("can't register atexit after shutdown")
-
-        call = functools.partial(func, *arg, **kwargs)
-        threading._threading_atexits.append(call)
-
     def __init__(self, config: Dict, tag: str):
         self._logger = logging.getLogger(self.__class__.__name__)
         # Hack to fix boto3 issue https://bugs.python.org/issue42647
-        threading._register_atexit = self._register_atexit
+        threading._register_atexit = Boto3Hack._register_atexit
+        concurrent.futures.thread.ThreadPoolExecutor.submit = Boto3Hack.submit
 
         # Init boto3
         self.s3_enabled = config.get('pytrade2.s3.enabled', False)
@@ -54,7 +46,7 @@ class DataPersister:
 
         self.last_save_time = datetime.utcnow()
         # Periodically save data
-        self.save_interval: timedelta = timedelta(seconds=1)  # 60
+        self.save_interval: timedelta = timedelta(seconds=60)  # 60
         self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
         self.last_learn_saved_index = datetime.min
 
