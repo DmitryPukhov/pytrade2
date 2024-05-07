@@ -162,6 +162,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             "take_profit_max_coeff"}
         for param_name in keys:
             setattr(self, param_name, float(params[param_name]))
+        setattr(self, "target_period", params["target_period"])
 
         with self.data_lock:
             self.target_period = params["target_period"]
@@ -177,4 +178,5 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             self.candles_feed.apply_history_days(int(params["history_days"]))
 
         # Update metrics server with new app params
-        MetricServer.app_params = {key: val for key, val in params.items() if key in keys}
+        #MetricServer.app_params = {key: val for key, val in params.items() if key in keys}
+        MetricServer.app_params = params
