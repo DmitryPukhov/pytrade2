@@ -34,7 +34,7 @@ class StrategyBase:
         self.data_persister = DataPersister(config, strategy_name)
         self.model_name = strategy_name.rstrip("Strategy")
         self.model_persister = ModelPersister(config, strategy_name)
-        self.params: dict = {}
+        self.app_params: dict = {}
         self.model_version = {}
 
         self.config = config
@@ -187,7 +187,7 @@ class StrategyBase:
 
         model, model_version, params = self.model_persister.get_last_trade_ready_model(self.model_name)
         is_model_changed = model and model_version and (model_version != self.model_version)
-        is_params_changed = params and (params != self.params)
+        is_params_changed = params and (params != self.app_params)
         # Set model if changaed
         if is_model_changed:
             self._logger.info(f"Updating model {self.model_name} from v{self.model_version} to {model_version}")
@@ -197,7 +197,7 @@ class StrategyBase:
         if is_params_changed:
             self._logger.info("Updating model params")
             self.apply_params(params)
-            self.params = params
+            self.app_params = params
 
     def create_model(self, x_size, y_size):
         raise NotImplementedError()

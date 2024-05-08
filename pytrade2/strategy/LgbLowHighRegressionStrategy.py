@@ -164,4 +164,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                                   self.stop_loss_max_coeff, self.take_profit_min_coeff,
                                                   self.take_profit_max_coeff, self.comissionpct, self.price_precision)
             self._logger.info(f"Updated signal calc: {self.signal_calc}")
-            self.candles_feed.apply_history_days(int(params["history_days"]))
+
+            # Set history days
+            history_days = int(params["history_days"])
+            self.candles_feed.apply_history_days(history_days)
+            MetricServer.app_params["history_days"] = history_days
