@@ -152,20 +152,9 @@ class LgbLowHighRegressionStrategy(StrategyBase):
     def apply_params(self, params: dict) -> None:
         """ After last model and params read from mlflow, apply params to strategy"""
         self._logger.info("Applying new params")
-
-        # Update settings from params
-        keys = {
-            "profit_loss_ratio",
-            "stop_loss_min_coeff",
-            "stop_loss_max_coeff",
-            "take_profit_min_coeff",
-            "take_profit_max_coeff"}
-        for param_name in keys:
-            setattr(self, param_name, float(params[param_name]))
-        setattr(self, "target_period", params["target_period"])
+        super().apply_params(params)
 
         with self.data_lock:
-            self.target_period = params["target_period"]
             # Candles feed reconfigure
             self.candles_feed.apply_periods_counts(params["features_candles_periods"].lstrip("[").rstrip("]"),
                                                    params["features_candles_counts"].lstrip("[").rstrip("]"))
@@ -176,7 +165,3 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                                   self.take_profit_max_coeff, self.comissionpct, self.price_precision)
             self._logger.info(f"Updated signal calc: {self.signal_calc}")
             self.candles_feed.apply_history_days(int(params["history_days"]))
-
-        # Update metrics server with new app params
-        #MetricServer.app_params = {key: val for key, val in params.items() if key in keys}
-        MetricServer.app_params = params

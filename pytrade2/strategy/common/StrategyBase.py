@@ -1,11 +1,12 @@
 import gc
 import logging
 import multiprocessing
-import traceback
 import time
+import traceback
 from datetime import datetime, timedelta
 from threading import Thread, Event, Timer
 from typing import Dict
+
 import pandas as pd
 import tensorflow.python.keras.backend
 from sklearn.compose import ColumnTransformer
@@ -74,8 +75,8 @@ class StrategyBase:
         # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
         self.stop_loss_max_coeff = config.get("pytrade2.strategy.stoploss.max.coeff", float('inf'))
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
-        self.take_profit_min_coeff = config.get("pytrade2.strategy.take.profit.min.coeff", 0)
-        self.take_profit_max_coeff = config.get("pytrade2.strategy.take.profit.max.coeff", float('inf'))
+        self.take_profit_min_coeff = config.get("pytrade2.strategy.takeprofit.min.coeff", 0)
+        self.take_profit_max_coeff = config.get("pytrade2.strategy.takeprofit.max.coeff", float('inf'))
 
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
@@ -277,7 +278,15 @@ class StrategyBase:
 
     def apply_params(self, params: dict) -> None:
         """ After last model and params read from mlflow, apply params to strategy"""
-        ...
+        """ After last model and params read from mlflow, apply params to strategy"""
+        self._logger.info("Applying new params")
+
+        for name, val in {name: val for name, val in params.items() if hasattr(self, name)}.items():
+            typed_val = type(getattr(self, name))(val)
+            setattr(self, name, typed_val)
+
+        # Update metrics server with params from strategy
+        MetricServer.app_params = {name: val for name, val in params.items() if hasattr(self, name)}
 
     def prepare_last_x(self):
         raise NotImplementedError("prepare_Xy")
