@@ -31,8 +31,10 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         self._logger.info(f"SignalCalc: {self.signal_calc}")
         # Should keep 1 more candle for targets
         predict_window = config["pytrade2.strategy.predict.window"]
-        self.model_name = "MultiOutputRegressorLgb"
         self.target_period = predict_window
+        self.model_name = "MultiOutputRegressorLgb"
+        self.history_days = config.get("pytrade2.feed.candles.history.days", 2)
+
         self._logger.info(f"Target period: {self.target_period}")
 
     def can_learn(self) -> bool:
@@ -139,13 +141,9 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df, 'y_pred': y_pred})
 
     def create_model(self, X_size, y_size):
-
-        # model, params = self.model_persister.get_last_trade_ready_model(self.model_name)
-        # model = self.model_persister.load_last_model(None)
         if not self.model:
             lgb_model = lgb.LGBMRegressor(verbose=-1)
             self.model = MultiOutputRegressor(lgb_model)
-
         self._logger.info(f'Created lgb model: {self.model}')
         return self.model
 
@@ -165,7 +163,5 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                                   self.take_profit_max_coeff, self.comissionpct, self.price_precision)
             self._logger.info(f"Updated signal calc: {self.signal_calc}")
 
-            # Set history days
-            history_days = int(params["history_days"])
-            self.candles_feed.apply_history_days(history_days)
-            MetricServer.app_params["history_days"] = history_days
+            # Set history days,
+            self.candles_feed.apply_history_days(self.history_days)
