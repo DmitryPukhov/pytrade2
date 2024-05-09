@@ -64,6 +64,7 @@ class StrategyBase:
         self.model = None
         self.broker = None
         self.is_processing = False
+        self.is_learn_enabled = config.get("pytrade2.strategy.learn.enabled", True)
 
         # Expected profit/loss >= ratio means signal to trade
         self.profit_loss_ratio = config.get("pytrade2.strategy.profitloss.ratio", 1)
@@ -98,11 +99,19 @@ class StrategyBase:
             self.candles_feed.read_candles()
         self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
 
+        with self.data_lock:
+            # Create pipe and model
+            self.update_model()
+            train_X, train_y = self.prepare_xy()
+            self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
+            # Learn the model
+            if self.is_learn_enabled:
+                self.learn()
+
         # Start main processing loop
         Thread(target=self.processing_loop).start()
         self.broker.run()
 
-        self.learn()
         # # Start periodical jobs
         # if self.learn_interval:
         #     self._logger.info(f"Starting periodical learning, interval: {self.learn_interval}")
@@ -223,6 +232,9 @@ class StrategyBase:
         raise NotImplementedError("prepare_Xy")
 
     def learn(self):
+        if not self.is_learn_enabled:
+            self._logger.info("Learning is disabled")
+            return
         try:
             # Update model and clear buffers
             self.apply_buffers()
@@ -273,7 +285,7 @@ class StrategyBase:
             else:
                 self._logger.info(f"Not enough train data to learn should be >= {self.min_xy_len}")
         finally:
-            if self.learn_interval:
+            if self.learn_interval and self.is_learn_enabled:
                 Timer(self.learn_interval.seconds, self.learn).start()
 
     def apply_params(self, params: dict) -> None:
