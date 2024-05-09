@@ -37,7 +37,7 @@ class CandlesFeed:
         self.downloader.download_absent_days(datetime.now())
 
     @staticmethod
-    def candles_history_cnts(intervals: set[str], days: int) -> dict[str, int]:
+    def candles_counts_in_days(intervals: set[str], days: int) -> dict[str, int]:
         """Calculate how many candles of given intervals do we have in given history days"""
         out = dict()
         history_duration = pd.Timedelta(days=days)

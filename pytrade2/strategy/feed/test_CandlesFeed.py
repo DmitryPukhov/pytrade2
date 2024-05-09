@@ -20,25 +20,25 @@ class TestCandlesFeed(TestCase):
         feed.candles_history_cnt_by_interval = {"1min": 10, "5min": 1}
         return feed
 
-    def test_candles_history_cnts(self):
+    def test_candles_counts_in_days(self):
         days = 2
-        actual = CandlesFeed.candles_history_cnts({"1min", "5min"}, days)
+        actual = CandlesFeed.candles_counts_in_days({"1min", "5min"}, days)
         # Check candles counts in given number of days
         self.assertEqual({"1min": 60 * 24 * days, "5min": 60 / 5 * 24 * days}, actual)
         # Counts should be int, not floats
         for cnt in actual.values():
             self.assertEqual(int, type(cnt))
 
-    def test_candles_history_cnts_empty_intervals(self):
-        actual = CandlesFeed.candles_history_cnts(set(), 2)
+    def test_candles_counts_in_days_empty_intervals(self):
+        actual = CandlesFeed.candles_counts_in_days(set(), 2)
         # Empty input - empty output
         self.assertEqual({}, actual)
-        actual = CandlesFeed.candles_history_cnts(set(), 0)
+        actual = CandlesFeed.candles_counts_in_days(set(), 0)
         # Empty input - empty output
         self.assertEqual({}, actual)
 
-    def test_candles_history_cnts_zero_days(self):
-        actual = CandlesFeed.candles_history_cnts({"1min", "5min"}, 0)
+    def test_candles_counts_in_days_zero_days(self):
+        actual = CandlesFeed.candles_counts_in_days({"1min", "5min"}, 0)
         # zero days - zero candles of each period
         self.assertEqual({"1min": 0, "5min": 0}, actual)
 
