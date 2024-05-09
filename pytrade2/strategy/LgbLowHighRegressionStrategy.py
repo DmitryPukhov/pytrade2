@@ -81,7 +81,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             self.candles_feed.candles_by_interval[self.target_period][
                 ['close_time', 'open', 'high', 'low', 'close']].iloc[-1]
         fut_low_diff, fut_high_diff = y_pred.loc[y_pred.index[-1], ["fut_low_diff", "fut_high_diff"]]
-        fut_low, fut_high = close + fut_low_diff, close + fut_high_diff
+        fut_low, fut_high = low + fut_low_diff, high + fut_high_diff
 
         # signal, sl, tp = self.signal_calc.calc_signal(close, low, high, fut_low, fut_high)
         signal_ext = self.signal_calc.calc_signal_ext(close, fut_low, fut_high)
