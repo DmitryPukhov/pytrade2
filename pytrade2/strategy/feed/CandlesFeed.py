@@ -1,6 +1,8 @@
 import logging
 import multiprocessing
 import os
+import re
+
 from datetime import datetime
 from pathlib import Path
 from typing import Dict
@@ -47,7 +49,10 @@ class CandlesFeed:
             out[interval] = cnt
         return out
 
-    def apply_periods(self, new_periods: list[str], history_days: int):
+    def apply_periods(self, new_periods_str: str, history_days: int):
+
+        new_periods = re.split(r"\W*,\W*", new_periods_str.lstrip("[").rstrip("]").strip(" ").strip("'"))
+        new_periods = [period for period in new_periods if period]
         new_counts = self.candles_counts_in_days(set(new_periods), history_days)
 
         """Set new periods counts if changed"""
@@ -83,17 +88,19 @@ class CandlesFeed:
         # Produce initial candles
         for period, cnt in self.candles_cnt_by_interval.items():
             # Read cnt + 1 extra for diff candles
-            candles_new = pd.DataFrame(self.exchange_candles_feed.read_candles(self.ticker, period, cnt)) \
-                .set_index("close_time", drop=False)
+            # candles_new = pd.DataFrame(self.exchange_candles_feed.read_candles(self.ticker, period, cnt)) \
+            #     .set_index("close_time", drop=False)
 
-            candles_history = candles_1min.resample(period).agg({'open_time': 'first',
+            candles = candles_1min.resample(period).agg({'open_time': 'first',
                                                                  'close_time': 'last',
                                                                  'open': 'first',
                                                                  'high': 'max',
                                                                  'low': 'min',
-                                                                 'close': 'last'})
-            candles_history = candles_history[candles_history.index < candles_new.index.min()]
-            candles = pd.concat([candles_history, candles_new])
+                                                                 'close': 'last',
+                                                                 'vol': 'max'
+                                                         })
+            #candles_history = candles_history[candles_history.index < candles_new.index.min()]
+            #candles = pd.concat([candles_history, candles_new])
 
             self._logger.debug(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles

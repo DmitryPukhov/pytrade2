@@ -21,13 +21,25 @@ class TestCandlesFeed(TestCase):
         feed.read_candles = MagicMock()
         return feed
 
+    def test_apply_periods_empty(self):
+        feed = self.new_candles_feed()
+        days = 2
+        feed.apply_periods("", days)
+
+        # CandlesFeed should have new periods counts
+        self.assertEqual({}, feed.candles_cnt_by_interval)
+
     def test_apply_periods(self):
         feed = self.new_candles_feed()
         days = 2
-        feed.apply_periods(["10min", "15min"], days)
+        expected = {"10min": 6 * 24 * days, "15min": 60 / 15 * 24 * days}
 
-        # CandlesFeed should have new periods counts
-        self.assertEqual({"10min": 6 * 24 * days, "15min": 60 / 15 * 24 * days}, feed.candles_cnt_by_interval)
+        # Call, compare with expected
+        feed.apply_periods("[ 10min , 15min ]", days)
+        self.assertEqual(expected, feed.candles_cnt_by_interval)
+
+        feed.apply_periods("[ '10min' , '15min' ]", days)
+        self.assertEqual(expected, feed.candles_cnt_by_interval)
 
     def test_candles_counts_in_days(self):
         days = 2

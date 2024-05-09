@@ -162,5 +162,5 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
             # Set new history days and candles periods
             self.candles_feed.apply_history_days(self.history_days)
-            periods = params["features_candles_periods"].lstrip("[").rstrip("]")
+            periods = params["features_candles_periods"]
             self.candles_feed.apply_periods(periods, self.history_days)
