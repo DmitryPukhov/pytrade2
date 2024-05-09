@@ -1,26 +1,46 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
-import os
-import sys
 from multiprocessing import RLock, Event
 from unittest import TestCase
 from unittest.mock import MagicMock
 
 import pandas as pd
 
-from strategy.common.test_StrategyStub import RegressionStrategyStub
 from strategy.feed.CandlesFeed import CandlesFeed
 
 
 class TestCandlesFeed(TestCase):
-    def new_candles_feed(self):
+    @staticmethod
+    def new_candles_feed():
         config = defaultdict(str)
         config["pytrade2.feed.candles.periods"] = "1min,5min"
         config["pytrade2.feed.candles.counts"] = "1,1"
         config["pytrade2.feed.candles.history.days"] = "1"
         feed = CandlesFeed(config, "ticker1", MagicMock(), RLock(), Event(), "test")
-        feed.candles_history_cnt_by_interval = {"1min": 10, "5min":1}
+        feed.candles_history_cnt_by_interval = {"1min": 10, "5min": 1}
         return feed
+
+    def test_candles_history_cnts(self):
+        days = 2
+        actual = CandlesFeed.candles_history_cnts({"1min", "5min"}, days)
+        # Check candles counts in given number of days
+        self.assertEqual({"1min": 60 * 24 * days, "5min": 60 / 5 * 24 * days}, actual)
+        # Counts should be int, not floats
+        for cnt in actual.values():
+            self.assertEqual(int, type(cnt))
+
+    def test_candles_history_cnts_empty_intervals(self):
+        actual = CandlesFeed.candles_history_cnts(set(), 2)
+        # Empty input - empty output
+        self.assertEqual({}, actual)
+        actual = CandlesFeed.candles_history_cnts(set(), 0)
+        # Empty input - empty output
+        self.assertEqual({}, actual)
+
+    def test_candles_history_cnts_zero_days(self):
+        actual = CandlesFeed.candles_history_cnts({"1min", "5min"}, 0)
+        # zero days - zero candles of each period
+        self.assertEqual({"1min": 0, "5min": 0}, actual)
 
     def test_update_candles(self):
         candles_feed = self.new_candles_feed()
@@ -28,7 +48,8 @@ class TestCandlesFeed(TestCase):
 
         # Candle 1 received
         dt1 = datetime(year=2023, month=6, day=28, hour=9, minute=52)
-        candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "open":1, "high": 1, "low": 1, "close": 1, "vol": 1}
+        candle1 = {"close_time": dt1, "open_time": dt1, "interval": "1min", "open": 1, "high": 1, "low": 1, "close": 1,
+                   "vol": 1}
         # Call
         candles_feed.on_candle(candle1)
         candles_feed.apply_buf()
@@ -83,7 +104,7 @@ class TestCandlesFeed(TestCase):
         candles_feed = self.new_candles_feed()
         candles_feed.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         candles_feed.candles_by_interval = {"1min": [{}, {}],
-                                                     "5min": [{}, {}, {}]}
+                                            "5min": [{}, {}, {}]}
 
         self.assertTrue(candles_feed.has_min_history())
 
@@ -91,7 +112,7 @@ class TestCandlesFeed(TestCase):
         candles_feed = self.new_candles_feed()
         candles_feed.candles_cnt_by_interval = {"1min": 2, "5min": 3}
         candles_feed.candles_by_interval = {"1min": [{}, {}],
-                                                     "5min": [{}, {}]}
+                                            "5min": [{}, {}]}
 
         self.assertFalse(candles_feed.has_min_history())
 
@@ -101,4 +122,3 @@ class TestCandlesFeed(TestCase):
         candles_feed.candles_by_interval = {"1min": [{}, {}]}
 
         self.assertFalse(candles_feed.has_min_history())
-

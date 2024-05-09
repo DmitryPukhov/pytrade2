@@ -36,6 +36,17 @@ class CandlesFeed:
         self.downloader.days = history_days
         self.downloader.download_absent_days(datetime.now())
 
+    @staticmethod
+    def candles_history_cnts(intervals: set[str], days: int) -> dict[str, int]:
+        """Calculate how many candles of given intervals do we have in given history days"""
+        out = dict()
+        history_duration = pd.Timedelta(days=days)
+        for interval in intervals:
+            intervalduration = pd.Timedelta(interval)
+            cnt = history_duration // intervalduration
+            out[interval] = cnt
+        return out
+
     def apply_periods_counts(self, periods_str: str, counts_str: str):
         """Candles configuration changed: periods, counts, reload them"""
         new_counts = self.candles_cnt_by_interval_of(periods_str, counts_str)
@@ -50,7 +61,7 @@ class CandlesFeed:
                 self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
 
                 # If changed, redownload candles
-                self.candles_by_interval_buf = dict() # reset buf
+                self.candles_by_interval_buf = dict()  # reset buf
                 self.read_candles()
 
     @staticmethod
@@ -122,7 +133,6 @@ class CandlesFeed:
             return
         candle_df = pd.DataFrame([candle]).set_index("close_time", drop=False)
         with (self.data_lock):
-
             self._logger.debug(f"Got {period} candle: {candle}")
             prev_buf = self.candles_by_interval_buf.get(period, pd.DataFrame())
             # Add to buffer
