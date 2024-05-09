@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 
 from datamodel.Trade import Trade
 from datamodel.TradeStatus import TradeStatus
+from metrics.MetricServer import MetricServer
 
 
 class Broker:
@@ -36,6 +37,7 @@ class Broker:
                 self.fix_cur_trade()
         else:
             self._logger.info("Opened trades not found")
+
         self._logger.info("Completed init broker.")
 
     def __init_db__(self, config: Dict[str, str]):

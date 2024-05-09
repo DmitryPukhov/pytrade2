@@ -97,3 +97,5 @@ class Metrics:
                 self.is_in_trade = Gauge("broker_is_in_trade", "1 if is in trade, 0 if out of market",
                                          namespace=app_name,
                                          subsystem=strategy)
+                self.trade_profit = Gauge("broker_trade_profit", "trade_profit", namespace=app_name,
+                                               subsystem=strategy)

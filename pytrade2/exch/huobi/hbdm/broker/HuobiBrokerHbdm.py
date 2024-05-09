@@ -1,5 +1,4 @@
 import logging
-from io import StringIO
 
 from exch.Broker import Broker
 from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
@@ -36,7 +35,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
 
     def set_one_way_mode(self):
         """ Set up exchange to set one way (no buy and sell opened simultaneously) """
-        self._logger.info(f"Setting one way trading mode (opposite trade will close current one)")
+        self._logger.info("Setting one way trading mode (opposite trade will close current one)")
         res = self.rest_client.post("/linear-swap-api/v1/swap_cross_switch_position_mode",
                                     {"margin_account": "USDT", "position_mode": "single_side"})
         self._logger.debug(f"response: f{res}")
@@ -93,7 +92,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
                         # Current trade is opened
                         self.update_trade_opened_event(msg, self.cur_trade)
                         self.db_session.commit()
-                        self._logger.info(f"Current trade is opened")
+                        self._logger.info("Current trade is opened")
 
                     elif order_direction == - self.cur_trade.direction():
                         # Current trade is closed
@@ -104,3 +103,19 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
         except Exception as e:
             self._logger.error(f"Socket message processing error: {e}")
 
+    def on_ticker(self, ticker: dict):
+        """On price changed, set metric and move trailing stop"""
+
+        with self.trade_lock:
+            if self.cur_trade and self.cur_trade.ticker == ticker["symbol"]:
+                # Move trailing stop
+                TrailingStopSupport.on_ticker(self, ticker)
+
+                # Calculate current profit metric
+                direction = self.cur_trade.direction()
+                if direction == 1:
+                    profit = ticker["bid"] - self.cur_trade.open_price
+                    MetricServer.metrics.broker.trade.trade_profit.set(profit)
+                elif direction == -1:
+                    profit = self.cur_trade.open_price - ticker["ask"]
+                    MetricServer.metrics.broker.trade.trade_profit.set(profit)
