@@ -18,7 +18,16 @@ class TestCandlesFeed(TestCase):
         config["pytrade2.feed.candles.history.days"] = "1"
         feed = CandlesFeed(config, "ticker1", MagicMock(), RLock(), Event(), "test")
         feed.candles_history_cnt_by_interval = {"1min": 10, "5min": 1}
+        feed.read_candles = MagicMock()
         return feed
+
+    def test_apply_periods(self):
+        feed = self.new_candles_feed()
+        days = 2
+        feed.apply_periods(["10min", "15min"], days)
+
+        # CandlesFeed should have new periods counts
+        self.assertEqual({"10min": 6 * 24 * days, "15min": 60 / 15 * 24 * days}, feed.candles_cnt_by_interval)
 
     def test_candles_counts_in_days(self):
         days = 2

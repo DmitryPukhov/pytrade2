@@ -153,9 +153,6 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         super().apply_params(params)
 
         with self.data_lock:
-            # Candles feed reconfigure
-            self.candles_feed.apply_periods_counts(params["features_candles_periods"].lstrip("[").rstrip("]"),
-                                                   params["features_candles_counts"].lstrip("[").rstrip("]"))
 
             # Signal calculator should be recreated with new params
             self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
@@ -163,5 +160,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                                   self.take_profit_max_coeff, self.comissionpct, self.price_precision)
             self._logger.info(f"Updated signal calc: {self.signal_calc}")
 
-            # Set history days,
+            # Set new history days and candles periods
             self.candles_feed.apply_history_days(self.history_days)
+            periods = params["features_candles_periods"].lstrip("[").rstrip("]")
+            self.candles_feed.apply_periods(periods, self.history_days)

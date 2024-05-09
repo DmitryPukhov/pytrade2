@@ -47,10 +47,10 @@ class CandlesFeed:
             out[interval] = cnt
         return out
 
-    def apply_periods_counts(self, periods_str: str, counts_str: str):
-        """Candles configuration changed: periods, counts, reload them"""
-        new_counts = self.candles_cnt_by_interval_of(periods_str, counts_str)
+    def apply_periods(self, new_periods: list[str], history_days: int):
+        new_counts = self.candles_counts_in_days(set(new_periods), history_days)
 
+        """Set new periods counts if changed"""
         if self.candles_cnt_by_interval != new_counts:
             # If changed, reload all candles
             with self.data_lock:
