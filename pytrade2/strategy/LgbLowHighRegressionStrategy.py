@@ -39,7 +39,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
     def can_learn(self) -> bool:
         # Only candles feed is for data. Bid ask feed is for trailing stop support, don't check it.
-        return self.candles_feed.has_min_history()
+
+        return bool(self.candles_feed.candles_by_interval)
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         with self.data_lock:

@@ -3,7 +3,7 @@ pytrade2.broker.trade.allow: false
 
 
 pytrade2.strategy.processing.interval: "30 seconds"
-pytrade2.strategy.learn.enabled: false
+pytrade2.strategy.learn.enabled: true
 pytrade2.strategy.learn.interval: "5min"
 
 
