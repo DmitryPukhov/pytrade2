@@ -323,6 +323,7 @@ class StrategyBase:
     def process_new_data(self):
 
         if self.model and not self.is_processing:
+            start_time = datetime.utcnow()
             try:
                 self.is_processing = True
                 self.apply_buffers()
@@ -345,6 +346,9 @@ class StrategyBase:
             except Exception as e:
                 self._logger.error(f"{e}. Traceback: {traceback.format_exc()}")
             finally:
+                # Set metrics
+                process_duration = datetime.utcnow() - start_time
+                MetricServer.metrics.strategy.process.process_duration_sec.set(process_duration.total_seconds())
                 self.is_processing = False
 
     def process_prediction(self, y_pred):

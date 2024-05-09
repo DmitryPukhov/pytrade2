@@ -13,6 +13,7 @@ class Metrics:
         def __init__(self, app_name: str, strategy: str):
             self.learn = Metrics.Strategy.Learn(app_name, strategy)
             self.prediction = Metrics.Strategy.Prediction(app_name, strategy)
+            self.process = Metrics.Strategy.Process(app_name, strategy)
             self.signal = Metrics.Strategy.Signal(app_name, strategy)
             self.feed = Metrics.Strategy.Feed(app_name, strategy)
 
@@ -40,6 +41,12 @@ class Metrics:
                 self.train_exec_duration_sec = Gauge("strategy_learn_train_exec_duration_sec",
                                                      "Model fit() process duration", namespace=app_name,
                                                      subsystem=strategy)
+
+        class Process:
+            def __init__(self, app_name: str, strategy: str):
+                self.process_duration_sec = Gauge("strategy_process_duration_sec",
+                                                  "Process new data duration", namespace=app_name,
+                                                  subsystem=strategy)
 
         class Prediction:
             def __init__(self, app_name: str, strategy: str):
@@ -98,4 +105,4 @@ class Metrics:
                                          namespace=app_name,
                                          subsystem=strategy)
                 self.trade_profit = Gauge("broker_trade_profit", "trade_profit", namespace=app_name,
-                                               subsystem=strategy)
+                                          subsystem=strategy)
