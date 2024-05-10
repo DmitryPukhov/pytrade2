@@ -23,7 +23,7 @@ pytrade2.strategy.predict.window: "10min"
 #  max_loss_ratio = comission * 10 = 0.0024
 
 # Signal parameters
-pytrade2.strategy.profitloss.ratio: 2
+pytrade2.strategy.profitloss.ratio: 4
 pytrade2.strategy.profit.min.coeff: 0.0012
 pytrade2.strategy.stoploss.max.coeff: 0.0048
 
