@@ -65,7 +65,7 @@ class MultiIndiFeatures:
     @staticmethod
     def ichimoku_of(candles: pd.DataFrame, period: str = ''):
         df = pd.DataFrame()
-        ichimoku = trend.IchimokuIndicator(candles['high'], candles['low'], fillna=True)
+        ichimoku = trend.IchimokuIndicator(candles['high'], candles['low'], fillna=False)
         df[f'ichimoku_base_line_{period}_diff'] = ichimoku.ichimoku_base_line().diff()
         df[f'ichimoku_conversion_line_{period}_diff'] = ichimoku.ichimoku_conversion_line().diff()
         df[f'ichimoku_a_{period}_diff'] = ichimoku.ichimoku_a().diff()
@@ -79,12 +79,12 @@ class MultiIndiFeatures:
             {'high': 'max', 'low': 'min', 'open': 'first', 'close': 'last', 'vol': 'sum'})
         df = MultiIndiFeatures.ichimoku_of(resampled, period)
         df[f'cci_{period}_diff'] = trend.cci(resampled['high'], resampled['low'], resampled['close'],
-                                             fillna=True).diff()
+                                             fillna=False).diff()
         df[f'adx_{period}_diff'] = trend.adx(resampled['high'], resampled['low'], resampled['close'],
-                                             fillna=True).diff()
-        df[f'rsi_{period}_diff'] = momentum.rsi(resampled['close'], fillna=True).diff()
+                                             fillna=False).diff()
+        df[f'rsi_{period}_diff'] = momentum.rsi(resampled['close'], fillna=False).diff()
         df[f'stoch_{period}_diff'] = momentum.stoch(resampled['high'], resampled['low'], resampled['close'],
-                                                    fillna=True).diff()
-        df[f'macd_{period}_diff'] = trend.macd(resampled['close'], fillna=True).diff()
+                                                    fillna=False).diff()
+        df[f'macd_{period}_diff'] = trend.macd(resampled['close'], fillna=False).diff()
         df = df.dropna()
         return df
