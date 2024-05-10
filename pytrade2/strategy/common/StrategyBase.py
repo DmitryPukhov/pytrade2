@@ -204,6 +204,8 @@ class StrategyBase:
             self.apply_params(params)
             self.app_params = params
 
+        MetricServer.app_params["model"] = f"{self.model_version.name} v{self.model_version.version}"
+
     def create_model(self, x_size, y_size):
         raise NotImplementedError()
 
