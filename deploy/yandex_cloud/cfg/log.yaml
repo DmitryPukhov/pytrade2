@@ -31,3 +31,9 @@ loggers:
     level: INFO
     handlers: [ consoleHandler ]
     propagate: no
+
+# turn off GET /metrics HTTP:/1.1 200 logs
+  werkzeug:
+    level: WARNING
+    handlers: [ consoleHandler ]
+    propagate: no
