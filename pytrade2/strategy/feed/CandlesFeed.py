@@ -102,7 +102,7 @@ class CandlesFeed:
             #candles_history = candles_history[candles_history.index < candles_new.index.min()]
             #candles = pd.concat([candles_history, candles_new])
 
-            self._logger.debug(f"Got {len(candles.index)} initial {self.ticker} {period} candles")
+            self._logger.debug(f"Got {len(candles.index)} {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
 
     def read_candles_downloaded(self):

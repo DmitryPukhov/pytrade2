@@ -14,13 +14,16 @@ formatters:
 loggers:
   root:
     level: INFO
-    handlers: [consoleHandler]
+    handlers: [ consoleHandler ]
   HuobiBrokerHbdm:
     level: DEBUG
-    handlers: [consoleHandler]
+    handlers: [ consoleHandler ]
     propagate: no
-
   LgbLowHighRegressionStrategy:
+    level: DEBUG
+    handlers: [ consoleHandler ]
+    propagate: no
+  MultiIndiFeatures:
     level: INFO
-    handlers: [consoleHandler]
+    handlers: [ consoleHandler ]
     propagate: no

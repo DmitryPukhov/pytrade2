@@ -57,6 +57,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         return x, y
 
     def prepare_last_x(self) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+        self._logger.debug(f"Preparing last x. Candles by interval: {self.candles_feed.candles_by_interval.keys()}")
+
         with self.data_lock:
             x = MultiIndiFeatures.multi_indi_features_last(
                 self.candles_feed.candles_by_interval) if self.candles_feed.candles_by_interval else pd.DataFrame.empty

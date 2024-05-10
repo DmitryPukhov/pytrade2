@@ -1,22 +1,26 @@
-from typing import List, Dict, re
+import logging
+from typing import Dict
 
 import pandas as pd
-from ta import trend, momentum, volume, others, volatility
+from ta import trend, momentum
 
 from strategy.features.CandlesFeatures import CandlesFeatures
 from strategy.features.LowHighTargets import LowHighTargets
 
+
 class MultiIndiFeatures:
     """ Multiple TA indicators on multiple periods"""
+    _log = logging.getLogger("MultiIndiFeatures")
 
     @staticmethod
     def multi_indi_features_last(candles_by_periods: Dict[str, pd.DataFrame], n=1):
-        max_candles = 52  # Ichimoku period is last
+        max_candles = 52 *2 # Ichimoku period is last todo: remove 2
         last_candles_by_periods = {period: candles.tail(max_candles) for period, candles in candles_by_periods.items()}
         return MultiIndiFeatures.multi_indi_features(last_candles_by_periods).tail(n)
 
     @staticmethod
-    def multi_indi_features_targets(candles_by_periods: Dict[str, pd.DataFrame], target_period, drop_features_wo_targets = True):
+    def multi_indi_features_targets(candles_by_periods: Dict[str, pd.DataFrame], target_period,
+                                    drop_features_wo_targets=True):
         features = MultiIndiFeatures.multi_indi_features(candles_by_periods)
         targets = LowHighTargets.fut_lohi(candles_by_periods[target_period], target_period)
         if drop_features_wo_targets:
@@ -32,13 +36,28 @@ class MultiIndiFeatures:
         min_period = min(candles_by_periods.keys(), key=pd.Timedelta)
 
         min_candles = candles_by_periods[min_period]
+
+        # time
         time_features = CandlesFeatures.time_features_of(min_candles)[['time_hour', 'time_minute']]
+        MultiIndiFeatures._log.debug(f"time features:\n{time_features.tail()}")
+
+        # Indicators
+        indicators_features = []
+        for period, candles in candles_by_periods.items():
+            period_indicators = MultiIndiFeatures.indicators_of(candles, period)
+            indicators_features.append(period_indicators)
+            MultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
+
+        # Concat time and indicators columns
+        features = pd.concat([time_features] + indicators_features, axis=1).sort_index().ffill().dropna()
+        MultiIndiFeatures._log.debug(f"Resulted features:\n{features.tail()}")
+
         # indi_features = pd.concat([indi_features] + [indicators_of(candles,period) for period in ['1min', '5min', '15min', '30min', '60min']], axis=1).ffill()
         # Enrich with columns from each period
-        features = pd.concat(
-            [time_features] + [MultiIndiFeatures.indicators_of(candles, period) for period, candles in
-                               candles_by_periods.items()],
-            axis=1).sort_index().ffill().dropna()
+        # features = pd.concat(
+        #     [time_features] + [MultiIndiFeatures.indicators_of(candles, period) for period, candles in
+        #                        candles_by_periods.items()],
+        #     axis=1).sort_index().ffill().dropna()
         return features
 
     @staticmethod
