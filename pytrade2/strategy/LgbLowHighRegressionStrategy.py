@@ -67,9 +67,9 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             self._logger.debug("Last candles:\n" + "\n".join(
                 [f"{period} : {candles.tail()}" for period, candles in
                  self.candles_feed.candles_by_interval.items()]))
-            x = MultiIndiFeatures.multi_indi_features_last(
-                self.candles_feed.candles_by_interval) if self.candles_feed.candles_by_interval else pd.DataFrame.empty
-            self._logger.debug(f"Prepared last x: {x}")
+        x = MultiIndiFeatures.multi_indi_features_last(
+            self.candles_feed.candles_by_interval) if self.candles_feed.candles_by_interval else pd.DataFrame.empty
+        self._logger.debug(f"Prepared last x: {x}")
         return x
 
     def predict(self, x):
