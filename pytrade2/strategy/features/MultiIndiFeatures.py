@@ -14,7 +14,7 @@ class MultiIndiFeatures:
 
     @staticmethod
     def multi_indi_features_last(candles_by_periods: Dict[str, pd.DataFrame], n=1):
-        max_candles = 52 * 2  # Ichimoku period is last todo: remove 2
+        max_candles = 52  # Ichimoku period is last todo: remove 2
         last_candles_by_periods = {period: candles.tail(max_candles) for period, candles in candles_by_periods.items()}
         return MultiIndiFeatures.multi_indi_features(last_candles_by_periods).tail(n)
 
@@ -76,11 +76,13 @@ class MultiIndiFeatures:
         resampled = candles.resample(period).agg(
             {'high': 'max', 'low': 'min', 'open': 'first', 'close': 'last', 'vol': 'sum'})
         df = MultiIndiFeatures.ichimoku_of(resampled, period)
-        df[f'cci_{period}_diff'] = trend.cci(resampled['high'], resampled['low'], resampled['close']).diff()
+        df[f'cci_{period}_diff'] = trend.cci(resampled['high'], resampled['low'], resampled['close'],
+                                             fillna=True).diff()
         df[f'adx_{period}_diff'] = trend.adx(resampled['high'], resampled['low'], resampled['close'],
                                              fillna=True).diff()
-        df[f'rsi_{period}_diff'] = momentum.rsi(resampled['close']).diff()
-        df[f'stoch_{period}_diff'] = momentum.stoch(resampled['high'], resampled['low'], resampled['close']).diff()
-        df[f'macd_{period}_diff'] = trend.macd(resampled['close']).diff()
+        df[f'rsi_{period}_diff'] = momentum.rsi(resampled['close'], fillna=True).diff()
+        df[f'stoch_{period}_diff'] = momentum.stoch(resampled['high'], resampled['low'], resampled['close'],
+                                                    fillna=True).diff()
+        df[f'macd_{period}_diff'] = trend.macd(resampled['close'], fillna=True).diff()
         df = df.dropna()
         return df
