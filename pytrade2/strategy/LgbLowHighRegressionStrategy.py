@@ -165,3 +165,4 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             self.candles_feed.apply_history_days(self.history_days)
             periods = params["features_candles_periods"]
             self.candles_feed.apply_periods(periods, self.history_days)
+            MetricServer.app_params["candles_cnt_by_interval"] = self.candles_feed.candles_cnt_by_interval
