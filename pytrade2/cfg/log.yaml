@@ -20,7 +20,7 @@ loggers:
     handlers: [ consoleHandler ]
     propagate: no
   LgbLowHighRegressionStrategy:
-    level: INFO
+    level: DEBUG
     handlers: [ consoleHandler ]
     propagate: no
   MultiIndiFeatures:

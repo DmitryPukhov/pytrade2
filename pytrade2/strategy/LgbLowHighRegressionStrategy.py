@@ -1,3 +1,4 @@
+import logging
 from typing import Dict
 
 import lightgbm as lgb
@@ -60,8 +61,15 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         self._logger.debug(f"Preparing last x. Candles by interval: {self.candles_feed.candles_by_interval.keys()}")
 
         with self.data_lock:
+            self.candles_feed.read_candles()
+
             x = MultiIndiFeatures.multi_indi_features_last(
                 self.candles_feed.candles_by_interval) if self.candles_feed.candles_by_interval else pd.DataFrame.empty
+        if self._logger.isEnabledFor(logging.DEBUG):
+            self._logger.debug("Last candles:" + "\n".join(
+                [f"{period} last candle: {candles.index.max()}" for period, candles in
+                 self.candles_feed.candles_by_interval.items()]))
+
         return x
 
     def predict(self, x):
