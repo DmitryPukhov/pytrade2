@@ -114,7 +114,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             MetricServer.metrics.strategy.signal.signal_price.set(price)
             MetricServer.metrics.strategy.signal.signal_sl.set(sl)
             MetricServer.metrics.strategy.signal.signal_tp.set(tp)
-            MetricServer.metrics.strategy.signal.signal_tr_delta.set(tr_delta)
+            MetricServer.metrics.strategy.signal.signal_tr_delta.set(tr_delta if tr_delta else 0)
 
         MetricServer.metrics.strategy.prediction.pred_fut_low_diff.set(fut_low_diff)
         MetricServer.metrics.strategy.prediction.pred_fut_high_diff.set(fut_high_diff)
