@@ -44,10 +44,7 @@ pytrade2.strategy.stoploss.max.coeff: 0.004
 
 # 0.001 of 30000 = 30
 pytrade2.order.quantity: 1
+pytrade2.order.is_trailingstop: false
 
-# Param not used anywhere
-#pytrade2.order.trailingstop: false
 pytrade2.broker.comissionpct: 0.012
-
-
 pytrade2.broker.trade.allow: false

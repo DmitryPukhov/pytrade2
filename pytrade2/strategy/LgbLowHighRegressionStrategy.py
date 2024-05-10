@@ -92,7 +92,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                      signal_ext['price'],
                                      signal_ext['sl'],
                                      signal_ext['tp'])
-        tr_delta = abs(close - sl) if sl else None
+        tr_delta = abs(close - sl) if sl and self.is_trailingstop else None
         signal_ext['tr_delta'] = tr_delta
 
         # Metrics
@@ -156,7 +156,6 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         super().apply_params(params)
 
         with self.data_lock:
-
             # Signal calculator should be recreated with new params
             self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
                                                   self.stop_loss_max_coeff, self.take_profit_min_coeff,
