@@ -3,17 +3,17 @@ pytrade2.broker.trade.allow: false
 
 
 pytrade2.strategy.processing.interval: "30 seconds"
-pytrade2.strategy.learn.enabled: true
+pytrade2.strategy.learn.enabled: false
 pytrade2.strategy.learn.interval: "5min"
 
 
 # Candles to learn on
-pytrade2.feed.candles.periods: 5min, 15min, 30min, 60min
-pytrade2.feed.candles.counts: 5, 5, 5, 5
+pytrade2.feed.candles.periods: 5min, 10min, 20min, 30min, 40min
+pytrade2.feed.candles.counts: 5, 5, 5, 5, 5
 
 pytrade2.feed.candles.history.days: 10
 # Candle to predict
-pytrade2.strategy.predict.window: "15min"
+pytrade2.strategy.predict.window: "10min"
 
 
 #  comission_pct=0.012
