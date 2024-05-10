@@ -49,8 +49,10 @@ class MultiIndiFeatures:
             MultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
 
         # Concat time and indicators columns
-        features = pd.concat([time_features] + indicators_features, axis=1).sort_index().ffill().dropna()
-        MultiIndiFeatures._log.debug(f"Resulted features:\n{features.tail()}")
+        features = pd.concat([time_features] + indicators_features, axis=1).sort_index().ffill()
+        MultiIndiFeatures._log.debug(f"Resulted features with nans:\n{features.tail()}")
+        features = features.dropna()
+        MultiIndiFeatures._log.debug(f"Resulted features dropna:\n{features.tail()}")
 
         # indi_features = pd.concat([indi_features] + [indicators_of(candles,period) for period in ['1min', '5min', '15min', '30min', '60min']], axis=1).ffill()
         # Enrich with columns from each period
@@ -63,7 +65,7 @@ class MultiIndiFeatures:
     @staticmethod
     def ichimoku_of(candles: pd.DataFrame, period: str = ''):
         df = pd.DataFrame()
-        ichimoku = trend.IchimokuIndicator(candles['high'], candles['low'])
+        ichimoku = trend.IchimokuIndicator(candles['high'], candles['low'], fillna=True)
         df[f'ichimoku_base_line_{period}_diff'] = ichimoku.ichimoku_base_line().diff()
         df[f'ichimoku_conversion_line_{period}_diff'] = ichimoku.ichimoku_conversion_line().diff()
         df[f'ichimoku_a_{period}_diff'] = ichimoku.ichimoku_a().diff()

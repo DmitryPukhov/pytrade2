@@ -63,13 +63,13 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         with self.data_lock:
             self.candles_feed.read_candles()
 
+        if self._logger.isEnabledFor(logging.DEBUG):
+            self._logger.debug("Last candles:\n" + "\n".join(
+                [f"{period} : {candles.tail()}" for period, candles in
+                 self.candles_feed.candles_by_interval.items()]))
             x = MultiIndiFeatures.multi_indi_features_last(
                 self.candles_feed.candles_by_interval) if self.candles_feed.candles_by_interval else pd.DataFrame.empty
-        if self._logger.isEnabledFor(logging.DEBUG):
-            self._logger.debug("Last candles:" + "\n".join(
-                [f"{period} last candle: {candles.index.max()}" for period, candles in
-                 self.candles_feed.candles_by_interval.items()]))
-
+            self._logger.debug(f"Prepared last x: {x}")
         return x
 
     def predict(self, x):

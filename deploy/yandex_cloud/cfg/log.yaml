@@ -20,7 +20,7 @@ loggers:
     handlers: [consoleHandler]
     propagate: no
   LgbLowHighRegressionStrategy:
-    level: DEBUG
+    level: INFO
     handlers: [consoleHandler]
     propagate: no
   CandlesFeed:
