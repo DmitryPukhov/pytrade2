@@ -47,9 +47,9 @@ class CandlesDownloader:
         start = self.get_start_date()
         end = datetime.today() + timedelta(days=1)
 
-        self._logger.info(f"Downloading new candles from {start} to {end}. Total days: {self.days}")
+        self._logger.debug(f"Downloading new candles from {start} to {end}. Total days: {self.days}")
         intervals = self.date_intervals(start, end)
-        self._logger.info(f"{len(intervals)} days will be downloaded")
+        self._logger.debug(f"{len(intervals)} days will be downloaded")
         self.download_intervals(intervals, False)
 
     def download_intervals(self, intervals: List[Tuple[datetime, datetime]], skip_existing=False):
@@ -57,7 +57,7 @@ class CandlesDownloader:
          :param intervals: [<from>, <to>] one interval - one day (2024-02-17 00:01, 2024-02-18 00:00)
          :param skip_existing: if file exists, don't download it again
          """
-        self._logger.info(f"Start downloading candles to {self.download_dir}")
+        self._logger.debug(f"Start downloading candles to {self.download_dir}")
 
         for start, end in intervals:
             file_name = f"{start.date()}_{self.ticker}_candles_{self.period}.csv"
@@ -77,9 +77,9 @@ class CandlesDownloader:
             candles.to_csv(str(file_path),
                            header=True,
                            mode='w')
-            self._logger.info(
+            self._logger.debug(
                 f"{self.period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
-        self._logger.info(f"Downloading of {len(list(intervals))} intervals completed")
+        self._logger.debug(f"Downloading of {len(list(intervals))} intervals completed")
 
     @staticmethod
     def date_intervals(from_: datetime, to: datetime, period="1d"):
