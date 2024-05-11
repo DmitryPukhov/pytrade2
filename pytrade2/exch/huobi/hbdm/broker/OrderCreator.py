@@ -220,7 +220,8 @@ class OrderCreator:
                 MetricServer.metrics.broker.trade.trade_open_price.set(self.cur_trade.open_price)
                 MetricServer.metrics.broker.trade.trade_sl.set(self.cur_trade.stop_loss_price)
                 MetricServer.metrics.broker.trade.trade_tp.set(self.cur_trade.take_profit_price)
-                MetricServer.metrics.broker.trade.trade_tr_delta.set(self.cur_trade.trailing_delta)
+                if self.cur_trade.trailing_delta:
+                    MetricServer.metrics.broker.trade.trade_tr_delta.set(self.cur_trade.trailing_delta)
 
                 self._logger.info(f"Opened trade: {self.cur_trade}")
             else:
