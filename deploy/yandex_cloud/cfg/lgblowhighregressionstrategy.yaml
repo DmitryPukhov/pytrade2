@@ -1,7 +1,6 @@
 pytrade2.strategy: LgbLowHighRegressionStrategy
 pytrade2.broker.trade.allow: false
 
-
 pytrade2.strategy.processing.interval: "30 seconds"
 pytrade2.strategy.learn.enabled: false
 pytrade2.strategy.learn.interval: "5min"
@@ -23,7 +22,7 @@ pytrade2.strategy.predict.window: "10min"
 #  max_loss_ratio = comission * 10 = 0.0024
 
 # Signal parameters
-pytrade2.strategy.profitloss.ratio: 4
+pytrade2.strategy.profitloss.ratio: 3
 pytrade2.strategy.profit.min.coeff: 0.0012
 pytrade2.strategy.stoploss.max.coeff: 0.0048
 
