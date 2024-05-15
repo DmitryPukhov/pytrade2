@@ -1,5 +1,6 @@
-pytrade2.exchange: binance.BinanceExchange
-pytrade2.exchange.binance.spot.url: 'https://testnet.binance.vision'
+pytrade2.exchange: "huobi.hbdm.HuobiExchangeHbdm"
+#pytrade2.exchange: binance.BinanceExchange
+#pytrade2.exchange.binance.spot.url: 'https://testnet.binance.vision'
 
 pytrade2.s3.enabled: false
 pytrade2.s3.endpoint_url: 'https://storage.yandexcloud.net'

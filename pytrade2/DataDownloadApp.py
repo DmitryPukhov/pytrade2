@@ -29,17 +29,12 @@ class DataDownloadApp(App):
         to = self.config.get("to")
         self.to = datetime.fromisoformat(to) if to else datetime.now()
 
-        # self.from_ = datetime.fromisoformat(self.config["from"]) if "from" in self.config \
-        #     else datetime.combine(datetime.today(), datetime.min.time())
-        # self.to = datetime.fromisoformat(self.config["to"]) if "to" in self.config \
-        #     else datetime.now()
-        # #self.limit = self.config.get("limit", 24 * 60)
-        # self.limit = self.config.get("limit", None)
-
     def _parse_args(self) -> Dict[str, str]:
         """ Parse command line arguments"""
 
         parser = argparse.ArgumentParser()
+        parser.add_argument('--pytrade2.data.dir',
+                            help='Local destination data directory')
         parser.add_argument('--days',
                             help='How much days to download example: --days 2')
         parser.add_argument('--to',
