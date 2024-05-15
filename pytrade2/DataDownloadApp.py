@@ -52,7 +52,7 @@ class DataDownloadApp(App):
         self._logger.info(f"Start downloading data to {self.download_dir}")
         period = "1min"
         feed = self.exchange_provider.candles_feed()
-        candles_downloader = CandlesDownloader(self.config, feed, "common")
+        candles_downloader = CandlesDownloader(self.config, feed )
         intervals = CandlesDownloader.last_days(self.to, self.days, period)
 
         candles_downloader.download_intervals(intervals)

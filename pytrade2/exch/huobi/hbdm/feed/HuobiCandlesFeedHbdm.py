@@ -57,8 +57,10 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         path = "/linear-swap-ex/market/history/kline"
         params = {"contract_code": ticker,
                   "period": interval,
-                  "size": limit,
                   }
+
+        if limit:
+            params["size"] = limit
         if from_:
             params["from"] = int(from_.timestamp())
         if to:

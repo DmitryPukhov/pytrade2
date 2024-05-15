@@ -12,12 +12,13 @@ class CandlesDownloader:
     Download 1min candles to history to data/common
     """
 
-    def __init__(self, config: Dict, exchange_candles_feed, tag: str):
+    def __init__(self, config: Dict, exchange_candles_feed, tag: str = None):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.config = config
         self.exchange_candles_feed = exchange_candles_feed
         data_dir = Path(self.config["pytrade2.data.dir"])
-        self.download_dir = Path(data_dir, tag, "candles")
+        path_parts = [part for part in [data_dir, tag, "candles"] if part]
+        self.download_dir = Path(*path_parts)
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.ticker = self.config["pytrade2.tickers"].split(",")[-1]
         self.period = "1min"
@@ -71,14 +72,17 @@ class CandlesDownloader:
                                                                   limit=None,
                                                                   from_=start,
                                                                   to=end)
+            if candles_raw:
+                candles = pd.DataFrame(candles_raw).set_index("close_time")
+                # Save to file system
+                candles.to_csv(str(file_path),
+                               header=True,
+                               mode='w')
+                self._logger.debug(
+                    f"{self.period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
+            else:
+                self._logger.info(f"Candles for period from {start} to {end} are empty")
 
-            candles = pd.DataFrame(candles_raw).set_index("close_time")
-            # Save to file system
-            candles.to_csv(str(file_path),
-                           header=True,
-                           mode='w')
-            self._logger.debug(
-                f"{self.period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
         self._logger.debug(f"Downloading of {len(list(intervals))} intervals completed")
 
     @staticmethod
