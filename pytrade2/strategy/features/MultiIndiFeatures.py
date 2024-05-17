@@ -27,6 +27,8 @@ class MultiIndiFeatures:
     @staticmethod
     def multi_indi_features(candles_by_periods: Dict[str, pd.DataFrame], params=None):
         # Create time features
+        if params is None:
+            params = dict()
         min_period = min(candles_by_periods.keys(), key=pd.Timedelta)
 
         min_candles = candles_by_periods[min_period]
@@ -38,7 +40,8 @@ class MultiIndiFeatures:
         # Indicators
         indicators_features = []
         for period, candles in candles_by_periods.items():
-            period_indicators = MultiIndiFeatures.indicators_of(candles, period, params)
+            period_indicators = MultiIndiFeatures.indicators_of(candles, period,
+                                                                params.get(period, MultiIndiFeatures.default_params))
             indicators_features.append(period_indicators)
             MultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
 
