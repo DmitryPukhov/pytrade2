@@ -68,7 +68,7 @@ class StrategyBase:
         self.is_learn_enabled = config.get("pytrade2.strategy.learn.enabled", True)
 
         # Expected profit/loss >= ratio means signal to trade
-        self.profit_loss_ratio = config.get("pytrade2.strategy.profitloss.ratio", 1)
+        self.profit_loss_ratio = float(config.get("pytrade2.strategy.profitloss.ratio", 1))
 
         # stop loss should be above price * min_stop_loss_coeff
         # 0.00005 for BTCUSDT 30000 means 1,5
