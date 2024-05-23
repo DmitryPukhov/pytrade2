@@ -352,7 +352,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_signal > 0",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_signal >= 0",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -637,7 +637,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 3,
+        "h": 4,
         "w": 11,
         "x": 11,
         "y": 4
@@ -663,7 +663,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_broker_in_trade > 0",
+          "expr": "pytrade2_lgblowhighregressionstrategy_broker_in_trade >= 0",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -857,7 +857,7 @@
         "h": 6,
         "w": 11,
         "x": 11,
-        "y": 7
+        "y": 8
       },
       "id": 12,
       "options": {
@@ -880,7 +880,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_broker_trade_profit > 0",
+          "expr": "pytrade2_lgblowhighregressionstrategy_broker_trade_profit >= 0",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
@@ -1083,7 +1083,7 @@
         "h": 9,
         "w": 11,
         "x": 11,
-        "y": 13
+        "y": 14
       },
       "id": 1,
       "options": {
@@ -1313,7 +1313,7 @@
         "h": 6,
         "w": 11,
         "x": 11,
-        "y": 22
+        "y": 23
       },
       "id": 10,
       "interval": "10s",
@@ -1404,7 +1404,7 @@
         "h": 9,
         "w": 11,
         "x": 11,
-        "y": 28
+        "y": 29
       },
       "id": 11,
       "interval": "30s",
@@ -1463,13 +1463,13 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "pytrade2 strategy",
   "uid": "a52cb481-45c0-48d1-a9ac-64a7092950f0",
-  "version": 10,
+  "version": 11,
   "weekStart": ""
 }
