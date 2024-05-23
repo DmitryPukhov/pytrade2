@@ -254,7 +254,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic",
+            "seriesBy": "last"
           },
           "custom": {
             "axisBorderShow": false,
@@ -349,11 +350,32 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_signal",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_signal > 0",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "instant": false,
           "range": true,
-          "refId": "A"
+          "refId": "Buy",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_signal < 0",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "Sell",
+          "useBackend": false
         }
       ],
       "title": "Signal",
@@ -541,7 +563,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "fixedColor": "#ccccdc",
+            "mode": "continuous-RdYlGr",
+            "seriesBy": "max"
           },
           "custom": {
             "axisBorderShow": false,
@@ -551,7 +575,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "bars",
-            "fillOpacity": 0,
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -575,7 +599,26 @@
               "mode": "off"
             }
           },
-          "mappings": [],
+          "decimals": 0,
+          "mappings": [
+            {
+              "options": {
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Buy"
+                },
+                "-1": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Sell"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "max": 1,
+          "min": -1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -589,12 +632,12 @@
               }
             ]
           },
-          "unit": "bool"
+          "unit": "none"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 3,
         "w": 11,
         "x": 11,
         "y": 4
@@ -618,14 +661,34 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_broker_is_in_trade",
+          "expr": "pytrade2_lgblowhighregressionstrategy_broker_in_trade > 0",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "instant": false,
           "range": true,
-          "refId": "A"
+          "refId": "Buy",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "pytrade2_lgblowhighregressionstrategy_broker_in_trade < 0",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "range": true,
+          "refId": "Sell",
+          "useBackend": false
         }
       ],
-      "title": "Is in trade",
+      "title": "In trade",
       "type": "timeseries"
     },
     {
@@ -646,7 +709,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 50,
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -655,12 +718,15 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 1,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
-            "showPoints": "always",
+            "showPoints": "auto",
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -735,7 +801,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "palette-classic",
+            "seriesBy": "last"
           },
           "custom": {
             "axisBorderShow": false,
@@ -744,7 +811,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "bars",
+            "drawStyle": "line",
             "fillOpacity": 50,
             "gradientMode": "none",
             "hideFrom": {
@@ -787,10 +854,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 6,
         "w": 11,
         "x": 11,
-        "y": 8
+        "y": 7
       },
       "id": 12,
       "options": {
@@ -798,7 +865,7 @@
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": false
         },
         "tooltip": {
           "mode": "single",
@@ -813,13 +880,30 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_broker_trade_profit",
+          "expr": "pytrade2_lgblowhighregressionstrategy_broker_trade_profit > 0",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
           "refId": "Profit",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "expr": "pytrade2_lgblowhighregressionstrategy_broker_trade_profit < 0",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "Loss",
           "useBackend": false
         }
       ],
@@ -844,7 +928,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -952,7 +1036,7 @@
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 10,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -976,6 +1060,7 @@
               "mode": "off"
             }
           },
+          "decimals": 2,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -989,7 +1074,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "none"
         },
         "overrides": []
       },
@@ -997,7 +1083,7 @@
         "h": 9,
         "w": 11,
         "x": 11,
-        "y": 12
+        "y": 13
       },
       "id": 1,
       "options": {
@@ -1018,11 +1104,15 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_broker_account_balance",
+          "expr": "pytrade2_lgblowhighregressionstrategy_broker_account_balance != 0",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "instant": false,
           "range": true,
-          "refId": "A"
+          "refId": "A",
+          "useBackend": false
         }
       ],
       "title": "Account balance",
@@ -1122,47 +1212,63 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_open",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_open != 0",
+          "fullMetaSearch": false,
           "hide": false,
+          "includeNullMetadata": true,
           "instant": false,
           "range": true,
-          "refId": "open"
+          "refId": "open",
+          "useBackend": false
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_high",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_high != 0",
+          "fullMetaSearch": false,
           "hide": false,
+          "includeNullMetadata": true,
           "instant": false,
           "range": true,
-          "refId": "high"
+          "refId": "high",
+          "useBackend": false
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_low",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_low != 0",
+          "fullMetaSearch": false,
           "hide": false,
+          "includeNullMetadata": true,
           "instant": false,
           "range": true,
-          "refId": "low"
+          "refId": "low",
+          "useBackend": false
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
+          "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_close",
+          "expr": "pytrade2_lgblowhighregressionstrategy_strategy_feed_candles_close != 0",
+          "fullMetaSearch": false,
+          "includeNullMetadata": true,
           "instant": false,
           "range": true,
-          "refId": "close"
+          "refId": "close",
+          "useBackend": false
         }
       ],
       "title": "Candles",
@@ -1207,7 +1313,7 @@
         "h": 6,
         "w": 11,
         "x": 11,
-        "y": 21
+        "y": 22
       },
       "id": 10,
       "interval": "10s",
@@ -1298,7 +1404,7 @@
         "h": 9,
         "w": 11,
         "x": 11,
-        "y": 27
+        "y": 28
       },
       "id": 11,
       "interval": "30s",
@@ -1357,13 +1463,13 @@
     "list": []
   },
   "time": {
-    "from": "now-15m",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "pytrade2 strategy",
   "uid": "a52cb481-45c0-48d1-a9ac-64a7092950f0",
-  "version": 4,
+  "version": 10,
   "weekStart": ""
 }
