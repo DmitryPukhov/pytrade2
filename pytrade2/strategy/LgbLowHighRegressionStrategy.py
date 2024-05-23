@@ -35,6 +35,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         self.target_period = predict_window
         self.model_name = "MultiOutputRegressorLgb"
         self.history_days = config.get("pytrade2.feed.candles.history.days", 2)
+        self.indi_params = config.get("pytrade2.features.indicators")
 
         self._logger.info(f"Target period: {self.target_period}")
 
@@ -45,7 +46,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         with self.data_lock:
-            x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval)
+            x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval, params = self.indi_params)
 
             # Candles with minimal period
             min_period = min(self.candles_feed.candles_by_interval.keys(), key=pd.Timedelta)
