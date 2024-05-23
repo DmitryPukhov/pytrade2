@@ -112,7 +112,7 @@ class OrderFollower:
         # Save and clear current trade
         self.db_session.commit()
         self.cur_trade, self.prev_trade = None, self.cur_trade
-        MetricServer.metrics.broker.trade.is_in_trade.set(0)
+        MetricServer.metrics.broker.trade.in_trade.set(0)
         MetricServer.metrics.broker.trade.trade_profit.set(0)
         # Ask account manager to read changed balance from the server
         self.account_manager.refresh_balance()

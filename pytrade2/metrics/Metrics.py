@@ -101,8 +101,8 @@ class Metrics:
                 self.trade_tp = Gauge("broker_trade_tp", "trade_tp", namespace=app_name, subsystem=strategy)
                 self.trade_tr_delta = Gauge("broker_trade_tr_delta", "trade_tr_delta", namespace=app_name,
                                             subsystem=strategy)
-                self.is_in_trade = Gauge("broker_is_in_trade", "1 buy, -1 sell trade, 0 if out of market",
-                                         namespace=app_name,
-                                         subsystem=strategy)
+                self.in_trade = Gauge("broker_in_trade", "1 buy, -1 sell trade, 0 if out of market",
+                                      namespace=app_name,
+                                      subsystem=strategy)
                 self.trade_profit = Gauge("broker_trade_profit", "trade_profit", namespace=app_name,
                                           subsystem=strategy)
