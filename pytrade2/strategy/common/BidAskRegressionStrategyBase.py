@@ -1,4 +1,3 @@
-import logging
 from typing import Dict
 import pandas as pd
 from numpy import ndarray
@@ -17,8 +16,11 @@ class BidAskRegressionStrategyBase(StrategyBase):
         self.websocket_feed = None
 
         StrategyBase.__init__(self, config, exchange_provider, True, True, True)
-        self.signal_calc = SignalByFutBidAsk(self.profit_loss_ratio, self.stop_loss_min_coeff, self.stop_loss_max_coeff,
-                                             self.take_profit_min_coeff, self.take_profit_max_coeff, self.price_precision)
+        self.signal_calc = SignalByFutBidAsk(self.profit_loss_ratio,
+                                             self.stop_loss_min_coeff, self.stop_loss_max_coeff,
+                                             self.stop_loss_add_ratio,
+                                             self.take_profit_min_coeff, self.take_profit_max_coeff,
+                                             self.price_precision)
         # Learn params
         self.predict_window = config["pytrade2.strategy.predict.window"]
         self.past_window = config["pytrade2.strategy.past.window"]

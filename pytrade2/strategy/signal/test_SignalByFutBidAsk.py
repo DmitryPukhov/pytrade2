@@ -6,9 +6,9 @@ from strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
 class TestSignalByFutBidAsk(TestCase):
     @classmethod
     def signal_stub(cls):
-        signal = SignalByFutBidAsk(profit_loss_ratio=1, stop_loss_min_coeff=0, stop_loss_max_coeff=float('inf'),
+        signal = SignalByFutBidAsk(profit_loss_ratio=1, stop_loss_min_coeff=0, stop_loss_max_coeff=float('inf'), stop_loss_add_ratio = 0.0,
                                    take_profit_min_coeff=0, take_profit_max_coeff=float('inf'), price_precision=2)
-        signal.profit_loss_ratio = 4
+        signal.profit_loss_ratio = 4.0
         return signal
 
     def test_get_signal_buy(self):

@@ -38,7 +38,6 @@ class TestBidAskRegressionStrategyBase(TestCase):
         y = strategy.predict(X)
         self.assertEqual(y.index.to_pydatetime().tolist(), strategy.bid_ask_feed.bid_ask.tail(1).index.to_pydatetime().tolist())
 
-
     def test_process_new_prediction__should_buy(self):
         strategy = RegressionStrategyStub()
         strategy.bid_ask_feed.bid_ask = pd.DataFrame([{"bid": 10, "ask": 11}])

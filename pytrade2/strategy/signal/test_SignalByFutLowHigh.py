@@ -10,6 +10,7 @@ class TestSignalByFutLowHigh(TestCase):
         signal = SignalByFutLowHigh(profit_loss_ratio=4,
                                     stop_loss_min_coeff=0,
                                     stop_loss_max_coeff=float('inf'),
+                                    stop_loss_add_ratio=0,
                                     take_profit_min_coeff=0,
                                     take_profit_max_coeff=float('inf'),
                                     comission_pct=0,

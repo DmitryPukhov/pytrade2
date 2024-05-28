@@ -68,16 +68,19 @@ class StrategyBase:
         self.is_learn_enabled = config.get("pytrade2.strategy.learn.enabled", True)
 
         # Expected profit/loss >= ratio means signal to trade
-        self.profit_loss_ratio = float(config.get("pytrade2.strategy.profitloss.ratio", 1))
+        self.profit_loss_ratio = float(config.get("pytrade2.strategy.profitloss.ratio", 1.0))
 
         # stop loss should be above price * min_stop_loss_coeff
         # 0.00005 for BTCUSDT 30000 means 1,5
-        self.stop_loss_min_coeff = config.get("pytrade2.strategy.stoploss.min.coeff", 0)
+        self.stop_loss_min_coeff = config.get("pytrade2.strategy.stoploss.min.coeff", 0.0)
 
         # 0.005 means For BTCUSDT 30 000 max stop loss would be 150
         self.stop_loss_max_coeff = config.get("pytrade2.strategy.stoploss.max.coeff", float('inf'))
+
+        self.stop_loss_add_ratio = config.get("pytrade2.strategy.stoploss.add.ratio", 0.0)
+
         # 0.002 means For BTCUSDT 30 000 max stop loss would be 60
-        self.take_profit_min_coeff = config.get("pytrade2.strategy.takeprofit.min.coeff", 0)
+        self.take_profit_min_coeff = config.get("pytrade2.strategy.takeprofit.min.coeff", 0.0)
         self.take_profit_max_coeff = config.get("pytrade2.strategy.takeprofit.max.coeff", float('inf'))
 
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])

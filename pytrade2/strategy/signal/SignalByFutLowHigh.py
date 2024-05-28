@@ -6,9 +6,10 @@ from strategy.signal.SignalCalcBase import SignalCalcBase
 class SignalByFutLowHigh(SignalCalcBase):
 
     def __init__(self, profit_loss_ratio: float, stop_loss_min_coeff: float, stop_loss_max_coeff: float,
+                 stop_loss_add_ratio: float,
                  take_profit_min_coeff: float, take_profit_max_coeff: float, comission_pct: float,
                  price_presision: float):
-        super().__init__(profit_loss_ratio, stop_loss_min_coeff, stop_loss_max_coeff, take_profit_min_coeff,
+        super().__init__(profit_loss_ratio, stop_loss_min_coeff, stop_loss_max_coeff, stop_loss_add_ratio, take_profit_min_coeff,
                          take_profit_max_coeff, price_presision)
         self.comission_pct = comission_pct
 
@@ -46,12 +47,12 @@ class SignalByFutLowHigh(SignalCalcBase):
         signal, sl, tp = 0, None, None
         if signal_buy and not signal_sell:
             # Apply minimal possible stop loss, maximum possible take profit
-            sl_adj = min(fut_low, close * (1 - self.stop_loss_min_coeff))
+            sl_adj = min(fut_low * (1 - self.stop_loss_add_ratio), close * (1 - self.stop_loss_min_coeff))
             tp_adj = min(fut_high, close * (1 + self.take_profit_max_coeff))
             signal, sl, tp = 1, round(sl_adj, self.price_precision), round(tp_adj, self.price_precision)
         elif signal_sell and not signal_buy:
             # Apply minimal possible stop loss, maximum possible take profit
-            sl_adj = max(fut_high, close * (1 + self.stop_loss_min_coeff))
+            sl_adj = max(fut_high * (1 + self.stop_loss_add_ratio), close * (1 + self.stop_loss_min_coeff))
             tp_adj = max(fut_low, close * (1 - self.take_profit_max_coeff))
             signal, sl, tp = -1, round(sl_adj, self.price_precision), round(tp_adj, self.price_precision)
         else:
