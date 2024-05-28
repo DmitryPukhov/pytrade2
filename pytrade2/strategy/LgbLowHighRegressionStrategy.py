@@ -46,7 +46,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         with self.data_lock:
-            x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval, params = self.indi_params)
+            x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval, params=self.indi_params)
 
             # Candles with minimal period
             min_period = min(self.candles_feed.candles_by_interval.keys(), key=pd.Timedelta)
@@ -167,7 +167,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         with self.data_lock:
             # Signal calculator should be recreated with new params
             self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
-                                                  self.stop_loss_max_coeff, self.take_profit_min_coeff,
+                                                  self.stop_loss_max_coeff, self.stop_loss_add_ratio,
+                                                  self.take_profit_min_coeff,
                                                   self.take_profit_max_coeff, self.comissionpct, self.price_precision)
             self._logger.info(f"Updated signal calc: {self.signal_calc}")
 
