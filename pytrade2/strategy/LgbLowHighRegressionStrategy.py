@@ -27,7 +27,8 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                               is_level2_feed=False)
         self.comissionpct = float(config.get('pytrade2.broker.comissionpct'))
         self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
-                                              self.stop_loss_max_coeff, self.take_profit_min_coeff,
+                                              self.stop_loss_max_coeff, self.stop_loss_add_ratio,
+                                              self.take_profit_min_coeff,
                                               self.take_profit_max_coeff, self.comissionpct, self.price_precision)
         self._logger.info(f"SignalCalc: {self.signal_calc}")
         # Should keep 1 more candle for targets
