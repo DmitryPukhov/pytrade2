@@ -46,21 +46,21 @@ pytrade2.broker.trade.allow: false
 pytrade2.strategy.lstm.window.size: 10
 pytrade2.order.quantity: 1
   #pytrade2.order.trailingstop: false
-
-pytrade2.features.indicators:
-  cca:
-    window: 20
-  ichimoku:
-    window1: 9
-    window2: 26
-    window3: 52
-  adx:
-    window: 14
-  rsi:
-    window: 14
-  stoch:
-    window: 14
-    smooth_window: 3
-  macd:
-    slow: 26
-    fast: 12
+#
+#pytrade2.features.indicators:
+#  cca:
+#    window: 20
+#  ichimoku:
+#    window1: 9
+#    window2: 26
+#    window3: 52
+#  adx:
+#    window: 14
+#  rsi:
+#    window: 14
+#  stoch:
+#    window: 14
+#    smooth_window: 3
+#  macd:
+#    slow: 26
+#    fast: 12
