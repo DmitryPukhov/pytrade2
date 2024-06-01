@@ -8,9 +8,9 @@ class SignalByFutLowHigh(SignalCalcBase):
     def __init__(self, profit_loss_ratio: float, stop_loss_min_coeff: float, stop_loss_max_coeff: float,
                  stop_loss_add_ratio: float,
                  take_profit_min_coeff: float, take_profit_max_coeff: float, comission_pct: float,
-                 price_presision: float):
-        super().__init__(profit_loss_ratio, stop_loss_min_coeff, stop_loss_max_coeff, stop_loss_add_ratio, take_profit_min_coeff,
-                         take_profit_max_coeff, price_presision)
+                 price_presision: int):
+        super().__init__(profit_loss_ratio, stop_loss_min_coeff, stop_loss_max_coeff, stop_loss_add_ratio,
+                         take_profit_min_coeff, take_profit_max_coeff, price_presision)
         self.comission_pct = comission_pct
 
     def __str__(self):
