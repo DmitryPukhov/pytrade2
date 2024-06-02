@@ -35,8 +35,11 @@ class Broker:
             self._logger.info(f"Loaded previously opened current trade: {self.cur_trade}")
             if self.allow_trade:
                 self.fix_cur_trade()
+            MetricServer.metrics.broker.trade.in_trade.set(self.cur_trade.direction())
         else:
+            MetricServer.metrics.broker.trade.in_trade.set(0)
             self._logger.info("Opened trades not found")
+        MetricServer.metrics.broker.trade.in_trade.set(bool(self.cur_trade))
 
         self._logger.info("Completed init broker.")
 

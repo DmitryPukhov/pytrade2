@@ -58,4 +58,5 @@ class Trade(Base):
         return int(self.open_time.timestamp() * 1000)
 
     def direction(self) -> int:
+        """ buy: 1, sell: -1, oom: 0"""
         return Trade.order_side_codes.get(self.side)
