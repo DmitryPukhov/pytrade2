@@ -102,7 +102,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                                      signal_ext['price'],
                                      signal_ext['sl'],
                                      signal_ext['tp'])
-        tr_delta = abs(close - sl) if sl and self.is_trailingstop else None
+        tr_delta = abs(close - sl) if sl and self.is_trailing_stop else None
         signal_ext['tr_delta'] = tr_delta
 
         # Metrics

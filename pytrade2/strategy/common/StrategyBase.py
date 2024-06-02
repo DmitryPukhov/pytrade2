@@ -54,7 +54,7 @@ class StrategyBase:
             self.bid_ask_feed = BidAskFeed(config, exchange_provider, self.data_lock, self.new_data_event)
         # self.learn_data_balancer = LearnDataBalancer()
         self.order_quantity = config["pytrade2.order.quantity"]
-        self.is_trailingstop = config.get("pytrade2.order.is_trailingstop", False)
+        self.is_trailing_stop = config.get("pytrade2.order.is_trailingstop", False)
         self._logger.info(f"Order quantity: {self.order_quantity}")
         self.price_precision = config["pytrade2.price.precision"]
         self.amount_precision = config["pytrade2.amount.precision"]
