@@ -7,7 +7,7 @@ pytrade2.strategy.learn.interval: "5min"
 
 
 # Candles to learn on
-pytrade2.feed.candles.periods: 5min, 10min, 15min, 30min
+pytrade2.feed.candles.periods: 10min, 15min, 30min, 60min
 pytrade2.feed.candles.counts: 5, 5, 5, 5
 
 pytrade2.feed.candles.history.days: 10
@@ -22,7 +22,7 @@ pytrade2.strategy.predict.window: "5min"
 #  max_loss_ratio = comission * 10 = 0.0024
 
 # Signal parameters
-pytrade2.strategy.profitloss.ratio: 3
+pytrade2.strategy.profitloss.ratio: 3.5
 pytrade2.strategy.profit.min.coeff: 0.0012
 pytrade2.strategy.stoploss.max.coeff: 0.0048
 
@@ -31,7 +31,7 @@ pytrade2.strategy.profit.max.coeff: 0.005
 pytrade2.strategy.stoploss.min.coeff: 0.00012
 # Add this coeff to protect stop loss
 #pytrade2.strategy.stoploss.add.ratio: 0.0005
-pytrade2.strategy.stoploss.add.ratio: 0
+pytrade2.strategy.stoploss.add.ratio: 0.0002
 pytrade2.order.is_trailingstop: true
 pytrade2.s3.enabled: true
 
