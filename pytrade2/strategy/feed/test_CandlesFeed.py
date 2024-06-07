@@ -90,13 +90,13 @@ class TestCandlesFeed(TestCase):
         candles_feed.apply_buf()
         candles = candles_feed.candles_by_interval["1min"]
         # Assert candle 2
-        self.assertEqual(1, len(candles))
-        self.assertEqual([pd.Timestamp(dt1)],
+        self.assertEqual(2, len(candles))
+        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt1)],
                          [pd.Timestamp(dt) for dt in candles["open_time"].values.tolist()])
-        self.assertEqual([pd.Timestamp(dt2)],
+        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt2)],
                          [pd.Timestamp(dt) for dt in
                           candles["close_time"].values.tolist()])
-        self.assertEqual([2], candles["close"].values.tolist())
+        self.assertEqual([1, 2], candles["close"].values.tolist())
 
         # Candle3 received in 1 min - new candle
         dt3 = dt1 + timedelta(minutes=1)
@@ -108,11 +108,11 @@ class TestCandlesFeed(TestCase):
         # Assert candle3
         self.assertEqual(2, len(candles))
         # Second candle is forming, open time is fixed prev candle + 1s
-        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt1) + pd.Timedelta("59s")],
+        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt1)],
                          [pd.Timestamp(dt) for dt in candles["open_time"].values.tolist()])
-        self.assertEqual([pd.Timestamp(dt1) + pd.Timedelta("59s"), pd.Timestamp(dt3)],
+        self.assertEqual([pd.Timestamp(dt1), pd.Timestamp(dt3)],
                          [pd.Timestamp(dt) for dt in candles["close_time"].values.tolist()])
-        self.assertEqual([2, 3], candles["close"].values.tolist())
+        self.assertEqual([1, 3], candles["close"].values.tolist())
 
     def test_has_history_empty(self):
         candles_feed = self.new_candles_feed()

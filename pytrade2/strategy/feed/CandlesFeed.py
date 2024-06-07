@@ -91,7 +91,7 @@ class CandlesFeed:
             # candles_new = pd.DataFrame(self.exchange_candles_feed.read_candles(self.ticker, period, cnt)) \
             #     .set_index("close_time", drop=False)
 
-            candles = candles_1min.resample(period).agg({'open_time': 'first',
+            candles = candles_1min.resample(period, closed="right").agg({'open_time': 'first',
                                                                  'close_time': 'last',
                                                                  'open': 'first',
                                                                  'high': 'max',
@@ -127,11 +127,11 @@ class CandlesFeed:
                 # candles + buf
                 candles = self.candles_by_interval.get(period, pd.DataFrame())
                 candles = pd.concat([df for df in [candles, buf] if not df.empty]).set_index("close_time", drop=False)
-                candles = candles.resample(period).agg(
+                candles_resampled = candles.resample(period, closed="right").agg(
                     {'open_time': 'first', 'close_time': 'last', 'open': 'first', 'high': 'max', 'low': 'min',
-                     'close': 'last', 'vol': 'max'}).sort_index()
+                     'close': 'last', 'vol': 'max'}).set_index('close_time', drop=False).sort_index()
 
-                self.candles_by_interval[period] = candles
+                self.candles_by_interval[period] = candles_resampled
                 self.candles_by_interval_buf[period] = pd.DataFrame()
 
     def on_candle(self, candle: {}):

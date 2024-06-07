@@ -70,7 +70,7 @@ class MultiIndiFeatures:
         if not params:
             params = MultiIndiFeatures.default_params
 
-        resampled = candles.resample(period).agg(
+        resampled = candles.resample(period, closed="right").agg(
             {'high': 'max', 'low': 'min', 'open': 'first', 'close': 'last', 'vol': 'sum'})
         df = MultiIndiFeatures.ichimoku_of(resampled,
                                            period,
