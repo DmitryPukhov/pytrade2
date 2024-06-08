@@ -88,6 +88,10 @@ class StrategyBase:
 
         self.trade_check_interval = timedelta(seconds=30)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
+
+        self.model_check_interval = timedelta(seconds=30)
+        self.last_model_check_time = datetime.utcnow() - self.model_check_interval
+
         self.min_xy_len = 2
         self.X_pipe, self.y_pipe = None, None
 
@@ -130,6 +134,7 @@ class StrategyBase:
                     self.new_data_event.clear()
 
                 # Learn and predict only if no gap between level2 and bidask
+                self.update_model(is_periodical=True)
                 self.process_new_data()
 
                 if self.processing_interval.total_seconds() > 0:
@@ -190,8 +195,11 @@ class StrategyBase:
             self._logger.info(f"Can not learn because some datasets have not enough data. Filled status {status}")
         return has_min_history
 
-    def update_model(self):
+    def update_model(self, is_periodical=False):
         """ Read last trade ready model from mlflow"""
+        if is_periodical and (datetime.utcnow() - self.last_model_check_time) < self.model_check_interval:
+            # For periodical update, skip if check interval is not elapsed
+            return
 
         model, model_version, params = self.model_persister.get_last_trade_ready_model(self.model_name)
         is_model_changed = model and model_version and (model_version != self.model_version)
@@ -208,6 +216,7 @@ class StrategyBase:
             self.app_params = params
 
         MetricServer.app_params["model"] = f"{self.model_version.name} v{self.model_version.version}"
+        self.last_model_check_time = datetime.utcnow()
 
     def create_model(self, x_size, y_size):
         raise NotImplementedError()
