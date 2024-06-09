@@ -37,7 +37,7 @@ class Trade(Base):
         details = f"{self.ticker} {self.side},  quantity:{self.quantity}, status: {self.status}, " \
                   f"open order id: {self.open_order_id}, open time: {self.open_time}, open price: {self.open_price}, " \
                   f"sl order id: {self.stop_loss_order_id}, sl: {self.stop_loss_price}, " \
-                  f"tp: {self.take_profit_price}"
+                  f"tp: {self.take_profit_price}, tr_delta: {self.trailing_delta}"
 
         # Profit
         if self.side == "BUY" and self.close_price and self.open_price and self.quantity:
