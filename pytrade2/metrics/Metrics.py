@@ -1,5 +1,7 @@
 from prometheus_client import Gauge
 
+from datamodel.Trade import Trade
+
 
 class Metrics:
     """Prometheus Metric collectors: gauges, counters."""
@@ -106,3 +108,16 @@ class Metrics:
                                       subsystem=strategy)
                 self.trade_profit = Gauge("broker_trade_profit", "trade_profit", namespace=app_name,
                                           subsystem=strategy)
+
+            def set_metrics(self, cur_trade: Trade):
+                if cur_trade:
+                    self.in_trade.set(cur_trade.direction())
+                    self.trade_open_price.set(cur_trade.open_price)
+                    self.trade_sl.set(cur_trade.stop_loss_price)
+                    self.trade_tp.set(cur_trade.take_profit_price)
+                    if cur_trade.trailing_delta:
+                        self.trade_tr_delta.set(cur_trade.trailing_delta)
+                else:
+                    self.in_trade.set(0)
+                    self.trade_profit.set(0)
+

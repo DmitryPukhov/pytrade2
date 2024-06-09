@@ -55,8 +55,7 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
 
         # Initial set current trade if it is opened
         self.update_cur_trade_status()
-        if self.cur_trade:
-            MetricServer.metrics.broker.trade.in_trade.set(self.cur_trade.direction())
+        MetricServer.metrics.broker.trade.set_metrics(self.cur_trade)
 
     def sub_events(self):
         """ Subscribe account and order events """

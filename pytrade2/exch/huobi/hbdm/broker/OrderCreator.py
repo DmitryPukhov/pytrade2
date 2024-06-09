@@ -215,13 +215,9 @@ class OrderCreator:
                 self.db_session.add(self.cur_trade)
                 self.db_session.commit()
 
+                # Set current trade metrics
                 MetricServer.metrics.broker.order.order_created.set(1)
-                MetricServer.metrics.broker.trade.in_trade.set(self.cur_trade.direction())
-                MetricServer.metrics.broker.trade.trade_open_price.set(self.cur_trade.open_price)
-                MetricServer.metrics.broker.trade.trade_sl.set(self.cur_trade.stop_loss_price)
-                MetricServer.metrics.broker.trade.trade_tp.set(self.cur_trade.take_profit_price)
-                if self.cur_trade.trailing_delta:
-                    MetricServer.metrics.broker.trade.trade_tr_delta.set(self.cur_trade.trailing_delta)
+                MetricServer.metrics.broker.trade.set_metrics(self.cur_trade)
 
                 self._logger.info(f"Opened trade: {self.cur_trade}")
             else:
