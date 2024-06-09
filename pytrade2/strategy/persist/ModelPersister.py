@@ -93,14 +93,14 @@ class ModelPersister:
                 order_by=["version_number desc"], max_results=1)
             if model_versions:
                 model_version = model_versions.pop()
-                self._logger.info(f"Got model: {model_version.source}")
+                self._logger.debug(f"Got model: {model_version.source}")
                 model = load_func(model_version.source)
 
                 # Get run parameters
                 params = self.mlflow_client.get_run(model_version.run_id).data.params
-                self._logger.info(f"Got strategy parameters: {params}")
+                self._logger.debug(f"Got strategy parameters: {params}")
             else:
-                self._logger.info(f"Model: {model_name} not found")
+                self._logger.debug(f"Model: {model_name} not found")
         except Exception as e:
             self._logger.error(e)
 

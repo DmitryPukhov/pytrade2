@@ -211,7 +211,7 @@ class StrategyBase:
 
         # Set params i
         if is_params_changed:
-            self._logger.info("Updating model params")
+            self._logger.info(f"Updating model params from {self.app_params} to {params}")
             self.apply_params(params)
             self.app_params = params
 
