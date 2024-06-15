@@ -32,7 +32,7 @@ pytrade2.strategy.stoploss.min.coeff: 0.00012
 # Add this coeff to protect stop loss
 #pytrade2.strategy.stoploss.add.ratio: 0.0005
 pytrade2.strategy.stoploss.add.ratio: 0.0002
-pytrade2.order.is_trailingstop: true
+pytrade2.order.is_trailingstop: false
 pytrade2.s3.enabled: true
 
 
