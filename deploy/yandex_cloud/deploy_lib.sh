@@ -65,7 +65,7 @@ prepare_tmp(){
   prepare_tmp_config
 
   echo "Copying docker files"
-  for file in  "Dockerfile" "requirements.txt" "docker-compose.yml"
+  for file in  "Dockerfile" "pyproject.toml" "docker-compose.yml"
   do
     cp "$PYTRADE2_DIR/$file" "$TMP_DIR/pytrade2/"
   done
@@ -95,7 +95,7 @@ build_docker() {
 build_baremetal() {
     # In case of running without docker
     ssh $VM_USER@"$VM_PUBLIC_IP" "sudo apt install -y pip"
-    ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo pip install -r requirements.txt"
+    ssh $VM_USER@"$VM_PUBLIC_IP" "cd $VM_PYTRADE2_DIR ; sudo pip install ."
 }
 
 dockers_up() {
