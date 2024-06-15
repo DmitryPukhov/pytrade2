@@ -86,7 +86,7 @@ class ModelPersister:
         model, model_version, params = None, None, None
         try:
             trade_ready_tag = "is_trade_ready"
-            self._logger.info(f"Getting latest trade ready model: {model_name} from {self.mlflow_client.tracking_uri}")
+            self._logger.debug(f"Getting latest trade ready model: {model_name} from {self.mlflow_client.tracking_uri}")
             # Get last trade ready model version, tagged as trade ready
             model_versions = self.mlflow_client.search_model_versions(
                 f"name = '{model_name}' and tag.{trade_ready_tag} = 'True'",

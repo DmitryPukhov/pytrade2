@@ -110,7 +110,7 @@ class DataPersister:
         if not self.s3_enabled:
             return
         if not os.path.exists(datapath):
-            self._logger.info(f"{datapath} does not exist, cannot upload it to s3")
+            self._logger.debug(f"{datapath} does not exist, cannot upload it to s3")
             return
 
         if compress:
