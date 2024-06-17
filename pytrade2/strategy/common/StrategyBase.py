@@ -304,7 +304,11 @@ class StrategyBase:
         self._logger.info("Applying new params")
 
         for name, val in {name: val for name, val in params.items() if hasattr(self, name)}.items():
-            typed_val = type(getattr(self, name))(val)
+            val_type = type(getattr(self, name))
+            if val_type == bool:
+                typed_val = not (str(val).lower() == "false")
+            else:
+                typed_val = type(getattr(self, name))(val)
             setattr(self, name, typed_val)
 
         # Update metrics server with params from strategy

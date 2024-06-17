@@ -13,6 +13,7 @@ class TestStrategyBase(TestCase):
             self.floatParam = 1.0
             self.intParam = 1
             self.strParam = "strParam1"
+            self.boolParam = False
 
     @staticmethod
     def new_strategy():
@@ -43,6 +44,20 @@ class TestStrategyBase(TestCase):
         self.assertEqual(3, strategy.intParam)
         self.assertEqual("strParam4", strategy.strParam)
 
+    def test_apply_params_bools(self):
+        strategy = self.new_strategy()
+        strategy.apply_params({"boolParam": False})
+        self.assertFalse(strategy.boolParam)
+
+        strategy.apply_params({"boolParam": "False"})
+        self.assertFalse(strategy.boolParam)
+
+        strategy.apply_params({"boolParam": "True"})
+        self.assertTrue(strategy.boolParam)
+
+        strategy.apply_params({"boolParam": True})
+        self.assertTrue(strategy.boolParam)
+
     def test_apply_params_floats(self):
         strategy = self.new_strategy()
         strategy.apply_params({"floatParam": 2.0, "intParam": 3.0, "strParam": "strParam4"})
@@ -55,7 +70,12 @@ class TestStrategyBase(TestCase):
     def test_apply_params_is_trailing_stop(self):
         strategy = self.new_strategy()
         strategy.is_trailing_stop = True
+        strategy.apply_params({"is_trailing_stop": "False"})
+        self.assertFalse(strategy.is_trailing_stop)
+
+        strategy.is_trailing_stop = True
         strategy.apply_params({"is_trailing_stop": False})
         self.assertFalse(strategy.is_trailing_stop)
+
         strategy.apply_params({"is_trailing_stop": True})
         self.assertTrue(strategy.is_trailing_stop)
