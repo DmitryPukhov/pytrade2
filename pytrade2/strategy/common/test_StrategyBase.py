@@ -51,3 +51,11 @@ class TestStrategyBase(TestCase):
         self.assertEqual(2.0, strategy.floatParam)
         self.assertEqual(3, strategy.intParam)
         self.assertEqual("strParam4", strategy.strParam)
+
+    def test_apply_params_is_trailing_stop(self):
+        strategy = self.new_strategy()
+        strategy.is_trailing_stop = True
+        strategy.apply_params({"is_trailing_stop": False})
+        self.assertFalse(strategy.is_trailing_stop)
+        strategy.apply_params({"is_trailing_stop": True})
+        self.assertTrue(strategy.is_trailing_stop)
