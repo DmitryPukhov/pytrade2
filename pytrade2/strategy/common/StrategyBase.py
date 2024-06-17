@@ -300,9 +300,6 @@ class StrategyBase:
 
     def apply_params(self, params: dict) -> None:
         """ After last model and params read from mlflow, apply params to strategy"""
-        """ After last model and params read from mlflow, apply params to strategy"""
-        self._logger.info("Applying new params")
-
         for name, val in {name: val for name, val in params.items() if hasattr(self, name)}.items():
             val_type = type(getattr(self, name))
             if val_type == bool:
@@ -312,7 +309,8 @@ class StrategyBase:
             setattr(self, name, typed_val)
 
         # Update metrics server with params from strategy
-        MetricServer.app_params = {name: val for name, val in params.items() if hasattr(self, name)}
+        MetricServer.app_params = {name: getattr(self, name) if hasattr(self, name) else None
+                                   for name, val in params.items()}
 
     def prepare_last_x(self):
         raise NotImplementedError("prepare_Xy")
