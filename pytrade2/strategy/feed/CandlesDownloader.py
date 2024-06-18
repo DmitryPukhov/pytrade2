@@ -72,7 +72,8 @@ class CandlesDownloader:
                                                                   limit=None,
                                                                   from_=start,
                                                                   to=end)
-            if candles_raw:
+
+            if isinstance(candles_raw, list) and candles_raw:
                 candles = pd.DataFrame(candles_raw).set_index("close_time")
                 # Save to file system
                 candles.to_csv(str(file_path),
@@ -81,7 +82,8 @@ class CandlesDownloader:
                 self._logger.debug(
                     f"{self.period} {len(candles)} candles from {candles.index.min()} to {candles.index.max()} for {end.date()} downloaded to {file_path}")
             else:
-                self._logger.info(f"Candles for period from {start} to {end} are empty")
+                self._logger.info(
+                    f"Candles for period from {start} to {end} are empty: {str(candles_raw)}, feed: {self.exchange_candles_feed}")
 
         self._logger.debug(f"Downloading of {len(list(intervals))} intervals completed")
 
