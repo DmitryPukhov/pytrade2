@@ -1,0 +1,8 @@
+
+image:
+  repository: "{{ .Env.REGISTRY }}/pytrade2"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+command:
+  - ""{{ .Env.PYTRADE2_COMMAND }}
+
