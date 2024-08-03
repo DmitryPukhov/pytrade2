@@ -4,8 +4,10 @@
 function redeploy_secrets(){
   for yaml_file in secret/*.yaml; do
       echo "Deploying secret $yaml_file"
+      set +e
       secret_name=$(basename "${yaml_file%.*}")
       kubectl delete secret "$secret_name"
+      set -e
       # Deploy the secret
       kubectl apply -f "$yaml_file"
   done
