@@ -11,6 +11,7 @@ _trial_temp
 data
 /env
 secret.yaml
+**/secret
 /pytrade2/cfg/*-dev.yaml
 /pytrade2/cfg/*strategy*.yaml
 
