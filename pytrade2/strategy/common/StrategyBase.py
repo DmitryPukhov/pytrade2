@@ -43,6 +43,8 @@ class StrategyBase:
 
         self.risk_manager = None
         self.data_lock = multiprocessing.RLock()
+
+        self.is_periodical = False
         self.new_data_event: Event = Event()
         self.candles_feed = self.bid_ask_feed = self.level2_feed = None
         if is_candles_feed:
@@ -129,7 +131,7 @@ class StrategyBase:
             try:
                 # Wait for new data received
                 # while not self.new_data_event.is_set():
-                if self.new_data_event:
+                if self.new_data_event and not self.is_periodical:
                     self.new_data_event.wait()
                     self.new_data_event.clear()
 

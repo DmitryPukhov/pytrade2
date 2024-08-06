@@ -25,6 +25,10 @@ class LgbLowHighRegressionStrategy(StrategyBase):
                               is_candles_feed=True,
                               is_bid_ask_feed=False,
                               is_level2_feed=False)
+
+        # Periodically scan the data, don't listen events
+        self.is_periodical = True
+
         self.comissionpct = float(config.get('pytrade2.broker.comissionpct'))
         self.signal_calc = SignalByFutLowHigh(self.profit_loss_ratio, self.stop_loss_min_coeff,
                                               self.stop_loss_max_coeff, self.stop_loss_add_ratio,
