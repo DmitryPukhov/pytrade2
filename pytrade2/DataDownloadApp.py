@@ -1,12 +1,9 @@
 import argparse
-import logging.config
 from datetime import datetime
 from pathlib import Path
 from typing import Dict
-
 from App import App
 from exch.Exchange import Exchange
-from strategy.feed.CandlesFeed import CandlesFeed
 from strategy.feed.CandlesDownloader import CandlesDownloader
 
 

@@ -78,6 +78,9 @@ class CandlesFeed:
 
         return dict(zip(periods, counts))
 
+    def run(self):
+        self.exchange_candles_feed.run()
+
     def read_candles(self):
         # Download history to common folder. Minimal period to be resampled during merge later
         # downloader is already configured with history days to download
