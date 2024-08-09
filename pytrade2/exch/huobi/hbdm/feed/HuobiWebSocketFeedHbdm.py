@@ -30,12 +30,11 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
 
     def sub_events(self):
         for ticker in self.tickers:
-            self._logger.info(f"Subscribing to {ticker} feed")
-
+            topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step2"]
+            self._logger.info(f"Subscribing to feeds: {topics}")
             # Sub bid ask, level2
-            for topic in [f"market.{ticker}.bbo", f"market.{ticker}.depth.step2"]:
+            for topic in topics:
                 self._client.add_consumer(topic, {"sub": topic}, self)
-
         self._logger.info("Feed subscribed to all events needed")
 
     def on_socket_data(self, topic, msg):

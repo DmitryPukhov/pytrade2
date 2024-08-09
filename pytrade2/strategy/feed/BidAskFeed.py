@@ -1,19 +1,20 @@
-import logging
 import multiprocessing
 from datetime import datetime
-from io import StringIO
-from typing import Dict, List, Optional
+from typing import Dict
+
 import pandas as pd
 
 from exch.Exchange import Exchange
 
 
 class BidAskFeed:
-    def __init__(self, cfg: Dict[str, str], exchange_provider: Exchange, data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
+    def __init__(self, cfg: Dict[str, str], exchange_provider: Exchange, data_lock: multiprocessing.RLock,
+                 new_data_event: multiprocessing.Event):
         self.websocket_feed = exchange_provider.websocket_feed(cfg["pytrade2.exchange"])
         self.websocket_feed.consumers.add(self)
-        self.bid_ask: pd.DataFrame = pd.DataFrame()
-        self.bid_ask_buf: pd.DataFrame = pd.DataFrame()  # Buffer
+        cols = ['datetime', 'symbol', 'bid', 'bid_vol', 'ask', 'ask_vol']
+        self.bid_ask: pd.DataFrame = pd.DataFrame(columns=cols)
+        self.bid_ask_buf: pd.DataFrame = pd.DataFrame(columns=cols)  # Buffer
         self.history_min_window = (pd.Timedelta(cfg.get("pytrade2.strategy.history.min.window"))
                                    + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
         self.history_max_window = (pd.Timedelta(cfg.get("pytrade2.strategy.history.max.window"))
@@ -21,12 +22,14 @@ class BidAskFeed:
         self.data_lock = data_lock
         self.new_data_event = new_data_event
 
+    def run(self):
+        self.websocket_feed.run()
+
     def on_ticker(self, ticker: dict):
         # Add new data to df
         new_df = pd.DataFrame([ticker], columns=list(ticker.keys())).set_index("datetime", drop=False)
         with self.data_lock:
-            self.bid_ask_buf = pd.concat([self.bid_ask_buf, new_df])
-
+            self.bid_ask_buf = pd.concat([df for df in [self.bid_ask_buf, new_df] if not df.empty])
         self.new_data_event.set()
 
     def apply_buf(self):

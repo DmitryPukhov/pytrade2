@@ -22,6 +22,9 @@ class Level2Feed:
         self.data_lock = data_lock
         self.new_data_event = new_data_event
 
+    def run(self):
+        self.websocket_feed.run()
+
     def on_level2(self, level2: List[Dict]):
         """
         Got new order book items event
