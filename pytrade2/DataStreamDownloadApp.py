@@ -10,6 +10,7 @@ from exch.Exchange import Exchange
 from strategy.feed.BidAskFeed import BidAskFeed
 from strategy.feed.CandlesFeed import CandlesFeed
 from strategy.feed.Level2Feed import Level2Feed
+from strategy.persist.DataPersister import DataPersister
 
 
 class DataStreamDownloadApp(App):
@@ -36,12 +37,15 @@ class DataStreamDownloadApp(App):
         exchange_provider = Exchange(self.config)
         tag = self.__class__.__name__
         # Set up feeds
-
         self.candles_feed = CandlesFeed(self.config, self.ticker, exchange_provider, multiprocessing.RLock(),
                                         multiprocessing.Event(), tag)
         self.level2_feed = Level2Feed(self.config, exchange_provider, multiprocessing.RLock(), multiprocessing.Event())
         self.bid_ask_lock = multiprocessing.RLock()
         self.bid_ask_feed = BidAskFeed(self.config, exchange_provider, multiprocessing.RLock(), multiprocessing.Event())
+
+        # Set up persister to accumulate the data locally then upload to s3
+        self.data_persister = DataPersister(self.config, "raw")
+        # self.data_persister.save_interval = pd.Timedelta(0)
 
     def run(self):
         self._logger.info(f"Start downloading stream data to {self.download_dir}")
@@ -51,7 +55,16 @@ class DataStreamDownloadApp(App):
 
         # processing loop
         while True:
+            # Get from buffers
             new_candles, new_bid_ask, new_level2 = self.get_accumulated_data()
+
+            # Save
+            self.data_persister.s3_enabled = False
+            for tag, df in {"candles": new_candles, "bid_ask": new_bid_ask, "level2": new_level2}.items():
+                if not df.empty:
+                    file_path = self.data_persister.persist_df(df, str(Path(self.download_dir, tag)), tag, self.ticker)
+                    self.data_persister.copy2s3(file_path)
+
             time.sleep(5)
 
     def get_accumulated_data(self):

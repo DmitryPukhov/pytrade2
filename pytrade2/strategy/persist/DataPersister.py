@@ -4,10 +4,9 @@ import os
 import threading
 import zipfile
 from collections import defaultdict
-
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 import boto3
 import pandas as pd
@@ -36,8 +35,8 @@ class DataPersister:
         self.data_dir = config["pytrade2.data.dir"]
         if self.data_dir:
             # Xy data dir
-            self.model_Xy_dir = str(Path(self.data_dir, tag, "Xy"))
-            Path(self.model_Xy_dir).mkdir(parents=True, exist_ok=True)
+            self.model_xy_dir = str(Path(self.data_dir, tag, "Xy"))
+            Path(self.model_xy_dir).mkdir(parents=True, exist_ok=True)
             # Account dir
             self.account_dir = str(Path(self.data_dir, tag, "account"))
             Path(self.account_dir).mkdir(parents=True, exist_ok=True)
@@ -84,13 +83,8 @@ class DataPersister:
         for data_tag in self.data_bufs:
             if self.data_bufs[data_tag].empty:
                 continue
-            time = self.data_bufs[data_tag].index[-1]
-            file_name = f"{pd.to_datetime(time).date()}_{ticker}_{data_tag}"
-            file_path = Path(self.model_Xy_dir, f"{file_name}.csv")
-            self._logger.debug(f"Saving last {data_tag} data to {file_path}")
-            self.data_bufs[data_tag].to_csv(str(file_path),
-                                            header=not file_path.exists(),
-                                            mode='a')
+            # Save dataframe to local file
+            file_path = self.persist_df(self.data_bufs[data_tag], self.model_xy_dir, data_tag, ticker)
             self.data_bufs[data_tag] = pd.DataFrame()
             # Data file copy
             self.copy2s3(file_path)
@@ -103,8 +97,22 @@ class DataPersister:
         self.copy2s3(account_path)
 
         # Purge old data
-        self.purge_data_files(self.model_Xy_dir)
+        self.purge_data_files(self.model_xy_dir)
         self.purge_data_files(self.account_dir)
+
+    def persist_df(self, df: pd.DataFrame, dir_: str, data_tag: str, ticker: str) -> Optional[Path]:
+        """ Save file locally, append if exists"""
+        if df.empty:
+            return None
+        time = df.index[-1]
+        file_name = f"{pd.to_datetime(time).date()}_{ticker}_{data_tag}"
+        Path(dir_).mkdir(parents=True, exist_ok=True)  # ensure directory exists
+        file_path = Path(dir_, f"{file_name}.csv")
+        self._logger.debug(f"Saving last {data_tag} data to {file_path}")
+        df.to_csv(str(file_path),
+                  header=not file_path.exists(),
+                  mode='a')
+        return file_path
 
     def copy2s3(self, datapath: Path, compress=True):
         if not self.s3_enabled:
