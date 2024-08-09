@@ -1,6 +1,8 @@
 import logging
 import multiprocessing
+import os
 import time
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -52,7 +54,8 @@ class DataStreamDownloadApp(App):
 
         # Run feeds
         [feed.run() for feed in [self.candles_feed, self.bid_ask_feed, self.level2_feed]]
-
+        last_save_time = datetime.now()
+        last_s3_time = datetime.now()
         # processing loop
         while True:
             # Get from buffers
@@ -62,10 +65,18 @@ class DataStreamDownloadApp(App):
             self.data_persister.s3_enabled = False
             for tag, df in {"candles": new_candles, "bid_ask": new_bid_ask, "level2": new_level2}.items():
                 if not df.empty:
+                    # Save locally then copy to s3
                     file_path = self.data_persister.persist_df(df, str(Path(self.download_dir, tag)), tag, self.ticker)
                     self.data_persister.copy2s3(file_path)
+            # Remove previous days data
+
+            for subdir in ["candles", "bid_ask", "level2"]:
+                self.data_persister.purge_data_files(Path(self.download_dir, subdir))
 
             time.sleep(5)
+
+    def purge(self):
+        os.listdir(self.download_dir)
 
     def get_accumulated_data(self):
         """ Get accumulated data from feed buffers. Clean feed buffers then. """
