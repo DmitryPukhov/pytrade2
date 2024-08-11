@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 from pathlib import Path
 from typing import Dict
+
 from App import App
 from exch.Exchange import Exchange
 from strategy.feed.CandlesDownloader import CandlesDownloader
@@ -41,11 +42,12 @@ class DataDownloadApp(App):
         return vars(parser.parse_args())
 
     def run(self):
-        self._logger.info(f"Start downloading data to {self.download_dir}")
         period = "1min"
         feed = self.exchange_provider.candles_feed()
-        candles_downloader = CandlesDownloader(self.config, feed )
+        candles_downloader = CandlesDownloader(self.config, feed)
         intervals = CandlesDownloader.last_days(self.to, self.days, period)
+        self._logger.info(f"Start downloading data to {candles_downloader.download_dir}")
+        self._logger.info(f"Downloading days {self.days} to {self.to}(included)")
 
         candles_downloader.download_intervals(intervals)
 
