@@ -47,10 +47,9 @@ class DataStreamDownloadApp(App):
 
         # Set up persister to accumulate the data locally then upload to s3
         self.data_persister = DataPersister(self.config, "raw")
+        self.data_persister._logger.setLevel(logging.DEBUG)
         self.save_interval_local = timedelta(seconds=float(self.config["pytrade2.stream.save.interval.sec.local"]))
         self.save_interval_s3 = timedelta(seconds=float(self.config["pytrade2.stream.save.interval.sec.s3"]))
-
-        # self.data_persister.save_interval = pd.Timedelta(0)
 
     def run(self):
         self._logger.info(f"Start downloading stream data to {self.download_dir}")
@@ -65,7 +64,6 @@ class DataStreamDownloadApp(App):
             new_candles, new_bid_ask, new_level2 = self.get_accumulated_data()
 
             # Save
-            self.data_persister.s3_enabled = False
             for tag, df in {"candles": new_candles, "bid_ask": new_bid_ask, "level2": new_level2}.items():
                 if not df.empty:
                     # Save locally
@@ -84,9 +82,6 @@ class DataStreamDownloadApp(App):
 
             # Wait for next save time
             time.sleep(self.save_interval_local.seconds)
-
-    def purge(self):
-        os.listdir(self.download_dir)
 
     def get_accumulated_data(self):
         """ Get accumulated data from feed buffers. Clean feed buffers then. """
