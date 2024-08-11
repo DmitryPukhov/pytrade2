@@ -2,7 +2,7 @@ import logging
 import multiprocessing
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
@@ -29,7 +29,7 @@ class DataStreamDownloadApp(App):
 
         # Ensure download dir
         data_dir = Path(self.config["pytrade2.data.dir"])
-        self.download_dir = Path(data_dir, "stream/raw")
+        self.download_dir = Path(data_dir, "raw")
         self.download_dir.mkdir(parents=True, exist_ok=True)
 
         # Set up exchange
@@ -47,6 +47,9 @@ class DataStreamDownloadApp(App):
 
         # Set up persister to accumulate the data locally then upload to s3
         self.data_persister = DataPersister(self.config, "raw")
+        self.save_interval_local = timedelta(seconds=float(self.config["pytrade2.stream.save.interval.sec.local"]))
+        self.save_interval_s3 = timedelta(seconds=float(self.config["pytrade2.stream.save.interval.sec.s3"]))
+
         # self.data_persister.save_interval = pd.Timedelta(0)
 
     def run(self):
@@ -54,8 +57,8 @@ class DataStreamDownloadApp(App):
 
         # Run feeds
         [feed.run() for feed in [self.candles_feed, self.bid_ask_feed, self.level2_feed]]
-        last_save_time = datetime.now()
-        last_s3_time = datetime.now()
+        last_save_time_local = datetime.now()
+        last_save_time_s3 = datetime.now()
         # processing loop
         while True:
             # Get from buffers
@@ -65,15 +68,22 @@ class DataStreamDownloadApp(App):
             self.data_persister.s3_enabled = False
             for tag, df in {"candles": new_candles, "bid_ask": new_bid_ask, "level2": new_level2}.items():
                 if not df.empty:
-                    # Save locally then copy to s3
+                    # Save locally
                     file_path = self.data_persister.persist_df(df, str(Path(self.download_dir, tag)), tag, self.ticker)
-                    self.data_persister.copy2s3(file_path)
+                    last_save_time_local = datetime.now()
+
+                    # Copy to s3
+                    if (last_save_time_local - last_save_time_s3) > self.save_interval_s3:
+                        self.data_persister.copy2s3(file_path)
+                        last_save_time_s3 = last_save_time_local
             # Remove previous days data
-
             for subdir in ["candles", "bid_ask", "level2"]:
-                self.data_persister.purge_data_files(Path(self.download_dir, subdir))
+                path = Path(self.download_dir, subdir)
+                if path.exists():
+                    self.data_persister.purge_data_files(path)
 
-            time.sleep(5)
+            # Wait for next save time
+            time.sleep(self.save_interval_local.seconds)
 
     def purge(self):
         os.listdir(self.download_dir)

@@ -26,11 +26,15 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
     @staticmethod
     def is_level2(ch):
         """ Is channel name is level2 like market.BTC-USDT.depth.step1"""
-        return re.fullmatch("market\\..*\\.depth\\.step\\d+", ch)
+        #return re.fullmatch("market\\..*\\.depth\\.step\\d+", ch)
+        return re.fullmatch("market\\..*\\.depth\\..+", ch)
 
     def sub_events(self):
         for ticker in self.tickers:
             topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step0"]
+            # topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.size_150.high_freq"]
+            #topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step14"] # 150
+            #topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step13"] # 150 10
             self._logger.info(f"Subscribing to feeds: {topics}")
             # Sub bid ask, level2
             for topic in topics:
@@ -78,3 +82,4 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
                 "ask": tick["ask"][0],
                 "ask_vol": tick["ask"][1]
                 }
+
