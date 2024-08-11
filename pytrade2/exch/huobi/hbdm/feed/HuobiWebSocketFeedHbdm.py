@@ -17,8 +17,9 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
         super().__init__(config, rest_client, ws_client)
 
         templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template",
-                               f"market.{self.ticker_template}.bbo,market.{self.ticker_template}.depth.step6".split(
-                                   ","))
+                               f"market.{self.ticker_template}.bbo,market.{self.ticker_template}.depth.step6")
+        templates = templates.split(",")
+
         self.subscribe_topics = self.topics_of(templates, self.tickers)
         self.sub_events()
 
@@ -52,17 +53,6 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
             self._logger.info(f"Subscribing to websocket feed {topic}")
             self._client.add_consumer(topic, {"sub": topic}, self)
         self._logger.info("Subscribed to all")
-        # for ticker in self.tickers:
-        #     # step0 - 150 wo merge
-        #     topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step0"]  #
-        #     # topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.size_150.high_freq"]
-        #     # topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step14"] # 150
-        #     # topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step13"] # 150 10
-        #     self._logger.info(f"Subscribing to feeds: {topics}")
-        #     # Sub bid ask, level2
-        #     for topic in topics:
-        #         self._client.add_consumer(topic, {"sub": topic}, self)
-        # self._logger.info("Feed subscribed to all events needed")
 
     def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""

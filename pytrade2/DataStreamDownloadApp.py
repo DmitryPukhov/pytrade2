@@ -47,7 +47,8 @@ class DataStreamDownloadApp(App):
 
         # Set up persister to accumulate the data locally then upload to s3
         self.data_persister = DataPersister(self.config, "raw")
-        self.data_persister._logger.setLevel(logging.DEBUG)
+        #self.data_persister._logger.setLevel(logging.DEBUG)
+
         self.save_interval_local = timedelta(seconds=float(self.config["pytrade2.stream.save.interval.sec.local"]))
         self.save_interval_s3 = timedelta(seconds=float(self.config["pytrade2.stream.save.interval.sec.s3"]))
 
