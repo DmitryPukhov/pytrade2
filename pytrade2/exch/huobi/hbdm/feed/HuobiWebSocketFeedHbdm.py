@@ -1,4 +1,3 @@
-import logging
 import re
 from datetime import datetime
 from typing import Dict, List
@@ -12,11 +11,28 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
     """
     Huobi derivatives market web socket.
     """
+    ticker_template = "{ticker}"
 
     def __init__(self, config: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
         super().__init__(config, rest_client, ws_client)
+
+        templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template",
+                               f"market.{self.ticker_template}.bbo,market.{self.ticker_template}.depth.step6".split(
+                                   ","))
+        self.subscribe_topics = self.topics_of(templates, self.tickers)
         self.sub_events()
 
+    @staticmethod
+    def topics_of(templates: list[str], tickers: list[str]):
+        """ Topics to subscribe websocket"""
+        topics = []
+
+        # Apply each template to each ticker
+        for template in templates:
+            for ticker in tickers:
+                topic = template.strip().replace("{ticker}", ticker)
+                topics.append(topic)
+        return topics
 
     @staticmethod
     def is_bidask(ch):
@@ -26,20 +42,27 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
     @staticmethod
     def is_level2(ch):
         """ Is channel name is level2 like market.BTC-USDT.depth.step1"""
-        #return re.fullmatch("market\\..*\\.depth\\.step\\d+", ch)
+        # return re.fullmatch("market\\..*\\.depth\\.step\\d+", ch)
         return re.fullmatch("market\\..*\\.depth\\..+", ch)
 
     def sub_events(self):
-        for ticker in self.tickers:
-            topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step0"]
-            # topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.size_150.high_freq"]
-            #topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step14"] # 150
-            #topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step13"] # 150 10
-            self._logger.info(f"Subscribing to feeds: {topics}")
-            # Sub bid ask, level2
-            for topic in topics:
-                self._client.add_consumer(topic, {"sub": topic}, self)
-        self._logger.info("Feed subscribed to all events needed")
+        """ Subscribe to websocket feeds: bid/ask, level2 if configured"""
+
+        for topic in self.subscribe_topics:
+            self._logger.info(f"Subscribing to websocket feed {topic}")
+            self._client.add_consumer(topic, {"sub": topic}, self)
+        self._logger.info("Subscribed to all")
+        # for ticker in self.tickers:
+        #     # step0 - 150 wo merge
+        #     topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step0"]  #
+        #     # topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.size_150.high_freq"]
+        #     # topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step14"] # 150
+        #     # topics = [f"market.{ticker}.bbo", f"market.{ticker}.depth.step13"] # 150 10
+        #     self._logger.info(f"Subscribing to feeds: {topics}")
+        #     # Sub bid ask, level2
+        #     for topic in topics:
+        #         self._client.add_consumer(topic, {"sub": topic}, self)
+        # self._logger.info("Feed subscribed to all events needed")
 
     def on_socket_data(self, topic, msg):
         """ Got subscribed data from socket"""
@@ -82,4 +105,3 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
                 "ask": tick["ask"][0],
                 "ask_vol": tick["ask"][1]
                 }
-

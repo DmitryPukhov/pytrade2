@@ -75,3 +75,18 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
         # Call
         feed.on_socket_data('notmarket.BTC-USDT.bbo', msg)
         consumer.on_ticker.assert_not_called()
+
+    def test_topics_of(self):
+        # Should return topics for each ticker
+        feed = HuobiWebSocketFeedHbdm(config={"pytrade2.tickers": "BTC-USDT"}, rest_client=MagicMock(),
+                                      ws_client=MagicMock())
+        actual = feed.topics_of(["market.{ticker}.bbo", "market.{ticker}.depth.step0", "market.{ticker}.depth.step6"],
+                                ["BTC-USDT", "ticker1"])
+        expected = ["market.BTC-USDT.bbo", "market.BTC-USDT.depth.step0", "market.BTC-USDT.depth.step6",
+                    "market.ticker1.bbo", "market.ticker1.depth.step0", "market.ticker1.depth.step6"]
+        self.assertEqual(expected, sorted(actual))
+
+        expected = ["market.ticker1.bbo", "market.ticker1.depth.step0"]
+        actual = feed.topics_of([],
+                                ["ticker1"])
+        self.assertEqual([], actual)
