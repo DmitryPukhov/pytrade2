@@ -86,7 +86,7 @@ class TestHuobiWebSocketFeedHbdm(TestCase):
                     "market.ticker1.bbo", "market.ticker1.depth.step0", "market.ticker1.depth.step6"]
         self.assertEqual(expected, sorted(actual))
 
-        expected = ["market.ticker1.bbo", "market.ticker1.depth.step0"]
+        # Empty in - empty out
         actual = feed.topics_of([],
                                 ["ticker1"])
         self.assertEqual([], actual)
