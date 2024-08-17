@@ -24,7 +24,7 @@ class DataPersister:
         concurrent.futures.thread.ThreadPoolExecutor.submit = Boto3Hack.submit
 
         # Init boto3
-        self.s3_enabled = config.get('pytrade2.s3.enabled', False)
+        self.s3_enabled = bool(config.get('pytrade2.s3.enabled', False))
         if self.s3_enabled:
             self.s3_access_key = config['pytrade2.s3.access_key']
             self.s3_secret_key = config['pytrade2.s3.secret_key']
@@ -45,7 +45,7 @@ class DataPersister:
 
         self.last_save_time = datetime.utcnow()
         # Periodically save data
-        self.save_interval: timedelta = timedelta(seconds=60)  # 60
+        self.save_interval: timedelta = timedelta(seconds=int(config.get("pytrade2.data.save.interval.sec", 60)))
         self.data_bufs: Dict[str, pd.DataFrame] = defaultdict(pd.DataFrame)
         self.last_learn_saved_index = datetime.min
 
@@ -62,11 +62,9 @@ class DataPersister:
                     self._logger.debug(f"Purging {f}")
                     os.remove(f)
 
-    def save_last_data(self, ticker: str,  # X_last: pd.DataFrame, y_pred_last: pd.DataFrame,
+    def add_to_buf(self, ticker: str,  # X_last: pd.DataFrame, y_pred_last: pd.DataFrame,
                        data_last: Dict[str, pd.DataFrame]):
-        """
-        Write X,y, data to csv for analysis
-        """
+        """ Add new data to the buffer, don't save now"""
         for data_tag in data_last:
             if data_last[data_tag].empty:
                 continue
@@ -75,9 +73,16 @@ class DataPersister:
             else:
                 self.data_bufs[data_tag] = data_last[data_tag]
 
+    def save_last_data(self, ticker: str,  # X_last: pd.DataFrame, y_pred_last: pd.DataFrame,
+                       data_last: Dict[str, pd.DataFrame]):
+        """
+        Write X,y, data to csv for analysis
+        """
+        # Add new data to the buffer
+        self.add_to_buf(ticker, data_last)
+
         if datetime.utcnow() - self.last_save_time < self.save_interval:
             return
-
         self.last_save_time = datetime.utcnow()
 
         for data_tag in self.data_bufs:
