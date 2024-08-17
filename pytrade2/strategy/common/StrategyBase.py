@@ -321,23 +321,9 @@ class StrategyBase:
         raise NotImplementedError()
 
     def apply_buffers(self):
-        # Append new data from buffers to main data frames
+        """ Append new data from buffers to main data frames """
         with (self.data_lock):
-            save_dict = {}
-            # Form saving dict structure and copy from buffers to main datasets
-            if self.bid_ask_feed:
-                save_dict["raw_bid_ask"] = self.bid_ask_feed.bid_ask_buf
-                self.bid_ask_feed.apply_buf()
-            # save_dict = {**{"raw_bid_ask": self.bid_ask_feed.bid_ask_buf},
-            if self.candles_feed:
-                save_dict.update({f"raw_candles_{period}": buf for period, buf in
-                                  self.candles_feed.candles_by_interval_buf.items()})
-                self.candles_feed.apply_buf()
-            if self.level2_feed:
-                # Don't call save_dict.update() because Level 2 is too big, don't save, just apply buf
-                self.level2_feed.apply_buf()
-
-            self.data_persister.save_last_data(self.ticker, save_dict)
+            [feed.apply_buf() for feed in [self.bid_ask_feed, self.candles_feed, self.level2_feed] if feed]
 
     def process_new_data(self):
 
