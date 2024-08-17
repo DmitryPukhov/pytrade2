@@ -32,7 +32,8 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
         for template in templates:
             for ticker in tickers:
                 topic = template.strip().replace("{ticker}", ticker)
-                topics.append(topic)
+                if topic:
+                    topics.append(topic)
         return topics
 
     @staticmethod
