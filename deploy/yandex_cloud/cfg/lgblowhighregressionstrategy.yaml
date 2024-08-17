@@ -36,6 +36,6 @@ pytrade2.order.is_trailingstop: false
 pytrade2.s3.enabled: true
 
 # Don't subscribe to data feed
-pytrade2.exchange.feed.huobi.websocket.sub.topics.template:
+#pytrade2.exchange.feed.huobi.websocket.sub.topics.template:
 
 

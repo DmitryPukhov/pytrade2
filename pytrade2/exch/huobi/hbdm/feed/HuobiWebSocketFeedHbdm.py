@@ -17,7 +17,9 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
         super().__init__(config, rest_client, ws_client)
 
         templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template",
-                               f"market.{self.ticker_template}.bbo,market.{self.ticker_template}.depth.step6")
+                               f"market.{self.ticker_template}.bbo")
+        # templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template",
+        #                        f"market.{self.ticker_template}.bbo,market.{self.ticker_template}.depth.step6")
         templates = templates.split(",") if templates else []
 
         self.subscribe_topics = self.topics_of(templates, self.tickers)
