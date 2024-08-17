@@ -138,6 +138,7 @@ class StrategyBase:
                 # Learn and predict only if no gap between level2 and bidask
                 self.update_model(is_periodical=True)
                 self.process_new_data()
+                gc.collect()
 
                 if self.processing_interval.total_seconds() > 0:
                     # Delay before next processing cycle
