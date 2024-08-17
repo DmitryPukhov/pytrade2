@@ -18,10 +18,10 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
 
         templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template",
                                f"market.{self.ticker_template}.bbo,market.{self.ticker_template}.depth.step6")
-        templates = templates.split(",")
+        templates = templates.split(",") if templates else []
 
         self.subscribe_topics = self.topics_of(templates, self.tickers)
-        #self.sub_events()
+        # self.sub_events()
 
     @staticmethod
     def topics_of(templates: list[str], tickers: list[str]):
