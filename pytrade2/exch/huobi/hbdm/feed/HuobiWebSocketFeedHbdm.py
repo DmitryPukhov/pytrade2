@@ -21,7 +21,7 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
         templates = templates.split(",")
 
         self.subscribe_topics = self.topics_of(templates, self.tickers)
-        self.sub_events()
+        #self.sub_events()
 
     @staticmethod
     def topics_of(templates: list[str], tickers: list[str]):

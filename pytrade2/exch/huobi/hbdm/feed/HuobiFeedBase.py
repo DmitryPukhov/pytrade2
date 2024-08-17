@@ -19,6 +19,7 @@ class HuobiFeedBase:
         """
         Read data from web socket
         """
+        self.sub_events()
         self._client.open()
 
     @staticmethod
