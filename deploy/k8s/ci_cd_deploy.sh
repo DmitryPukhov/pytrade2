@@ -54,22 +54,21 @@ function deploy_jenkins() {
 
 function deploy_argo() {
   echo "Installing Argo..."
+  kubectl create namespace argocd
   helm repo add argo https://argoproj.github.io/argo-helm
 
   # Install argo
-  kubectl delete -n $NAMESPACE \
-    -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-  kubectl apply -n $NAMESPACE \
-    -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+  kubectl delete -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+  kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
   #  expose the Argo CD API server to external
-  kubectl patch svc argocd-server -n $NAMESPACE -p '{"spec": {"type": "LoadBalancer"}}'
+  kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
 
   # Print Argo info
-  argo_url=$(minikube service argocd-server --url -n $NAMESPACE)
+  argo_url=$(minikube service argocd-server --url -n argocd)
   echo "Argo url: $argo_url"
   echo "Argo secret:"
-  kubectl -n pytrade2 get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d;echo
+  kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d;echo
 }
 
 
