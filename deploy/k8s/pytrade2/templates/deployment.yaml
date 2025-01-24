@@ -15,5 +15,5 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["{{ .Values.command }}]
+          command: ["{{ .Values.command }}"]
           resources: {}
