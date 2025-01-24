@@ -1,0 +1,7 @@
+spec:
+  securityContext:
+    fsGroup: 1000
+
+persistence:
+  enabled: true
+  existingClaim: pytrade2-jenkins

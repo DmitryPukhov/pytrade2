@@ -4,5 +4,5 @@ image:
   tag: "latest"
   pullPolicy: IfNotPresent
 command:
-  - ""{{ .Env.PYTRADE2_COMMAND }}
+  - "{{ .Env.PYTRADE2_COMMAND }}"
 

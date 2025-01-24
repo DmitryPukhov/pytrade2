@@ -2,7 +2,7 @@
 
 # Read and automatically export env variables
 set -a
-source yc.env
+source .env
 set +a
 
 # Global vars

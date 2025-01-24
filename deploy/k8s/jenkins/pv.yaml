@@ -1,0 +1,16 @@
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pytrade2-jenkins
+  namespace: pytrade2
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: "/data/pytrade2/jenkins-pv"
+
