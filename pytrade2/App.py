@@ -43,7 +43,9 @@ class App:
         pd.set_option("expand_frame_repr", False)
 
         # Load config, set up logging
-        self.config = self._load_config()
+        self.config = {key:val for key, val in os.environ.items()}
+        self._logger.info(self._config_msg(self.config))
+        #self.config = self._load_config()
 
         self._logger.info("App initialized")
 

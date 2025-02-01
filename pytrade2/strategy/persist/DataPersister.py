@@ -24,7 +24,7 @@ class DataPersister:
         concurrent.futures.thread.ThreadPoolExecutor.submit = Boto3Hack.submit
 
         # Init boto3
-        self.s3_enabled = bool(config.get('pytrade2.s3.enabled', False))
+        self.s3_enabled = bool(config.get('pytrade2.s3.enabled', False).lower() == "true")
         if self.s3_enabled:
             self.s3_access_key = config['pytrade2.s3.access_key']
             self.s3_secret_key = config['pytrade2.s3.secret_key']

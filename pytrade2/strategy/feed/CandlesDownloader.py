@@ -22,7 +22,7 @@ class CandlesDownloader:
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.ticker = self.config["pytrade2.tickers"].split(",")[-1]
         self.period = "1min"
-        self.days = config.get("pytrade2.feed.candles.history.days", 2)
+        self.days = int(config.get("pytrade2.feed.candles.history.days", '2').strip())
 
     def get_start_date(self):
         """ In candles data folder find last file and parse date from it''s name"""
