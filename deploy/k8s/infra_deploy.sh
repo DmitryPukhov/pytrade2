@@ -31,6 +31,16 @@ function redeploy_mlflow(){
   helm install pytrade2-mlflow oci://registry-1.docker.io/bitnamicharts/mlflow --values mlflow/values.yaml
 }
 
+function redeploy_prometheus(){
+  echo "Redeploying prometheus"
+  set +e
+  helm delete pytrade2-prometheus
+  kubectl delete pvc pytrade2-prometheus-0
+  set -e
+
+  helm install pytrade2-prometheus oci://registry-1.docker.io/bitnamicharts/prometheus --values prometheus/values.yaml --set serviceMonitor.enabled=true
+}
+
 # Grafana
 function redeploy_grafana(){
   echo "Redeploying grafana"
@@ -50,6 +60,7 @@ function redeploy_grafana(){
 # Exit on error
 set -e
 
-#redeploy_secrets
-#redeploy_mlflow
+redeploy_secrets
+redeploy_mlflow
 redeploy_grafana
+redeploy_prometheus

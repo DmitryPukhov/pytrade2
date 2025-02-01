@@ -1,0 +1,5 @@
+server:
+  service:
+    nodePorts:
+      http: "30280"
+      https: "30280"
