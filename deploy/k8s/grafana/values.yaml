@@ -3,4 +3,6 @@ admin:
   existingSecret: "pytrade2-grafana"
   existingSecretPasswordKey: password
 service:
-  type: LoadBalancer
+  type: NodePort
+  nodePorts:
+    grafana: 30300

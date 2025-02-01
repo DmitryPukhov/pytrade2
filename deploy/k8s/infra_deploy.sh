@@ -1,4 +1,8 @@
 #!/bin/bash
+# Read and automatically export env variables
+set -a
+source .env
+set +a
 
 # All secrets
 function redeploy_secrets(){
@@ -46,6 +50,6 @@ function redeploy_grafana(){
 # Exit on error
 set -e
 
-redeploy_secrets
-redeploy_mlflow
+#redeploy_secrets
+#redeploy_mlflow
 redeploy_grafana

@@ -77,9 +77,9 @@ function deploy_argo() {
 ensure_namespace
 # jenkins repo update is too slow, commented out
 #ensure_repo
-#deploy_jenkins
+deploy_jenkins
 #deploy_argo
-deploy_argo
+#deploy_argo
 
 #print_jenkins_info
 

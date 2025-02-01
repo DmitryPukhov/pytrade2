@@ -5,3 +5,19 @@ spec:
 persistence:
   enabled: true
   existingClaim: pytrade2-jenkins
+
+controller:
+  sidecars:
+    docker:
+      enabled: true
+      resources: {}
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - name: dockersocket
+          mountPath: /var/run/docker.sock
+      volumes:
+        - name: dockersocket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

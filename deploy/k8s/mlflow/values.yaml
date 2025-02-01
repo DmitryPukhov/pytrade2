@@ -1,4 +1,3 @@
-# Mlflow tracking
 tracking:
   enabled: true
   auth:
@@ -6,6 +5,12 @@ tracking:
     existingSecret: pytrade2-mlflow-tracking
     existingSecretUserKey: admin-user
     existingSecretPasswordKey: admin-password
+  service:
+    type: LoadBalancer
+    nodePorts:
+      http: "30180"
+      https: "30180"
+
 
 postgresql:
   enabled: true
@@ -13,18 +18,31 @@ postgresql:
     database: bitnami_mlflow
     existingSecret: pytrade2-mlflow-postgresql
 
-# No minio
 minio:
-  enabled: false
+  enabled: true
+  auth:
+    existingSecret: pytrade2-mlflow-minio
+
 
 # Cloud s3
-externalS3:
-  host: "storage.yandexcloud.net"
-  port: 443
-  useCredentialsInSecret: true
-  existingSecret: "pytrade2-mlflow-s3"
-  existingSecretAccessKeyIDKey: "access-key-id"
-  existingSecretKeySecretKey: "access-key-secret"
-  protocol: "https"
-  bucket: "pytrade2"
-  serveArtifacts: true
+#externalS3:
+#  host: "storage.yandexcloud.net"
+#  port: 443
+#  useCredentialsInSecret: true
+#  existingSecret: "pytrade2-mlflow-s3"
+#  existingSecretAccessKeyIDKey: "access-key-id"
+#  existingSecretKeySecretKey: "access-key-secret"
+#  protocol: "https"
+#  bucket: "pytrade2"
+#  serveArtifacts: true
+
+#ingress:
+#  enabled: true
+#  annotations:
+#    kubernetes.io/ingress.class: nginx
+#    nginx.ingress.kubernetes.io/rewrite-target: /$1
+#  hosts:
+#    - host: "{{ .Values.global.pytrade2_external_ip }}"
+#      paths:
+#        - path: /mlflow(/|$)(.*)
+#          pathType: ImplementationSpecific
