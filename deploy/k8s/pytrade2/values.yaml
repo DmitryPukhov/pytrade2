@@ -1,6 +1,6 @@
 
 image:
-  repository: "{{ .Env.REGISTRY }}/pytrade2"
+  repository: "localhost:5000/pytrade2"
   tag: "latest"
   pullPolicy: IfNotPresent
 command:
