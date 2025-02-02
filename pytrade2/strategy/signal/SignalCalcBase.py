@@ -22,4 +22,4 @@ class SignalCalcBase:
         self.take_profit_min_coeff = float(take_profit_min_coeff)
         self.take_profit_max_coeff = float(take_profit_max_coeff)
 
-        self.price_precision = price_precision
+        self.price_precision = int(price_precision)

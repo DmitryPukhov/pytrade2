@@ -39,7 +39,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         predict_window = config["pytrade2.strategy.predict.window"]
         self.target_period = predict_window
         self.model_name = "MultiOutputRegressorLgb"
-        self.history_days = config.get("pytrade2.feed.candles.history.days", 2)
+        self.history_days = int(config.get("pytrade2.feed.candles.history.days", "2"))
         self.indi_params = config.get("pytrade2.features.indicators")
 
         self._logger.info(f"Target period: {self.target_period}")
