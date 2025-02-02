@@ -2,6 +2,8 @@
 # Read and automatically export env variables
 set -a
 source .env
+source common_lib.sh
+ensure_namespace
 set +a
 
 # All secrets
@@ -62,5 +64,5 @@ set -e
 
 redeploy_secrets
 redeploy_mlflow
-redeploy_grafana
-redeploy_prometheus
+#redeploy_grafana
+#redeploy_prometheus

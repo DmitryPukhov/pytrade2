@@ -100,7 +100,7 @@ class ModelPersister:
                 params = self.mlflow_client.get_run(model_version.run_id).data.params
                 self._logger.debug(f"Got strategy parameters: {params}")
             else:
-                self._logger.debug(f"Model: {model_name} not found")
+                self._logger.warning(f"Model: {model_name} not found")
         except Exception as e:
             self._logger.error(e)
 

@@ -3,19 +3,9 @@
 # Read and automatically export env variables
 set -a
 source .env
+source common_lib.sh
+ensure_namespace
 set +a
-
-
-# Create namespace if does not exist
-function ensure_namespace() {
-  if kubectl get ns "$NAMESPACE" >/dev/null 2>&1; then
-    echo "Namespace '$NAMESPACE' is found."
-  else
-    echo "Creating namespace '$NAMESPACE'..."
-    kubectl create namespace "$NAMESPACE"
-  fi
-  kubectl config set-context --current --namespace="$NAMESPACE"
-}
 
 function print_jenkins_info() {
   # Print jenkins url

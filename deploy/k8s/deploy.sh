@@ -3,6 +3,8 @@
 # Read and automatically export env variables
 set -a
 source .env
+source common_lib.sh
+ensure_namespace
 set +a
 
 # Global vars
