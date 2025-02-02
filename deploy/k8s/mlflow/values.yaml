@@ -11,6 +11,7 @@ tracking:
       http: "30180"
       https: "30180"
 
+defaultBuckets: "pytrade2"
 
 postgresql:
   enabled: true
@@ -19,10 +20,22 @@ postgresql:
     existingSecret: pytrade2-mlflow-postgresql
 
 minio:
-  enabled: true
+  enabled: false
   auth:
     existingSecret: pytrade2-mlflow-minio
 
+
+# Local minikube minio
+externalS3:
+  host: "192.168.49.2"
+  port: 30901
+  useCredentialsInSecret: true
+  existingSecret: "pytrade2-mlflow-minio"
+  existingSecretAccessKeyIDKey: "root-user"
+  existingSecretKeySecretKey: "root-password"
+  protocol: "http"
+  bucket: "pytrade2"
+  serveArtifacts: true
 
 # Cloud s3
 #externalS3:

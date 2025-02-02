@@ -19,6 +19,14 @@ function redeploy_secrets(){
   done
 }
 
+function redeploy_minio(){
+  echo "Redeploying minio"
+  set +e
+  helm delete pytrade2-minio
+  helm install pytrade2-minio oci://registry-1.docker.io/bitnamicharts/minio  --values minio/values.yaml
+  set -e
+}
+
 # Mlflow run, tracking, postgresql
 function redeploy_mlflow(){
   echo "Redeploying mlflow"
@@ -62,7 +70,8 @@ function redeploy_grafana(){
 # Exit on error
 set -e
 
-redeploy_secrets
+#redeploy_secrets
+redeploy_minio
 redeploy_mlflow
 #redeploy_grafana
 #redeploy_prometheus

@@ -1,0 +1,8 @@
+auth:
+  existingSecret: pytrade2-mlflow-minio
+service:
+  type: NodePort
+  nodePorts:
+    api: 30900
+    console: 30901
+defaultBuckets: "pytrade2"
