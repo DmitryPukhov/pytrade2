@@ -122,7 +122,7 @@ class App:
         # secured_conf = [secured_key_val(key, config[key]) for key in sorted(config) if key.startswith("pytrade2")]
         secured_conf = App.secured_config(config)
         msg = "\n" + "\n".join([f"{key}: {val}" for key, val in secured_conf])
-        return msg
+        return "Pytrade2 configuration: \n" + msg
 
     @staticmethod
     def secured_config(config):

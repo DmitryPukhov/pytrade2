@@ -15,5 +15,8 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["{{ .Values.command }}"]
+          command: {{ toYaml .Values.command | nindent 12 }}
           resources: {}
+          envFrom:
+            - configMapRef:
+                name: pytrade2-env

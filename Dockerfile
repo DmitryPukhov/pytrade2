@@ -15,4 +15,4 @@ RUN pip install .
 WORKDIR /pytrade2
 RUN rm -f ./cfg/app-dev.yaml
 # command to run on container start
-#CMD [ "python", "./App.py" ]
+CMD [ "python", "./App.py" ]
