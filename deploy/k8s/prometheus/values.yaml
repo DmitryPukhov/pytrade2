@@ -3,3 +3,8 @@ server:
     nodePorts:
       http: "30280"
       https: "30280"
+
+  extraScrapeConfigs:
+    - job_name: pytrade2
+      static_configs:
+        - targets: [ 'pytrade2:8000' ]
