@@ -93,8 +93,9 @@ class ModelPersister:
                 order_by=["version_number desc"], max_results=1)
             if model_versions:
                 model_version = model_versions.pop()
-                self._logger.debug(f"Got model: {model_version.source}")
+                self._logger.debug(f"Got model source: {model_version.source}")
                 model = load_func(model_version.source)
+                self._logger.debug(f"Loaded model")
 
                 # Get run parameters
                 params = self.mlflow_client.get_run(model_version.run_id).data.params

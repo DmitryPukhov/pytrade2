@@ -16,17 +16,17 @@ class Broker:
     def __init__(self, config: dict):
         self._logger = logging.getLogger(self.__class__.__name__)
 
-        self.price_precision = config["pytrade2.price.precision"]
+        self.price_precision = float(config["pytrade2.price.precision"])
         self.fee: float = 0
         self.cur_trade: Optional[Trade] = None
         self.prev_trade: Optional[Trade] = None
         self.trade_lock: RLock = RLock()
         self.config = config
-        self.amount_precision = config["pytrade2.amount.precision"]
+        self.amount_precision = float(config["pytrade2.amount.precision"])
 
         self.min_trade_interval = timedelta(seconds=10)
         self.last_trade_time = datetime.utcnow() - self.min_trade_interval
-        self.allow_trade = config.get("pytrade2.broker.trade.allow", False)
+        self.allow_trade = bool(config.get("pytrade2.broker.trade.allow", "False").lower() == "true")
         self.__init_db__(config)
 
         # Load saved opened trade
