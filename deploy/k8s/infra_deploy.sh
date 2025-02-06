@@ -70,8 +70,8 @@ function redeploy_grafana(){
 # Exit on error
 set -e
 
-#redeploy_secrets
+redeploy_secrets
 redeploy_minio
 redeploy_mlflow
-#redeploy_grafana
-#redeploy_prometheus
+redeploy_grafana
+redeploy_prometheus
