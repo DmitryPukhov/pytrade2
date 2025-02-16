@@ -129,7 +129,7 @@ class DataPersister:
         if compress:
             # Compress to temp zip before uploading to s3
             zippath = datapath.with_suffix(datapath.suffix + '.zip')
-            with zipfile.ZipFile(zippath, 'w') as zf:
+            with zipfile.ZipFile(zippath, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
                 # csv file inside zip file
                 zf.write(datapath, arcname=datapath.name)
             datapath = zippath
