@@ -18,6 +18,7 @@ function build_pytrade2(){
   # Build
   echo "Building docker: $TAG"
   cd $PROJECT_DIR
+  export DOCKER_BUILDKIT=1
   docker build -t $TAG .
   cd "$OLDPWD"
 }

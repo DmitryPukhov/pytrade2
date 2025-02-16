@@ -10,7 +10,7 @@ COPY pytrade2/ .
 WORKDIR /
 # Install libs
 COPY pyproject.toml .
-RUN pip install .
+RUN pip install --no-cache-dir .
 
 WORKDIR /pytrade2
 RUN rm -f ./cfg/app-dev.yaml
