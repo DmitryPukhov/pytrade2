@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: log-config
+data:
+  log.yaml: |
+    {{ index .Values.logConfig "log.yaml" | nindent 4 }}

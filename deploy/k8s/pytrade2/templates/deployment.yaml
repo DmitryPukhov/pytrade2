@@ -12,6 +12,7 @@ spec:
       labels:
         app: {{ .Release.Name }}
     spec:
+
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -20,3 +21,11 @@ spec:
           envFrom:
             - configMapRef:
                 name: pytrade2-env
+          volumeMounts:
+            - name: log-config-volume
+              mountPath: /pytrade2/cfg/log.yaml
+              subPath: log.yaml
+      volumes:
+        - name: log-config-volume
+          configMap:
+            name: log-config

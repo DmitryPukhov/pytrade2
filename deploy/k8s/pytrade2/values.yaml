@@ -5,3 +5,35 @@ image:
   pullPolicy: IfNotPresent
   command: ["python", "./App.py"]
 
+logConfig:
+  "log.yaml": |
+    version: 1
+    handlers:
+      consoleHandler:
+        class: logging.StreamHandler
+        level: NOTSET
+        formatter: simpleFormatter
+        stream: ext://sys.stdout
+    
+    formatters:
+      simpleFormatter:
+        format: "%(asctime)s %(levelname)s %(module)s - %(funcName)s: %(message)s"
+        datefmt: "%Y-%m-%d %H:%M:%s"
+    
+    loggers:
+      root:
+        level: INFO
+        handlers: [ consoleHandler ]
+      HuobiBrokerHbdm:
+        level: INFO
+        handlers: [ consoleHandler ]
+        propagate: no
+      LgbLowHighRegressionStrategy:
+        level: INFO
+        handlers: [ consoleHandler ]
+        propagate: no
+      MultiIndiFeatures:
+        level: INFO
+        handlers: [ consoleHandler ]
+        propagate: no
+
