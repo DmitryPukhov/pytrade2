@@ -155,7 +155,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
         # Persist the data for later analysis
         y_pred["datetime"] = dt
         signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
-        self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df, 'y_pred': y_pred})
+        self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df})
 
     def create_model(self, X_size, y_size):
         if not self.model:

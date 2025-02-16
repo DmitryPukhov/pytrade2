@@ -348,6 +348,7 @@ class StrategyBase:
                 self.process_prediction(y_pred)
 
                 # Save to disk for analysis
+                #y_pred["datetime"] = dt
                 self.data_persister.save_last_data(self.ticker, {'y_pred': y_pred})
             except Exception as e:
                 self._logger.error(f"{e}. Traceback: {traceback.format_exc()}")
