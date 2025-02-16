@@ -12,47 +12,9 @@ PROJECT_DIR=../..
 DEPLOY_ENV_PATH="$PROJECT_DIR/minikube.env"
 TMP_DIR="$PROJECT_DIR/deploy/k8s/tmp"
 CONFIGMAP_PATH="$TMP_DIR/configmap.yaml"
-TAG="pytrade2"
-REGISTRY=$(minikube ip):5000
-PUSH_TAG="$REGISTRY/$TAG"
-NAMESPACE="pytrade2"
-APP_NAME="pytrade2"
-
-#function build_push_pytrade2(){
-#  # Build
-#  echo "Building docker: $TAG"
-#  #eval $(minikube docker-env)
-#  cd $PROJECT_DIR
-#  docker build -t $TAG .
-#
-#  # Push
-#  echo "Pushing docker image to $PUSH_TAG"
-#  docker tag $TAG $PUSH_TAG
-#  docker push "$PUSH_TAG"
-#  cd "$OLDPWD"
-#  echo "Pushed"
-#}
-
-function push_pytrade2(){
-  # Push
-  echo "Pushing docker image to $PUSH_TAG"
-  docker tag $TAG $PUSH_TAG
-  docker push "$PUSH_TAG"
-  echo "Pushed"
-}
-
-
-function build_pytrade2(){
-  # Build
-  echo "Building docker: $TAG"
-  #eval $(minikube docker-env)
-  cd $PROJECT_DIR
-  docker build -t $TAG .
-  cd "$OLDPWD"
-}
 
 # Prepare configmap with environment variables
-function create_chart_env(){
+function create_env_configmap(){
   # Ensure directory without previous env files
   mkdir -p $(dirname CONFIGMAP_PATH)
   rm $CONFIGMAP_PATH
@@ -102,10 +64,5 @@ function redeploy_pytrade2_chart(){
 # Exit on error
 set -e
 
-create_chart_env
-#build_pytrade2
-#push_pytrade2
+create_env_configmap
 redeploy_pytrade2_chart
-
-#pod_name=$(kubectl get pods | grep pytrade2 | awk '{print $1}')
-#kubectl logs -f $pod_name
