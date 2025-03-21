@@ -34,6 +34,7 @@ class StrategyBase:
         self.data_persister = DataPersister(config, strategy_name)
         self.model_name = strategy_name.rstrip("Strategy")
         self.model_persister = ModelPersister(config, strategy_name)
+        self.model_source = config.get("pytrade2.model.source", "local")  # or "all"
         self.app_params: dict = {}
         self.model_version = {}
 
@@ -204,21 +205,26 @@ class StrategyBase:
             # For periodical update, skip if check interval is not elapsed
             return
 
-        model, model_version, params = self.model_persister.get_last_trade_ready_model(self.model_name)
-        is_model_changed = model and model_version and (model_version != self.model_version)
-        is_params_changed = params and (params != self.app_params)
-        # Set model if changaed
-        if is_model_changed:
-            self._logger.info(f"Updating model {self.model_name} from v{self.model_version} to {model_version}")
-            self.model, self.model_version = model, model_version
+        if self.model_source == "local":
+            # Get model from local file, usually this is for dev
+            self.model = self.model_persister.load_last_model()
+        else:
+            # Get model from mlflow server
+            model, model_version, params = self.model_persister.get_last_trade_ready_model(self.model_name)
+            is_model_changed = model and model_version and (model_version != self.model_version)
+            is_params_changed = params and (params != self.app_params)
+            # Set model if changaed
+            if is_model_changed:
+                self._logger.info(f"Updating model {self.model_name} from v{self.model_version} to {model_version}")
+                self.model, self.model_version = model, model_version
 
-        # Set params i
-        if is_params_changed:
-            self._logger.info(f"Updating model params from {self.app_params} to {params}")
-            self.apply_params(params)
-            self.app_params = params
+            # Set params i
+            if is_params_changed:
+                self._logger.info(f"Updating model params from {self.app_params} to {params}")
+                self.apply_params(params)
+                self.app_params = params
 
-        MetricServer.app_params["model"] = f"{self.model_version.name} v{self.model_version.version}"
+                MetricServer.app_params["model"] = f"{self.model_version.name} v{self.model_version.version}"
         self.last_model_check_time = datetime.utcnow()
 
     def create_model(self, x_size, y_size):

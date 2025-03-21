@@ -28,7 +28,7 @@ class ModelPersister:
             Path(self.model_dir).mkdir(parents=True, exist_ok=True)
         self.mlflow_client = MlflowClient()
 
-    def load_last_model(self, model: Model):
+    def load_last_model(self, model: Model = None):
         try:
             saved_models = glob.glob(str(Path(self.model_dir, "*.*")))
             if not saved_models:
