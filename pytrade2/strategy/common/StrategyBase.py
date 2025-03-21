@@ -108,6 +108,8 @@ class StrategyBase:
         self.broker = self.exchange_provider.broker(exchange_name)
         if self.candles_feed:
             self.candles_feed.read_candles()
+        if self.level2_feed and not self.is_periodical:
+            self.level2_feed.run()
         self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
 
         with self.data_lock:
