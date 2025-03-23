@@ -23,6 +23,14 @@ class DataStreamDownloadApp(App):
     def __init__(self):
         super().__init__()
 
+        # History window to keep in memory is the same as save interval, we need not saved data
+        save_interval_sec = self.config.get("pytrade2.stream.save.interval.sec.local", 60)
+        self.config["pytrade2.strategy.history.max.window"] = f"{save_interval_sec}s"
+
+        self.save_interval_local = timedelta(seconds=float(save_interval_sec))
+        self.save_interval_s3 = timedelta(seconds=float(self.config.get("pytrade2.stream.save.interval.sec.s3", 60.0)))
+
+
         # Will capture 1 min candles only
         self.config["pytrade2.feed.candles.periods"] = "1min"
         self.config["pytrade2.feed.candles.counts"] = "1"
@@ -49,8 +57,6 @@ class DataStreamDownloadApp(App):
         self.data_persister = DataPersister(self.config, "raw")
         #self.data_persister._logger.setLevel(logging.DEBUG)
 
-        self.save_interval_local = timedelta(seconds=float(self.config["pytrade2.stream.save.interval.sec.local"]))
-        self.save_interval_s3 = timedelta(seconds=float(self.config["pytrade2.stream.save.interval.sec.s3"]))
 
     def run(self):
         self._logger.info(f"Start downloading stream data to {self.download_dir}")
