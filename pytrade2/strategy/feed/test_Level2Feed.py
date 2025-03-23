@@ -23,18 +23,18 @@ class TestLevel2Feed(TestCase):
         return level2_feed
 
     def test_on_level2_should_purge_old(self):
-        strategy = self.new_level2_feed()
-        strategy.history_max_window = pd.Timedelta('1min')
+        level2_feed = self.new_level2_feed()
+        level2_feed.history_max_window = pd.Timedelta('1min')
 
         # Call
-        strategy.apply_buf()
+        level2_feed.apply_buf()
 
         # Should purge old
         self.assertListEqual(
             [datetime.fromisoformat("2023-11-26 00:10:01"),
              datetime.fromisoformat("2023-11-26 00:11"),
              ],
-            strategy.level2["datetime"].tolist())
+            level2_feed.level2["datetime"].tolist())
 
     def test_on_level2_no_purge(self):
         level2_feed = self.new_level2_feed()
