@@ -1,4 +1,3 @@
-version: "3.9"
 services:
 
   #  grafana:
@@ -37,6 +36,14 @@ services:
     extends:
       service: trade
     command: python ./App.py --pytrade2.strategy LgbLowHighRegressionStrategy
+
+  streamdownloader:
+    container_name: streamdownloader
+    hostname: streamdownloader
+    extends:
+      service: trade
+    command: python ./DataStreamDownloadApp.py
+
 #
 #  keraslowhighclassificationstrategy:
 #    container_name: keraslowhighclassificationstrategy
@@ -65,4 +72,4 @@ services:
 networks:
   pytrade2:
     name: pytrade2
-    external: true
+    #external: true

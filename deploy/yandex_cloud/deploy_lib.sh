@@ -3,7 +3,7 @@
 
 DEFAULT_BOT_NAMES='lgblowhighregressionstrategy'
 S3_DATA_URL='s3://pytrade2/data'
-VM_PUBLIC_IP="$(yc compute instance list | grep pytrade2 | awk '{print $10}')"
+#VM_PUBLIC_IP="$(yc compute instance list | grep pytrade2 | grep -v downloader | awk '{print $10}')"
 VM_USER="yc-user"
 TMP_DIR="$(pwd)/tmp"
 PYTRADE2_DIR="$(pwd)/../.."
