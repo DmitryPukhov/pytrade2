@@ -66,6 +66,7 @@ class DataStreamDownloadApp(App):
         last_save_time_local = datetime.now()
         last_save_time_s3 = datetime.now()
         # processing loop
+        saved_s3_flag = False
         while True:
             # Get from buffers
             new_candles, new_bid_ask, new_level2 = self.get_accumulated_data()
@@ -75,12 +76,15 @@ class DataStreamDownloadApp(App):
                 if not df.empty:
                     # Save locally
                     file_path = self.data_persister.persist_df(df, str(Path(self.download_dir, tag)), tag, self.ticker)
-                    last_save_time_local = datetime.now()
 
                     # Copy to s3
-                    if (last_save_time_local - last_save_time_s3) > self.save_interval_s3:
+                    if (datetime.now() - last_save_time_s3) > self.save_interval_s3:
                         self.data_persister.copy2s3(file_path)
-                        last_save_time_s3 = last_save_time_local
+                        saved_s3_flag = True # Set the flag to update last s3 save time later
+
+            # If saving to s3 happened, update the last s3 save time
+            if saved_s3_flag: last_save_time_s3 = datetime.now()
+
             # Remove previous days data
             for subdir in ["candles", "bid_ask", "level2"]:
                 path = Path(self.download_dir, subdir)
