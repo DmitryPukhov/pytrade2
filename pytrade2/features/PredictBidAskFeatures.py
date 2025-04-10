@@ -5,7 +5,7 @@ import pandas as pd
 
 from features.BidAskFeatures import BidAskFeatures
 from features.CandlesFeatures import CandlesFeatures
-from features.Level2Features import Level2Features
+from features.level2.Level2Buckets import Level2Buckets
 
 
 class PredictBidAskFeatures:
@@ -59,7 +59,7 @@ class PredictBidAskFeatures:
         if bid_ask.empty or level2.empty or not candles_by_interval:
             return pd.DataFrame()
         candles_features = CandlesFeatures.candles_combined_features_of(candles_by_interval, candles_cnt_by_interval)
-        l2_features = Level2Features().level2_buckets(level2, past_window=past_window)
+        l2_features = Level2Buckets().level2_buckets(level2, past_window=past_window)
         bid_ask_features = pd.merge(BidAskFeatures.time_features_of(bid_ask),
                                     BidAskFeatures.bid_ask_features_of(bid_ask, past_window),
                                     left_index=True, right_index=True, sort=True)

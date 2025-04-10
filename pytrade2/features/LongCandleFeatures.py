@@ -1,7 +1,6 @@
 from typing import Dict
 import pandas as pd
 from features.CandlesFeatures import CandlesFeatures
-from features.Level2Features import Level2Features
 
 
 class LongCandleFeatures:

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-class Level2Features:
+class Level2Buckets:
     """
     Level2 feature engineering
     """

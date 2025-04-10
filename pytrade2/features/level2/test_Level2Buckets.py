@@ -1,13 +1,13 @@
 from datetime import datetime
 from unittest import TestCase
 import pandas as pd
-from features.Level2Features import Level2Features
+from features.level2.Level2Buckets import Level2Buckets
 
 
-class TestLevel2Features(TestCase):
+class TestLevel2Buckets(TestCase):
 
     def test_level2_features_empty(self):
-        buckets = Level2Features().level2_buckets(
+        buckets = Level2Buckets().level2_buckets(
             pd.DataFrame(columns=["datetime", "bid", "bid_vol", "ask", "ask_vol"]), past_window="1s")
         self.assertTrue(buckets.empty)
 
@@ -22,7 +22,7 @@ class TestLevel2Features(TestCase):
              'bid_vol': 1} for i in range(0, 10)]
         data = pd.DataFrame(asks + bids)
         # Call
-        buckets = Level2Features().level2_buckets(data, past_window="1s")
+        buckets = Level2Buckets().level2_buckets(data, past_window="1s")
         features = buckets.values.tolist()
 
         # Assert all features should be 1.0
@@ -38,7 +38,7 @@ class TestLevel2Features(TestCase):
             {'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'bid': -0.9, 'ask_vol': None, 'bid_vol': 1}
         ])
 
-        features = Level2Features().level2_buckets(data, past_window="1s", l2size=20, buckets=20)
+        features = Level2Buckets().level2_buckets(data, past_window="1s", l2size=20, buckets=20)
         lst = features.values.tolist()
 
         # All features should be 1.0
