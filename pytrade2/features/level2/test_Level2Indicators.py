@@ -7,6 +7,17 @@ from features.level2.Level2Indicators import Level2Indicators
 
 
 class TestLevel2Indicators(TestCase):
+    def test_expectation(self):
+        # Math expectation = sum(price * vol) / sum(vol)
+        dt = datetime.fromisoformat('2021-11-26 17:39:00')
+        level2_data = pd.DataFrame([
+            {"datetime": dt, "ask": 4, "ask_vol": 2},
+            {"datetime": dt, "bid": 2, "bid_vol": 2}
+        ])
+        expectations = Level2Indicators().expectation(level2_data)
+
+        self.assertEqual([3], expectations["l2_expectation"].tolist())
+
     def test_volume(self):
         # Order book1 for time1 bids and acks
         asks1 = [{'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'ask': i, 'ask_vol': 1,
