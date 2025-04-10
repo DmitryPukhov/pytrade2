@@ -3,7 +3,7 @@ import pandas as pd
 from numpy import ndarray
 from exch.Exchange import Exchange
 from strategy.common.StrategyBase import StrategyBase
-from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
+from features.PredictBidAskFeatures import PredictBidAskFeatures
 from strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
 
 

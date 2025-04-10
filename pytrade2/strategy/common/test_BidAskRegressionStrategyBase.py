@@ -7,7 +7,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 from test_StrategyStub import RegressionStrategyStub
-from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
+from features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
 class TestBidAskRegressionStrategyBase(TestCase):

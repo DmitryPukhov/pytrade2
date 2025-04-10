@@ -9,7 +9,7 @@ from typing import Dict
 import pandas as pd
 
 from exch.Exchange import Exchange
-from strategy.feed.CandlesDownloader import CandlesDownloader
+from feed.CandlesDownloader import CandlesDownloader
 
 
 class CandlesFeed:

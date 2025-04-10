@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest import TestCase
 import pandas as pd
-from strategy.features.CandlesFeatures import CandlesFeatures
+from features.CandlesFeatures import CandlesFeatures
 
 
 class TestCandlesFeatures(TestCase):

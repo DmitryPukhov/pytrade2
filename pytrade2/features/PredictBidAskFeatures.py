@@ -3,9 +3,9 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 
-from strategy.features.BidAskFeatures import BidAskFeatures
-from strategy.features.CandlesFeatures import CandlesFeatures
-from strategy.features.Level2Features import Level2Features
+from features.BidAskFeatures import BidAskFeatures
+from features.CandlesFeatures import CandlesFeatures
+from features.Level2Features import Level2Features
 
 
 class PredictBidAskFeatures:

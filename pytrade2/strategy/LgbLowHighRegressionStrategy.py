@@ -8,8 +8,8 @@ from sklearn.multioutput import MultiOutputRegressor
 from metrics.MetricServer import MetricServer
 from exch.Exchange import Exchange
 from strategy.common.StrategyBase import StrategyBase
-from strategy.features.LowHighTargets import LowHighTargets
-from strategy.features.MultiIndiFeatures import MultiIndiFeatures
+from features.LowHighTargets import LowHighTargets
+from features.MultiIndiFeatures import MultiIndiFeatures
 from strategy.signal.SignalByFutLowHigh import SignalByFutLowHigh
 
 

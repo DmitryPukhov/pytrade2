@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest import TestCase
 import pandas as pd
-from strategy.features.Level2Features import Level2Features
+from features.Level2Features import Level2Features
 
 
 class TestLevel2Features(TestCase):

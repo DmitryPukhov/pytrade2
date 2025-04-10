@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest import TestCase
 
-from strategy.feed.CandlesDownloader import CandlesDownloader
+from feed.CandlesDownloader import CandlesDownloader
 
 
 class TestCandlesDownloader(TestCase):

@@ -6,7 +6,7 @@ import pandas as pd
 
 from metrics.MetricServer import MetricServer
 from strategy.LgbLowHighRegressionStrategy import LgbLowHighRegressionStrategy
-from strategy.feed.CandlesFeed import CandlesFeed
+from feed.CandlesFeed import CandlesFeed
 
 
 class TestLgbLowHighRegressionStrategy(TestCase):

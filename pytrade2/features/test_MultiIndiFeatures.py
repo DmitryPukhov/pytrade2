@@ -2,7 +2,7 @@ from unittest import TestCase
 from datetime import datetime, timedelta
 import pandas as pd
 
-from strategy.features.MultiIndiFeatures import MultiIndiFeatures
+from features.MultiIndiFeatures import MultiIndiFeatures
 
 
 class TestMultiIndiFeatures(TestCase):

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from strategy.feed.CandlesFeed import CandlesFeed
+from feed.CandlesFeed import CandlesFeed
 
 
 class TestCandlesFeed(TestCase):

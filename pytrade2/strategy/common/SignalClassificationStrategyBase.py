@@ -9,7 +9,7 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler, OneHotEncoder
 from exch.Exchange import Exchange
 from strategy.common.LearnDataBalancer import LearnDataBalancer
 from strategy.common.StrategyBase import StrategyBase
-from strategy.features.LongCandleFeatures import LongCandleFeatures
+from features.LongCandleFeatures import LongCandleFeatures
 from strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
 
 

@@ -16,9 +16,9 @@ from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 from exch.Exchange import Exchange
 from metrics.MetricServer import MetricServer
 from strategy.common.RiskManager import RiskManager
-from strategy.feed.BidAskFeed import BidAskFeed
-from strategy.feed.CandlesFeed import CandlesFeed
-from strategy.feed.Level2Feed import Level2Feed
+from feed.BidAskFeed import BidAskFeed
+from feed.CandlesFeed import CandlesFeed
+from feed.Level2Feed import Level2Feed
 from strategy.persist.DataPersister import DataPersister
 from strategy.persist.ModelPersister import ModelPersister
 

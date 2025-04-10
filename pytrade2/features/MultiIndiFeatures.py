@@ -4,7 +4,7 @@ from typing import Dict
 import pandas as pd
 from ta import trend, momentum
 
-from strategy.features.CandlesFeatures import CandlesFeatures
+from features.CandlesFeatures import CandlesFeatures
 
 
 class MultiIndiFeatures:

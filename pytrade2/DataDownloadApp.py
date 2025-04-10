@@ -5,7 +5,7 @@ from typing import Dict
 
 from App import App
 from exch.Exchange import Exchange
-from strategy.feed.CandlesDownloader import CandlesDownloader
+from feed.CandlesDownloader import CandlesDownloader
 
 
 class DataDownloadApp(App):

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from strategy.features.LongCandleFeatures import LongCandleFeatures
+from features.LongCandleFeatures import LongCandleFeatures
 
 
 class TestLongCandleFeatures(TestCase):

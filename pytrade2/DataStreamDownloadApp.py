@@ -9,9 +9,9 @@ import pandas as pd
 
 from App import App
 from exch.Exchange import Exchange
-from strategy.feed.BidAskFeed import BidAskFeed
-from strategy.feed.CandlesFeed import CandlesFeed
-from strategy.feed.Level2Feed import Level2Feed
+from feed.BidAskFeed import BidAskFeed
+from feed.CandlesFeed import CandlesFeed
+from feed.Level2Feed import Level2Feed
 from strategy.persist.DataPersister import DataPersister
 
 

@@ -1,7 +1,7 @@
 from typing import Dict
 import pandas as pd
-from strategy.features.CandlesFeatures import CandlesFeatures
-from strategy.features.Level2Features import Level2Features
+from features.CandlesFeatures import CandlesFeatures
+from features.Level2Features import Level2Features
 
 
 class LongCandleFeatures:

@@ -8,7 +8,7 @@ from sklearn.preprocessing import RobustScaler, MinMaxScaler, FunctionTransforme
 
 from exch.Exchange import Exchange
 from strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
-from strategy.features.PredictBidAskFeatures import PredictBidAskFeatures
+from features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
 class LSTMBidAskRegressionStrategyBase(BidAskRegressionStrategyBase):

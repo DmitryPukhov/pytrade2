@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from strategy.features.LowHighTargets import LowHighTargets
+from features.LowHighTargets import LowHighTargets
 
 
 class TestLowHighTargets(TestCase):

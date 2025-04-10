@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from strategy.feed.Level2Feed import Level2Feed
+from feed.Level2Feed import Level2Feed
 
 
 class TestLevel2Feed(TestCase):
