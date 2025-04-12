@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class Level2Indicators:
+class Level2Features:
     def expectation(self, level2_df: pd.DataFrame):
         """ Expectations with volumes"""
         # temp columns to calc expectations

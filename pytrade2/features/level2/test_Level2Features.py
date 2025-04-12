@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 from unittest import TestCase
 import pandas as pd
-from features.level2.Level2Indicators import Level2Indicators
+from features.level2.Level2Features import Level2Features
 
 
-class TestLevel2Indicators(TestCase):
+class TestLevel2Features(TestCase):
     def test_expectation(self):
         # Math expectation = sum(price * vol) / sum(vol)
         dt = datetime.fromisoformat('2021-11-26 17:39:00')
@@ -22,7 +22,7 @@ class TestLevel2Indicators(TestCase):
             {"datetime": dt + timedelta(seconds = 1), "bid": 100, "bid_vol": 10000},
 
         ])
-        expectations = Level2Indicators().expectation(level2_data)
+        expectations = Level2Features().expectation(level2_data)
 
         self.assertEqual(30, expectations["l2_bid_vol"].tolist()[0])
         self.assertEqual(5/3, expectations["l2_bid_expect"].tolist()[0])
