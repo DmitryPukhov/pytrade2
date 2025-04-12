@@ -1,8 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest import TestCase
-
 import pandas as pd
-
 from features.level2.Level2Indicators import Level2Indicators
 
 
@@ -10,46 +8,30 @@ class TestLevel2Indicators(TestCase):
     def test_expectation(self):
         # Math expectation = sum(price * vol) / sum(vol)
         dt = datetime.fromisoformat('2021-11-26 17:39:00')
+        # bid vol = 30, bid_expect = (1*10 + 2*20) / (10+20) = 5/3
+        # ask vol = 70, ask expect = (3*30 + 4*40) / (30+40) = (90+160)/70 = 250/70 = 25/7
+        # bidask expect = (1*10 + 2*20 + 3*30 + 4*40) / (10+20+30+40) = 300/100 = 3
         level2_data = pd.DataFrame([
-            {"datetime": dt, "ask": 4, "ask_vol": 2},
-            {"datetime": dt, "bid": 2, "bid_vol": 2}
+            {"datetime": dt, "ask": 4, "ask_vol": 40},
+            {"datetime": dt, "ask": 3, "ask_vol": 30},
+
+            {"datetime": dt, "bid": 2, "bid_vol": 20},
+            {"datetime": dt, "bid": 1, "bid_vol": 10},
+
+            # Next time moment order book
+            {"datetime": dt + timedelta(seconds = 1), "bid": 100, "bid_vol": 10000},
+
         ])
         expectations = Level2Indicators().expectation(level2_data)
 
-        self.assertEqual([3], expectations["l2_expectation"].tolist())
+        self.assertEqual(30, expectations["l2_bid_vol"].tolist()[0])
+        self.assertEqual(5/3, expectations["l2_bid_expect"].tolist()[0])
 
-    def test_volume(self):
-        # Order book1 for time1 bids and acks
-        asks1 = [{'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'ask': i, 'ask_vol': 1,
-                  'bid_vol': None} for i in range(10, 20)]
-        bids1 = [
-            {'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:39:00'), 'bid': i, 'ask_vol': None,
-             'bid_vol': 10} for i in range(0, 10)]
+        self.assertEqual(70, expectations["l2_ask_vol"].tolist()[0])
+        self.assertEqual(25/7, expectations["l2_ask_expect"].tolist()[0])
 
-        # Order book2 for time1 bids and acks
-        asks2 = [{'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:40:00'), 'ask': i, 'ask_vol': 2,
-                  'bid_vol': None} for i in range(10, 20)]
-        bids2 = [
-            {'asset': 'asset1', 'datetime': datetime.fromisoformat('2021-11-26 17:40:00'), 'bid': i, 'ask_vol': None,
-             'bid_vol': 20} for i in range(0, 10)]
 
-        # Order book 1 and 2 for  time1 and time2
-        level2_data = pd.DataFrame(asks1 + bids1 + asks2 + bids2)
+        self.assertEqual(3, expectations["l2_bid_ask_expect"].tolist()[0])
 
-        # Call
-        volumes_df = Level2Indicators().volume(level2_data)
-
-        # datetime should be the same as source
-        self.assertEqual(level2_data["datetime"].unique().tolist(), volumes_df.index.tolist())
-
-        # bid+ask check
-        volumes = volumes_df["level2_vol"].values.tolist()
-        self.assertListEqual([110, 220], volumes)
-
-        # bid check
-        bid_volumes = volumes_df["bid_vol"].values.tolist()
-        self.assertListEqual([100, 200], bid_volumes)
-
-        # ask check
-        ask_volumes = volumes_df["ask_vol"].values.tolist()
-        self.assertListEqual([10, 20], ask_volumes)
+        self.assertEqual(2, expectations["l2_bid_max"].tolist()[0])
+        self.assertEqual(3, expectations["l2_ask_min"].tolist()[0])
