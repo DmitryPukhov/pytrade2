@@ -7,6 +7,23 @@ import pandas as pd
 class CandlesFeatures:
 
     @staticmethod
+    def candles_of_bidask(bidask: pd.DataFrame, period: str):
+        """ Calculate candles from bidask data. Consider price as (bid+ask)/2 """
+        df = pd.DataFrame(bidask)
+        df["price"] = (df["bid"] + df["ask"])/2
+        df["vol"] = df["bid_vol"] + df["ask_vol"]
+        return df.resample(period, closed="right").agg(
+            open_time = ("datetime", "first"),
+            close_time = ("datetime", "last"),
+            open = ("price", "first"),
+            high = ("price", "max"),
+            low = ("price", "min"),
+            close = ("price", "last"),
+            vol = ("vol", "sum")
+        ).set_index("close_time", drop=False)
+
+
+    @staticmethod
     def candles_last_combined_features_of(candles_by_periods: Dict[str, pd.DataFrame],
                                           cnt_by_period: Dict[str, int]) -> pd.DataFrame:
         # todo: optimize
