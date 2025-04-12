@@ -125,7 +125,7 @@ class TestCandlesFeatures(TestCase):
             {"datetime": datetime.fromisoformat("2025-04-13T01:02:00"), "bid": 7, "bid_vol": 70, "ask": 8, "ask_vol": 80}
                       ]).set_index("datetime", drop=False)
 
-        candles = CandlesFeatures.candles_of_bidask(df_bidask, "1min")
+        candles = CandlesFeatures.candles_of_bid_ask(df_bidask, "1min")
 
         self.assertListEqual(["2025-04-13 01:01:00", "2025-04-13 01:02:00"], candles.index.astype(str).tolist())
         self.assertListEqual(["2025-04-13 01:01:00", "2025-04-13 01:02:00"], candles["close_time"].astype(str).tolist())

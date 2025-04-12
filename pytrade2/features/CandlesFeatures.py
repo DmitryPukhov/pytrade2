@@ -7,9 +7,9 @@ import pandas as pd
 class CandlesFeatures:
 
     @staticmethod
-    def candles_of_bidask(bidask: pd.DataFrame, period: str):
+    def candles_of_bid_ask(bid_ask: pd.DataFrame, period: str):
         """ Calculate candles from bidask data. Consider price as (bid+ask)/2 """
-        df = pd.DataFrame(bidask)
+        df = pd.DataFrame(bid_ask)
         df["price"] = (df["bid"] + df["ask"])/2
         df["vol"] = df["bid_vol"] + df["ask_vol"]
         return df.resample(period, closed="right").agg(
