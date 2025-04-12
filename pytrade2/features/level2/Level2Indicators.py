@@ -34,8 +34,8 @@ class Level2Indicators:
         df["ask_expect"] = df["ask_vol_mult"]/df["ask_vol"]
         df["bid_ask_expect"] = df["bidask_vol_mult"] / (df["bid_vol"] + df["ask_vol"])
 
-        # Return without temp columns
         df.columns = [f"l2_{col}" for col in df.columns]
+        # Return without temp columns
         return df[["l2_bid_max", "l2_bid_vol",  "l2_bid_expect",
                    "l2_ask_min","l2_ask_vol","l2_ask_expect", "l2_bid_ask_expect"]]
 
