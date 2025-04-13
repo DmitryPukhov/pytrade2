@@ -7,21 +7,35 @@ import pandas as pd
 class CandlesFeatures:
 
     @staticmethod
-    def candles_of_bid_ask(bid_ask: pd.DataFrame, period: str):
+    def rolling_candles_of_bid_ask(bid_ask: pd.DataFrame, period: str):
         """ Calculate candles from bidask data. Consider price as (bid+ask)/2 """
+
         df = pd.DataFrame(bid_ask)
         df["price"] = (df["bid"] + df["ask"])/2
         df["vol"] = df["bid_vol"] + df["ask_vol"]
-        return df.resample(period, closed="right").agg(
-            open_time = ("datetime", "first"),
-            close_time = ("datetime", "last"),
-            open = ("price", "first"),
-            high = ("price", "max"),
-            low = ("price", "min"),
-            close = ("price", "last"),
-            vol = ("vol", "sum")
-        ).set_index("close_time", drop=False)
 
+        # datetime hack to avooid numeric type error when rolling agg
+        df["datetime"] = df["datetime"].astype('int64')
+
+        df = df[[ "datetime", "price", "vol"]].rolling(period, closed = "right").agg({
+            'datetime': [lambda x: x.iloc[0], lambda x: x.iloc[-1]],     # Open/close times
+            'price': [lambda x: x.iloc[0], 'max', 'min', lambda x: x.iloc[-1]],
+            'vol': 'sum',
+        })
+        df.columns = [
+            'open_time',   # First datetime
+            'close_time',  # Last datetime
+            'open',        # First price
+            'high',        # Max price
+            'low',         # Min price
+            'close',       # Last price
+            'vol',         # Summed volume
+        ]
+        # Set back to datetime
+        df["open_time"] = pd.to_datetime(df["open_time"])
+        df["close_time"] = pd.to_datetime(df["close_time"])
+        df.set_index("close_time", inplace=True, drop=False)
+        return df
 
     @staticmethod
     def candles_last_combined_features_of(candles_by_periods: Dict[str, pd.DataFrame],

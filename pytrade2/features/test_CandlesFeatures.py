@@ -1,11 +1,12 @@
 from datetime import datetime
 from unittest import TestCase
+
 import pandas as pd
+
 from features.CandlesFeatures import CandlesFeatures
 
 
 class TestCandlesFeatures(TestCase):
-
 
     @staticmethod
     def candles_1m_5():
@@ -118,21 +119,28 @@ class TestCandlesFeatures(TestCase):
     def test_candles_of_bidask(self):
         df_bidask = pd.DataFrame([
             # Candle1
-            {"datetime": datetime.fromisoformat("2025-04-13T01:00:01"), "bid": 1, "bid_vol": 10, "ask": 2, "ask_vol": 20},
-            {"datetime": datetime.fromisoformat("2025-04-13T01:01:00"), "bid": 3, "bid_vol": 30, "ask": 4, "ask_vol": 40},
+            {"datetime": datetime.fromisoformat("2025-04-13T01:00:01"), "bid": 1, "bid_vol": 10, "ask": 2,
+             "ask_vol": 20},
+            {"datetime": datetime.fromisoformat("2025-04-13T01:01:00"), "bid": 3, "bid_vol": 30, "ask": 4,
+             "ask_vol": 40},
             # Candle2
-            {"datetime": datetime.fromisoformat("2025-04-13T01:01:01"), "bid": 5, "bid_vol": 50, "ask": 6, "ask_vol": 60},
-            {"datetime": datetime.fromisoformat("2025-04-13T01:02:00"), "bid": 7, "bid_vol": 70, "ask": 8, "ask_vol": 80}
-                      ]).set_index("datetime", drop=False)
+            {"datetime": datetime.fromisoformat("2025-04-13T01:01:01"), "bid": 5, "bid_vol": 50, "ask": 6,
+             "ask_vol": 60},
+            {"datetime": datetime.fromisoformat("2025-04-13T01:02:00"), "bid": 7, "bid_vol": 70, "ask": 8,
+             "ask_vol": 80}
+        ]).set_index("datetime", drop=False)
 
-        candles = CandlesFeatures.candles_of_bid_ask(df_bidask, "1min")
+        candles = CandlesFeatures.rolling_candles_of_bid_ask(df_bidask, "1min")
 
-        self.assertListEqual(["2025-04-13 01:01:00", "2025-04-13 01:02:00"], candles.index.astype(str).tolist())
-        self.assertListEqual(["2025-04-13 01:01:00", "2025-04-13 01:02:00"], candles["close_time"].astype(str).tolist())
-        self.assertListEqual(["2025-04-13 01:00:01", "2025-04-13 01:01:01"], candles["open_time"].astype(str).tolist())
-        self.assertEqual([1.5, 5.5], candles["open"].tolist())
-        self.assertEqual([3.5, 7.5], candles["high"].tolist())
-        self.assertEqual([1.5, 5.5], candles["low"].tolist())
-        self.assertEqual([3.5, 7.5], candles["close"].tolist())
-        self.assertEqual([100, 260], candles["vol"].tolist())
 
+        self.assertListEqual(
+            ["2025-04-13 01:00:01", "2025-04-13 01:01:00", "2025-04-13 01:01:01", "2025-04-13 01:02:00"],
+            candles["close_time"].astype(str).tolist())
+
+        self.assertListEqual(candles["close_time"].tolist(), candles.index.tolist())
+        self.assertListEqual(["2025-04-13 01:00:01", "2025-04-13 01:00:01", "2025-04-13 01:01:00", "2025-04-13 01:01:01"], candles["open_time"].astype(str).tolist())
+        self.assertEqual([1.5, 1.5, 3.5, 5.5], candles["open"].tolist())
+        self.assertEqual([1.5, 3.5, 5.5, 7.5], candles["high"].tolist())
+        self.assertEqual([1.5, 1.5, 3.5, 5.5], candles["low"].tolist())
+        self.assertEqual([1.5, 3.5, 5.5, 7.5], candles["close"].tolist())
+        self.assertEqual([30, 100, 180, 260], candles["vol"].tolist())
