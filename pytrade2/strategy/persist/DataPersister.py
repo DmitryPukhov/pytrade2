@@ -32,6 +32,7 @@ class DataPersister:
             self.s3_endpoint_url = config['pytrade2.s3.endpoint_url']
 
         # Directory for model weights and price data
+        self.account_dir = self.db_path = None
         self.data_dir = config.get("pytrade2.data.dir")
         if self.data_dir:
             # Xy data dir
