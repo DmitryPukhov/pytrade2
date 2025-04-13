@@ -51,7 +51,8 @@ class DataPersister:
 
     def purge_data_files(self, data_dir):
         """ Keep only last day """
-
+        if not data_dir:
+            return
         files = os.listdir(data_dir)
         if files:
             keep_prefix = max(files)[:10]  # last yyyy-mm-dd prefix
@@ -98,8 +99,9 @@ class DataPersister:
         self.copy2s3(Path(self.db_path), compress=False)
 
         # Account balance copy
-        account_path = Path(self.account_dir, f"{datetime.utcnow().date()}_balance.csv")
-        self.copy2s3(account_path)
+        if self.account_dir:
+            account_path = Path(self.account_dir, f"{datetime.utcnow().date()}_balance.csv")
+            self.copy2s3(account_path)
 
         # Purge old data
         self.purge_data_files(self.model_xy_dir)
