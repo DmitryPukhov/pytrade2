@@ -96,7 +96,8 @@ class DataPersister:
             self.copy2s3(file_path)
 
         # Database file copy
-        self.copy2s3(Path(self.db_path), compress=False)
+        if self.db_path:
+            self.copy2s3(Path(self.db_path), compress=False)
 
         # Account balance copy
         if self.account_dir:
