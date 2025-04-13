@@ -7,7 +7,7 @@ import pandas as pd
 class CandlesFeatures:
 
     @staticmethod
-    def rolling_candles_of_bid_ask(bid_ask: pd.DataFrame, period: str):
+    def rolling_candles_of_bid_ask(bid_ask: pd.DataFrame, period: str = "1min"):
         """ Calculate candles from bidask data. Consider price as (bid+ask)/2 """
 
         df = pd.DataFrame(bid_ask)
