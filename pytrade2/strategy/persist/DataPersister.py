@@ -76,7 +76,7 @@ class DataPersister:
                 self.data_bufs[data_tag] = data_last[data_tag]
 
     def save_last_data(self, ticker: str,  # X_last: pd.DataFrame, y_pred_last: pd.DataFrame,
-                       data_last: Dict[str, pd.DataFrame]):
+                       data_last: Dict[str, pd.DataFrame], mode="a"):
         """
         Write X,y, data to csv for analysis
         """
@@ -91,7 +91,7 @@ class DataPersister:
             if self.data_bufs[data_tag].empty:
                 continue
             # Save dataframe to local file
-            file_path = self.persist_df(self.data_bufs[data_tag], self.model_xy_dir, data_tag, ticker)
+            file_path = self.persist_df(self.data_bufs[data_tag], self.model_xy_dir, data_tag, ticker, mode = "a")
             self.data_bufs[data_tag] = pd.DataFrame()
             # Data file copy
             self.copy2s3(file_path)
@@ -109,7 +109,7 @@ class DataPersister:
         self.purge_data_files(self.model_xy_dir)
         self.purge_data_files(self.account_dir)
 
-    def persist_df(self, df: pd.DataFrame, dir_: str, data_tag: str, ticker: str) -> Optional[Path]:
+    def persist_df(self, df: pd.DataFrame, dir_: str, data_tag: str, ticker: str, mode = "a") -> Optional[Path]:
         """ Save file locally, append if exists"""
         if df.empty:
             return None
@@ -120,7 +120,7 @@ class DataPersister:
         self._logger.debug(f"Saving last {data_tag} data to {file_path}")
         df.to_csv(str(file_path),
                   header=not file_path.exists(),
-                  mode='a')
+                  mode=mode)
         return file_path
 
     def copy2s3(self, datapath: Path, compress=True):
