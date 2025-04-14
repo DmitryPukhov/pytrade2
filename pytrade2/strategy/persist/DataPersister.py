@@ -91,7 +91,7 @@ class DataPersister:
             if self.data_bufs[data_tag].empty:
                 continue
             # Save dataframe to local file
-            file_path = self.persist_df(self.data_bufs[data_tag], self.model_xy_dir, data_tag, ticker, mode = "a")
+            file_path = self.persist_df(self.data_bufs[data_tag], self.model_xy_dir, data_tag, ticker, mode = mode)
             self.data_bufs[data_tag] = pd.DataFrame()
             # Data file copy
             self.copy2s3(file_path)
