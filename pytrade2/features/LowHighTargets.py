@@ -16,11 +16,11 @@ class LowHighTargets:
         return fut_lohi[['fut_low_delta', 'fut_high_delta']]
 
     @staticmethod
-    def fut_lohi_signal_target(df_candles_1_min: pd.DataFrame,
-                               predict_window: str,
-                               loss_coeff: float,
-                               profit_loss_ratio: float
-                               ):
+    def fut_lohi_signal(df_candles_1_min: pd.DataFrame,
+                        predict_window: str,
+                        loss_coeff: float,
+                        profit_loss_ratio: float
+                        ):
         # Calc low, high for future
         df = df_candles_1_min.copy()
         df[['fut_low', 'fut_high']] = df_candles_1_min[['low', 'high']][::-1] \

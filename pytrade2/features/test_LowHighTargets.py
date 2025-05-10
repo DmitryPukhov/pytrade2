@@ -13,7 +13,7 @@ class TestLowHighTargets(TestCase):
             {'datetime': datetime.fromisoformat('2024-02-07 20:02'), 'close': 100, 'low': 99.1, 'high': 104}
         ]).set_index('datetime')
 
-        actual = LowHighTargets.fut_lohi_signal_target(candles, '1min', 0.01, 4)
+        actual = LowHighTargets.fut_lohi_signal(candles, '1min', 0.01, 4)
         self.assertSequenceEqual(candles.index.tolist(), actual.index.tolist())
         self.assertSequenceEqual([1,0],actual["signal"].tolist())
 
@@ -24,7 +24,7 @@ class TestLowHighTargets(TestCase):
             {'datetime': datetime.fromisoformat('2024-02-07 20:02'), 'close': 100, 'low': 99.1, 'high': 103.9}
         ]).set_index('datetime')
 
-        actual = LowHighTargets.fut_lohi_signal_target(candles, '1min', 0.01, 4)
+        actual = LowHighTargets.fut_lohi_signal(candles, '1min', 0.01, 4)
         self.assertSequenceEqual(candles.index.tolist(), actual.index.tolist())
         self.assertSequenceEqual([0,0],actual["signal"].tolist())
 
@@ -35,7 +35,7 @@ class TestLowHighTargets(TestCase):
             {'datetime': datetime.fromisoformat('2024-02-07 20:02'), 'close': 100, 'low': 99, 'high': 104}
         ]).set_index('datetime')
 
-        actual = LowHighTargets.fut_lohi_signal_target(candles, '1min', 0.01, 4)
+        actual = LowHighTargets.fut_lohi_signal(candles, '1min', 0.01, 4)
         self.assertSequenceEqual(candles.index.tolist(), actual.index.tolist())
         self.assertSequenceEqual([0,0],actual["signal"].tolist())
 
@@ -45,7 +45,7 @@ class TestLowHighTargets(TestCase):
             {'datetime': datetime.fromisoformat('2024-02-07 20:02'), 'close': 100, 'low': 96, 'high': 100.9}
         ]).set_index('datetime')
 
-        actual = LowHighTargets.fut_lohi_signal_target(candles, '1min', 0.01, 4)
+        actual = LowHighTargets.fut_lohi_signal(candles, '1min', 0.01, 4)
         self.assertSequenceEqual(candles.index.tolist(), actual.index.tolist())
         self.assertSequenceEqual([-1,0],actual["signal"].tolist())
 
@@ -55,7 +55,7 @@ class TestLowHighTargets(TestCase):
             {'datetime': datetime.fromisoformat('2024-02-07 20:02'), 'close': 100, 'low': 96.1, 'high': 100.9}
         ]).set_index('datetime')
 
-        actual = LowHighTargets.fut_lohi_signal_target(candles, '1min', 0.01, 4)
+        actual = LowHighTargets.fut_lohi_signal(candles, '1min', 0.01, 4)
         self.assertSequenceEqual(candles.index.tolist(), actual.index.tolist())
         self.assertSequenceEqual([0,0],actual["signal"].tolist())
 
@@ -66,7 +66,7 @@ class TestLowHighTargets(TestCase):
             {'datetime': datetime.fromisoformat('2024-02-07 20:02'), 'close': 100, 'low': 96, 'high': 101}
         ]).set_index('datetime')
 
-        actual = LowHighTargets.fut_lohi_signal_target(candles, '1min', 0.01, 4)
+        actual = LowHighTargets.fut_lohi_signal(candles, '1min', 0.01, 4)
         self.assertSequenceEqual(candles.index.tolist(), actual.index.tolist())
         self.assertSequenceEqual([0,0],actual["signal"].tolist())
 
