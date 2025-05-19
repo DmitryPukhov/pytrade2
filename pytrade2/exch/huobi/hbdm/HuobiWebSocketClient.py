@@ -181,7 +181,7 @@ class HuobiWebSocketClient:
 
     def _on_close(self, ws):
         self._logger.info("Socket closed")
-        self.is_opened = False
+        self.is_opened = self.is_opening = False
         if not self._active_close:
             self.open()
 
@@ -200,5 +200,5 @@ class HuobiWebSocketClient:
     def close(self):
         self._logger.info("Closing socket")
         self._active_close = True
-        self.is_opened = False
+        self.is_opened = self._is_opening = False
         if self._ws: self._ws.close()
