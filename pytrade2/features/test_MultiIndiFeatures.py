@@ -2,7 +2,7 @@ from unittest import TestCase
 from datetime import datetime, timedelta
 import pandas as pd
 
-from features.MultiIndiFeatures import MultiIndiFeatures
+from features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
 
 
 class TestMultiIndiFeatures(TestCase):
@@ -12,5 +12,5 @@ class TestMultiIndiFeatures(TestCase):
                        "close": 0, "vol":0}, range(60))
         candles = pd.DataFrame(candles).set_index("datetime")
 
-        actual =  MultiIndiFeatures.multi_indi_features({"1min": candles})
+        actual =  CandlesMultiIndiFeatures.multi_indi_features({"1min": candles})
         self.assertTrue(actual.empty)

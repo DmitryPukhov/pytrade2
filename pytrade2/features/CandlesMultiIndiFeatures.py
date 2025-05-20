@@ -7,9 +7,9 @@ from ta import trend, momentum
 from features.CandlesFeatures import CandlesFeatures
 
 
-class MultiIndiFeatures:
+class CandlesMultiIndiFeatures:
     """ Multiple TA indicators on multiple periods"""
-    _log = logging.getLogger("MultiIndiFeatures")
+    _log = logging.getLogger("CandlesMultiIndiFeatures")
     default_params = {"cca": {"window": 20},
                       "ichimoku": {"window1": 9, "window2": 26, "window3": 52},
                       "adx": {"window": 14},
@@ -22,7 +22,7 @@ class MultiIndiFeatures:
     def multi_indi_features_last(candles_by_periods: Dict[str, pd.DataFrame], n=1, params=None):
         max_candles = 52  # Ichimoku period is last todo: remove 2
         last_candles_by_periods = {period: candles.tail(max_candles) for period, candles in candles_by_periods.items()}
-        return MultiIndiFeatures.multi_indi_features(last_candles_by_periods, params=params).tail(n)
+        return CandlesMultiIndiFeatures.multi_indi_features(last_candles_by_periods, params=params).tail(n)
 
     @staticmethod
     def multi_indi_features(candles_by_periods: Dict[str, pd.DataFrame], params=None):
@@ -35,21 +35,21 @@ class MultiIndiFeatures:
 
         # time
         time_features = CandlesFeatures.time_features_of(min_candles)[['time_hour', 'time_minute']]
-        MultiIndiFeatures._log.debug(f"time features:\n{time_features.tail()}")
+        CandlesMultiIndiFeatures._log.debug(f"time features:\n{time_features.tail()}")
 
         # Indicators
         indicators_features = []
         for period, candles in candles_by_periods.items():
-            period_indicators = MultiIndiFeatures.indicators_of(candles, period,
-                                                                params.get(period, MultiIndiFeatures.default_params))
+            period_indicators = CandlesMultiIndiFeatures.indicators_of(candles, period,
+                                                                       params.get(period, CandlesMultiIndiFeatures.default_params))
             indicators_features.append(period_indicators)
-            MultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
+            CandlesMultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
 
         # Concat time and indicators columns
         features = pd.concat([time_features] + indicators_features, axis=1).sort_index().ffill()
-        MultiIndiFeatures._log.debug(f"Resulted features with nans:\n{features.tail()}")
+        CandlesMultiIndiFeatures._log.debug(f"Resulted features with nans:\n{features.tail()}")
         features = features.dropna()
-        MultiIndiFeatures._log.debug(f"Resulted features dropna:\n{features.tail()}")
+        CandlesMultiIndiFeatures._log.debug(f"Resulted features dropna:\n{features.tail()}")
         return features
 
     @staticmethod
@@ -68,15 +68,15 @@ class MultiIndiFeatures:
         """ Single period indicators"""
 
         if not params:
-            params = MultiIndiFeatures.default_params
+            params = CandlesMultiIndiFeatures.default_params
 
         resampled = candles.resample(period, closed="right").agg(
             {'high': 'max', 'low': 'min', 'open': 'first', 'close': 'last', 'vol': 'sum'})
-        df = MultiIndiFeatures.ichimoku_of(resampled,
-                                           period,
-                                           params["ichimoku"]["window1"],
-                                           params["ichimoku"]["window2"],
-                                           params["ichimoku"]["window3"], )
+        df = CandlesMultiIndiFeatures.ichimoku_of(resampled,
+                                                  period,
+                                                  params["ichimoku"]["window1"],
+                                                  params["ichimoku"]["window2"],
+                                                  params["ichimoku"]["window3"], )
         df[f'cci_{period}_diff'] = trend.cci(resampled['high'], resampled['low'], resampled['close'],
                                              window=params["cca"]["window"], fillna=False).diff()
         df[f'adx_{period}_diff'] = trend.adx(resampled['high'], resampled['low'], resampled['close'],

@@ -9,7 +9,7 @@ from metrics.MetricServer import MetricServer
 from exch.Exchange import Exchange
 from strategy.common.StrategyBase import StrategyBase
 from features.LowHighTargets import LowHighTargets
-from features.MultiIndiFeatures import MultiIndiFeatures
+from features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
 from strategy.signal.SignalByFutLowHigh import SignalByFutLowHigh
 
 
@@ -51,7 +51,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         with self.data_lock:
-            x = MultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval, params=self.indi_params)
+            x = CandlesMultiIndiFeatures.multi_indi_features(self.candles_feed.candles_by_interval, params=self.indi_params)
 
             # Candles with minimal period
             min_period = min(self.candles_feed.candles_by_interval.keys(), key=pd.Timedelta)
@@ -73,7 +73,7 @@ class LgbLowHighRegressionStrategy(StrategyBase):
             self._logger.debug("Last candles:\n" + "\n".join(
                 [f"{period} : {candles.tail()}" for period, candles in
                  self.candles_feed.candles_by_interval.items()]))
-        x = MultiIndiFeatures.multi_indi_features_last(
+        x = CandlesMultiIndiFeatures.multi_indi_features_last(
             self.candles_feed.candles_by_interval) if self.candles_feed.candles_by_interval else pd.DataFrame.empty
         self._logger.debug(f"Prepared last x: {x}")
         return x

@@ -7,6 +7,35 @@ import pandas as pd
 class CandlesFeatures:
 
     @staticmethod
+    def rolling_candles_by_periods(candles_1min: pd.DataFrame, periods: list[str]) -> dict[str, pd.DataFrame]:
+        out = {}
+        for period in periods:
+            out[period] = CandlesFeatures.rolling_ohlc(candles_1min, period)
+        return out
+
+    @staticmethod
+    def rolling_ohlc(candles_1min, window):
+        """ Unlike resample, rolling window does not work with first, last aggregations and with datetime there.
+            Some hacks needed """
+        df = candles_1min.copy()
+        # Convert datetime to numeric because rolling window does not work with times for getting first in aggregation
+        df['open_time'] = pd.to_datetime(df['open_time']).astype('int64')
+        df['close_time'] = pd.to_datetime(df['close_time']).astype('int64')
+        # Aggregate
+        df = df.rolling(window, closed = 'both').agg({
+            'open_time': 'min',
+            'close_time': 'max',      # Equivalent to 'last' for time
+            'open': lambda x: x.iloc[0],    # First value
+            'high': 'max',
+            'low': 'min',
+            'close': lambda x: x.iloc[-1],   # Last value
+            'vol': 'sum'})
+        df['open_time'] = pd.to_datetime(df['open_time'], unit = 'ns')
+        df['close_time'] = pd.to_datetime(df['close_time'], unit = 'ns')
+
+        return df
+
+    @staticmethod
     def rolling_candles_of_bid_ask(bid_ask: pd.DataFrame, period: str = "1min"):
         """ Calculate candles from bidask data. Consider price as (bid+ask)/2 """
 

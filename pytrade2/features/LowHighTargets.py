@@ -19,7 +19,8 @@ class LowHighTargets:
     def fut_lohi_signal(df_candles_1_min: pd.DataFrame,
                         predict_window: str,
                         loss_coeff: float,
-                        profit_loss_ratio: float
+                        profit_loss_ratio: float,
+                        with_extra: bool = False
                         ):
         # Calc low, high for future
         df = df_candles_1_min.copy()
