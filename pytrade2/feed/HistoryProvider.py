@@ -111,10 +111,3 @@ class HistoryProvider:
             self._logger.info(f"Downloading {s3_file_path} to {local_path}")
             s3client.download_file(bucket_name, s3_file_path, local_path)
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    config = {key:val for key, val in os.environ.items()}
-    hp = HistoryProvider(config)
-    #hp.update_local_history(pd.Timestamp("2025-05-10"), pd.Timestamp("2025-05-21"))
-    df = hp.read_local_history("level2", pd.Timestamp("2025-05-10"), pd.Timestamp("2025-05-10"))
-    print(df.tail())
