@@ -7,9 +7,9 @@ from typing import Dict, List, Tuple
 import pandas as pd
 
 
-class CandlesDownloader:
+class CandlesExchDownloader:
     """
-    Download 1min candles to history to data/common
+    Download 1min candles from exchange to local history in data/common
     """
 
     def __init__(self, config: Dict, exchange_candles_feed, tag: str = None):

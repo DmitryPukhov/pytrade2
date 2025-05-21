@@ -9,7 +9,7 @@ from typing import Dict
 import pandas as pd
 
 from exch.Exchange import Exchange
-from feed.CandlesDownloader import CandlesDownloader
+from feed.history.CandlesExchDownloader import CandlesExchDownloader
 
 
 class CandlesFeed:
@@ -21,7 +21,7 @@ class CandlesFeed:
         self.data_lock = data_lock
         self.exchange_candles_feed = exchange_provider.candles_feed(config["pytrade2.exchange"])
         self.exchange_candles_feed.consumers.add(self)
-        self.downloader = CandlesDownloader(config, self.exchange_candles_feed, tag)
+        self.downloader = CandlesExchDownloader(config, self.exchange_candles_feed, tag)
 
         self.ticker = ticker
         self.candles_by_interval: Dict[str, pd.DataFrame] = dict()
