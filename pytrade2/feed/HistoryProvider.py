@@ -22,6 +22,25 @@ class HistoryProvider:
         self.s3_endpoint_url = config['pytrade2.s3.endpoint_url']
         self.data_dir = config.get("pytrade2.data.dir")
 
+    def read_local_history(self, kind: str, start_date = pd.Timestamp.min, end_date = pd.Timestamp.max) -> pd.DataFrame:
+        """ Read data between start_date and end_date from local data directory."""
+        accumulated_df = pd.DataFrame()
+        local_dir = f"{self.data_dir}/raw/{kind}/"
+        for file in os.listdir(local_dir):
+            # Check date, encoded in filename like 2025-05-21_BTC-USDT_level2.csv.zip
+            datestr = file.split('_')[0]
+            file_date = pd.to_datetime(datestr)
+            if not (start_date <= file_date <= end_date):
+                continue
+            df = pd.read_csv(f"{local_dir}/{file}")
+            accumulated_df = pd.concat([accumulated_df, df], ignore_index=True)
+
+        # Set index, try to use datetime column for price or candle data
+        index_col = "datetime" if "datetime" in accumulated_df.columns else "close_time"
+        accumulated_df.set_index(index_col, inplace=True, drop=False)
+        return accumulated_df.sort_index()
+
+
     def update_local_history(self, start_date = pd.Timestamp.min, end_date = pd.Timestamp.max,
                     kinds=("level2", "candles", "bid_ask")):
         """ Download new history data from s3 to local data directory."""
@@ -92,3 +111,10 @@ class HistoryProvider:
             self._logger.info(f"Downloading {s3_file_path} to {local_path}")
             s3client.download_file(bucket_name, s3_file_path, local_path)
 
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    config = {key:val for key, val in os.environ.items()}
+    hp = HistoryProvider(config)
+    #hp.update_local_history(pd.Timestamp("2025-05-10"), pd.Timestamp("2025-05-21"))
+    df = hp.read_local_history("level2", pd.Timestamp("2025-05-10"), pd.Timestamp("2025-05-10"))
+    print(df.tail())
