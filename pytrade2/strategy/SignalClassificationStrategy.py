@@ -42,10 +42,6 @@ class SignalClassificationStrategy(StrategyBase):
 
         self._logger.info(f"Target period: {self.target_period}")
 
-    def can_learn(self) -> bool:
-        """ Minimal history should present to calculate features. """
-        return self.level2_feed.has_min_history() and self.candles_feed.has_min_history()
-
     def features_targets(self, history_window: str, with_targets: bool = True) -> (pd.DataFrame, pd.DataFrame):
         if ("1min" not in self.candles_feed.candles_by_interval
                 or self.candles_feed.candles_by_interval["1min"].empty
@@ -166,25 +162,25 @@ class SignalClassificationStrategy(StrategyBase):
             print(f'Created new model {model}')
             return model
 
-def create_pipe(x, _) -> (Pipeline, Pipeline):
-    """ Create feature only pipeline to use for transform and inverse transform """
+    def create_pipe(self, x, _) -> (Pipeline, Pipeline):
+        """ Create feature only pipeline to use for transform and inverse transform """
 
-    time_cols = [col for col in x.columns if col.startswith("time")]
-    float_cols = list(set(x.columns) - set(time_cols))
-    x_pipe = Pipeline(
-        [("xscaler", ColumnTransformer([("xrs", StandardScaler(), float_cols)], remainder="passthrough")),
-         ("xmms", MaxAbsScaler())])
-    x_pipe.fit(x)
+        time_cols = [col for col in x.columns if col.startswith("time")]
+        float_cols = list(set(x.columns) - set(time_cols))
+        x_pipe = Pipeline(
+            [("xscaler", ColumnTransformer([("xrs", StandardScaler(), float_cols)], remainder="passthrough")),
+             ("xmms", MaxAbsScaler())])
+        x_pipe.fit(x)
 
-    class AddTwo(BaseEstimator, TransformerMixin):
-        def fit(self, X, y=None):
-            return self
+        class AddTwo(BaseEstimator, TransformerMixin):
+            def fit(self, X, y=None):
+                return self
 
-        def transform(self, X):
-            # Adding 2 to every value in the dataset
-            return X + 2
-        def inverse_transform(self, X):
-            return X - 2
+            def transform(self, X):
+                # Adding 2 to every value in the dataset
+                return X + 2
+            def inverse_transform(self, X):
+                return X - 2
 
-    y_pipe = make_pipeline(AddTwo())
-    return x_pipe, y_pipe
+        y_pipe = make_pipeline(AddTwo())
+        return x_pipe, y_pipe

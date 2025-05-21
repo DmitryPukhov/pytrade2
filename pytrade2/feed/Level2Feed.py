@@ -55,5 +55,5 @@ class Level2Feed:
         return self.level2.empty or (datetime.utcnow() - self.level2.index.max() <= maxdelta)
 
     def has_min_history(self):
-        interval = self.level2.index.max() - self.level2.index.min() if not self.level2.empty else pd.Timedelta("0s")
+        interval = self.level2.index.max() - self.level2.index.min() if not self.level2.empty else pd.Timedelta(0)
         return interval >= self.history_min_window

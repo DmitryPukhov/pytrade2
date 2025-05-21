@@ -15,10 +15,11 @@ class HuobiWebSocketFeedHbdm(HuobiFeedBase):
 
     def __init__(self, config: dict, rest_client: HuobiRestClient, ws_client: HuobiWebSocketClient):
         super().__init__(config, rest_client, ws_client)
+        templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template")
 
-        templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template",
-                               f"market.{self.ticker_template}.bbo")
         # templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template",
+        #                        f"market.{self.ticker_template}.bbo")
+        # # templates = config.get("pytrade2.exchange.feed.huobi.websocket.sub.topics.template",
         #                        f"market.{self.ticker_template}.bbo,market.{self.ticker_template}.depth.step6")
         templates = templates.split(",") if templates else []
 
