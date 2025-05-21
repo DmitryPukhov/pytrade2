@@ -3,6 +3,10 @@ from typing import Dict
 
 import lightgbm as lgb
 import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.pipeline import Pipeline, make_pipeline
+from sklearn.preprocessing import StandardScaler, MaxAbsScaler
+from sklearn.compose import ColumnTransformer
 
 from exch.Exchange import Exchange
 from features.CandlesFeatures import CandlesFeatures
@@ -27,15 +31,14 @@ class SignalClassificationStrategy(StrategyBase):
                               is_level2_feed=True)
 
         # self.comissionpct = float(config.get('pytrade2.broker.comissionpct'))
-        predict_window = config["pytrade2.strategy.predict.window"]
         self.history_min_window = config["pytrade2.strategy.history.min.window"]
         self.history_max_window = config["pytrade2.strategy.history.max.window"]
         self.target_period = config["pytrade2.strategy.target.period"]
         self.model_name = "SignalClassification"
-        self.candles_periods = [period.trim() for period in config["pytrade2.feed.candles.periods"].split(",")]
-        self.level2_periods = [period.trim() for period in config["pytrade2.feed.level2.periods"].split(",")]
-        self.stop_loss_coeff = float(config["pytrade2.strategy.stop.loss.coeff"])
-        self.profit_loss_ratip = float(config["pytrade2.strategy.profit.loss.ratio"])
+        self.candles_periods = [period.strip() for period in config["pytrade2.strategy.features.candles.periods"].split(",")]
+        self.level2_periods = [period.strip() for period in config["pytrade2.strategy.features.level2.periods"].split(",")]
+        self.stop_loss_coeff = float(config["pytrade2.strategy.stoploss.coeff"])
+        self.profit_loss_ratio = float(config["pytrade2.strategy.profit.loss.ratio"])
 
         self._logger.info(f"Target period: {self.target_period}")
 
@@ -44,10 +47,16 @@ class SignalClassificationStrategy(StrategyBase):
         return self.level2_feed.has_min_history() and self.candles_feed.has_min_history()
 
     def features_targets(self, history_window: str, with_targets: bool = True) -> (pd.DataFrame, pd.DataFrame):
+        if ("1min" not in self.candles_feed.candles_by_interval
+                or self.candles_feed.candles_by_interval["1min"].empty
+                or self.level2_feed.level2.empty):
+            return pd.DataFrame(), pd.DataFrame()
+
         with self.data_lock:
             # Get the most recent timestamp in the DataFrame
             full_candles_1min = self.candles_feed.candles_by_interval["1min"]
             full_level2 = self.level2_feed.level2
+
             last_time = max(full_candles_1min.index.max(), full_level2.index.max())
             window_start = last_time - pd.to_timedelta(history_window)
 
@@ -156,3 +165,26 @@ class SignalClassificationStrategy(StrategyBase):
             )
             print(f'Created new model {model}')
             return model
+
+def create_pipe(x, _) -> (Pipeline, Pipeline):
+    """ Create feature only pipeline to use for transform and inverse transform """
+
+    time_cols = [col for col in x.columns if col.startswith("time")]
+    float_cols = list(set(x.columns) - set(time_cols))
+    x_pipe = Pipeline(
+        [("xscaler", ColumnTransformer([("xrs", StandardScaler(), float_cols)], remainder="passthrough")),
+         ("xmms", MaxAbsScaler())])
+    x_pipe.fit(x)
+
+    class AddTwo(BaseEstimator, TransformerMixin):
+        def fit(self, X, y=None):
+            return self
+
+        def transform(self, X):
+            # Adding 2 to every value in the dataset
+            return X + 2
+        def inverse_transform(self, X):
+            return X - 2
+
+    y_pipe = make_pipeline(AddTwo())
+    return x_pipe, y_pipe

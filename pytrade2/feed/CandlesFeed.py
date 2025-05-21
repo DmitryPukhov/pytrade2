@@ -28,9 +28,13 @@ class CandlesFeed:
         self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
         self.new_data_event = new_data_event
 
-        periods = config["pytrade2.feed.candles.periods"]
-        counts = config["pytrade2.feed.candles.counts"]
-        self.candles_cnt_by_interval = self.candles_cnt_by_interval_of(periods, counts)
+        periods = config.get("pytrade2.feed.candles.periods", "1min")
+        # candles counts used only for downloading from rest service, not for streaming
+        if "pytrade2.feed.candles.counts" in config:
+            counts = config["pytrade2.feed.candles.counts"]
+            self.candles_cnt_by_interval = self.candles_cnt_by_interval_of(periods, counts)
+        else:
+            self.candles_cnt_by_interval = {}
 
     def apply_history_days(self, history_days: int):
         """History days parameter changed, load absent"""

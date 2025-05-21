@@ -17,7 +17,7 @@ class HuobiCandlesFeedHbdm(HuobiFeedBase):
         self._logger = logging.getLogger(self.__class__.__name__)
         super().__init__(config, rest_client, ws_client)
         self.periods = [s.strip() for s in str(self.config["pytrade2.feed.candles.periods"]).split(",")]
-        self.counts = [int(s) for s in str(self.config["pytrade2.feed.candles.counts"]).split(",")]
+        #self.counts = [int(s) for s in str(self.config["pytrade2.feed.candles.counts"]).split(",")]
         self.candles = {}
         #self.sub_events()
 

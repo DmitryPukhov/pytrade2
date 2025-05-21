@@ -14,11 +14,11 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 
 from exch.Exchange import Exchange
-from metrics.MetricServer import MetricServer
-from strategy.common.RiskManager import RiskManager
 from feed.BidAskFeed import BidAskFeed
 from feed.CandlesFeed import CandlesFeed
 from feed.Level2Feed import Level2Feed
+from metrics.MetricServer import MetricServer
+from strategy.common.RiskManager import RiskManager
 from strategy.persist.DataPersister import DataPersister
 from strategy.persist.ModelPersister import ModelPersister
 
@@ -59,11 +59,11 @@ class StrategyBase:
         self.order_quantity = config["pytrade2.order.quantity"]
         self.is_trailing_stop = config.get("pytrade2.order.is_trailingstop", "false").lower() == "true"
         self._logger.info(f"Order quantity: {self.order_quantity}")
-        self.price_precision = config["pytrade2.price.precision"]
-        self.amount_precision = config["pytrade2.amount.precision"]
+        self.price_precision = config.get("pytrade2.price.precision", 1)
+        self.amount_precision = config.get("pytrade2.amount.precision", 1)
         self.learn_interval = pd.Timedelta(config['pytrade2.strategy.learn.interval']) \
             if 'pytrade2.strategy.learn.interval' in config else None
-        self._wait_after_loss = pd.Timedelta(config["pytrade2.strategy.riskmanager.wait_after_loss"])
+        self._wait_after_loss = pd.Timedelta(config.get("pytrade2.strategy.riskmanager.wait_after_loss", 0))
         self.exchange_provider = exchange_provider
         self.model = None
         self.broker = None
@@ -118,7 +118,8 @@ class StrategyBase:
             # Create pipe and model
             self.update_model()
             train_X, train_y = self.prepare_xy()
-            self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
+            if not (train_X.empty or train_y.empty):
+                self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
             # Learn the model
             if self.is_learn_enabled:
                 self.learn()
@@ -358,7 +359,7 @@ class StrategyBase:
                 self.process_prediction(y_pred)
 
                 # Save to disk for analysis
-                #y_pred["datetime"] = dt
+                # y_pred["datetime"] = dt
                 self.data_persister.save_last_data(self.ticker, {'y_pred': y_pred})
             except Exception as e:
                 self._logger.error(f"{e}. Traceback: {traceback.format_exc()}")
