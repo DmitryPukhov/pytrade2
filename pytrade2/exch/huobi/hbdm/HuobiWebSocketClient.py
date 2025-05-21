@@ -187,8 +187,8 @@ class HuobiWebSocketClient:
 
     def _on_error(self, ws, error):
         self._logger.error(f"Socket error: {error}")
-        if not (self._is_opening or self.is_opened):
-            self.open()
+        self.is_opened = self.is_opening = False
+        self.open()
 
 
     def add_consumer(self, topic, params: dict, consumer):
