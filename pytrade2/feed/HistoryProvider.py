@@ -10,7 +10,7 @@ from botocore.client import BaseClient
 
 class HistoryProvider:
     """
-    Download necessary history data from s3 and add socket data to the end
+    Download necessary history data from s3
     """
 
     def __init__(self, config: Dict):
@@ -22,7 +22,7 @@ class HistoryProvider:
         self.s3_endpoint_url = config['pytrade2.s3.endpoint_url']
         self.data_dir = config.get("pytrade2.data.dir")
 
-    def update_local_history(self, start_date: pd.Timestamp, end_date: pd.Timestamp,
+    def update_local_history(self, start_date = pd.Timestamp.min, end_date = pd.Timestamp.max,
                     kinds=("level2", "candles", "bid_ask")):
         """ Download new history data from s3 to local data directory."""
         try:
@@ -92,7 +92,3 @@ class HistoryProvider:
             self._logger.info(f"Downloading {s3_file_path} to {local_path}")
             s3client.download_file(bucket_name, s3_file_path, local_path)
 
-logging.basicConfig(level=logging.INFO)
-config = {key:val for key, val in os.environ.items()}
-hp = HistoryProvider(config)
-hp.update_local_history(pd.Timestamp("2025-05-10"), pd.Timestamp("2025-05-21"))
