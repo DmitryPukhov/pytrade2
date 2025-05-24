@@ -22,6 +22,7 @@ class StreamWithHistoryPreprocFeed(object):
         self._last_initial_history_datetime = datetime.min
         self._last_reload_initial_history_datetime = datetime.min
         self._reload_history_interval = pd.Timedelta(config.get("pytrade2.strategy.history.initial.reload.interval", "5min"))
+        self._history_raw_today_df = None
 
     def reload_initial_history(self, history_start = None, history_end = None):
         """ Initial download history from s3 to local raw data. Preprocess and put to local preprocessed data"""
@@ -71,16 +72,19 @@ class StreamWithHistoryPreprocFeed(object):
         history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.stream_feed.kind,
                                                                             days=self.history_max_window.days)
 
+
         # Get today preproc data from  history and stream
-        history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.stream_feed.kind,
+        if not self._history_raw_today_df:
+            self._history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.stream_feed.kind,
                                                                            stream_start_datetime.date(),
                                                                            stream_start_datetime.date())
-        history_raw_today_df = history_raw_today_df[history_raw_today_df.index < stream_start_datetime]
-        raw_today_df = pd.concat([history_raw_today_df, stream_raw_df]).sort_index()
+            self._history_raw_today_df = self._history_raw_today_df[self._history_raw_today_df.index < stream_start_datetime]
+
+        raw_today_df = pd.concat([self._history_raw_today_df, stream_raw_df]).sort_index()
         preproc_today_df = self._preprocessor.transform(raw_today_df, self.stream_feed.kind)
 
         # Concatenate previous and today
-        all_history_window = pd.concat([history_before_today_df, preproc_today_df])
+        all_history_window = pd.concat([history_before_today_df, preproc_today_df]).sort_index()
         return all_history_window
 
     def run(self):
