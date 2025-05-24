@@ -106,6 +106,7 @@ class StrategyBase:
     def run(self):
         exchange_name = self.config["pytrade2.exchange"]
         self.broker = self.exchange_provider.broker(exchange_name)
+
         if self.candles_feed:
             self.candles_feed.read_candles()
             if not self.is_periodical:
@@ -113,6 +114,9 @@ class StrategyBase:
         if self.level2_feed and not self.is_periodical:
             self.level2_feed.run()
         self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
+        if not self.is_periodical:
+            feed = self.exchange_provider.websocket_feed(exchange_name)
+            feed.run()
 
         with self.data_lock:
             # Create pipe and model

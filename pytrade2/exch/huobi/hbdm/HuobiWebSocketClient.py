@@ -1,17 +1,16 @@
+import base64
+import gzip
+import hmac
+import json
 import logging
-from collections import defaultdict
-from typing import Dict, Set
-
-import websocket
 import threading
 import time
-import json
-import gzip
-from datetime import datetime
-from urllib import parse
-import hmac
-import base64
+from collections import defaultdict
+from datetime import datetime, timedelta
 from hashlib import sha256
+from urllib import parse
+
+import websocket
 
 
 class HuobiWebSocketClient:
@@ -45,11 +44,10 @@ class HuobiWebSocketClient:
         self._secret_key = secret_key
         self._be_spot = be_spot
         self._is_broker = is_broker
-        self._active_close = False
-        self._is_opening = False
-        self.is_opened = False
         self._ws = None
         self._consumers = defaultdict(set)
+        self.is_running = False
+        self.heartbeat_timeout = timedelta(seconds=10)
         self._logger.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
 
     def __del__(self):
@@ -63,15 +61,13 @@ class HuobiWebSocketClient:
         self.close()
 
     def open(self):
-        if self._is_opening or self.is_opened: return
-
-        self._is_opening = True
         self._logger.info(f"Opening socket: {self.url}")
         self._ws = websocket.WebSocketApp(self.url,
                                           on_open=self._on_open,
                                           on_message=self._on_msg,
                                           on_close=self._on_close,
                                           on_error=self._on_error)
+        self.is_running = True
         t = threading.Thread(target=self._ws.run_forever, daemon=True)
         t.start()
 
@@ -81,10 +77,11 @@ class HuobiWebSocketClient:
             # Some endpoints requires this signature data, others just returns invalid command error and continue to work.
             signature_data = self._get_signature_data()  # signature data
             self._ws.send(json.dumps(signature_data))  # as json string to be send
-        self.is_opened = True
-        self._is_opening = False
 
-        # Subscribe to messages for consumers
+        self.subscribe_events()
+
+    def subscribe_events(self):
+        """Subscribe to messages for consumers"""
         for topic_consumers in self._consumers.values():
             for params, consumer in topic_consumers:
                 self._logger.info(f"Subscribing to socket data, params: {params}, consumer: {consumer}")
@@ -136,6 +133,7 @@ class HuobiWebSocketClient:
         return data
 
     def _on_msg(self, ws, message):
+        self.last_heartbeat = datetime.utcnow()
         try:
             plain = message
             if not self._be_spot:
@@ -181,15 +179,12 @@ class HuobiWebSocketClient:
 
     def _on_close(self, ws):
         self._logger.info("Socket closed")
-        self.is_opened = self.is_opening = False
-        if not self._active_close:
-            self.open()
 
     def _on_error(self, ws, error):
         self._logger.error(f"Socket error: {error}")
-        self.is_opened = self.is_opening = False
+        # Reopen
+        self.close()
         self.open()
-
 
     def add_consumer(self, topic, params: dict, consumer):
         """ Registering consumer for the topic """
@@ -199,6 +194,14 @@ class HuobiWebSocketClient:
 
     def close(self):
         self._logger.info("Closing socket")
-        self._active_close = True
-        self.is_opened = self._is_opening = False
         if self._ws: self._ws.close()
+
+    def _watchdog(self):
+        while self.is_running:
+            time.sleep(1)
+            if datetime.now() - self.last_heartbeat > self.heartbeat_timeout:
+                self._logger.error(f"Watchdog: heartbeat timeout {self.heartbeat_timeout} Reconnecting...")
+                # Reopen
+                self.close()
+                self.open()
+                break

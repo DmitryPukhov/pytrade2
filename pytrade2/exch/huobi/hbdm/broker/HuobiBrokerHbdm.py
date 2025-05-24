@@ -46,10 +46,10 @@ class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):
         self.sub_events()
 
         # Open and wait until opened
-        if not self.ws_client.is_opened:
+        if not self.ws_client.is_running:
             self.ws_client.open()
 
-        self.ws_feed.run()
+        #self.ws_feed.run()
 
         self.account_manager.refresh_balance()
 

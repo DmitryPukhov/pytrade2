@@ -20,7 +20,8 @@ class HuobiFeedBase:
         Read data from web socket
         """
         self.sub_events()
-        self._client.open()
+        if not self._client.is_running:
+            self._client.open()
 
     @staticmethod
     def ticker_of_ch(ch):
