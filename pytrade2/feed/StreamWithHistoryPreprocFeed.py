@@ -87,7 +87,4 @@ class StreamWithHistoryPreprocFeed(object):
         all_history_window = pd.concat([history_before_today_df, preproc_today_df]).sort_index()
         return all_history_window
 
-    def run(self):
-        end_date = datetime.now(datetime.UTC)
-        start_date = end_date - self.history_max_window
-        self._history_downloader.update_local_history(start_date, end_date, kinds=self.stream_feed.kind)
+
