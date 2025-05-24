@@ -146,5 +146,6 @@ class Preprocessor:
                 .apply(lambda x: x[x['vol'] == x['vol'].max()]) \
                 .reset_index(drop=True)
             # df = df.loc[df.groupby(df['close_time'])['vol'].idxmax()] #.reset_index(drop=True)
+
         df = df.set_index(datetime_col, drop=False, inplace=False)
         return df

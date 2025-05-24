@@ -36,8 +36,9 @@ class HistoryS3Downloader:
             accumulated_df = pd.concat([accumulated_df, df], ignore_index=True)
 
         # Set index, try to use datetime column for price or candle data
-        index_col = "datetime" if "datetime" in accumulated_df.columns else "close_time"
-        accumulated_df.set_index(index_col, inplace=True, drop=False)
+        datetime_col = "datetime" if "datetime" in accumulated_df.columns else "close_time"
+        accumulated_df[datetime_col] = pd.to_datetime(accumulated_df[datetime_col])
+        accumulated_df.set_index(datetime_col, inplace=True, drop=False)
         return accumulated_df.sort_index()
 
     def update_local_history(self, ticker: str, start_date=pd.Timestamp.min, end_date=pd.Timestamp.max,
