@@ -108,7 +108,7 @@ class HistoryS3Downloader:
         download_list = sorted(
             self.get_download_list(s3client, bucket_name, ticker, s3_dir, local_dir, start_date, end_date))
         if not download_list:
-            self._logger.info(f"No files found in {bucket_name}/{s3_dir} between {start_date} and {end_date}")
+            self._logger.info(f"No changed files found in {bucket_name}/{s3_dir} between {start_date} and {end_date}")
             return False
         self._logger.info(
             f"Found {len(download_list)} s3 files to download, from {download_list[0]} to {download_list[-1]}")
