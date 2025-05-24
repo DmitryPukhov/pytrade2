@@ -49,7 +49,7 @@ class SignalClassificationStrategy(StrategyBase):
 
     def run(self):
         try:
-            self.level2_feed_preproc.load_initial_history()
+            self.level2_feed_preproc.reload_initial_history()
         except Exception as e:
             sys.exit(f"Cannot load initial history. Exception: {e.with_traceback(None)}")
         super().run()

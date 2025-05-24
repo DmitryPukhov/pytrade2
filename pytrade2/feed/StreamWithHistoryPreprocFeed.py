@@ -19,60 +19,64 @@ class StreamWithHistoryPreprocFeed(object):
         self._history_downloader = HistoryS3Downloader(config, data_dir=self.data_dir)
         self._preprocessor = Preprocessor(data_dir=self.data_dir)
         self.is_good_history = False
+        self._last_initial_history_datetime = datetime.min
 
-    def load_initial_history(self):
+    def reload_initial_history(self, history_start = None, history_end = None):
         """ Initial download history from s3 to local raw data. Preprocess and put to local preprocessed data"""
 
         # Download history to raw data
-        history_start = datetime.utcnow().date() - self.history_max_window
-        history_end = datetime.utcnow().date()
+        if not history_start:
+            history_start = datetime.utcnow().date() - self.history_max_window
+        if not history_end:
+            history_end = datetime.utcnow().date()
         self._logger.info(
             f"Load s3 initial {self.ticker} {self.stream_feed.kind} history {self.ticker}, from {history_start} to {history_end}")
-        # self._history_downloader.update_local_history(self.ticker, history_start, history_end,
-        #                                               kinds=[self.stream_feed.kind])
+        self._history_downloader.update_local_history(self.ticker, history_start, history_end,
+                                                      kinds=[self.stream_feed.kind])
         # Preprocess local raw data, put to local preprocessed data
-        self._preprocessor.preprocess_last_raw_data(self.ticker, self.stream_feed.kind)
+        self._last_initial_history_datetime = max(self._last_initial_history_datetime, self._preprocessor.preprocess_last_raw_data(self.ticker, self.stream_feed.kind))
+        return self._last_initial_history_datetime
 
     def apply_buf(self):
         """ Update data from stream and history. Return if no gap"""
 
         # Get last stream data raw
         stream_raw_df = self.stream_feed.apply_buf()
+        if stream_raw_df.empty:
+            return
+
+        stream_start_datetime = stream_raw_df.index.min()
 
         if not self.is_good_history:
             # Download history from s3
-            stream_start_datetime = stream_raw_df.index.min() if not stream_raw_df.empty else pd.Timestamp.max
             history_start_datetime = stream_start_datetime - self.history_max_window if not stream_raw_df.empty else datetime.utcnow()
+            history_end_datetime = self.reload_initial_history(history_start=history_start_datetime.date(), history_end=stream_start_datetime.date())
 
-            # Download raw data from s3 and preprocess if something new appeared there
-            self._history_downloader.update_local_history(self.ticker, history_start_datetime.date(),
-                                                          stream_start_datetime.date(),
-                                                          kinds=[self.stream_feed.kind])
-            history_end_datetime = self._preprocessor.preprocess_last_raw_data(self.ticker, self.stream_feed.kind)
-
+            self.is_good_history = history_end_datetime >= stream_start_datetime
             # If gap between stream and history, will try later, when history updated. Exiting now.
-            self.is_good_history = history_end_datetime > stream_start_datetime
             if not self.is_good_history:
                 gap = stream_start_datetime - history_end_datetime
                 self._logger.warning(
                     f"Not enough history data, gap {gap} between history and stream. last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
                 return pd.DataFrame
 
-            # Get all local history except today
-            history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.stream_feed.kind,
-                                                                                days=self.history_max_window.days)
+        # History is good
 
-            # Get today preproc data from  history and stream
-            history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.stream_feed.kind,
-                                                                               stream_start_datetime.date(),
-                                                                               stream_start_datetime.date())
-            history_raw_today_df = history_raw_today_df[history_raw_today_df.index < stream_start_datetime]
-            raw_today_df = pd.concat([history_raw_today_df, stream_raw_df]).sort_index()
-            preproc_today_df = self._preprocessor.transform(raw_today_df, self.stream_feed.kind)
+        # Get all local history except today
+        history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.stream_feed.kind,
+                                                                            days=self.history_max_window.days)
 
-            # Concatenate previous and today
-            all_history_window = pd.concat([history_before_today_df, preproc_today_df])
-            return all_history_window
+        # Get today preproc data from  history and stream
+        history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.stream_feed.kind,
+                                                                           stream_start_datetime.date(),
+                                                                           stream_start_datetime.date())
+        history_raw_today_df = history_raw_today_df[history_raw_today_df.index < stream_start_datetime]
+        raw_today_df = pd.concat([history_raw_today_df, stream_raw_df]).sort_index()
+        preproc_today_df = self._preprocessor.transform(raw_today_df, self.stream_feed.kind)
+
+        # Concatenate previous and today
+        all_history_window = pd.concat([history_before_today_df, preproc_today_df])
+        return all_history_window
 
     def run(self):
         end_date = datetime.now(datetime.UTC)
