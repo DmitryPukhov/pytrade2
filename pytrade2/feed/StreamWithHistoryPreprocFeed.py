@@ -22,7 +22,7 @@ class StreamWithHistoryPreprocFeed(object):
         self._last_initial_history_datetime = datetime.min
         self._last_reload_initial_history_datetime = datetime.min
         self._reload_history_interval = pd.Timedelta(config.get("pytrade2.strategy.history.initial.reload.interval", "5min"))
-        self._history_raw_today_df = None
+        self._history_raw_today_df = pd.DataFrame()
 
     def reload_initial_history(self, history_start = None, history_end = None):
         """ Initial download history from s3 to local raw data. Preprocess and put to local preprocessed data"""
@@ -74,7 +74,7 @@ class StreamWithHistoryPreprocFeed(object):
 
 
         # Get today preproc data from  history and stream
-        if not self._history_raw_today_df:
+        if self._history_raw_today_df.empty:
             self._history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.stream_feed.kind,
                                                                            stream_start_datetime.date(),
                                                                            stream_start_datetime.date())
