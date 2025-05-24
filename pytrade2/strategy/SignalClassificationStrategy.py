@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 from typing import Dict
 
@@ -13,6 +14,7 @@ from features.CandlesFeatures import CandlesFeatures
 from features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
 from features.LowHighTargets import LowHighTargets
 from features.level2.Level2MultiIndiFeatures import Level2MultiIndiFeatures
+from feed.StreamWithHistoryPreprocFeed import StreamWithHistoryPreprocFeed
 from metrics.MetricServer import MetricServer
 from strategy.common.StrategyBase import StrategyBase
 
@@ -30,6 +32,9 @@ class SignalClassificationStrategy(StrategyBase):
                               is_bid_ask_feed=False,
                               is_level2_feed=True)
 
+        self.candles_feed_preproc = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.candles_feed)
+        self.level2_feed_preproc = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.level2_feed)
+
         # self.comissionpct = float(config.get('pytrade2.broker.comissionpct'))
         self.history_min_window = config["pytrade2.strategy.history.min.window"]
         self.history_max_window = config["pytrade2.strategy.history.max.window"]
@@ -41,6 +46,16 @@ class SignalClassificationStrategy(StrategyBase):
         self.profit_loss_ratio = float(config["pytrade2.strategy.profit.loss.ratio"])
 
         self._logger.info(f"Target period: {self.target_period}")
+
+    def run(self):
+        try:
+            self.level2_feed_preproc.load_initial_history()
+        except Exception as e:
+            sys.exit(f"Cannot load initial history. Exception: {e.with_traceback(None)}")
+        super().run()
+
+    def apply_buffers(self):
+        self.level2_feed_preproc.apply_buf()
 
     def features_targets(self, history_window: str, with_targets: bool = True) -> (pd.DataFrame, pd.DataFrame):
         if ("1min" not in self.candles_feed.candles_by_interval

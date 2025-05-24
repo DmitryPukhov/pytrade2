@@ -15,6 +15,8 @@ from feed.history.CandlesExchDownloader import CandlesExchDownloader
 class CandlesFeed:
     """ Decorator for strategies. Reads candles from exchange """
 
+    kind = "candles"
+
     def __init__(self, config, ticker: str, exchange_provider: Exchange, data_lock: multiprocessing.RLock,
                  new_data_event: multiprocessing.Event, tag):
         self._logger = logging.getLogger(self.__class__.__name__)

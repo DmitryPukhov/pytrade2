@@ -8,6 +8,8 @@ from exch.Exchange import Exchange
 
 
 class BidAskFeed:
+    kind = "bid_ask"
+
     def __init__(self, cfg: Dict[str, str], exchange_provider: Exchange, data_lock: multiprocessing.RLock,
                  new_data_event: multiprocessing.Event):
         self.websocket_feed = exchange_provider.websocket_feed(cfg["pytrade2.exchange"])
@@ -21,6 +23,7 @@ class BidAskFeed:
                                    + pd.Timedelta(cfg.get("pytrade2.strategy.predict.window", "0s")))
         self.data_lock = data_lock
         self.new_data_event = new_data_event
+
 
     def run(self):
         self.websocket_feed.run()

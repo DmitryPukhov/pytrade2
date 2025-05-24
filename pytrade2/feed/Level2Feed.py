@@ -8,6 +8,9 @@ from exch.Exchange import Exchange
 
 
 class Level2Feed:
+    kind = "level2"
+
+
     def __init__(self, cfg: Dict[str, str], exchange_provider: Exchange, data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
         self._logger = logging.getLogger(self.__class__.__name__)
 
@@ -41,7 +44,7 @@ class Level2Feed:
     def apply_buf(self):
         """ Add level2 buf to level2 and purge old level2 """
         if self.level2_buf.empty:
-            return
+            return self.level2
 
         with self.data_lock:
             self.level2 = pd.concat([df for df in [self.level2, self.level2_buf] if not df.empty])
@@ -57,3 +60,4 @@ class Level2Feed:
     def has_min_history(self):
         interval = self.level2.index.max() - self.level2.index.min() if not self.level2.empty else pd.Timedelta(0)
         return interval >= self.history_min_window
+

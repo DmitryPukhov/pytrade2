@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+from datetime import datetime
 
 import pandas as pd
 
@@ -40,7 +41,8 @@ class Preprocessor:
         # Fill unprocessed file list
         unprocessed_list = []
         for raw_file in sorted(os.listdir(raw_dir_kind)):
-            preproc_file = pathlib.Path(raw_file).stem  # remove .zip
+            # If raw file is *.csv.zip, preproc will be *.csv not zipped
+            preproc_file = pathlib.Path(raw_file).stem if raw_file.endswith(".zip") else raw_file
             raw_file_path = os.path.join(raw_dir_kind, raw_file)
             preproc_file_path = os.path.join(preproc_dir_kind, f"{preproc_file}")
 
@@ -52,7 +54,7 @@ class Preprocessor:
             elif old_preproc_flag:
                 self._logger.info(f"Preprocessed {preproc_file} is older than raw, will preprocess raw {raw_file}")
 
-            if (preproc_not_exist or old_preproc_flag):
+            if preproc_not_exist or old_preproc_flag:
                 # Already preprocessed
                 unprocessed_list.append(raw_file)
         return unprocessed_list
@@ -90,9 +92,10 @@ class Preprocessor:
         unprocessed_raw_files = self.get_unprocessed_raw_files(kind)
 
         file_paths = [f"{source_dir}/{f}" for f in unprocessed_raw_files]
-        print(f"Preprocess {len(file_paths)} new {kind} raw files")
+        self._logger.info(f"Preprocess {len(file_paths)} new {kind} raw files")
+        last_preproc_date = datetime.min
         for raw_file_path in file_paths:
-            print(f"Read {ticker} {kind} data from {raw_file_path}")
+            self._logger.info(f"Read {ticker} {kind} data from {raw_file_path}")
             # Read raw data
             df = pd.read_csv(raw_file_path, parse_dates=True)
             datetime_col = self.datetime_col(df)
@@ -101,6 +104,8 @@ class Preprocessor:
 
             # Raw -> preprocessed transformation
             df = self.transform(df, kind)
+            if not df.empty:
+                last_preproc_date = max(df.index[-1], last_preproc_date)
 
             # Prepare target path
             target_file_name = pathlib.Path(raw_file_path).stem
@@ -108,14 +113,15 @@ class Preprocessor:
             preprocessed_file_path = os.path.join(target_dir, target_file_name)
 
             # Write to preprocessed dir
-            print(f"Write preprocessed {ticker} {kind} data to {preprocessed_file_path}")
+            self._logger.info(f"Write preprocessed {ticker} {kind} data to {preprocessed_file_path}")
             df.to_csv(preprocessed_file_path, header=True)
+        return last_preproc_date
 
     def read_last_preproc_data(self, ticker: str, kind: str, days=1):
         """ Read last given days from preprocessed directory """
 
         source_dir = f"{self.data_dir_preproc}/{kind}"
-        print(f"Read {ticker} {kind} data for {days} days from {source_dir}")
+        self._logger.info(f"Read {ticker} {kind} data for {days} days from {source_dir}")
 
         file_paths = sorted(
             [f"{source_dir}/{f}" for f in os.listdir(source_dir) if f.endswith(".csv")])[-days:]
