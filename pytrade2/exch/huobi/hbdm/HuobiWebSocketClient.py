@@ -47,7 +47,9 @@ class HuobiWebSocketClient:
         self._ws = None
         self._consumers = defaultdict(set)
         self.is_running = False
+        self.watchdog_thread = None
         self.heartbeat_timeout = timedelta(seconds=10)
+        self.last_heartbeat = datetime.utcnow()  # record last heartbeat time
         self._logger.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
 
     def __del__(self):
@@ -68,6 +70,18 @@ class HuobiWebSocketClient:
                                           on_close=self._on_close,
                                           on_error=self._on_error)
         self.is_running = True
+        self.last_heartbeat = datetime.utcnow()  # record last heartbeat time
+
+
+        # Start new watchdog thread once
+        if not self.watchdog_thread:
+
+            self.watchdog_thread = threading.Thread(
+                target=self._watchdog,
+                daemon=True
+            )
+            self.watchdog_thread.start()
+
         t = threading.Thread(target=self._ws.run_forever, daemon=True)
         t.start()
 
@@ -197,10 +211,12 @@ class HuobiWebSocketClient:
         if self._ws: self._ws.close()
 
     def _watchdog(self):
+        watchdog_interval_sec = 10
+        self._logger.info("Watchdog started")
         while self.is_running:
-            time.sleep(1)
+            time.sleep(watchdog_interval_sec)
             if datetime.now() - self.last_heartbeat > self.heartbeat_timeout:
-                self._logger.error(f"Watchdog: heartbeat timeout {self.heartbeat_timeout} Reconnecting...")
+                self._logger.error(f"Watchdog: heartbeat timeout {self.heartbeat_timeout} elapsed. Reconnecting...")
                 # Reopen
                 self.close()
                 self.open()
