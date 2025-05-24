@@ -54,6 +54,10 @@ class SignalClassificationStrategy(StrategyBase):
             sys.exit(f"Cannot load initial history. Exception: {e.with_traceback(None)}")
         super().run()
 
+    def can_learn(self) -> bool:
+        """ Check preconditions for learning"""
+        return self.level2_feed_preproc.is_good_history
+
     def apply_buffers(self):
         self.level2_feed_preproc.apply_buf()
 
