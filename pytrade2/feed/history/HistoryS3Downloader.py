@@ -29,7 +29,7 @@ class HistoryS3Downloader:
         for file in os.listdir(local_dir):
             # Check date, encoded in filename like 2025-05-21_BTC-USDT_level2.csv.zip
             datestr = file.split('_')[0]
-            file_date = pd.to_datetime(datestr)
+            file_date = pd.to_datetime(datestr).date()
             if not (start_date <= file_date <= end_date):
                 continue
             df = pd.read_csv(f"{local_dir}/{file}")

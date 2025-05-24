@@ -20,6 +20,8 @@ class StreamWithHistoryPreprocFeed(object):
         self._preprocessor = Preprocessor(data_dir=self.data_dir)
         self.is_good_history = False
         self._last_initial_history_datetime = datetime.min
+        self._last_reload_initial_history_datetime = datetime.min
+        self._reload_history_interval = pd.Timedelta(config.get("pytrade2.strategy.history.initial.reload.interval", "5min"))
 
     def reload_initial_history(self, history_start = None, history_end = None):
         """ Initial download history from s3 to local raw data. Preprocess and put to local preprocessed data"""
@@ -35,6 +37,7 @@ class StreamWithHistoryPreprocFeed(object):
                                                       kinds=[self.stream_feed.kind])
         # Preprocess local raw data, put to local preprocessed data
         self._last_initial_history_datetime = max(self._last_initial_history_datetime, self._preprocessor.preprocess_last_raw_data(self.ticker, self.stream_feed.kind))
+        self._last_reload_initial_history_datetime = datetime.utcnow()
         return self._last_initial_history_datetime
 
     def apply_buf(self):
@@ -48,17 +51,19 @@ class StreamWithHistoryPreprocFeed(object):
         stream_start_datetime = stream_raw_df.index.min()
 
         if not self.is_good_history:
+            if (datetime.utcnow() - self._last_initial_history_datetime) < self._reload_history_interval:
+                # Don't reload too often, try after self._reload_history_interval
+                return pd.DataFrame()
             # Download history from s3
             history_start_datetime = stream_start_datetime - self.history_max_window if not stream_raw_df.empty else datetime.utcnow()
             history_end_datetime = self.reload_initial_history(history_start=history_start_datetime.date(), history_end=stream_start_datetime.date())
-
             self.is_good_history = history_end_datetime >= stream_start_datetime
             # If gap between stream and history, will try later, when history updated. Exiting now.
             if not self.is_good_history:
                 gap = stream_start_datetime - history_end_datetime
                 self._logger.warning(
                     f"Not enough history data, gap {gap} between history and stream. last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
-                return pd.DataFrame
+                return pd.DataFrame()
 
         # History is good
 
