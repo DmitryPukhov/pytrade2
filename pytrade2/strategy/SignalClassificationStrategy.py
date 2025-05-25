@@ -5,9 +5,9 @@ from typing import Dict
 import lightgbm as lgb
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler
-from sklearn.compose import ColumnTransformer
 
 from exch.Exchange import Exchange
 from features.CandlesFeatures import CandlesFeatures
@@ -41,8 +41,10 @@ class SignalClassificationStrategy(StrategyBase):
         self.target_period = config["pytrade2.strategy.predict.window"]
 
         self.model_name = "SignalClassification"
-        self.candles_periods = [period.strip() for period in config["pytrade2.strategy.features.candles.periods"].split(",")]
-        self.level2_periods = [period.strip() for period in config["pytrade2.strategy.features.level2.periods"].split(",")]
+        self.candles_periods = [period.strip() for period in
+                                config["pytrade2.strategy.features.candles.periods"].split(",")]
+        self.level2_periods = [period.strip() for period in
+                               config["pytrade2.strategy.features.level2.periods"].split(",")]
         self.stop_loss_coeff = float(config["pytrade2.strategy.stoploss.coeff"])
         self.profit_loss_ratio = float(config["pytrade2.strategy.profit.loss.ratio"])
 
@@ -50,18 +52,21 @@ class SignalClassificationStrategy(StrategyBase):
 
     def run(self):
         try:
-            # Load initial candles
-            self.candles_feed_preproc.reload_initial_history()
-
             # Load initial level2
             self.level2_feed_preproc.reload_initial_history()
+
+            # Load initial candles
+            self.candles_feed_preproc.reload_initial_history()
         except Exception as e:
             sys.exit(f"Cannot load initial history. Exception: {e.with_traceback(None)}")
         super().run()
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
-        return self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history()
+        is_good_history = self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history
+        self._logger.debug(
+            f"Level2 filled: {self.level2_feed_preproc.is_good_history}, candles filled: {self.candles_feed_preproc.is_good_history()}")
+        return is_good_history
 
     def apply_buffers(self):
         self.level2_feed_preproc.apply_buf()
@@ -71,7 +76,8 @@ class SignalClassificationStrategy(StrategyBase):
 
         with self.data_lock:
             if not (self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history()):
-                self._logger.debug(f"Non enough history. Level2 is good:{self.level2_feed_preproc.is_good_history}, candles are good:{self.candles_feed_preproc.is_good_history}")
+                self._logger.debug(
+                    f"Non enough history. Level2 is good:{self.level2_feed_preproc.is_good_history}, candles are good:{self.candles_feed_preproc.is_good_history}")
                 return pd.DataFrame(), pd.DataFrame()
 
             full_candles_1min = self.candles_feed_preproc.preproc_data_df
@@ -202,6 +208,7 @@ class SignalClassificationStrategy(StrategyBase):
             def transform(self, X):
                 # Adding 2 to every value in the dataset
                 return X + 2
+
             def inverse_transform(self, X):
                 return X - 2
 

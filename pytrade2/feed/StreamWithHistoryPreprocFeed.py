@@ -107,7 +107,7 @@ class StreamWithHistoryPreprocFeed(object):
             self._history_raw_today_df = self._history_raw_today_df[
                 self._history_raw_today_df.index < stream_start_datetime]
 
-        raw_today_df = pd.concat([self._history_raw_today_df, stream_raw_df]).sort_index()
+        raw_today_df = pd.concat([df for df in [self._history_raw_today_df, stream_raw_df] if not df.empty]).sort_index()
         preproc_today_df = self._preprocessor.transform(raw_today_df, self.kind)
 
         # Concatenate previous and today
