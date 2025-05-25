@@ -56,22 +56,22 @@ class SignalClassificationStrategy(StrategyBase):
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
-        return self.level2_feed_preproc.is_good_history
+        return self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history
 
     def apply_buffers(self):
         self.level2_feed_preproc.apply_buf()
         self.candles_feed_preproc.apply_buf()
 
     def features_targets(self, history_window: str, with_targets: bool = True) -> (pd.DataFrame, pd.DataFrame):
-        if ("1min" not in self.candles_feed.candles_by_interval
-                or self.candles_feed.candles_by_interval["1min"].empty
-                or self.level2_feed.level2.empty):
-            return pd.DataFrame(), pd.DataFrame()
 
         with self.data_lock:
             # Get the most recent timestamp in the DataFrame
-            full_candles_1min = self.candles_feed.candles_by_interval["1min"]
-            full_level2 = self.level2_feed.level2
+            full_candles_1min = self.candles_feed_preproc.preproc_data_df
+            full_level2 = self.level2_feed_preproc.preproc_data_df
+            if full_candles_1min.empty or full_level2.empty:
+                self._logger.debug(f"Cannot calculate features and targets because of empty data.")
+                return pd.DataFrame(), pd.DataFrame()
+
 
             last_time = max(full_candles_1min.index.max(), full_level2.index.max())
             window_start = last_time - pd.to_timedelta(history_window)

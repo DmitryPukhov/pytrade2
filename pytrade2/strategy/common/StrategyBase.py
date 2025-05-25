@@ -270,6 +270,7 @@ class StrategyBase:
 
             self._logger.debug("Learning")
             if not self.can_learn():
+                self._logger.debug("Strategy reported cannot learn")
                 return
 
             train_X, train_y = self.prepare_xy()

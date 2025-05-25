@@ -25,6 +25,7 @@ class StreamWithHistoryPreprocFeed(object):
         self._reload_history_interval = pd.Timedelta(config.get("pytrade2.strategy.history.initial.reload.interval", "1min"))
         self._history_raw_today_df = pd.DataFrame()
         self._history_before_today_df = pd.DataFrame()
+        self.preproc_data_df = pd.DataFrame()
 
     def reload_initial_history(self, history_start = None, history_end = None):
         """ Initial download history from s3 to local raw data. Preprocess and put to local preprocessed data"""
@@ -59,7 +60,9 @@ class StreamWithHistoryPreprocFeed(object):
         stream_start_datetime = stream_raw_df.index.min()
 
         if not self.is_good_history:
+            time_from_last_reload = pd.Timedelta(pd.Timestamp.now().to_numpy() - self._last_initial_history_datetime.to_numpy())
             if pd.Timedelta(pd.Timestamp.now().to_numpy() - self._last_initial_history_datetime.to_numpy()) < self._reload_history_interval:
+                self._logger.debug(f"Too early to reload history, {time_from_last_reload} elapsed since last time {time_from_last_reload}")
                 # Don't reload too often, try after self._reload_history_interval
                 return pd.DataFrame()
             # Download history from s3
@@ -74,9 +77,9 @@ class StreamWithHistoryPreprocFeed(object):
                 self._logger.warning(
                     f"Not enough history data, gap {gap} between history and stream. last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
                 return pd.DataFrame()
-
-        # History is good
-
+            else:
+                # History is good
+                self._logger.info("History is good and ready")
         # Get all local history except today
         if self._history_before_today_df.empty:
             self._history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.kind,
@@ -93,7 +96,7 @@ class StreamWithHistoryPreprocFeed(object):
         preproc_today_df = self._preprocessor.transform(raw_today_df, self.kind)
 
         # Concatenate previous and today
-        all_history_window = pd.concat([self._history_before_today_df, preproc_today_df]).sort_index()
-        return all_history_window
+        self.preproc_data_df = pd.concat([self._history_before_today_df, preproc_today_df]).sort_index()
+        return self.preproc_data_df
 
 
