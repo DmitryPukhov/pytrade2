@@ -170,7 +170,8 @@ class CandlesFeed:
         dt = datetime.now()
         for i, c in self.candles_by_interval.items():
             candle_max_delta = pd.Timedelta(i)
-            if dt - c.index.max() > candle_max_delta * 2:
+            if not c.empty and  (dt - c.index.max() > candle_max_delta * 2):
                 # If double candle interval passed, and we did not get a new candle, we are dead
+                # If candles are empty, it can be initial download at start, we are still alive
                 return False
         return True
