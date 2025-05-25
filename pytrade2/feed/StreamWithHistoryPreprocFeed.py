@@ -61,8 +61,8 @@ class StreamWithHistoryPreprocFeed(object):
 
         if not self.is_good_history:
             time_from_last_reload = pd.Timedelta(pd.Timestamp.now().to_numpy() - self._last_initial_history_datetime.to_numpy())
-            if pd.Timedelta(pd.Timestamp.now().to_numpy() - self._last_initial_history_datetime.to_numpy()) < self._reload_history_interval:
-                self._logger.debug(f"Too early to reload history, {time_from_last_reload} elapsed since last time {time_from_last_reload}")
+            if time_from_last_reload < self._reload_history_interval:
+                self._logger.debug(f"Too early to reload history, {time_from_last_reload} elapsed since last time {self._last_reload_initial_history_datetime}")
                 # Don't reload too often, try after self._reload_history_interval
                 return pd.DataFrame()
             # Download history from s3

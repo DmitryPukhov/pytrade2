@@ -32,7 +32,7 @@ class SignalClassificationStrategy(StrategyBase):
                               is_bid_ask_feed=False,
                               is_level2_feed=True)
 
-        self.candles_feed_preproc = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.candles_feed)
+        #self.candles_feed_preproc = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.candles_feed)
         self.level2_feed_preproc = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.level2_feed)
 
         # self.comissionpct = float(config.get('pytrade2.broker.comissionpct'))
@@ -50,30 +50,28 @@ class SignalClassificationStrategy(StrategyBase):
     def run(self):
         try:
             self.level2_feed_preproc.reload_initial_history()
-            self.candles_feed_preproc.reload_initial_history()
+            #self.candles_feed_preproc.reload_initial_history()
         except Exception as e:
             sys.exit(f"Cannot load initial history. Exception: {e.with_traceback(None)}")
         super().run()
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
-        return self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history
+        return self.level2_feed_preproc.is_good_history and self.candles_feed.has_min_history()
 
     def apply_buffers(self):
         self.level2_feed_preproc.apply_buf()
-        self.candles_feed_preproc.apply_buf()
+        self.candles_feed.apply_buf()
 
     def features_targets(self, history_window: str, with_targets: bool = True) -> (pd.DataFrame, pd.DataFrame):
 
         with self.data_lock:
-            # Get the most recent timestamp in the DataFrame
-            full_candles_1min = self.candles_feed_preproc.preproc_data_df
-            full_level2 = self.level2_feed_preproc.preproc_data_df
-            if full_candles_1min.empty or full_level2.empty:
-                self._logger.debug(f"Cannot calculate features and targets because of empty data.")
+            if not self.level2_feed_preproc.is_good_history or self.candles_feed.has_min_history():
+                self._logger.debug(f"Non enough history. Level2 is good:{self.level2_feed_preproc.is_good_history}, candles are good:{self.candles_feed.has_min_history()}")
                 return pd.DataFrame(), pd.DataFrame()
 
-
+            full_candles_1min = self.candles_feed.candles_by_interval.get("1min", pd.DataFrame())
+            full_level2 = self.level2_feed.level2
             last_time = max(full_candles_1min.index.max(), full_level2.index.max())
             window_start = last_time - pd.to_timedelta(history_window)
 
