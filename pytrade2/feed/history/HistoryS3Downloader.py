@@ -80,6 +80,11 @@ class HistoryS3Downloader:
                 file_datetime_str = file_name.split('_')[0]
                 file_datetime = pd.to_datetime(file_datetime_str)
                 if start_date <= file_datetime.date() <= end_date:
+                    # Skip non-csv.zip files
+                    if not file_name.endswith('.csv.zip'):
+                        self._logger.info(f"Skipping file {s3_file_path}, not a csv.zip file")
+                        continue
+                    # Append to download list or not
                     local_exists_flag = os.path.exists(local_path)
                     s3_is_newer_flag = local_exists_flag and obj['Size'] != os.path.getsize(local_path)
                     if not local_exists_flag:

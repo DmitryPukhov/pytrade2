@@ -60,6 +60,7 @@ class SignalClassificationStrategy(StrategyBase):
 
     def apply_buffers(self):
         self.level2_feed_preproc.apply_buf()
+        self.candles_feed_preproc.apply_buf()
 
     def features_targets(self, history_window: str, with_targets: bool = True) -> (pd.DataFrame, pd.DataFrame):
         if ("1min" not in self.candles_feed.candles_by_interval

@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pandas as pd
 
+from deploy.yandex_cloud.tmp.pytrade2.pytrade2.feed.CandlesFeed import CandlesFeed
 from feed.history.HistoryS3Downloader import HistoryS3Downloader
 from feed.history.Preprocessor import Preprocessor
 
@@ -15,6 +16,7 @@ class StreamWithHistoryPreprocFeed(object):
         self.data_dir = config.get("pytrade2.data.dir")
         self.ticker = config.get("pytrade2.tickers")
         self.stream_feed = stream_feed
+        self.kind = self.stream_feed.kind
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
         self._history_downloader = HistoryS3Downloader(config, data_dir=self.data_dir)
         self._preprocessor = Preprocessor(data_dir=self.data_dir)
@@ -34,11 +36,11 @@ class StreamWithHistoryPreprocFeed(object):
         if not history_end:
             history_end = datetime.utcnow().date()
         self._logger.info(
-            f"Load s3 initial {self.ticker} {self.stream_feed.kind} history {self.ticker}, from {history_start} to {history_end}")
+            f"Load s3 initial {self.ticker} {self.kind} history {self.ticker}, from {history_start} to {history_end}")
         self._history_downloader.update_local_history(self.ticker, history_start, history_end,
-                                                      kinds=[self.stream_feed.kind])
+                                                      kinds=[self.kind])
         # Preprocess local raw data, put to local preprocessed data
-        self._last_initial_history_datetime = max(self._last_initial_history_datetime, self._preprocessor.preprocess_last_raw_data(self.ticker, self.stream_feed.kind))
+        self._last_initial_history_datetime = max(self._last_initial_history_datetime, self._preprocessor.preprocess_last_raw_data(self.ticker, self.kind))
         self._last_reload_initial_history_datetime = datetime.utcnow()
         return self._last_initial_history_datetime
 
@@ -47,7 +49,12 @@ class StreamWithHistoryPreprocFeed(object):
 
         # Get last stream data raw
         stream_raw_df = self.stream_feed.apply_buf()
+
+        if isinstance (self.stream_feed, CandlesFeed):
+            # apply_buf() above does not return 1 minute dataframe, get it from candles_by_interval
+            stream_raw_df = self.stream_feed.candles_by_interval.get("1min", pd.DataFrame())
         if stream_raw_df.empty:
+            self._logger.debug(f"Buffer {self.kind} {self.ticker} did not contain any data")
             return
 
         stream_start_datetime = stream_raw_df.index.min()
@@ -71,18 +78,18 @@ class StreamWithHistoryPreprocFeed(object):
 
         # Get all local history except today
         if self._history_before_today_df.empty:
-            self._history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.stream_feed.kind,
+            self._history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.kind,
                                                                                      days=self.history_max_window.days)
 
         # Get today preproc data from  history and stream
         if self._history_raw_today_df.empty:
-            self._history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.stream_feed.kind,
+            self._history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.kind,
                                                                            stream_start_datetime.date(),
                                                                            stream_start_datetime.date())
             self._history_raw_today_df = self._history_raw_today_df[self._history_raw_today_df.index < stream_start_datetime]
 
         raw_today_df = pd.concat([self._history_raw_today_df, stream_raw_df]).sort_index()
-        preproc_today_df = self._preprocessor.transform(raw_today_df, self.stream_feed.kind)
+        preproc_today_df = self._preprocessor.transform(raw_today_df, self.kind)
 
         # Concatenate previous and today
         all_history_window = pd.concat([self._history_before_today_df, preproc_today_df]).sort_index()
