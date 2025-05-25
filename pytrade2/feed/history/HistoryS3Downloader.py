@@ -32,6 +32,9 @@ class HistoryS3Downloader:
             file_date = pd.to_datetime(datestr).date()
             if not (start_date <= file_date <= end_date):
                 continue
+            if not file.endswith(".csv") and not file.endswith(".csv.zip"):
+                self._logger.warning(f"Skipping file {file} in {local_dir}")
+            self._logger.debug(f"Reading csv file {file} from {local_dir}")
             df = pd.read_csv(f"{local_dir}/{file}")
             accumulated_df = pd.concat([accumulated_df, df], ignore_index=True)
 
