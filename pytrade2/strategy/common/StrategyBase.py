@@ -275,6 +275,7 @@ class StrategyBase:
             train_X, train_y = self.prepare_xy()
             if train_X.empty or train_y.empty:
                 self._logger.warning(f"Cannot learn, no train data")
+                return
 
             # Metrics
             train_period_sec = (train_X.index.max() - train_X.index.min()).total_seconds()
