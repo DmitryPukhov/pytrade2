@@ -2,10 +2,10 @@ import logging
 import multiprocessing
 import os
 import re
-
 from datetime import datetime
 from pathlib import Path
 from typing import Dict
+
 import pandas as pd
 
 from exch.Exchange import Exchange
@@ -105,15 +105,15 @@ class CandlesFeed:
             #     .set_index("close_time", drop=False)
 
             candles = candles_1min.resample(period, closed="right").agg({'open_time': 'first',
-                                                                 'close_time': 'last',
-                                                                 'open': 'first',
-                                                                 'high': 'max',
-                                                                 'low': 'min',
-                                                                 'close': 'last',
-                                                                 'vol': 'max'
-                                                         })
-            #candles_history = candles_history[candles_history.index < candles_new.index.min()]
-            #candles = pd.concat([candles_history, candles_new])
+                                                                         'close_time': 'last',
+                                                                         'open': 'first',
+                                                                         'high': 'max',
+                                                                         'low': 'min',
+                                                                         'close': 'last',
+                                                                         'vol': 'max'
+                                                                         })
+            # candles_history = candles_history[candles_history.index < candles_new.index.min()]
+            # candles = pd.concat([candles_history, candles_new])
 
             self._logger.debug(f"Got {len(candles.index)} {self.ticker} {period} candles")
             self.candles_by_interval[period] = candles
@@ -132,10 +132,12 @@ class CandlesFeed:
 
     def apply_buf(self):
         """ Combine candles with buffers"""
-
         with (self.data_lock):
             for period, buf in self.candles_by_interval_buf.items():
+                self._logger.debug(f"Applying buffer for {period}")
                 if buf.empty or period not in self.candles_by_interval:
+                    self._logger.debug(
+                        f"Cannot apply buffer for period {period}. Buffer is good: {not buf.empty}, period is good: {period in self.candles_by_interval}")
                     continue
                 # candles + buf
                 candles = self.candles_by_interval.get(period, pd.DataFrame())
@@ -170,7 +172,7 @@ class CandlesFeed:
         dt = datetime.now()
         for i, c in self.candles_by_interval.items():
             candle_max_delta = pd.Timedelta(i)
-            if not c.empty and  (dt - c.index.max() > candle_max_delta * 2):
+            if not c.empty and (dt - c.index.max() > candle_max_delta * 2):
                 # If double candle interval passed, and we did not get a new candle, we are dead
                 # If candles are empty, it can be initial download at start, we are still alive
                 return False
