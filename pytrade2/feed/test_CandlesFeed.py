@@ -17,7 +17,7 @@ class TestCandlesFeed(TestCase):
         config["pytrade2.feed.candles.counts"] = "1,1"
         config["pytrade2.feed.candles.history.days"] = "1"
         feed = CandlesFeed(config, "ticker1", MagicMock(), RLock(), Event(), "test")
-        feed.candles_history_cnt_by_interval = {"1min": 10, "5min": 1}
+        feed.candles_cnt_by_interval = {"1min": 10, "5min": 1}
         feed.read_candles = MagicMock()
         return feed
 

@@ -59,7 +59,7 @@ class CandlesFeed:
             out[interval] = cnt
         return out
 
-    def apply_periods(self, new_periods_str: str, history_days: int):
+    def apply_periods(self, new_periods_str: str, history_days: int, load_history: bool = True):
 
         new_periods = re.split(r"\W*,\W*", new_periods_str.lstrip("[").rstrip("]").strip(" ").strip("'"))
         new_periods = [period for period in new_periods if period]
@@ -77,7 +77,9 @@ class CandlesFeed:
 
                 # If changed, redownload candles
                 self.candles_by_interval_buf = dict()  # reset buf
-                self.read_candles()
+                if load_history:
+                    # Reload history from exchange rest service
+                    self.read_candles()
 
     @staticmethod
     def candles_cnt_by_interval_of(periods_str: str, counts_str: str):
@@ -135,7 +137,7 @@ class CandlesFeed:
         with (self.data_lock):
             for period, buf in self.candles_by_interval_buf.items():
                 self._logger.debug(f"Applying buffer for {period}")
-                if buf.empty or period not in self.candles_by_interval:
+                if buf.empty or period not in self.candles_cnt_by_interval:
                     self._logger.debug(
                         f"Cannot apply buffer for period {period}. Buffer is good: {not buf.empty}, period is good: {period in self.candles_by_interval}")
                     continue

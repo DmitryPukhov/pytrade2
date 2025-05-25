@@ -1,4 +1,6 @@
 import logging
+import math
+from math import floor
 
 import pandas as pd
 
@@ -14,10 +16,16 @@ class StreamWithHistoryPreprocFeed(object):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.data_dir = config.get("pytrade2.data.dir")
         self.ticker = config.get("pytrade2.tickers")
-        self.stream_feed = stream_feed
-        self.kind = self.stream_feed.kind
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
         self._history_downloader = HistoryS3Downloader(config, data_dir=self.data_dir)
+
+        self.stream_feed = stream_feed
+        if isinstance(self.stream_feed.__class__, CandlesFeed.__class__):
+            # Candles feed has it's owm history window mechanism, set it to our history window
+            history_days = math.ceil(pd.Timedelta(self.history_max_window) / pd.Timedelta("1d"))
+            self.stream_feed.apply_periods("1min", history_days =  history_days, load_history = False)
+
+        self.kind = self.stream_feed.kind
         self._preprocessor = Preprocessor(data_dir=self.data_dir)
         self.is_good_history = False
         self._last_initial_history_datetime = pd.Timestamp.min
