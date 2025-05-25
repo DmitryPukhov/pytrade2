@@ -60,7 +60,7 @@ class StreamWithHistoryPreprocFeed(object):
         stream_start_datetime = stream_raw_df.index.min()
 
         if not self.is_good_history:
-            time_from_last_reload = pd.Timedelta(pd.Timestamp.now().to_numpy() - self._last_initial_history_datetime.to_numpy())
+            time_from_last_reload = pd.Timedelta(pd.Timestamp.now().to_pydatetime() - self._last_initial_history_datetime.to_pydatetime())
             if time_from_last_reload < self._reload_history_interval:
                 self._logger.debug(f"Too early to reload history, {time_from_last_reload} elapsed since last time {self._last_reload_initial_history_datetime}")
                 # Don't reload too often, try after self._reload_history_interval
