@@ -63,10 +63,9 @@ class SignalClassificationStrategy(StrategyBase):
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
-        is_good_history = self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history
         self._logger.debug(
-            f"Level2 filled: {self.level2_feed_preproc.is_good_history}, candles filled: {self.candles_feed_preproc.is_good_history()}")
-        return is_good_history
+            f"Level2 filled: {self.level2_feed_preproc.is_good_history}, candles filled: {self.candles_feed_preproc.is_good_history}")
+        return self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history
 
     def apply_buffers(self):
         self.level2_feed_preproc.apply_buf()

@@ -89,7 +89,7 @@ class StreamWithHistoryPreprocFeed(object):
 
                 gap = pd.Timedelta(stream_start_datetime.to_numpy() - history_end_datetime.to_numpy())
                 self._logger.warning(
-                    f"Not enough history data, gap {gap} between history and stream. last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
+                    f"Not enough {self.kind} {self.ticker} history data, gap {gap} between history and stream. last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
                 return pd.DataFrame()
             else:
                 # History is good
