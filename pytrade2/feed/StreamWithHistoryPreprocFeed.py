@@ -21,7 +21,7 @@ class StreamWithHistoryPreprocFeed(object):
         self.is_good_history = False
         self._last_initial_history_datetime = datetime.min
         self._last_reload_initial_history_datetime = datetime.min
-        self._reload_history_interval = pd.Timedelta(config.get("pytrade2.strategy.history.initial.reload.interval", "5min"))
+        self._reload_history_interval = pd.Timedelta(config.get("pytrade2.strategy.history.initial.reload.interval", "1min"))
         self._history_raw_today_df = pd.DataFrame()
         self._history_before_today_df = pd.DataFrame()
 

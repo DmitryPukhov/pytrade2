@@ -50,7 +50,7 @@ class HuobiWebSocketClient:
         self.watchdog_thread = None
         self.heartbeat_timeout = timedelta(seconds=10)
         self.last_heartbeat = datetime.utcnow()  # record last heartbeat time
-        self._logger.info(f"Initialized, key: {access_key[-3:]}, secret: {secret_key[-3:]}")
+        self._logger.info(f"Initialized, key: ***{access_key[-3:]}, secret: ***{secret_key[-3:]}")
 
     def __del__(self):
         self.close()
