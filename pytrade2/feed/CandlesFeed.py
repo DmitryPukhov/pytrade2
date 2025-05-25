@@ -30,11 +30,15 @@ class CandlesFeed:
         self.candles_by_interval_buf: Dict[str, pd.DataFrame] = dict()
         self.new_data_event = new_data_event
 
-        periods = config.get("pytrade2.feed.candles.periods", "1min")
+        periods_str = config.get("pytrade2.feed.candles.periods", "1min")
+        periods = [s.strip() for s in periods_str.replace("'", "").split(",")]
+        self.candles_by_interval = {period: pd.DataFrame() for period in periods}
+
         # candles counts used only for downloading from rest service, not for streaming
         if "pytrade2.feed.candles.counts" in config:
-            counts = config["pytrade2.feed.candles.counts"]
-            self.candles_cnt_by_interval = self.candles_cnt_by_interval_of(periods, counts)
+            counts_str = config["pytrade2.feed.candles.counts"]
+            counts = [int(s) for s in counts_str.replace("'", "").split(",")]
+            self.candles_cnt_by_interval = dict(zip(periods, counts))
         else:
             self.candles_cnt_by_interval = {}
 
@@ -131,7 +135,7 @@ class CandlesFeed:
 
         with (self.data_lock):
             for period, buf in self.candles_by_interval_buf.items():
-                if buf.empty or period not in self.candles_cnt_by_interval:
+                if buf.empty or period not in self.candles_by_interval:
                     continue
                 # candles + buf
                 candles = self.candles_by_interval.get(period, pd.DataFrame())
