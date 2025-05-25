@@ -66,7 +66,7 @@ class SignalClassificationStrategy(StrategyBase):
     def features_targets(self, history_window: str, with_targets: bool = True) -> (pd.DataFrame, pd.DataFrame):
 
         with self.data_lock:
-            if not self.level2_feed_preproc.is_good_history or self.candles_feed.has_min_history():
+            if not (self.level2_feed_preproc.is_good_history and self.candles_feed.has_min_history()):
                 self._logger.debug(f"Non enough history. Level2 is good:{self.level2_feed_preproc.is_good_history}, candles are good:{self.candles_feed.has_min_history()}")
                 return pd.DataFrame(), pd.DataFrame()
 
