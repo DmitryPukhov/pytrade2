@@ -1,8 +1,6 @@
 import logging
 import os
 import pathlib
-from datetime import datetime
-
 import pandas as pd
 
 from features.level2.Level2Features import Level2Features
@@ -41,7 +39,7 @@ class Preprocessor:
         # Fill unprocessed file list
         unprocessed_list = []
         for raw_file in sorted(os.listdir(raw_dir_kind)):
-            if not raw_file.endswith(".csv.zip") or not raw_file.endswith(".csv"):
+            if not raw_file.endswith(".csv.zip") and not raw_file.endswith(".csv"):
                 self._logger.warning(f"Raw file {raw_file} is not *.csv or *.csv.zip, skipping")
                 continue
             # If raw file is *.csv.zip, preproc will be *.csv not zipped
@@ -96,7 +94,7 @@ class Preprocessor:
 
         file_paths = [f"{source_dir}/{f}" for f in unprocessed_raw_files]
         self._logger.info(f"Preprocess {len(file_paths)} new {kind} raw files")
-        last_preproc_date = datetime.min
+        last_preproc_date = pd.Timestamp.min
         for raw_file_path in file_paths:
             self._logger.info(f"Read {ticker} {kind} data from {raw_file_path}")
             # Read raw data
