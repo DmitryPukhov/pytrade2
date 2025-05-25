@@ -41,6 +41,9 @@ class Preprocessor:
         # Fill unprocessed file list
         unprocessed_list = []
         for raw_file in sorted(os.listdir(raw_dir_kind)):
+            if not raw_file.endswith(".csv.zip") or not raw_file.endswith(".csv"):
+                self._logger.warning(f"Raw file {raw_file} is not *.csv or *.csv.zip, skipping")
+                continue
             # If raw file is *.csv.zip, preproc will be *.csv not zipped
             preproc_file = pathlib.Path(raw_file).stem if raw_file.endswith(".zip") else raw_file
             raw_file_path = os.path.join(raw_dir_kind, raw_file)
