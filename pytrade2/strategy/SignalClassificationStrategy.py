@@ -86,7 +86,7 @@ class SignalClassificationStrategy(StrategyBase):
             if self._logger.isEnabledFor(logging.DEBUG):
                 self._logger.debug(f"Features calculation status. window start: {window_start}, "
                                    f"candles1min: {len(full_candles_1min)}, level21min: {len(full_level2_1min)}, "
-                                   f"candles features: {len(candles_features)}, "
+                                   f"candles features: {len(candles_features)}, periods: {self.candles_periods},"
                                    f"level2 features: {len(level2_features)},"
                                    f"combined features: {len(combined_features)}")
 
