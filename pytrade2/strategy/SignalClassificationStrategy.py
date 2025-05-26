@@ -1,4 +1,4 @@
-import sys
+import logging
 from datetime import datetime
 from typing import Dict
 
@@ -50,17 +50,6 @@ class SignalClassificationStrategy(StrategyBase):
 
         self._logger.info(f"Target period: {self.target_period}")
 
-    # def run(self):
-    #     try:
-    #         # Load initial level2
-    #         self.level2_feed.reload_initial_history()
-    #
-    #         # Load initial candles
-    #         self.candles_feed.reload_initial_history()
-    #     except Exception as e:
-    #         sys.exit(f"Cannot load initial history. Exception: {e.with_traceback(None)}")
-    #     super().run()
-
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
         self._logger.debug(
@@ -94,11 +83,21 @@ class SignalClassificationStrategy(StrategyBase):
             level2 = full_level2_1min[full_level2_1min.index >= window_start]
             level2_features = Level2MultiIndiFeatures.level2_features_of(level2, self.level2_periods)
             combined_features = pd.merge_asof(candles_features, level2_features, left_index=True, right_index=True)
+            if self._logger.isEnabledFor(logging.DEBUG):
+                self._logger.debug(f"Features calculation status. window start: {window_start}, "
+                                   f"candles1min: {len(full_candles_1min)}, level21min: {len(full_level2_1min)}, "
+                                   f"candles features: {len(candles_features)}, "
+                                   f"level2 features: {len(level2_features)},"
+                                   f"combined features: {len(combined_features)}")
 
             if with_targets:
                 # Targets
                 targets = LowHighTargets.fut_lohi_signal(candles_1min, self.target_period, self.stop_loss_coeff,
                                                          self.profit_loss_ratio)
+            if self._logger.isEnabledFor(logging.DEBUG):
+                self._logger.debug(
+                    f"Targets calculation status. target period: {self.target_period}, targets: {len(targets)}, "
+                    f"stop loss coeff: {self.stop_loss_coeff}, profit loss ratio: {self.profit_loss_ratio}")
 
                 # Clean bad features before min_history_window after time gaps in input data
                 # candles_level2_intersection = candles_1min.index.intersection(self.level2_feed.level2.index)
@@ -108,14 +107,19 @@ class SignalClassificationStrategy(StrategyBase):
                 common_index = combined_features.dropna().index.intersection(targets.dropna().index)
                 features = combined_features.loc[common_index]
                 targets = targets.loc[common_index]
+
             else:
                 # All features, we cannot calculate targets for recent data
                 features, targets = combined_features, None
+            self._logger.debug(
+                f"Final features and targets calculation status. With targets: {with_targets}, "
+                f"features: {len(features)}, targets: {len(targets) if targets is not None else 'not required'}")
+
             return features, targets
 
     def prepare_xy(self) -> (pd.DataFrame, pd.DataFrame):
         time_window = self.history_max_window
-        self._logger.debug(f"Preparing xy for {time_window}. ")
+        self._logger.debug(f"Preparing xy for {time_window}")
         return self.features_targets(time_window, with_targets=True)
 
     def prepare_last_x(self) -> pd.DataFrame:
@@ -191,8 +195,8 @@ class SignalClassificationStrategy(StrategyBase):
             return model
 
     def create_pipe(self, x, _) -> (Pipeline, Pipeline):
-        """ Create feature only pipeline to use for transform and inverse transform """
 
+        # Scale features time and float columns differently
         time_cols = [col for col in x.columns if col.startswith("time")]
         float_cols = list(set(x.columns) - set(time_cols))
         x_pipe = Pipeline(
@@ -200,6 +204,7 @@ class SignalClassificationStrategy(StrategyBase):
              ("xmms", MaxAbsScaler())])
         x_pipe.fit(x)
 
+        # LBGM requires integer labels from 1 to n_classes
         class AddTwo(BaseEstimator, TransformerMixin):
             def fit(self, X, y=None):
                 return self
