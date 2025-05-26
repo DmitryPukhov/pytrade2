@@ -1,5 +1,6 @@
 import logging
 import math
+from datetime import datetime
 
 import pandas as pd
 
@@ -29,10 +30,10 @@ class StreamWithHistoryPreprocFeed(object):
         self.kind = self.stream_feed.kind
         self._preprocessor = Preprocessor(data_dir=self.data_dir)
         self.is_good_history = False
-        self._last_initial_history_datetime = pd.Timestamp.min
-        self._last_reload_initial_history_datetime = pd.Timestamp.min
+        self._last_history_datetime = pd.Timestamp.min
         self._reload_history_interval = pd.Timedelta(
             config.get("pytrade2.strategy.history.initial.reload.interval", "1min"))
+        self._next_reload_history_datetime = datetime.now() + self._reload_history_interval
         self._history_raw_today_df = pd.DataFrame()
         self._history_before_today_df = pd.DataFrame()
         self.preproc_data_df = pd.DataFrame()
@@ -50,10 +51,10 @@ class StreamWithHistoryPreprocFeed(object):
         self._history_downloader.update_local_history(self.ticker, history_start, history_end,
                                                       kinds=[self.kind])
         # Preprocess local raw data, put to local preprocessed data
-        self._last_initial_history_datetime = max(self._last_initial_history_datetime,
-                                                  self._preprocessor.preprocess_last_raw_data(self.ticker, self.kind))
-        self._last_reload_initial_history_datetime = pd.Timestamp.now()
-        return self._last_initial_history_datetime
+        self._last_history_datetime = max(self._last_history_datetime,
+                                          self._preprocessor.preprocess_last_raw_data(self.ticker, self.kind))
+        self._next_reload_history_datetime = pd.Timestamp.now() + self._reload_history_interval
+        return self._last_history_datetime
 
     def apply_buf(self):
         """ Update data from stream and history. Return if no gap"""
@@ -72,10 +73,10 @@ class StreamWithHistoryPreprocFeed(object):
 
         if not self.is_good_history:
             time_from_last_reload = pd.Timedelta(
-                pd.Timestamp.now().to_pydatetime() - self._last_initial_history_datetime.to_pydatetime())
+                datetime.now() - self._last_history_datetime.to_pydatetime())
             if time_from_last_reload < self._reload_history_interval:
                 self._logger.debug(
-                    f"Too early to reload history, {time_from_last_reload} elapsed since last time {self._last_reload_initial_history_datetime}")
+                    f"Too early to reload history, wait until {self._next_reload_history_datetime}")
                 # Don't reload too often, try after self._reload_history_interval
                 return pd.DataFrame()
             # Download history from s3
@@ -88,8 +89,8 @@ class StreamWithHistoryPreprocFeed(object):
             if not self.is_good_history:
 
                 gap = pd.Timedelta(stream_start_datetime.to_numpy() - history_end_datetime.to_numpy())
-                self._logger.warning(
-                    f"Not enough {self.kind} {self.ticker} history data, gap {gap} between history and stream. last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
+                self._logger.info(
+                    f"Still not enough {self.kind} {self.ticker} history data, gap {gap} between history and stream. last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
                 return pd.DataFrame()
             else:
                 # History is good

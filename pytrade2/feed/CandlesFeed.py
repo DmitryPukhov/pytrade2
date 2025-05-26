@@ -157,7 +157,6 @@ class CandlesFeed:
             return
         candle_df = pd.DataFrame([candle]).set_index("close_time", drop=False)
         with (self.data_lock):
-            self._logger.debug(f"Got {period} candle: {candle}")
             prev_buf = self.candles_by_interval_buf.get(period, pd.DataFrame())
             # Add to buffer
             self.candles_by_interval_buf[period] = pd.concat([df for df in [prev_buf, candle_df] if not df.empty])
