@@ -95,10 +95,10 @@ class SignalClassificationStrategy(StrategyBase):
                 # Targets
                 targets = LowHighTargets.fut_lohi_signal(candles_1min, self.target_period, self.stop_loss_coeff,
                                                          self.profit_loss_ratio)
-            if self._logger.isEnabledFor(logging.DEBUG):
-                self._logger.debug(
-                    f"Targets calculation status. target period: {self.target_period}, targets: {len(targets)}, "
-                    f"stop loss coeff: {self.stop_loss_coeff}, profit loss ratio: {self.profit_loss_ratio}")
+                if self._logger.isEnabledFor(logging.DEBUG):
+                    self._logger.debug(
+                        f"Targets calculation status. target period: {self.target_period}, targets: {len(targets)}, "
+                        f"stop loss coeff: {self.stop_loss_coeff}, profit loss ratio: {self.profit_loss_ratio}")
 
                 # Clean bad features before min_history_window after time gaps in input data
                 # candles_level2_intersection = candles_1min.index.intersection(self.level2_feed.level2.index)
