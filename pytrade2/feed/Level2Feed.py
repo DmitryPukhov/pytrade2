@@ -32,7 +32,7 @@ class Level2Feed:
         """
         Got new order book items event
         """
-        self._logger.debug("Got new level2 items: %s", level2)
+        #self._logger.debug("Got new level2 items: %s", level2)
         bid_ask_columns = ["datetime", "symbol", "bid", "bid_vol", "ask", "ask_vol"]
 
         # Add new data to df

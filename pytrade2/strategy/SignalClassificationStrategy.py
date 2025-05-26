@@ -32,8 +32,8 @@ class SignalClassificationStrategy(StrategyBase):
                               is_bid_ask_feed=False,
                               is_level2_feed=True)
 
-        self.candles_feed_preproc = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.candles_feed)
-        self.level2_feed_preproc = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.level2_feed)
+        self.candles_feed = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.candles_feed)
+        self.level2_feed = StreamWithHistoryPreprocFeed(config=config, stream_feed=self.level2_feed)
 
         # self.comissionpct = float(config.get('pytrade2.broker.comissionpct'))
         self.history_min_window = config["pytrade2.strategy.history.min.window"]
@@ -53,10 +53,10 @@ class SignalClassificationStrategy(StrategyBase):
     # def run(self):
     #     try:
     #         # Load initial level2
-    #         self.level2_feed_preproc.reload_initial_history()
+    #         self.level2_feed.reload_initial_history()
     #
     #         # Load initial candles
-    #         self.candles_feed_preproc.reload_initial_history()
+    #         self.candles_feed.reload_initial_history()
     #     except Exception as e:
     #         sys.exit(f"Cannot load initial history. Exception: {e.with_traceback(None)}")
     #     super().run()
@@ -64,23 +64,23 @@ class SignalClassificationStrategy(StrategyBase):
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
         self._logger.debug(
-            f"Level2 filled: {self.level2_feed_preproc.is_good_history}, candles filled: {self.candles_feed_preproc.is_good_history}")
-        return self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history
+            f"Level2 filled: {self.level2_feed.is_good_history}, candles filled: {self.candles_feed.is_good_history}")
+        return self.level2_feed.is_good_history and self.candles_feed.is_good_history
 
     def apply_buffers(self):
-        self.level2_feed_preproc.apply_buf()
-        self.candles_feed_preproc.apply_buf()
+        self.level2_feed.apply_buf()
+        self.candles_feed.apply_buf()
 
     def features_targets(self, history_window: str, with_targets: bool = True) -> (pd.DataFrame, pd.DataFrame):
 
         with self.data_lock:
-            if not (self.level2_feed_preproc.is_good_history and self.candles_feed_preproc.is_good_history()):
+            if not (self.level2_feed.is_good_history and self.candles_feed.is_good_history):
                 self._logger.debug(
-                    f"Non enough history. Level2 is good:{self.level2_feed_preproc.is_good_history}, candles are good:{self.candles_feed_preproc.is_good_history}")
+                    f"Non enough history. Level2 is good:{self.level2_feed.is_good_history}, candles are good:{self.candles_feed.is_good_history}")
                 return pd.DataFrame(), pd.DataFrame()
 
-            full_candles_1min = self.candles_feed_preproc.preproc_data_df
-            full_level2_1min = self.level2_feed_preproc.preproc_data_df
+            full_candles_1min = self.candles_feed.preproc_data_df
+            full_level2_1min = self.level2_feed.preproc_data_df
             last_time = max(full_candles_1min.index.max(), full_level2_1min.index.max())
             window_start = last_time - pd.to_timedelta(history_window)
 
@@ -141,7 +141,7 @@ class SignalClassificationStrategy(StrategyBase):
 
         if signal != 0:
             # Calc last price, we expect new trade to be opened at this if signal is 1 or -1
-            price = self.candles_feed_preproc.preproc_data_df['close'][-1]
+            price = self.candles_feed.preproc_data_df['close'][-1]
             stop_loss_price = price + price * self.stop_loss_coeff * signal
             take_profit_price = price + price * self.stop_loss_coeff * self.profit_loss_ratio
 

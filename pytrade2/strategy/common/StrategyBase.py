@@ -107,10 +107,19 @@ class StrategyBase:
         exchange_name = self.config["pytrade2.exchange"]
         self.broker = self.exchange_provider.broker(exchange_name)
 
-        if self.candles_feed:
-            self.candles_feed.read_candles()
-            if not self.is_periodical:
-                self.candles_feed.run()
+        if not self.is_periodical:
+            for feed in (feed for feed in (self.candles_feed, self.level2_feed, self.bid_ask_feed) if feed is not None):
+                feed.run()
+            # if self.candles_feed:
+            #     self.candles_feed.run()
+            # if self.level2_feed:
+            #     self.level2_feed.run()
+            # if self.bid_ask_feed:
+            #     self.bid_ask_feed.run()
+        # if self.candles_feed:
+        #     self.candles_feed.read_candles()
+        #     if not self.is_periodical:
+        #         self.candles_feed.run()
         if self.level2_feed and not self.is_periodical:
             self.level2_feed.run()
         self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
@@ -165,10 +174,12 @@ class StrategyBase:
     def is_alive(self):
         maxdelta = self.history_min_window + pd.Timedelta("60s")
         feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
-        is_alive = all([feed.is_alive(maxdelta) for feed in feeds])
+        feeds_alive_dict = {feed.kind: feed.is_alive(maxdelta) for feed in feeds}
+        is_alive = all(feeds_alive_dict.values())
+        #is_alive = all([feeds_alive_dict[feed.kind] for feed in feeds])
         if not is_alive:
             self._logger.info(self.get_report())
-            self._logger.error(f"Strategy is not alive for {maxdelta}")
+            self._logger.error(f"Strategy is not alive for {maxdelta}: {feeds_alive_dict}")
         return is_alive
 
     def get_info(self) -> dict:

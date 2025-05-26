@@ -152,6 +152,7 @@ class CandlesFeed:
                 self.candles_by_interval_buf[period] = pd.DataFrame()
 
     def on_candle(self, candle: {}):
+        #self._logger.debug(f"Got candle {candle}")
         period = str(candle["interval"])
         if period not in self.candles_cnt_by_interval:
             return

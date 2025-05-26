@@ -38,6 +38,13 @@ class StreamWithHistoryPreprocFeed(object):
         self._history_before_today_df = pd.DataFrame()
         self.preproc_data_df = pd.DataFrame()
 
+    def run(self):
+        self.stream_feed.run()
+
+    def is_alive(self, max_delta):
+        # After history is loaded, stream data should come regularly
+        return not self.is_good_history or self.stream_feed.is_alive(max_delta)
+
     def reload_initial_history(self, history_start=None, history_end=None):
         """ Initial download history from s3 to local raw data. Preprocess and put to local preprocessed data"""
 
@@ -72,29 +79,30 @@ class StreamWithHistoryPreprocFeed(object):
         stream_start_datetime = stream_raw_df.index.min()
 
         if not self.is_good_history:
-            time_from_last_reload = pd.Timedelta(
-                datetime.now() - self._last_history_datetime.to_pydatetime())
-            if time_from_last_reload < self._reload_history_interval:
+            if datetime.now() >= self._next_reload_history_datetime:
+                # Reload timeout passed, download history from s3
+                history_start_datetime = stream_start_datetime - self.history_max_window if not stream_raw_df.empty else pd.Timestamp.now()
+                history_end_datetime = self.reload_initial_history(history_start=history_start_datetime.date(),
+                                                                   history_end=stream_start_datetime.date())
+                self.is_good_history = history_end_datetime >= stream_start_datetime
+
+                # After reloaded, if there is still a gap between stream and history, exit now to try later
+                if not self.is_good_history:
+                    gap = pd.Timedelta(stream_start_datetime.to_numpy() - history_end_datetime.to_numpy())
+                    self._logger.info(
+                        f"Still not enough {self.kind} {self.ticker} history data, gap {gap} between history and stream. "
+                        f"last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
+                    return pd.DataFrame()
+                else:
+                    # History is good
+                    self._logger.info(f"History of {self.kind} {self.ticker} is good and ready")
+            else:
+                # Timeout to reload is not elapsed yet
                 self._logger.debug(
-                    f"Too early to reload history, wait until {self._next_reload_history_datetime}")
+                    f"Too early to reload {self.kind} {self.ticker} history, wait until {self._next_reload_history_datetime}")
                 # Don't reload too often, try after self._reload_history_interval
                 return pd.DataFrame()
-            # Download history from s3
-            history_start_datetime = stream_start_datetime - self.history_max_window if not stream_raw_df.empty else pd.Timestamp.now()
-            history_end_datetime = self.reload_initial_history(history_start=history_start_datetime.date(),
-                                                               history_end=stream_start_datetime.date())
 
-            self.is_good_history = history_end_datetime >= stream_start_datetime
-            # If gap between stream and history, will try later, when history updated. Exiting now.
-            if not self.is_good_history:
-
-                gap = pd.Timedelta(stream_start_datetime.to_numpy() - history_end_datetime.to_numpy())
-                self._logger.info(
-                    f"Still not enough {self.kind} {self.ticker} history data, gap {gap} between history and stream. last preproc history end:{history_end_datetime}, stream start date: {stream_start_datetime}")
-                return pd.DataFrame()
-            else:
-                # History is good
-                self._logger.info("History is good and ready")
         # Get all local history except today
         if self._history_before_today_df.empty:
             self._history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.kind,
@@ -108,7 +116,8 @@ class StreamWithHistoryPreprocFeed(object):
             self._history_raw_today_df = self._history_raw_today_df[
                 self._history_raw_today_df.index < stream_start_datetime]
 
-        raw_today_df = pd.concat([df for df in [self._history_raw_today_df, stream_raw_df] if not df.empty]).sort_index()
+        raw_today_df = pd.concat(
+            [df for df in [self._history_raw_today_df, stream_raw_df] if not df.empty]).sort_index()
         preproc_today_df = self._preprocessor.transform(raw_today_df, self.kind)
 
         # Concatenate previous and today
