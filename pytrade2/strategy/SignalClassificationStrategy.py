@@ -10,7 +10,6 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 
 from exch.Exchange import Exchange
-from features.CandlesFeatures import CandlesFeatures
 from features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
 from features.LowHighTargets import LowHighTargets
 from features.level2.Level2MultiIndiFeatures import Level2MultiIndiFeatures
@@ -75,8 +74,10 @@ class SignalClassificationStrategy(StrategyBase):
 
             # Candles features within history window
             candles_1min = full_candles_1min[full_candles_1min.index >= window_start]
-            candles_by_periods: dict[str, pd.DataFrame] = CandlesFeatures.rolling_candles_by_periods(candles_1min,
-                                                                                                     self.candles_periods)
+
+            candles_by_periods: Dict[str, pd.DataFrame] = CandlesMultiIndiFeatures.resample_by_periods(candles_1min, self.candles_periods)
+            # candles_by_periods: dict[str, pd.DataFrame] = CandlesFeatures.rolling_candles_by_periods(candles_1min,
+            #                                                                                          self.candles_periods)
             candles_features = CandlesMultiIndiFeatures.multi_indi_features(candles_by_periods)
 
             # Merge candles with level2 features

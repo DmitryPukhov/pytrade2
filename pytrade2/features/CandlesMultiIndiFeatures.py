@@ -19,6 +19,20 @@ class CandlesMultiIndiFeatures:
                       }
 
     @staticmethod
+    def resample_by_periods(candles1min, periods: [str]) -> dict[str, pd.DataFrame]:
+        """ Prepare dictionary period: candles from 1 minute candles for given periods"""
+        resampled_dict = {}
+        for period in periods:
+            if period == '1min':
+                resampled_dict[period] = candles1min.copy()
+            else:
+                resampled = (candles1min
+                             .resample(period, closed='right')
+                             .agg({'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'vol': 'sum'}))
+                resampled_dict[period] = resampled
+        return resampled_dict
+
+    @staticmethod
     def multi_indi_features_last(candles_by_periods: Dict[str, pd.DataFrame], n=1, params=None):
         max_candles = 52  # Ichimoku period is last todo: remove 2
         last_candles_by_periods = {period: candles.tail(max_candles) for period, candles in candles_by_periods.items()}
@@ -41,7 +55,8 @@ class CandlesMultiIndiFeatures:
         indicators_features = []
         for period, candles in candles_by_periods.items():
             period_indicators = CandlesMultiIndiFeatures.indicators_of(candles, period,
-                                                                       params.get(period, CandlesMultiIndiFeatures.default_params))
+                                                                       params.get(period,
+                                                                                  CandlesMultiIndiFeatures.default_params))
             indicators_features.append(period_indicators)
             CandlesMultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
 
