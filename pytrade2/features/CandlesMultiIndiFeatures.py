@@ -49,22 +49,28 @@ class CandlesMultiIndiFeatures:
 
         # time
         time_features = CandlesFeatures.time_features_of(min_candles)[['time_hour', 'time_minute']]
-        CandlesMultiIndiFeatures._log.debug(f"time features:\n{time_features.tail()}")
+        if CandlesMultiIndiFeatures._log.isEnabledFor(logging.DEBUG):
+            CandlesMultiIndiFeatures._log.debug(f"time features:\n{time_features.tail()}")
 
         # Indicators
         indicators_features = []
         for period, candles in candles_by_periods.items():
-            period_indicators = CandlesMultiIndiFeatures.indicators_of(candles, period,
-                                                                       params.get(period,
-                                                                                  CandlesMultiIndiFeatures.default_params))
+            period_indicators = CandlesMultiIndiFeatures.indicators_of(
+                candles.interpolate(method='time'),
+                period,
+                params.get(period, CandlesMultiIndiFeatures.default_params))
             indicators_features.append(period_indicators)
-            CandlesMultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
+            if CandlesMultiIndiFeatures._log.isEnabledFor(logging.DEBUG):
+                CandlesMultiIndiFeatures._log.debug(f"Candles of period: {period}\n{candles.tail()}")
+                CandlesMultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
 
         # Concat time and indicators columns
         features = pd.concat([time_features] + indicators_features, axis=1).sort_index().ffill()
-        CandlesMultiIndiFeatures._log.debug(f"Resulted features with nans:\n{features.tail()}")
+        if CandlesMultiIndiFeatures._log.isEnabledFor(logging.DEBUG):
+            CandlesMultiIndiFeatures._log.debug(f"Resulted features with nans:\n{features.tail()}")
         features = features.dropna()
-        CandlesMultiIndiFeatures._log.debug(f"Resulted features dropna:\n{features.tail()}")
+        if CandlesMultiIndiFeatures._log.isEnabledFor(logging.DEBUG):
+            CandlesMultiIndiFeatures._log.debug(f"Resulted features dropna:\n{features.tail()}")
         return features
 
     @staticmethod
