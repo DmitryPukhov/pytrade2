@@ -139,7 +139,7 @@ class Preprocessor:
         for remove_col in remove_cols:
             if remove_col in df.columns:
                 del df[remove_col]
-        df[datetime_col] = pd.to_datetime(df[datetime_col])
+        df[datetime_col] = pd.to_datetime(df[datetime_col], format="ISO8601")
 
         if "close_time" in df.columns and "vol" in df.columns:
             # remove duplicated

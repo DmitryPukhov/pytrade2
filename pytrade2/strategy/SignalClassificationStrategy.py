@@ -75,7 +75,8 @@ class SignalClassificationStrategy(StrategyBase):
             # Candles features within history window
             candles_1min = full_candles_1min[full_candles_1min.index >= window_start]
 
-            candles_by_periods: Dict[str, pd.DataFrame] = CandlesMultiIndiFeatures.resample_by_periods(candles_1min, self.candles_periods)
+            candles_by_periods: Dict[str, pd.DataFrame] = CandlesMultiIndiFeatures.resample_by_periods(candles_1min,
+                                                                                                       self.candles_periods)
             # candles_by_periods: dict[str, pd.DataFrame] = CandlesFeatures.rolling_candles_by_periods(candles_1min,
             #                                                                                          self.candles_periods)
             candles_features = CandlesMultiIndiFeatures.multi_indi_features(candles_by_periods)
@@ -130,6 +131,7 @@ class SignalClassificationStrategy(StrategyBase):
 
     def predict(self, x) -> int:
         # Save to buffer, actual persist by schedule of data persister
+        self._logger.debug(f"Predicting signal")
         self.data_persister.add_to_buf(self.ticker, {'x': x})
         with self.data_lock:
             x_trans = self.X_pipe.transform(x)
@@ -137,6 +139,7 @@ class SignalClassificationStrategy(StrategyBase):
             y_arr = self.y_pipe.inverse_transform(y_arr)
             y_arr = y_arr.reshape((-1, 1))[-1]  # Last and only row
             signal = y_arr[0]
+            self._logger.debug(f"Predicted signal: {signal}")
             return signal
 
     def process_prediction(self, signal: int):
@@ -176,6 +179,8 @@ class SignalClassificationStrategy(StrategyBase):
                 signal_ext["status"] = "already_in_market"
             elif not risk_manager_ok:
                 signal_ext["status"] = "risk_manager_deny"
+
+            self._logger.debug(f"Processed prediction info: {signal_ext}")
 
             # Persist the data for later analysis
             signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
