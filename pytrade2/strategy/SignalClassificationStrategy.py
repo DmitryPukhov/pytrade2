@@ -129,7 +129,7 @@ class SignalClassificationStrategy(StrategyBase):
         features, _ = self.features_targets(self.history_min_window, with_targets=False)
         return features
 
-    def predict(self, x) -> int:
+    def predict(self, x) -> pd.DataFrame:
         # Save to buffer, actual persist by schedule of data persister
         self._logger.debug(f"Predicting signal")
         self.data_persister.add_to_buf(self.ticker, {'x': x})
@@ -140,9 +140,14 @@ class SignalClassificationStrategy(StrategyBase):
             y_arr = y_arr.reshape((-1, 1))[-1]  # Last and only row
             signal = y_arr[0]
             self._logger.debug(f"Predicted signal: {signal}")
-            return signal
+            y_df = pd.DataFrame(data={'signal': signal},
+                                index=x.index[-1:])
+            return y_df
 
-    def process_prediction(self, signal: int):
+    def process_prediction(self, signal_df: pd.DataFrame):
+        if signal_df.empty:
+            self._logger.debug(f"Cannot process empty prediction")
+        signal = signal_df['signal'].values[-1]
 
         # Metrics
         MetricServer.metrics.strategy.signal.signal.set(signal)

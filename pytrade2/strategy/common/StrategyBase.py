@@ -300,10 +300,8 @@ class StrategyBase:
                 if not (self.X_pipe and self.y_pipe):
                     self.X_pipe, self.y_pipe = self.create_pipe(train_X, train_y)
                 # Final scaling and normalization
-                self.X_pipe.fit(train_X)
-                self.y_pipe.fit(train_y)
+                X_trans, y_trans = self.X_pipe.fit_transform(train_X), self.y_pipe.fit_transform(train_y)
 
-                X_trans, y_trans = self.X_pipe.transform(train_X), self.y_pipe.transform(train_y)
                 # If x window transformation applied, x size reduced => adjust y
                 y_trans = y_trans[-X_trans.shape[0]:]
 
