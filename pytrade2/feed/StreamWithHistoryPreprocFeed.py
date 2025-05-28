@@ -46,7 +46,8 @@ class StreamWithHistoryPreprocFeed(object):
         return not self.is_good_history or self.stream_feed.is_alive(max_delta)
 
     def reload_initial_history(self, history_start=None, history_end=None):
-        """ Initial download history from s3 to local raw data. Preprocess and put to local preprocessed data"""
+        """ Initial download history from s3 to local raw data.
+        Preprocess and put to local preprocessed data"""
 
         # Download history to raw data
         if not history_start:
@@ -103,12 +104,12 @@ class StreamWithHistoryPreprocFeed(object):
                 # Don't reload too often, try after self._reload_history_interval
                 return pd.DataFrame()
 
-        # Get all local history except today
+        # Initial get all local history except today
         if self._history_before_today_df.empty:
             self._history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.kind,
                                                                                       days=self.history_max_window.days)
 
-        # Get today preproc data from  history and stream
+        # Initial get today preproc data from  history and stream
         if self._history_raw_today_df.empty:
             self._history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.kind,
                                                                                      stream_start_datetime.date(),

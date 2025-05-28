@@ -74,12 +74,15 @@ class Preprocessor:
         # Transform
         if kind == "level2":
             df = self.level2_transform(df)
+            # Resampled to groups  00:00:00-00:00:59
+            df = df.resample("1min", label="right", closed="left").agg("mean")
         elif kind == "candles":
-            df = df.resample("1min", label="right", closed="right").agg(
+            # Resampled to groups  00:00:00-00:00:59
+            df = df.resample("1min", label="right", closed="left").agg(
                 {"open_time": "last", "close_time": "last", "open": "first", "high": "max", "low": "min",
                  "close": "last", "vol": "sum"})
         else:
-            df = df.resample("1min", label="right", closed="right").agg("mean")
+            self._logger.error(f"Kind {kind} not supported")
         return df
 
     def preprocess_last_raw_data(self, ticker: str, kind: str):
