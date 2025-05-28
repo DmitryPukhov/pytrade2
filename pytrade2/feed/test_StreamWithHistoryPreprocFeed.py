@@ -71,3 +71,46 @@ class TestStreamHistoryPreprocFeed(TestCase):
 
         self.assertListEqual([pd.to_datetime("2025-05-28 00:00:00"),
                               pd.to_datetime("2025-05-28 00:01:00")], preprocessed.index.tolist())
+
+    def test_preproc_incremental_if_new_before_old_should_skip(self):
+        feed = self.new_feed()
+        base_fields = {"bid": 0, "ask": 0, "bid_vol": 0, "ask_vol": 0}
+
+        # Old data
+        feed.preproc_data_df = pd.DataFrame([
+            {**{"datetime": pd.to_datetime("2025-05-28 00:02:00")}, **base_fields},
+        ]).set_index("datetime", drop=False)
+        # New data is not after old data
+        new_raw_data_df = pd.DataFrame([
+            {**{"datetime": pd.to_datetime("2025-05-28 00:01:00"), "value": 1}, **base_fields},
+            {**{"datetime": pd.to_datetime("2025-05-28 00:02:00"), "value": 1}, **base_fields},
+        ]).set_index("datetime", drop=False)
+
+        # Call
+        preprocessed = feed.preproc_incremental(new_raw_data_df)
+
+        self.assertListEqual([pd.to_datetime("2025-05-28 00:02:00"),
+                              ], preprocessed.index.tolist())
+
+    def test_preproc_incremental_if_new_after_old_should_append(self):
+        feed = self.new_feed()
+        base_fields = {"bid": 0, "ask": 0, "bid_vol": 0, "ask_vol": 0}
+
+        # Old data
+        feed.preproc_data_df = pd.DataFrame([
+            {**{"datetime": pd.to_datetime("2025-05-28 00:00:00")}, **base_fields},
+        ]).set_index("datetime", drop=False)
+        # New data is not after old data
+        new_raw_data_df = pd.DataFrame([
+            {**{"datetime": pd.to_datetime("2025-05-28 00:01:00"), "value": 1}, **base_fields},
+            {**{"datetime": pd.to_datetime("2025-05-28 00:02:00"), "value": 1}, **base_fields},
+        ]).set_index("datetime", drop=False)
+
+        # Call
+        preprocessed = feed.preproc_incremental(new_raw_data_df)
+
+        self.assertListEqual([
+            pd.to_datetime("2025-05-28 00:00:00"),
+            pd.to_datetime("2025-05-28 00:01:00"),
+            pd.to_datetime("2025-05-28 00:02:00"),
+        ], preprocessed.index.tolist())

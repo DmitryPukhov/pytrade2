@@ -132,8 +132,12 @@ class StreamWithHistoryPreprocFeed(object):
 
         stream_preproc_df = self._preprocessor.transform(stream_raw_df, self.kind)
         stream_preproc_df = stream_preproc_df[stream_preproc_df.index > self.preproc_data_df.index[-1]]
-        self._logger.debug(
-            f"Stream adjusted preproc {self.kind} {self.ticker} data is from: {stream_preproc_df.index[0]}, to: {stream_preproc_df.index[-1]}")
+        if stream_preproc_df.empty:
+            self._logger.debug(f"Not enough {self.kind} {self.ticker} new data after preprocessing. Will try next time")
+            return self.preproc_data_df
+        else:
+            self._logger.debug(
+                f"Stream adjusted preproc {self.kind} {self.ticker} data is from: {stream_preproc_df.index[0]}, to: {stream_preproc_df.index[-1]}")
 
         # Append new stream data to old previous data
         with self.data_lock:
