@@ -74,11 +74,11 @@ class Preprocessor:
         # Transform
         if kind == "level2":
             df = self.level2_transform(df)
-            # Resampled to groups  00:00:00-00:00:59
-            df = df.resample("1min", label="right", closed="left").agg("mean")
+            # Resampled to groups  00:00:01-00:01:00
+            df = df.resample("1min", label="right", closed="right").agg("mean")
         elif kind == "candles":
             # Resampled to groups  00:00:00-00:00:59
-            df = df.resample("1min", label="right", closed="left").agg(
+            df = df.resample("1min", label="right", closed="right").agg(
                 {"open_time": "last", "close_time": "last", "open": "first", "high": "max", "low": "min",
                  "close": "last", "vol": "sum"})
         else:

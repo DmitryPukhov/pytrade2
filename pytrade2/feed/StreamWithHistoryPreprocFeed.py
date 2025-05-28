@@ -20,6 +20,8 @@ class StreamWithHistoryPreprocFeed(object):
         self._history_downloader = HistoryS3Downloader(config, data_dir=self.data_dir)
 
         self.stream_feed = stream_feed
+        self.data_lock = stream_feed.data_lock
+
         if isinstance(self.stream_feed, CandlesFeed):
             # Candles feed has it's owm history window mechanism, set it to our history window
             history_days = math.ceil(pd.Timedelta(self.history_max_window) / pd.Timedelta("1d"))
@@ -34,8 +36,6 @@ class StreamWithHistoryPreprocFeed(object):
         self._reload_history_interval = pd.Timedelta(
             config.get("pytrade2.strategy.history.initial.reload.interval", "1min"))
         self._next_reload_history_datetime = datetime.now() + self._reload_history_interval
-        self._history_raw_today_df = pd.DataFrame()
-        self._history_before_today_df = pd.DataFrame()
         self.preproc_data_df = pd.DataFrame()
 
     def run(self):
@@ -79,6 +79,7 @@ class StreamWithHistoryPreprocFeed(object):
 
         stream_start_datetime = stream_raw_df.index.min()
 
+        # Initial download history from s3. Maybe skip this time if there is no enough history in s3 yet
         if not self.is_good_history:
             if datetime.now() >= self._next_reload_history_datetime:
                 # Reload timeout passed, download history from s3
@@ -104,23 +105,39 @@ class StreamWithHistoryPreprocFeed(object):
                 # Don't reload too often, try after self._reload_history_interval
                 return pd.DataFrame()
 
-        # Initial get all local history except today
-        if self._history_before_today_df.empty:
-            self._history_before_today_df = self._preprocessor.read_last_preproc_data(self.ticker, self.kind,
-                                                                                      days=self.history_max_window.days)
+        # Initial get all local history window for learning
+        if self.preproc_data_df.empty:
+            self.preproc_data_df = self._preprocessor.read_last_preproc_data(
+                self.ticker, self.kind, days=self.history_max_window.days)
+        return self.preproc_incremental(stream_raw_df)
 
-        # Initial get today preproc data from  history and stream
-        if self._history_raw_today_df.empty:
-            self._history_raw_today_df = self._history_downloader.read_local_history(self.ticker, self.kind,
-                                                                                     stream_start_datetime.date(),
-                                                                                     stream_start_datetime.date())
-            self._history_raw_today_df = self._history_raw_today_df[
-                self._history_raw_today_df.index < stream_start_datetime]
+    def preproc_incremental(self, stream_raw_df) -> pd.DataFrame:
+        """
+        Preprocess and append new stream data to old previous data
+        Updates self.preproc_data_df and returns it as well
+        """
+        if self.preproc_data_df.empty or stream_raw_df.empty:
+            self._logger.debug(f"Nothing to preprocess. History is empty:{self.preproc_data_df.empty}, stream data is empty: {stream_raw_df.empty}")
+            return self.preproc_data_df
 
-        raw_today_df = pd.concat(
-            [df for df in [self._history_raw_today_df, stream_raw_df] if not df.empty]).sort_index()
-        preproc_today_df = self._preprocessor.transform(raw_today_df, self.kind)
+        self._logger.debug(
+            f"Combine new and previous {self.kind} {self.ticker} data. Previous data is from: {self.preproc_data_df.index[0]}, to:{self.preproc_data_df.index[-1]}, new data is from: {stream_raw_df.index[0]} to:{stream_raw_df.index[-1]}")
 
-        # Concatenate previous and today
-        self.preproc_data_df = pd.concat([self._history_before_today_df, preproc_today_df]).sort_index()
+        # Cut old data from the stream df
+        stream_low_bound = self.preproc_data_df.index[-1] - pd.Timedelta("1min")  # 1 minute before last preproc data
+        stream_raw_df = stream_raw_df[stream_raw_df.index > stream_low_bound]
+        if stream_raw_df.empty or stream_raw_df.index[-1] < self.preproc_data_df.index[0]:
+            self._logger.debug(f"Not enough {self.kind} {self.ticker} new data. Will try next time")
+            return self.preproc_data_df
+
+        stream_preproc_df = self._preprocessor.transform(stream_raw_df, self.kind)
+        stream_preproc_df = stream_preproc_df[stream_preproc_df.index > self.preproc_data_df.index[-1]]
+        self._logger.debug(
+            f"Stream adjusted preproc {self.kind} {self.ticker} data is from: {stream_preproc_df.index[0]}, to: {stream_preproc_df.index[-1]}")
+
+        # Append new stream data to old previous data
+        with self.data_lock:
+            self.preproc_data_df = pd.concat([df for df in [self.preproc_data_df, stream_preproc_df] if not df.empty])
+        self._logger.debug(
+            f"Final preprocessed {self.kind} {self.ticker} data starts at {self.preproc_data_df.index[0]}, ends at {self.preproc_data_df.index[-1]}")
         return self.preproc_data_df

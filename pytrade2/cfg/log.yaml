@@ -16,14 +16,43 @@ loggers:
     level: INFO
     handlers: [ consoleHandler ]
   HuobiBrokerHbdm:
-    level: DEBUG
+    level: INFO
     handlers: [ consoleHandler ]
     propagate: no
   LgbLowHighRegressionStrategy:
     level: INFO
     handlers: [ consoleHandler ]
     propagate: no
-  MultiIndiFeatures:
+  Level2MultiIndiFeatures:
+    level: INFO
+    handlers: [ consoleHandler ]
+    propagate: no
+
+  CandlesMultiIndiFeatures:
+    level: INFO
+    handlers: [ consoleHandler ]
+    propagate: no
+  HistoryS3Downloader:
+    level: INFO
+    handlers: [ consoleHandler ]
+    propagate: no
+  Preprocessor:
+    level: INFO
+    handlers: [ consoleHandler ]
+    propagate: no
+  StreamWithHistoryPreprocFeed:
+    level: DEBUG
+    handlers: [ consoleHandler ]
+    propagate: no
+  SignalClassificationStrategy:
+    level: INFO
+    handlers: [ consoleHandler ]
+    propagate: no
+  CandlesFeed:
+    level: INFO
+    handlers: [ consoleHandler ]
+    propagate: no
+  Level2Feed:
     level: INFO
     handlers: [ consoleHandler ]
     propagate: no
