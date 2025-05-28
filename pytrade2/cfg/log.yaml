@@ -41,7 +41,7 @@ loggers:
     handlers: [ consoleHandler ]
     propagate: no
   StreamWithHistoryPreprocFeed:
-    level: DEBUG
+    level: INFO
     handlers: [ consoleHandler ]
     propagate: no
   SignalClassificationStrategy:

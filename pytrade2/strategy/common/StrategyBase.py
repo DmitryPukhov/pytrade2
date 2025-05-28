@@ -225,11 +225,11 @@ class StrategyBase:
         if is_periodical and (datetime.utcnow() - self.last_model_check_time) < self.model_check_interval:
             # For periodical update, skip if check interval is not elapsed
             return
-
         if self.model_source == "local":
             # Get model from local file, usually this is for dev
-            self.model = self.model_persister.load_last_model()
-        else:
+            if not self.model:
+                self.model = self.model_persister.load_last_model()
+        elif self.model_source == "mlflow":
             # Get model from mlflow server
             model, model_version, params = self.model_persister.get_last_trade_ready_model(self.model_name)
             is_model_changed = model and model_version and (model_version != self.model_version)
