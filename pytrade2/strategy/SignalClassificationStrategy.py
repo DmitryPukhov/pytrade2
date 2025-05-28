@@ -3,7 +3,9 @@ from datetime import datetime
 from typing import Dict
 
 import lightgbm as lgb
+import numpy as np
 import pandas as pd
+import sklearn
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
@@ -114,8 +116,8 @@ class SignalClassificationStrategy(StrategyBase):
                 # All features, we cannot calculate targets for recent data
                 features, targets = combined_features, None
             self._logger.debug(
-                f"Final features and targets calculation status. With targets: {with_targets}, "
-                f"features: {len(features)}, targets: {len(targets) if targets is not None else 'not required'}")
+                f"Final features and targets calculation status. With targets: {with_targets}\n "
+                f"features:\n {features.tail()}\n targets: {'\n' + str(targets.tail()) if targets is not None else 'not required'}")
 
             return features, targets
 
@@ -125,18 +127,22 @@ class SignalClassificationStrategy(StrategyBase):
         return self.features_targets(time_window, with_targets=True)
 
     def prepare_last_x(self) -> pd.DataFrame:
-        self._logger.debug(f"Preparing last x. Minimum history required {self.history_min_window}")
+        self._logger.debug(f"Preparing last x with minimum history required {self.history_min_window}")
         features, _ = self.features_targets(self.history_min_window, with_targets=False)
         return features
 
     def predict(self, x) -> pd.DataFrame:
         # Save to buffer, actual persist by schedule of data persister
+        if not self.is_learned:
+            self._logger.debug("Cannot predict, strategy is not learned yet")
         self._logger.debug(f"Predicting signal")
         self.data_persister.add_to_buf(self.ticker, {'x': x})
         with self.data_lock:
             x_trans = self.X_pipe.transform(x)
             y_arr = self.model.predict(x_trans)
+            self.y_pipe.is_fitted = False
             y_arr = self.y_pipe.inverse_transform(y_arr)
+
             y_arr = y_arr.reshape((-1, 1))[-1]  # Last and only row
             signal = y_arr[0]
             self._logger.debug(f"Predicted signal: {signal}")
@@ -205,27 +211,34 @@ class SignalClassificationStrategy(StrategyBase):
             print(f'Created new model {model}')
             return model
 
-    def create_pipe(self, x, _) -> (Pipeline, Pipeline):
-
+    def create_pipe(self, x, y) -> (Pipeline, Pipeline):
+        self._logger.debug(f"Creating x,y pipelines")
         # Scale features time and float columns differently
         time_cols = [col for col in x.columns if col.startswith("time")]
         float_cols = list(set(x.columns) - set(time_cols))
         x_pipe = Pipeline(
-            [("xscaler", ColumnTransformer([("xrs", StandardScaler(), float_cols)], remainder="passthrough")),
-             ("xmms", MaxAbsScaler())])
+            [("xscaler", ColumnTransformer([("xrs", StandardScaler(), float_cols)], remainder="passthrough").set_output(transform="pandas")),
+             ("xmms", MaxAbsScaler().set_output(transform="pandas"))]).set_output(transform="pandas")
         x_pipe.fit(x)
 
         # LBGM requires integer labels from 1 to n_classes
         class AddTwo(BaseEstimator, TransformerMixin):
-            def fit(self, X, y=None):
+            def __init__(self):
+                self.is_fitted_ = True
+
+            def fit(self, X, _=None):
                 return self
 
             def transform(self, X):
                 # Adding 2 to every value in the dataset
-                return X + 2
+                #return  sklearn.utils.validation.column_or_1d(X) + 2
+                #return X + 2
+                return np.array(X).ravel() + 2
 
             def inverse_transform(self, X):
-                return X - 2
+                #return X - 2
+                return np.array(X).ravel() - 2
 
         y_pipe = make_pipeline(AddTwo())
+        y_pipe.fit(y)
         return x_pipe, y_pipe

@@ -131,11 +131,3 @@ class HistoryS3Downloader:
             s3client.download_file(bucket_name, s3_file_path, local_path)
         return True
 
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    config = {key: val for key, val in os.environ.items()}
-    hp = HistoryS3Downloader(config)
-    # hp.update_local_history(pd.Timestamp("2025-05-10"), pd.Timestamp("2025-05-21"))
-    df = hp.read_local_history("level2", pd.Timestamp("2025-05-10"), pd.Timestamp("2025-05-10"))
-    print(df.tail())

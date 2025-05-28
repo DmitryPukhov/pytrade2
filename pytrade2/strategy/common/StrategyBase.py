@@ -69,6 +69,7 @@ class StrategyBase:
         self.broker = None
         self.is_processing = False
         self.is_learn_enabled = config.get("pytrade2.strategy.learn.enabled", "true").lower() == "true"
+        self.is_learned = False
 
         # Expected profit/loss >= ratio means signal to trade
         self.profit_loss_ratio = float(config.get("pytrade2.strategy.profitloss.ratio", 1.0))
@@ -252,7 +253,7 @@ class StrategyBase:
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):
         """ Create feature and target pipelines to use for transform and inverse transform """
-
+        self._logger.debug(f"Creating base x,y pipelines")
         time_cols = [col for col in X.columns if col.startswith("time")]
         float_cols = list(set(X.columns) - set(time_cols))
 
@@ -311,9 +312,9 @@ class StrategyBase:
 
                 # Train
                 self.model.fit(X_trans, y_trans)
+                self.is_learned = True
 
                 # Save weights and xy new delta
-                # todo: uncomment
                 self.model_persister.save_model(self.model)
 
                 # to avoid OOM
@@ -356,11 +357,12 @@ class StrategyBase:
 
     def process_new_data(self):
 
-        if self.model and not self.is_processing:
+        if self.model and not self.is_processing and self.is_learned:
             start_time = datetime.utcnow()
             try:
                 self.is_processing = True
                 self.apply_buffers()
+
                 x = self.prepare_last_x()
                 # x can be dataframe or np array, check is it empty
                 if (hasattr(x, 'empty') and x.empty) or (hasattr(x, 'shape') and x.shape[0] == 0):
