@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict
 
 import mlflow.sklearn
-from keras.models import Model
+#from keras.models import Model
 from lightgbm import LGBMRegressor
 from sklearn.multioutput import MultiOutputRegressor
 
@@ -28,14 +28,19 @@ class ModelPersister:
             Path(self.model_dir).mkdir(parents=True, exist_ok=True)
         self.mlflow_client = MlflowClient()
 
-    def load_last_model(self, model: Model = None):
+    def is_keras_model(self, obj):
+        return (obj.__class__.__name__ in {'Model', 'Sequential'} or
+                hasattr(obj, '_keras_api_names'))
+
+    def load_last_model(self, model  = None):
         try:
             saved_models = glob.glob(str(Path(self.model_dir, "*.*")))
             if not saved_models:
                 self._logger.info(f"No saved models in {self.model_dir}")
                 return model
 
-            if isinstance(model, Model):
+            if self.is_keras_model(model):
+                from keras.models import Model
                 saved_models = glob.glob(str(Path(self.model_dir, "*.index")))
                 # Load keras
                 last_model_path = str(sorted(saved_models)[-1])[:-len(".index")]
@@ -54,8 +59,11 @@ class ModelPersister:
 
     def save_model(self, model):
         model_path = str(Path(self.model_dir, datetime.utcnow().isoformat()))
-        if isinstance(model, Model):
+        #if isinstance(model, Model):
+        if self.is_keras_model(model):
             # Save keras
+            from keras.models import Model
+
             self._logger.debug(f"Save keras model to {model_path}")
             model.save_weights(model_path)
 
