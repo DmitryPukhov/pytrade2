@@ -41,7 +41,7 @@ class SignalClassificationStrategy(StrategyBase):
         self.history_max_window = config["pytrade2.strategy.history.max.window"]
         self.target_period = config["pytrade2.strategy.predict.window"]
 
-        self.model_name = "SignalClassification"
+        self.model_name = "SignalClassifierLgb"
         self.candles_periods = [period.strip() for period in
                                 config["pytrade2.strategy.features.candles.periods"].split(",")]
         self.level2_periods = [period.strip() for period in

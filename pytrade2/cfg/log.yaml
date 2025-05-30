@@ -56,3 +56,7 @@ loggers:
     level: INFO
     handlers: [ consoleHandler ]
     propagate: no
+  ModelPersister:
+    level: INFO
+    handlers: [ consoleHandler ]
+    propagate: no

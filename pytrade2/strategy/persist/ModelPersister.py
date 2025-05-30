@@ -15,7 +15,7 @@ from mlflow import MlflowClient
 
 
 class ModelPersister:
-    """ Read/write model weights"""
+    """ Read/write model locally or read model from mlflow"""
 
     def __init__(self, config: Dict, tag: str):
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -66,9 +66,9 @@ class ModelPersister:
                 pickle.dump(model, f)
                 self._logger.debug(f"Saved lgb  model to {model_path}")
 
-        self.purge_old_models()
+        self.purge_old_local_models()
 
-    def purge_old_models(self, keep_count=1):
+    def purge_old_local_models(self, keep_count=1):
         """
         Purge old weights
         """
@@ -80,7 +80,7 @@ class ModelPersister:
                 os.remove(os.path.join(self.model_dir, file))
             self._logger.debug(f"Purged {len(purge_files)} files in {self.model_dir}")
 
-    def get_last_trade_ready_model(self, model_name, load_func=mlflow.sklearn.load_model) -> (any, any, dict):
+    def get_last_mlflow_trade_ready_model(self, model_name, load_func=mlflow.sklearn.load_model) -> (any, any, dict):
         """ Load latest model and it's params from mlflow. The model should be tagged trade_ready.
         :return model, mlflow ModelVersion, params"""
         model, model_version, params = None, None, None

@@ -231,7 +231,7 @@ class StrategyBase:
                 self.model = self.model_persister.load_last_model()
         elif self.model_source == "mlflow":
             # Get model from mlflow server
-            model, model_version, params = self.model_persister.get_last_trade_ready_model(self.model_name)
+            model, model_version, params = self.model_persister.get_last_mlflow_trade_ready_model(self.model_name)
             is_model_changed = model and model_version and (model_version != self.model_version)
             is_params_changed = params and (params != self.app_params)
             # Set model if changaed

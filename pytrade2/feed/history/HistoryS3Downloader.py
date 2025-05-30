@@ -16,7 +16,7 @@ class HistoryS3Downloader:
         self._logger = logging.getLogger(self.__class__.__name__)
         self._logger.info(f"Initializing {self.__class__.__name__}")
         # Try feed specific s3 config then global s3 config
-        for prefix in ("pytrade2.s3", "pytrade2.feed.s3"):
+        for prefix in ("pytrade2.feed.s3", "pytrade2.s3"):
             if f"{prefix}.endpoint_url" in config:
                 self.s3_access_key = config[f"{prefix}.access_key"]
                 self.s3_secret_key = config[f"{prefix}.secret_key"]
