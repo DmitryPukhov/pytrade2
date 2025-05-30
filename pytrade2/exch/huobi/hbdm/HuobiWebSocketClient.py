@@ -82,8 +82,8 @@ class HuobiWebSocketClient:
             )
             self.watchdog_thread.start()
 
-        #t = threading.Thread(target=self._ws.run_forever, daemon=True)
-        #t.start()
+        t = threading.Thread(target=self._ws.run_forever, daemon=True)
+        t.start()
 
     def _on_open(self, ws):
         self._logger.info(f"Socket opened: {self.url}")
