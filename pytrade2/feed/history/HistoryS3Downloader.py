@@ -17,14 +17,13 @@ class HistoryS3Downloader:
         self._logger.info(f"Initializing {self.__class__.__name__}")
         # Try feed specific s3 config then global s3 config
         for prefix in ("pytrade2.s3", "pytrade2.feed.s3"):
-            if prefix in config:
+            if f"{prefix}.endpoint_url" in config:
                 self.s3_access_key = config[f"{prefix}.access_key"]
                 self.s3_secret_key = config[f"{prefix}.secret_key"]
                 self.s3_bucket = config[f"{prefix}.bucket"]
                 self.s3_endpoint_url = config[f"{prefix}.endpoint_url"]
+                self._logger.info(f"Data feed s3 is {self.s3_endpoint_url}")
                 break
-
-        self._logger.info(f"Data feed s3 is {self.s3_endpoint_url}")
 
         # local data directory
         self.data_dir = config.get("pytrade2.data.dir") if not data_dir else data_dir
