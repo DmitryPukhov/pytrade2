@@ -8,7 +8,7 @@ from threading import Thread, Event, Timer
 from typing import Dict
 
 import pandas as pd
-import tensorflow.python.keras.backend
+#import tensorflow.python.keras.backend
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler
@@ -318,7 +318,7 @@ class StrategyBase:
                 self.model_persister.save_model(self.model)
 
                 # to avoid OOM
-                tensorflow.keras.backend.clear_session()
+                #tensorflow.keras.backend.clear_session()
                 gc.collect()
                 self._logger.info("Learning completed")
                 learn_duration = datetime.utcnow() - start_time
