@@ -7,7 +7,7 @@ mlartifacts
 *.key
 /pytrade2/cfg/app.yaml
 tmp
-_trial_temp
+_trial_temp*
 data
 /env
 secret.yaml
