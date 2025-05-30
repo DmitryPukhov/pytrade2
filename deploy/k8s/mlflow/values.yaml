@@ -5,6 +5,7 @@ tracking:
     existingSecret: pytrade2-mlflow-tracking
     existingSecretUserKey: admin-user
     existingSecretPasswordKey: admin-password
+    existingSecretFlaskServerSecretKey: flask-server-secret-key
   service:
     type: LoadBalancer
     nodePorts:
