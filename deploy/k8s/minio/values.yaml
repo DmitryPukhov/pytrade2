@@ -1,8 +1,20 @@
 auth:
   existingSecret: pytrade2-mlflow-minio
+
+## Service Configuration
 service:
-  type: NodePort
+  type: NodePort             # Makes it accessible on Minikube IP
+  ports:
+    api: 9000                # MinIO API port
+    console: 9001             # MinIO Console port
   nodePorts:
-    api: 30900
+    api: 30900               # NodePort for API (30000-32767 range)
     console: 30901
+
+
+## Network Configuration (For Minikube IP access)
+networkPolicy:
+  enabled: false             # Disable for Minikube simplicity
+tls:
+  enabled: false
 defaultBuckets: "pytrade2"
