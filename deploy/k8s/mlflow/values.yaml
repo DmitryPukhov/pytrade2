@@ -22,14 +22,22 @@ postgresql:
 
 minio:
   enabled: false
-  auth:
-    existingSecret: pytrade2-mlflow-minio
+#  auth:
+#    existingSecret: pytrade2-mlflow-minio
 
+## Disable built-in artifact storage (we'll use external S3)
+artifactRoot: s3://pytrade2/mlartifacts
+## S3 Configuration
+extraEnvVars:
+  - name: MLFLOW_S3_ENDPOINT_URL
+    value: "http://192.168.49.2:30900"  # Your MinIO endpoint
+  - name: AWS_S3_IGNORE_TLS
+    value: "true"  # Only needed if using self-signed certs
 
 # Local minikube minio
 externalS3:
   host: "192.168.49.2"
-  port: 30901
+  port: 30900
   useCredentialsInSecret: true
   existingSecret: "pytrade2-mlflow-minio"
   existingSecretAccessKeyIDKey: "root-user"
