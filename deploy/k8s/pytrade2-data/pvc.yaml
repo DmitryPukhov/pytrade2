@@ -4,7 +4,7 @@ metadata:
   name: pytrade2-data
 spec:
   accessModes:
-    - ReadWriteOnce  # Can be 'ReadWriteOnce', 'ReadOnlyMany' or 'ReadWriteMany'
+    - ReadWriteMany  # Can be 'ReadWriteOnce', 'ReadOnlyMany' or 'ReadWriteMany'
   resources:
     requests:
       storage: 50Gi  # Adjust according to your needs
