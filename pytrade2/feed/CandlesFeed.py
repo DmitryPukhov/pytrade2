@@ -178,7 +178,7 @@ class CandlesFeed:
 
             max_lag = pd.Timedelta(i) * 2
             lag = dt - c.index.max()
-            is_alive = not c.empty and lag > max_lag
+            is_alive = not c.empty and lag <= max_lag
             if not is_alive:
                 self._logger.warning(
                     f"{self.__class__.__name__} {self.ticker}:{i} is dead. lag: {lag}, max lag allowed: {max_lag}")

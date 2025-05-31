@@ -143,3 +143,19 @@ class TestCandlesFeed(TestCase):
         candles_feed.candles_by_interval = {"1min": [{}, {}]}
 
         self.assertFalse(candles_feed.has_min_history())
+
+    def test_is_alive_alive(self):
+        candles_feed = self.new_candles_feed()
+        # Small lag
+        candles = pd.DataFrame(index = [datetime.now()], data = {"close": 1})
+        candles_feed.candles_by_interval = {"1min": candles}
+
+        self.assertTrue(candles_feed.is_alive(None))
+
+    def test_is_alive_not_alive(self):
+        candles_feed = self.new_candles_feed()
+        # Large lag
+        candles = pd.DataFrame(index = [datetime.now() - timedelta(minutes=10)], data = {"close": 1})
+        candles_feed.candles_by_interval = {"1min": candles}
+
+        self.assertFalse(candles_feed.is_alive(None))
