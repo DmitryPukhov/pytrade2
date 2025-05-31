@@ -79,17 +79,20 @@ class StreamWithHistoryPreprocFeed(object):
 
         stream_start_datetime = stream_raw_df.index.min()
 
-        # Initial download history from s3. Maybe skip this time if there is no enough history in s3 yet
+        # Will work with tmp status and update self.is_good_history at the end of all long operations
+        is_good_history_tmp = self.is_good_history
+
         if not self.is_good_history:
+            # Initial download history from s3. Maybe skip this time if there is no enough history in s3 yet
             if datetime.now() >= self._next_reload_history_datetime:
                 # Reload timeout passed, download history from s3
                 history_start_datetime = stream_start_datetime - self.history_max_window if not stream_raw_df.empty else pd.Timestamp.now()
                 history_end_datetime = self.reload_initial_history(history_start=history_start_datetime.date(),
                                                                    history_end=stream_start_datetime.date())
-                self.is_good_history = history_end_datetime >= stream_start_datetime
+                is_good_history_tmp = self.is_good_history = history_end_datetime >= stream_start_datetime
 
                 # After reloaded, if there is still a gap between stream and history, exit now to try later
-                if not self.is_good_history:
+                if not is_good_history_tmp:
                     gap = pd.Timedelta(stream_start_datetime.to_numpy() - history_end_datetime.to_numpy())
                     self._logger.info(
                         f"Still not enough {self.kind} {self.ticker} history data, gap {gap} between history and stream. "
@@ -109,7 +112,11 @@ class StreamWithHistoryPreprocFeed(object):
         if self.preproc_data_df.empty:
             self.preproc_data_df = self._preprocessor.read_last_preproc_data(
                 self.ticker, self.kind, days=self.history_max_window.days)
-        return self.preproc_incremental(stream_raw_df)
+        preproc_data_df =  self.preproc_incremental(stream_raw_df)
+
+        # Set good history status only now after all long operations are done
+        self.is_good_history = is_good_history_tmp
+        return preproc_data_df
 
     def preproc_incremental(self, stream_raw_df) -> pd.DataFrame:
         """
