@@ -152,7 +152,7 @@ class CandlesFeed:
                 self.candles_by_interval_buf[period] = pd.DataFrame()
 
     def on_candle(self, candle: {}):
-        #self._logger.debug(f"Got candle {candle}")
+        # self._logger.debug(f"Got candle {candle}")
         period = str(candle["interval"])
         if period not in self.candles_cnt_by_interval:
             return
@@ -173,9 +173,14 @@ class CandlesFeed:
     def is_alive(self, _):
         dt = datetime.now()
         for i, c in self.candles_by_interval.items():
-            candle_max_delta = pd.Timedelta(i)
-            if not c.empty and (dt - c.index.max() > candle_max_delta * 2):
-                # If double candle interval passed, and we did not get a new candle, we are dead
-                # If candles are empty, it can be initial download at start, we are still alive
+            # If double candle interval passed, and we did not get a new candle, we are dead
+            # If candles are empty, it can be initial download at start, we are still alive
+
+            max_lag = pd.Timedelta(i) * 2
+            lag = dt - c.index.max()
+            is_alive = not c.empty and lag > max_lag
+            if not is_alive:
+                self._logger.warning(
+                    f"{self.__class__.__name__} {self.ticker}:{i} is dead. lag: {lag}, max lag allowed: {max_lag}")
                 return False
         return True

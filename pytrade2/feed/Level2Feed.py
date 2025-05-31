@@ -2,6 +2,7 @@ import logging
 import multiprocessing
 from datetime import datetime
 from typing import Dict, List
+
 import pandas as pd
 
 from exch.Exchange import Exchange
@@ -10,8 +11,8 @@ from exch.Exchange import Exchange
 class Level2Feed:
     kind = "level2"
 
-
-    def __init__(self, cfg: Dict[str, str], exchange_provider: Exchange, data_lock: multiprocessing.RLock, new_data_event: multiprocessing.Event):
+    def __init__(self, cfg: Dict[str, str], exchange_provider: Exchange, data_lock: multiprocessing.RLock,
+                 new_data_event: multiprocessing.Event):
         self._logger = logging.getLogger(self.__class__.__name__)
 
         self.websocket_feed = exchange_provider.websocket_feed(cfg["pytrade2.exchange"])
@@ -32,7 +33,7 @@ class Level2Feed:
         """
         Got new order book items event
         """
-        #self._logger.debug("Got new level2 items: %s", level2)
+        # self._logger.debug("Got new level2 items: %s", level2)
         bid_ask_columns = ["datetime", "symbol", "bid", "bid_vol", "ask", "ask_vol"]
 
         # Add new data to df
@@ -56,9 +57,14 @@ class Level2Feed:
         return self.level2
 
     def is_alive(self, maxdelta: pd.Timedelta):
-        return self.level2.empty or (datetime.utcnow() - self.level2.index.max() <= maxdelta)
+        last_data_time = self.level2.index.max()
+        lag = datetime.utcnow() - last_data_time
+        is_alive = self.level2.empty or lag <= maxdelta
+        if not is_alive:
+            self._logger.warning(
+                f"{self.__class__.__name__} : is dead. Last {self.kind} data: {last_data_time}, lag: {lag}, max lag allowed: {maxdelta}")
+        return is_alive
 
     def has_min_history(self):
         interval = self.level2.index.max() - self.level2.index.min() if not self.level2.empty else pd.Timedelta(0)
         return interval >= self.history_min_window
-

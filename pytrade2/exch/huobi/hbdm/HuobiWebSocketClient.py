@@ -100,6 +100,7 @@ class HuobiWebSocketClient:
             for params, consumer in topic_consumers:
                 self._logger.info(f"Subscribing to socket data, params: {params}, consumer: {consumer}")
                 self._ws.send(params)  # as json string to be send
+        self._logger.info("All consumers subscribed")
 
     def _get_signature_data(self) -> dict:
         # it's utc time and an example is 2017-05-11T15:19:30
