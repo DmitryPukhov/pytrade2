@@ -5,7 +5,6 @@ from typing import Dict
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-import sklearn
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
@@ -117,7 +116,7 @@ class SignalClassificationStrategy(StrategyBase):
                 features, targets = combined_features, None
             self._logger.debug(
                 f"Final features and targets calculation status. With targets: {with_targets}\n "
-                f"features:\n {features.tail()}\n targets: {'\n' + str(targets.tail()) if targets is not None else 'not required'}")
+                f"features:\n {features.tail()}\n targets:\n { str(targets.tail()) if targets is not None else 'not required'}")
 
             return features, targets
 

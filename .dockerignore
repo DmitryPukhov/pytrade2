@@ -1,7 +1,22 @@
-/data-dev
-/model-dev
-/analysis
-/test
+data-dev/
+model-dev/
+analysis/
+test/
 # Idea
 .idea
 *.iml
+.gigaide
+.venv
+data
+.ipynb_checkpoints
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.vscode/
+*.egg-info/
+*.log
+MagicMock*/
+mlruns/*
+out/*

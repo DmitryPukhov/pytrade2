@@ -30,12 +30,15 @@ function create_env_configmap(){
 
   # Read source env file line by line, convert and write to confitmap
   while IFS='=' read -r key value; do
-    # Пропускаем комментарии и пустые строки
+    # Skip empty lines and lines starting with '#'
     if [[ -z "$key" || $key =~ ^\s*#.*$ ]]; then
       continue
     fi
 
-    # Экранируем значение от возможных символов, которые могут нарушить формат YAML
+    # Trim leading and trailing whitespace from key
+    key="${key#"${key%%[![:space:]]*}"}"  # Trim leading
+    key="${key%"${key##*[![:space:]]}"}"  # Trim trailing
+    # Adjust value for YAML format
     value="${value//\"/\\\"}"
     printf "    \"$key\": \"$value\"\n" >> $CONFIGMAP_PATH
   done < $DEPLOY_ENV_PATH
