@@ -42,4 +42,8 @@ logConfig:
         level: INFO
         handlers: [ consoleHandler ]
         propagate: no
+      werkzeug:
+        level: WARNING
+        handlers: [ consoleHandler ]
+        propagate: no
 
