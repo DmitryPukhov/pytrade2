@@ -238,6 +238,7 @@ class StrategyBase:
             if is_model_changed:
                 self._logger.info(f"Updating model {self.model_name} from v{self.model_version} to {model_version}")
                 self.model, self.model_version = model, model_version
+                self.is_learned = True
 
             # Set params i
             if is_params_changed:
