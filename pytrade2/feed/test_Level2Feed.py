@@ -1,5 +1,5 @@
 import multiprocessing
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest import TestCase
 from unittest.mock import MagicMock
 
@@ -66,3 +66,13 @@ class TestLevel2Feed(TestCase):
         level2_feed.apply_buf()
 
         self.assertTrue(level2_feed.level2_buf.empty)
+
+    def test_is_alive_alive(self):
+        level2_feed = self.new_level2_feed()
+        level2_feed.level2 = pd.DataFrame(index = [datetime.utcnow() ], data = {"bid": 1})
+        self.assertTrue(level2_feed.is_alive(pd.Timedelta('1min')))
+
+    def test_is_alive_not_alive(self):
+        level2_feed = self.new_level2_feed()
+        level2_feed.level2 = pd.DataFrame(index = [datetime.utcnow() - timedelta(minutes=10) ], data = {"bid": 1})
+        self.assertFalse(level2_feed.is_alive(pd.Timedelta('1min')))
