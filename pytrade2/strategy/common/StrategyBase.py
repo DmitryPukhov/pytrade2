@@ -89,6 +89,7 @@ class StrategyBase:
 
         self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
         self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
+        self.feed_lag_max = pd.Timedelta(config.get("pytrade2.feed.lag.max", "1min"))
 
         self.trade_check_interval = timedelta(seconds=30)
         self.last_trade_check_time = datetime.utcnow() - self.trade_check_interval
@@ -173,14 +174,14 @@ class StrategyBase:
         self._logger.info("End main processing loop")
 
     def is_alive(self):
-        max_delta = pd.Timedelta("60s")
+
         feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
-        feeds_alive_dict = {feed.kind: feed.is_alive(max_delta) for feed in feeds}
+        feeds_alive_dict = {feed.kind: feed.is_alive(self.feed_lag_max) for feed in feeds}
         is_alive = all(feeds_alive_dict.values())
         #is_alive = all([feeds_alive_dict[feed.kind] for feed in feeds])
         if not is_alive:
             self._logger.info(self.get_report())
-            self._logger.error(f"Strategy is not alive for {max_delta}: {feeds_alive_dict}")
+            self._logger.error(f"Strategy is not alive for {self.feed_lag_max}: {feeds_alive_dict}")
         return is_alive
 
     def get_info(self) -> dict:
