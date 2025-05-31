@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pytrade2-data
+spec:
+  accessModes:
+    - ReadWriteOnce  # Can be 'ReadWriteOnce', 'ReadOnlyMany' or 'ReadWriteMany'
+  resources:
+    requests:
+      storage: 50Gi  # Adjust according to your needs
+  storageClassName: standard  # Specify the correct storage class name here

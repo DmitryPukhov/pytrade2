@@ -63,13 +63,19 @@ function redeploy_grafana(){
   # install grafana
   helm install pytrade2-grafana oci://registry-1.docker.io/bitnamicharts/grafana --values grafana/values.yaml
 }
+function redeploy_pvc(){
+  kubectl delete pvc pytrade2-data
+  kubectl apply -f pytrade2-data/pvc.yaml
+}
+
+
 
 ###############
 # main
 ###############
 # Exit on error
 set -e
-
+redeploy_pvc
 redeploy_secrets
 redeploy_minio
 redeploy_mlflow
