@@ -59,10 +59,10 @@ class CandlesMultiIndiFeatures:
             # the "time" interpolation method at the array level.
             # (despite the method being documented for DataFrame.interpolate()).
             # Cannot directly interpolate with "time" method, use this hack
-            candles_interpolated = candles.set_index(candles.index.view('int64')).interpolate(method='time').set_index(candles.index)
+            #candles_interpolated = candles.set_index(candles.index.view('int64')).interpolate(method='time').set_index(candles.index)
 
             period_indicators = CandlesMultiIndiFeatures.indicators_of(
-                candles_interpolated,
+                candles.interpolate(),
                 period,
                 params.get(period, CandlesMultiIndiFeatures.default_params))
 
