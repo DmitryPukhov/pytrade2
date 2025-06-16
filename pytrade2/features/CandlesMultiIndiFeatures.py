@@ -55,10 +55,17 @@ class CandlesMultiIndiFeatures:
         # Indicators
         indicators_features = []
         for period, candles in candles_by_periods.items():
+            #  pandas  DatetimeIndex interpolation does not natively support
+            # the "time" interpolation method at the array level.
+            # (despite the method being documented for DataFrame.interpolate()).
+            # Cannot directly interpolate with "time" method, use this hack
+            candles_interpolated = candles.set_index(candles.index.view('int64')).interpolate(method='time').set_index(candles.index)
+
             period_indicators = CandlesMultiIndiFeatures.indicators_of(
-                candles.interpolate(method='time'),
+                candles_interpolated,
                 period,
                 params.get(period, CandlesMultiIndiFeatures.default_params))
+
             indicators_features.append(period_indicators)
             if CandlesMultiIndiFeatures._log.isEnabledFor(logging.DEBUG):
                 CandlesMultiIndiFeatures._log.debug(f"Candles of period: {period}\n{candles.tail()}")
