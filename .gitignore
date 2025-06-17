@@ -5,15 +5,15 @@ mlartifacts
 *.secret
 *.crt
 *.key
-/pytrade2/cfg/app.yaml
+/src/pytrade2/cfg/app.yaml
 tmp
 _trial_temp*
 data
 /env
 secret.yaml
 **/secret
-/pytrade2/cfg/*-dev.yaml
-/pytrade2/cfg/*strategy*.yaml
+/src/pytrade2/cfg/*-dev.yaml
+/src/pytrade2/cfg/*strategy*.yaml
 
 /deploy/yandex_cloud/secret
 /deploy/yandex_cloud/tmp
