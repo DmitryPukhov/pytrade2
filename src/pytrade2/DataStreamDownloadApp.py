@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from App import App
+from pytrade2.App import App
 from pytrade2.exch.Exchange import Exchange
 from pytrade2.feed.BidAskFeed import BidAskFeed
 from pytrade2.feed.CandlesFeed import CandlesFeed

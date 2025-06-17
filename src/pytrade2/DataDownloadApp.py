@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-from App import App
+from pytrade2.App import App
 from pytrade2.exch.Exchange import Exchange
 from pytrade2.feed.history.CandlesExchDownloader import CandlesExchDownloader
 
