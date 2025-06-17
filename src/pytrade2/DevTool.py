@@ -13,10 +13,10 @@ from huobi.client.account import AccountClient
 from huobi.client.market import MarketClient
 from huobi.client.trade import TradeClient
 
-from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
-from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
-from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
-from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
+from pytrade2.exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from pytrade2.exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from pytrade2.exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
+from pytrade2.exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
 
 
 class DevTool():

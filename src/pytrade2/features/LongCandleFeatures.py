@@ -1,6 +1,6 @@
 from typing import Dict
 import pandas as pd
-from features.CandlesFeatures import CandlesFeatures
+from pytrade2.features.CandlesFeatures import CandlesFeatures
 
 
 class LongCandleFeatures:

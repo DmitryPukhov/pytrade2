@@ -1,7 +1,7 @@
 import pandas as pd
 from ta import trend, momentum
 
-from features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
+from pytrade2.features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
 
 
 class Level2MultiIndiFeatures:

@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 
-from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
-from datamodel.Trade import Trade
-from strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
+from pytrade2.exch.binance.broker.BinanceBroker import BinanceBrokerSpot
+from pytrade2.datamodel.Trade import Trade
+from pytrade2.strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
 
 
 class ModelStub:

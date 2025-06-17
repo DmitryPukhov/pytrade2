@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from features.LongCandleFeatures import LongCandleFeatures
+from pytrade2.features.LongCandleFeatures import LongCandleFeatures
 
 
 class TestLongCandleFeatures(TestCase):

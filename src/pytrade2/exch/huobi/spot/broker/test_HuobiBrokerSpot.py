@@ -11,9 +11,9 @@ from huobi.client.trade import TradeClient
 from huobi.constant import OrderState, OrderType
 from huobi.model.trade import Order, OrderUpdateEvent, OrderUpdate
 
-from exch.huobi.spot.broker.AccountManagerSpot import AccountManagerSpot
-from exch.huobi.spot.broker.HuobiBrokerSpot import HuobiBrokerSpot
-from exch.BrokerSpotBase import BrokerSpotBase
+from pytrade2.exch.huobi.spot.broker.AccountManagerSpot import AccountManagerSpot
+from pytrade2.exch.huobi.spot.broker.HuobiBrokerSpot import HuobiBrokerSpot
+from pytrade2.exch.BrokerSpotBase import BrokerSpotBase
 
 
 class TestHuobiBrokerSpot(unittest.TestCase):

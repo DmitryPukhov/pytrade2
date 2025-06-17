@@ -8,11 +8,11 @@ from pathlib import Path
 import pandas as pd
 
 from App import App
-from exch.Exchange import Exchange
-from feed.BidAskFeed import BidAskFeed
-from feed.CandlesFeed import CandlesFeed
-from feed.Level2Feed import Level2Feed
-from strategy.persist.DataPersister import DataPersister
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.feed.BidAskFeed import BidAskFeed
+from pytrade2.feed.CandlesFeed import CandlesFeed
+from pytrade2.feed.Level2Feed import Level2Feed
+from pytrade2.strategy.persist.DataPersister import DataPersister
 
 
 class DataStreamDownloadApp(App):

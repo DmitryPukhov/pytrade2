@@ -8,7 +8,7 @@ from huobi.client.market import MarketClient
 from huobi.model.market import *
 from huobi.utils import PrintBasic
 
-from exch.huobi.HuobiTools import HuobiTools
+from pytrade2.exch.huobi.HuobiTools import HuobiTools
 
 
 class HuobiWebsocketFeedSpot:

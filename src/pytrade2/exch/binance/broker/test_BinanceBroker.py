@@ -4,8 +4,8 @@ from typing import Dict
 from unittest import mock
 from unittest.mock import Mock, MagicMock
 
-from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
-from exch.BrokerSpotBase import BrokerSpotBase
+from pytrade2.exch.binance.broker.BinanceBroker import BinanceBrokerSpot
+from pytrade2.exch.BrokerSpotBase import BrokerSpotBase
 
 
 class TestBinanceBroker(unittest.TestCase):

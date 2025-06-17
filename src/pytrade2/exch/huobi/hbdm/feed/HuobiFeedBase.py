@@ -1,8 +1,8 @@
 import logging
 import re
 
-from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
-from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from pytrade2.exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from pytrade2.exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
 
 
 class HuobiFeedBase:

@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
-from strategy.signal.SignalByFutLowHigh import SignalByFutLowHigh
+from pytrade2.strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
+from pytrade2.strategy.signal.SignalByFutLowHigh import SignalByFutLowHigh
 
 
 class TestSignalByFutLowHigh(TestCase):

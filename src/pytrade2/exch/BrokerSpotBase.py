@@ -7,9 +7,9 @@ from typing import Optional, Dict
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from exch.Broker import Broker
-from datamodel.Trade import Trade
-from datamodel.TradeStatus import TradeStatus
+from pytrade2.exch.Broker import Broker
+from pytrade2.datamodel.Trade import Trade
+from pytrade2.datamodel.TradeStatus import TradeStatus
 
 
 

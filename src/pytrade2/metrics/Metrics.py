@@ -1,6 +1,6 @@
 from prometheus_client import Gauge
 
-from datamodel.Trade import Trade
+from pytrade2.datamodel.Trade import Trade
 
 
 class Metrics:

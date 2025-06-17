@@ -2,7 +2,7 @@ from unittest import TestCase
 from datetime import datetime, timedelta
 import pandas as pd
 
-from features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
+from pytrade2.features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
 
 
 class TestMultiIndiFeatures(TestCase):

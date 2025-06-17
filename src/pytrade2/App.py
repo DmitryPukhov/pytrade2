@@ -13,11 +13,11 @@ from typing import Dict
 import pandas as pd
 import yaml
 
-from metrics.MetricServer import MetricServer
+from pytrade2.metrics.MetricServer import MetricServer
 
-from exch.Exchange import Exchange
-from metrics.Metrics import Metrics
-from strategy.common.StrategyBase import StrategyBase
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.metrics.Metrics import Metrics
+from pytrade2.strategy.common.StrategyBase import StrategyBase
 
 
 class App:

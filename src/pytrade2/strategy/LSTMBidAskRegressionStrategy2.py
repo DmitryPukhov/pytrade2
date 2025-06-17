@@ -1,7 +1,7 @@
 from keras import Sequential
 from keras.layers import Dense, Dropout, LSTM
 
-from strategy.common.LSTMBidAskRegressionStrategyBase import LSTMBidAskRegressionStrategyBase
+from pytrade2.strategy.common.LSTMBidAskRegressionStrategyBase import LSTMBidAskRegressionStrategyBase
 
 
 class LSTMBidAskRegressionStrategy2(LSTMBidAskRegressionStrategyBase):

@@ -2,7 +2,7 @@ import datetime
 from unittest import TestCase
 import pandas as pd
 
-from strategy.common.LearnDataBalancer import LearnDataBalancer
+from pytrade2.strategy.common.LearnDataBalancer import LearnDataBalancer
 
 
 class LearnDataBalancerTest(TestCase):

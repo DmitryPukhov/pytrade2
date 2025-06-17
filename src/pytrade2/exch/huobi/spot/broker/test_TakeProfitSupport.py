@@ -2,8 +2,8 @@ import unittest
 from threading import RLock
 from unittest.mock import Mock
 from huobi.model.market import TradeDetailEvent, TradeDetail
-from exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
-from datamodel.Trade import Trade
+from pytrade2.exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
+from pytrade2.datamodel.Trade import Trade
 
 
 class TestTakeProfitSupport(unittest.TestCase):

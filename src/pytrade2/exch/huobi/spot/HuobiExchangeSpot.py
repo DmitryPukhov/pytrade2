@@ -8,10 +8,10 @@ from huobi.client.trade import TradeClient
 from huobi.connection.impl.websocket_manage import WebsocketManage
 from huobi.utils import PrintBasic
 
-from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
-from exch.huobi.spot.broker.HuobiBrokerSpot import HuobiBrokerSpot
-from exch.huobi.spot.feed.HuobiCandlesFeedSpot import HuobiCandlesFeedSpot
-from exch.huobi.spot.feed.HuobiWebsocketFeedSpot import HuobiWebsocketFeedSpot
+from pytrade2.exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from pytrade2.exch.huobi.spot.broker.HuobiBrokerSpot import HuobiBrokerSpot
+from pytrade2.exch.huobi.spot.feed.HuobiCandlesFeedSpot import HuobiCandlesFeedSpot
+from pytrade2.exch.huobi.spot.feed.HuobiWebsocketFeedSpot import HuobiWebsocketFeedSpot
 
 
 class HuobiExchangeSpot:

@@ -12,12 +12,12 @@ from huobi.client.trade import TradeClient
 from huobi.constant import *
 from huobi.model.trade import OrderUpdateEvent
 
-from exch.BrokerSpotBase import BrokerSpotBase
-from exch.huobi.HuobiTools import HuobiTools
-from exch.huobi.spot.broker.AccountManagerSpot import AccountManagerSpot
-from exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
-from datamodel.Trade import Trade
-from datamodel.TradeStatus import TradeStatus
+from pytrade2.exch.BrokerSpotBase import BrokerSpotBase
+from pytrade2.exch.huobi.HuobiTools import HuobiTools
+from pytrade2.exch.huobi.spot.broker.AccountManagerSpot import AccountManagerSpot
+from pytrade2.exch.huobi.spot.broker.TakeProfitSupport import TakeProfitSupport
+from pytrade2.datamodel.Trade import Trade
+from pytrade2.datamodel.TradeStatus import TradeStatus
 
 
 class HuobiBrokerSpot(BrokerSpotBase, TakeProfitSupport):

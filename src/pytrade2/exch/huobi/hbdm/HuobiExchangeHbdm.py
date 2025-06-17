@@ -1,11 +1,11 @@
 import logging
 from typing import Optional
 
-from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
-from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
-from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
-from exch.huobi.hbdm.feed.HuobiCandlesFeedHbdm import HuobiCandlesFeedHbdm
-from exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
+from pytrade2.exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from pytrade2.exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from pytrade2.exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
+from pytrade2.exch.huobi.hbdm.feed.HuobiCandlesFeedHbdm import HuobiCandlesFeedHbdm
+from pytrade2.exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
 
 
 class HuobiExchangeHbdm:

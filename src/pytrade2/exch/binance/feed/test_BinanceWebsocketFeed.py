@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
+from pytrade2.exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 
 
 class TestBinanceWebsocketFeed(TestCase):

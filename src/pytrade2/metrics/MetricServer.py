@@ -6,7 +6,7 @@ from functools import wraps
 from flask import Flask, request, abort
 from prometheus_client import make_wsgi_app
 
-from metrics.Metrics import Metrics
+from pytrade2.metrics.Metrics import Metrics
 
 
 class MetricServer:

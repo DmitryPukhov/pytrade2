@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 from unittest import TestCase
 
-from features.PredictBidAskFeatures import PredictBidAskFeatures
+from pytrade2.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
 class TestPredictBidAskFeatures(TestCase):

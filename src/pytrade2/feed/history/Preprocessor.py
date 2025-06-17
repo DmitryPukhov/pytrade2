@@ -3,7 +3,7 @@ import os
 import pathlib
 import pandas as pd
 
-from features.level2.Level2Features import Level2Features
+from pytrade2.features.level2.Level2Features import Level2Features
 
 
 class Preprocessor:

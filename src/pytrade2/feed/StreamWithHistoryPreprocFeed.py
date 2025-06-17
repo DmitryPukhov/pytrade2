@@ -4,9 +4,9 @@ from datetime import datetime
 
 import pandas as pd
 
-from feed.CandlesFeed import CandlesFeed
-from feed.history.HistoryS3Downloader import HistoryS3Downloader
-from feed.history.Preprocessor import Preprocessor
+from pytrade2.feed.CandlesFeed import CandlesFeed
+from pytrade2.feed.history.HistoryS3Downloader import HistoryS3Downloader
+from pytrade2.feed.history.Preprocessor import Preprocessor
 
 
 class StreamWithHistoryPreprocFeed(object):

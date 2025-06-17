@@ -8,11 +8,11 @@ from typing import Optional
 
 from sqlalchemy.orm.session import Session
 
-from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
-from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
-from datamodel.Trade import Trade
-from datamodel.TradeStatus import TradeStatus
-from metrics.MetricServer import MetricServer
+from pytrade2.exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from pytrade2.exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
+from pytrade2.datamodel.Trade import Trade
+from pytrade2.datamodel.TradeStatus import TradeStatus
+from pytrade2.metrics.MetricServer import MetricServer
 
 
 class OrderCreator:

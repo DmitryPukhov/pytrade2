@@ -4,10 +4,10 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
-from exch.huobi.hbdm.broker.OrderFollower import OrderFollower
-from datamodel.Trade import Trade
-from metrics.MetricServer import MetricServer
+from pytrade2.exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
+from pytrade2.exch.huobi.hbdm.broker.OrderFollower import OrderFollower
+from pytrade2.datamodel.Trade import Trade
+from pytrade2.metrics.MetricServer import MetricServer
 
 
 class TestOrderManager(TestCase):

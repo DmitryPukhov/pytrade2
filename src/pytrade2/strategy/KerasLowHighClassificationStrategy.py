@@ -7,11 +7,11 @@ from keras.layers import Dense, Dropout
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
-from exch.Exchange import Exchange
-from features.LongCandleFeatures import LongCandleFeatures
-from strategy.common.LearnDataBalancer import LearnDataBalancer
-from strategy.common.StrategyBase import StrategyBase
-from strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.features.LongCandleFeatures import LongCandleFeatures
+from pytrade2.strategy.common.LearnDataBalancer import LearnDataBalancer
+from pytrade2.strategy.common.StrategyBase import StrategyBase
+from pytrade2.strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
 
 
 class KerasLowHighClassificationStrategy(StrategyBase):

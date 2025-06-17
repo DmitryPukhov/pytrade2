@@ -2,10 +2,10 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from exch.AccountManagerBase import AccountManagerBase
-from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
-from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
-from metrics.MetricServer import MetricServer
+from pytrade2.exch.AccountManagerBase import AccountManagerBase
+from pytrade2.exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from pytrade2.exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from pytrade2.metrics.MetricServer import MetricServer
 
 
 class AccountManagerHbdm(AccountManagerBase):

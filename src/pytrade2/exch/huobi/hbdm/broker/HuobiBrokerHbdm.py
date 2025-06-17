@@ -1,15 +1,15 @@
 import logging
 
-from exch.Broker import Broker
-from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
-from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
-from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
-from exch.huobi.hbdm.broker.OrderFollower import OrderFollower
-from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
-from exch.huobi.hbdm.broker.TrailingStopSupport import TrailingStopSupport
-from exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
-from datamodel.Trade import Trade
-from metrics.MetricServer import MetricServer
+from pytrade2.exch.Broker import Broker
+from pytrade2.exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from pytrade2.exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from pytrade2.exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
+from pytrade2.exch.huobi.hbdm.broker.OrderFollower import OrderFollower
+from pytrade2.exch.huobi.hbdm.broker.OrderCreator import OrderCreator
+from pytrade2.exch.huobi.hbdm.broker.TrailingStopSupport import TrailingStopSupport
+from pytrade2.exch.huobi.hbdm.feed.HuobiWebSocketFeedHbdm import HuobiWebSocketFeedHbdm
+from pytrade2.datamodel.Trade import Trade
+from pytrade2.metrics.MetricServer import MetricServer
 
 
 class HuobiBrokerHbdm(OrderCreator, TrailingStopSupport, OrderFollower, Broker):

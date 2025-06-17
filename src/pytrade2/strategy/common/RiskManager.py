@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from exch.Broker import Broker
+from pytrade2.exch.Broker import Broker
 
 
 class RiskManager:

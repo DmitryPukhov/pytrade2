@@ -1,10 +1,10 @@
 from typing import Dict
 import pandas as pd
 from numpy import ndarray
-from exch.Exchange import Exchange
-from strategy.common.StrategyBase import StrategyBase
-from features.PredictBidAskFeatures import PredictBidAskFeatures
-from strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.strategy.common.StrategyBase import StrategyBase
+from pytrade2.features.PredictBidAskFeatures import PredictBidAskFeatures
+from pytrade2.strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
 
 
 class BidAskRegressionStrategyBase(StrategyBase):

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from features.LowHighTargets import LowHighTargets
+from pytrade2.features.LowHighTargets import LowHighTargets
 
 
 class TestLowHighTargets(TestCase):

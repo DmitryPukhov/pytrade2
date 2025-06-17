@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 
-from strategy.common.LSTMBidAskRegressionStrategyBase import LSTMBidAskRegressionStrategyBase
+from pytrade2.strategy.common.LSTMBidAskRegressionStrategyBase import LSTMBidAskRegressionStrategyBase
 
 
 class TestLSTMBidAskRegressionStrategyBase(TestCase):

@@ -6,9 +6,9 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import RobustScaler, MinMaxScaler, FunctionTransformer
 
-from exch.Exchange import Exchange
-from strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
-from features.PredictBidAskFeatures import PredictBidAskFeatures
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
+from pytrade2.features.PredictBidAskFeatures import PredictBidAskFeatures
 
 
 class LSTMBidAskRegressionStrategyBase(BidAskRegressionStrategyBase):

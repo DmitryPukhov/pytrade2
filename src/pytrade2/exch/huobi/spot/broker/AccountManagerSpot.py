@@ -8,8 +8,8 @@ from huobi.client.account import AccountClient
 from huobi.constant import AccountBalanceMode
 from huobi.model.account import AccountUpdateEvent, AccountUpdate
 
-from exch.AccountManagerBase import AccountManagerBase
-from exch.huobi.HuobiTools import HuobiTools
+from pytrade2.exch.AccountManagerBase import AccountManagerBase
+from pytrade2.exch.huobi.HuobiTools import HuobiTools
 
 
 class AccountManagerSpot(AccountManagerBase):

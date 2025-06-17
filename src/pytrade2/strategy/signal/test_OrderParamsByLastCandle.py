@@ -1,6 +1,6 @@
 from unittest import TestCase
 import pandas as pd
-from strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
+from pytrade2.strategy.signal.OrderParamsByLastCandle import OrderParamsByLastCandle
 
 
 class TestOrderParamsByLastCandle(TestCase):

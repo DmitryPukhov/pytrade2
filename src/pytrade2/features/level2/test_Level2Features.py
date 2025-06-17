@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from unittest import TestCase
 import pandas as pd
-from features.level2.Level2Features import Level2Features
+from pytrade2.features.level2.Level2Features import Level2Features
 
 
 class TestLevel2Features(TestCase):

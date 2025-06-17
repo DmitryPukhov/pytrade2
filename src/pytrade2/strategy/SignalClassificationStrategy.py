@@ -10,13 +10,13 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 
-from exch.Exchange import Exchange
-from features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
-from features.LowHighTargets import LowHighTargets
-from features.level2.Level2MultiIndiFeatures import Level2MultiIndiFeatures
-from feed.StreamWithHistoryPreprocFeed import StreamWithHistoryPreprocFeed
-from metrics.MetricServer import MetricServer
-from strategy.common.StrategyBase import StrategyBase
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
+from pytrade2.features.LowHighTargets import LowHighTargets
+from pytrade2.features.level2.Level2MultiIndiFeatures import Level2MultiIndiFeatures
+from pytrade2.feed.StreamWithHistoryPreprocFeed import StreamWithHistoryPreprocFeed
+from pytrade2.metrics.MetricServer import MetricServer
+from pytrade2.strategy.common.StrategyBase import StrategyBase
 
 
 class SignalClassificationStrategy(StrategyBase):

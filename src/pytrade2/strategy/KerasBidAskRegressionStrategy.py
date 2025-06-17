@@ -3,7 +3,7 @@ from typing import Dict
 from keras import Sequential, Input
 from keras.layers import Dense, Dropout
 
-from strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
+from pytrade2.strategy.common.BidAskRegressionStrategyBase import BidAskRegressionStrategyBase
 
 
 class KerasBidAskRegressionStrategy(BidAskRegressionStrategyBase):

@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from strategy.common.StrategyBase import StrategyBase
+from pytrade2.strategy.common.StrategyBase import StrategyBase
 
 
 class TestStrategyBase(TestCase):

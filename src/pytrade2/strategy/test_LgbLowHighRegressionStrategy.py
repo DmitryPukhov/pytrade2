@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from metrics.MetricServer import MetricServer
-from strategy.LgbLowHighRegressionStrategy import LgbLowHighRegressionStrategy
-from feed.CandlesFeed import CandlesFeed
+from pytrade2.metrics.MetricServer import MetricServer
+from pytrade2.strategy.LgbLowHighRegressionStrategy import LgbLowHighRegressionStrategy
+from pytrade2.feed.CandlesFeed import CandlesFeed
 
 
 class TestLgbLowHighRegressionStrategy(TestCase):

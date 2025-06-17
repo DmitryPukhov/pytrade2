@@ -7,9 +7,9 @@ from huobi.constant import TradeDirection
 from huobi.model.market import TradeDetail
 from huobi.model.market.trade_detail_event import TradeDetailEvent
 
-from exch.huobi.HuobiTools import HuobiTools
-from datamodel.Trade import Trade
-from datamodel.TradeStatus import TradeStatus
+from pytrade2.exch.huobi.HuobiTools import HuobiTools
+from pytrade2.datamodel.Trade import Trade
+from pytrade2.datamodel.TradeStatus import TradeStatus
 
 
 class TakeProfitSupport:

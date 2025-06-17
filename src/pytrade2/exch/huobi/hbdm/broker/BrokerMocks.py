@@ -2,9 +2,9 @@ import threading
 from unittest.mock import MagicMock, patch
 
 from exch import AccountManagerBase
-from exch.Broker import Broker
-from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
-from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
+from pytrade2.exch.Broker import Broker
+from pytrade2.exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
+from pytrade2.exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
 
 
 class BrokerMocks:

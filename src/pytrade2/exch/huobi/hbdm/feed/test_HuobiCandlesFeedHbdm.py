@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from exch.huobi.hbdm.feed.HuobiCandlesFeedHbdm import HuobiCandlesFeedHbdm
+from pytrade2.exch.huobi.hbdm.feed.HuobiCandlesFeedHbdm import HuobiCandlesFeedHbdm
 
 
 class TestHuobiCandlesFeedHbdm(TestCase):

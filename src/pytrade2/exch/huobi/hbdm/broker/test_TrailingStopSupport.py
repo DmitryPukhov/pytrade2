@@ -3,8 +3,8 @@ from datetime import datetime
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from exch.huobi.hbdm.broker.TrailingStopSupport import TrailingStopSupport
-from datamodel.Trade import Trade
+from pytrade2.exch.huobi.hbdm.broker.TrailingStopSupport import TrailingStopSupport
+from pytrade2.datamodel.Trade import Trade
 
 
 class TestTrailingStopSupport(TestCase):

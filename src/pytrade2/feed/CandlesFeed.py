@@ -8,8 +8,8 @@ from typing import Dict
 
 import pandas as pd
 
-from exch.Exchange import Exchange
-from feed.history.CandlesExchDownloader import CandlesExchDownloader
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.feed.history.CandlesExchDownloader import CandlesExchDownloader
 
 
 class CandlesFeed:

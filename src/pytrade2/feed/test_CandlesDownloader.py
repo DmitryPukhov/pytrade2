@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest import TestCase
 
-from feed.history.CandlesExchDownloader import CandlesExchDownloader
+from pytrade2.feed.history.CandlesExchDownloader import CandlesExchDownloader
 
 
 class TestCandlesDownloader(TestCase):

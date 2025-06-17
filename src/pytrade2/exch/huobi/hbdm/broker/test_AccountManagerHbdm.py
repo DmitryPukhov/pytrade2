@@ -3,9 +3,9 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
-from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
-from datamodel.Trade import Trade
+from pytrade2.exch.huobi.hbdm.broker.AccountManagerHbdm import AccountManagerHbdm
+from pytrade2.exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
+from pytrade2.datamodel.Trade import Trade
 
 
 class TestHuobiBrokerHbdm(TestCase):

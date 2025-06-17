@@ -1,6 +1,6 @@
 import pandas as pd
 
-from strategy.signal.SignalCalcBase import SignalCalcBase
+from pytrade2.strategy.signal.SignalCalcBase import SignalCalcBase
 
 
 class OrderParamsByLastCandle(SignalCalcBase):

@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from features.CandlesFeatures import CandlesFeatures
+from pytrade2.features.CandlesFeatures import CandlesFeatures
 
 
 class TestCandlesFeatures(TestCase):

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from exch.huobi.hbdm.feed.HuobiFeedBase import HuobiFeedBase
+from pytrade2.exch.huobi.hbdm.feed.HuobiFeedBase import HuobiFeedBase
 
 
 class TestHuobiFeedBase(TestCase):

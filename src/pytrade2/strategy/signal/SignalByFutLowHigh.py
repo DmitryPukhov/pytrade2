@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from strategy.signal.SignalCalcBase import SignalCalcBase
+from pytrade2.strategy.signal.SignalCalcBase import SignalCalcBase
 
 
 class SignalByFutLowHigh(SignalCalcBase):

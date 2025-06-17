@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from feed.CandlesFeed import CandlesFeed
+from pytrade2.feed.CandlesFeed import CandlesFeed
 
 
 class TestCandlesFeed(TestCase):

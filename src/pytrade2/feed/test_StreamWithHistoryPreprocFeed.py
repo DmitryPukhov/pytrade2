@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from feed.StreamWithHistoryPreprocFeed import StreamWithHistoryPreprocFeed
+from pytrade2.feed.StreamWithHistoryPreprocFeed import StreamWithHistoryPreprocFeed
 
 
 class TestStreamHistoryPreprocFeed(TestCase):

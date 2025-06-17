@@ -1,4 +1,4 @@
-from strategy.signal.SignalCalcBase import SignalCalcBase
+from pytrade2.strategy.signal.SignalCalcBase import SignalCalcBase
 
 
 class SignalByFutBidAsk(SignalCalcBase):

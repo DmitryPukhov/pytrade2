@@ -13,14 +13,14 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 
-from exch.Exchange import Exchange
-from feed.BidAskFeed import BidAskFeed
-from feed.CandlesFeed import CandlesFeed
-from feed.Level2Feed import Level2Feed
-from metrics.MetricServer import MetricServer
-from strategy.common.RiskManager import RiskManager
-from strategy.persist.DataPersister import DataPersister
-from strategy.persist.ModelPersister import ModelPersister
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.feed.BidAskFeed import BidAskFeed
+from pytrade2.feed.CandlesFeed import CandlesFeed
+from pytrade2.feed.Level2Feed import Level2Feed
+from pytrade2.metrics.MetricServer import MetricServer
+from pytrade2.strategy.common.RiskManager import RiskManager
+from pytrade2.strategy.persist.DataPersister import DataPersister
+from pytrade2.strategy.persist.ModelPersister import ModelPersister
 
 
 class StrategyBase:

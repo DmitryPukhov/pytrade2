@@ -5,12 +5,12 @@ import lightgbm as lgb
 import pandas as pd
 from sklearn.multioutput import MultiOutputRegressor
 
-from metrics.MetricServer import MetricServer
-from exch.Exchange import Exchange
-from strategy.common.StrategyBase import StrategyBase
-from features.LowHighTargets import LowHighTargets
-from features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
-from strategy.signal.SignalByFutLowHigh import SignalByFutLowHigh
+from pytrade2.metrics.MetricServer import MetricServer
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.strategy.common.StrategyBase import StrategyBase
+from pytrade2.features.LowHighTargets import LowHighTargets
+from pytrade2.features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
+from pytrade2.strategy.signal.SignalByFutLowHigh import SignalByFutLowHigh
 
 
 class LgbLowHighRegressionStrategy(StrategyBase):

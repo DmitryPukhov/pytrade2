@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
+from pytrade2.strategy.signal.SignalByFutBidAsk import SignalByFutBidAsk
 
 
 class TestSignalByFutBidAsk(TestCase):

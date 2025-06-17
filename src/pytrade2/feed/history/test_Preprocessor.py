@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import pandas as pd
 
-from feed.history.Preprocessor import Preprocessor
+from pytrade2.feed.history.Preprocessor import Preprocessor
 
 
 class TestPreprocessor(TestCase):

@@ -4,7 +4,7 @@ from typing import Dict
 
 import pandas as pd
 
-from exch.Exchange import Exchange
+from pytrade2.exch.Exchange import Exchange
 
 
 class BidAskFeed:

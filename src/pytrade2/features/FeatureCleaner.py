@@ -2,7 +2,7 @@ import pandas as pd
 
 
 class FeatureCleaner:
-    """ Exclude input time gaps from features"""
+    """ Exclude input time gaps from pytrade2.features"""
 
     @classmethod
     def find_time_gaps(cls, dfindex: pd.DatetimeIndex, start_delta: pd.Timedelta = pd.Timedelta(0), freq='1min') -> [()]:

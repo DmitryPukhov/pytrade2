@@ -11,7 +11,7 @@ from typing import Dict, Optional
 import boto3
 import pandas as pd
 
-from strategy.persist.Boto3Hack import Boto3Hack
+from pytrade2.strategy.persist.Boto3Hack import Boto3Hack
 
 
 class DataPersister:

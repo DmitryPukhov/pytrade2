@@ -2,9 +2,9 @@ import copy
 from datetime import datetime
 from unittest import TestCase
 
-from exch.huobi.hbdm.broker.OrderCreator import OrderCreator
+from pytrade2.exch.huobi.hbdm.broker.OrderCreator import OrderCreator
 
-from datamodel.Trade import Trade
+from pytrade2.datamodel.Trade import Trade
 
 
 class TestOrderCreator(TestCase):

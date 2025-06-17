@@ -1,7 +1,7 @@
 from datetime import datetime
 from unittest import TestCase
 import pandas as pd
-from features.level2.Level2Buckets import Level2Buckets
+from pytrade2.features.level2.Level2Buckets import Level2Buckets
 
 
 class TestLevel2Buckets(TestCase):

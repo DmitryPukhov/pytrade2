@@ -3,9 +3,9 @@ from datetime import datetime, timezone, tzinfo, timedelta
 
 import pandas as pd
 
-from exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
-from exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
-from exch.huobi.hbdm.feed.HuobiFeedBase import HuobiFeedBase
+from pytrade2.exch.huobi.hbdm.HuobiRestClient import HuobiRestClient
+from pytrade2.exch.huobi.hbdm.HuobiWebSocketClient import HuobiWebSocketClient
+from pytrade2.exch.huobi.hbdm.feed.HuobiFeedBase import HuobiFeedBase
 
 
 class HuobiCandlesFeedHbdm(HuobiFeedBase):

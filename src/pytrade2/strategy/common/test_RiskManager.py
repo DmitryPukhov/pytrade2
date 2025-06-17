@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 
-from exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
-from datamodel.Trade import Trade
-from strategy.common.RiskManager import RiskManager
+from pytrade2.exch.huobi.hbdm.broker.HuobiBrokerHbdm import HuobiBrokerHbdm
+from pytrade2.datamodel.Trade import Trade
+from pytrade2.strategy.common.RiskManager import RiskManager
 
 
 class TestRiskManager(TestCase):

@@ -3,9 +3,9 @@ import logging
 from binance.spot import Spot
 from binance.websocket.spot.websocket_client import SpotWebsocketClient
 
-from exch.binance.broker.BinanceBroker import BinanceBrokerSpot
-from exch.binance.feed.BinanceCandlesFeed import BinanceCandlesFeed
-from exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
+from pytrade2.exch.binance.broker.BinanceBroker import BinanceBrokerSpot
+from pytrade2.exch.binance.feed.BinanceCandlesFeed import BinanceCandlesFeed
+from pytrade2.exch.binance.feed.BinanceWebsocketFeed import BinanceWebsocketFeed
 
 
 class BinanceExchange:

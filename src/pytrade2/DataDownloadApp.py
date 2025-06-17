@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Dict
 
 from App import App
-from exch.Exchange import Exchange
-from feed.history.CandlesExchDownloader import CandlesExchDownloader
+from pytrade2.exch.Exchange import Exchange
+from pytrade2.feed.history.CandlesExchDownloader import CandlesExchDownloader
 
 
 class DataDownloadApp(App):
