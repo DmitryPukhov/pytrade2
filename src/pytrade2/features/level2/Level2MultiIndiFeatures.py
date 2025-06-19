@@ -46,7 +46,7 @@ class Level2MultiIndiFeatures:
         if not params:
             params = CandlesMultiIndiFeatures.default_params
 
-        resampled = df_level2.resample("1min", closed="right").agg("mean")
+        resampled = df_level2.resample("1min", closed="right", label="right").agg("mean")
         # resampled = rolling_level2(df_level2, period)
         resampled["l2_price"] = (resampled["l2_bid_max"] + resampled[
             "l2_ask_min"]) / 2
