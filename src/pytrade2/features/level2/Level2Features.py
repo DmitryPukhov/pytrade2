@@ -2,7 +2,8 @@ import pandas as pd
 
 
 class Level2Features:
-    def expectation(self, level2_df: pd.DataFrame):
+    @staticmethod
+    def expectation(level2_df: pd.DataFrame, period ="1min"):
         """ Expectations with volumes"""
         # temp columns to calc expectations
         df = level2_df.set_index("datetime")
@@ -34,9 +35,15 @@ class Level2Features:
         df["ask_expect"] = df["ask_vol_mult"]/df["ask_vol"]
         df["bid_ask_expect"] = df["bidask_vol_mult"] / (df["bid_vol"] + df["ask_vol"])
 
+        # Without technical columns
         df.columns = [f"l2_{col}" for col in df.columns]
         # Return without temp columns
-        return df[["l2_bid_max", "l2_bid_vol",  "l2_bid_expect",
+        df = df[["l2_bid_max", "l2_bid_vol",  "l2_bid_expect",
                    "l2_ask_min","l2_ask_vol","l2_ask_expect", "l2_bid_ask_expect"]]
+
+        # Resample, usually 1min
+        df = df.resample(period, label ="right", closed ="right").mean()
+        df["datetime"] = df.index
+        return df
 
 
