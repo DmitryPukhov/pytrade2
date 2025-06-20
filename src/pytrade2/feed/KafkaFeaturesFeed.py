@@ -2,7 +2,6 @@ import json
 import logging
 import multiprocessing
 from threading import Thread
-from typing import Dict
 
 import pandas as pd
 from confluent_kafka.cimpl import Consumer
@@ -17,7 +16,7 @@ class KafkaFeaturesFeed:
                  new_data_event: multiprocessing.Event):
         self._logger = logging.getLogger(self.__class__.__name__)
         self.data_lock = data_lock
-        self.new_data_event = new_data_event
+        self._new_data_event = new_data_event
         kafka_conf = self._create_kafka_conf(config)
         self._consumer = Consumer(kafka_conf)
         self._features_topic = config['pytrade2.feed.features.kafka.topic']
@@ -33,7 +32,7 @@ class KafkaFeaturesFeed:
         # }
 
         kafka_conf = {
-            'bootstrap.servers': config['pytrade2.feed.features.kafka.bootstrap.servers'],
+            'bootstrap.servers': config.get('pytrade2.feed.features.kafka.bootstrap.servers', 'localhost:9092'),
             'group.id': self.__class__.__name__,  # Consumer group ID
             'auto.offset.reset': 'earliest',  # todo: change to latest
         }
@@ -54,15 +53,18 @@ class KafkaFeaturesFeed:
                     continue
                 else:
                     msg = json.loads(msg.value().decode('utf-8'))
-                    self.on_message(msg)
-                    self.new_data_event.set()
+                    self._on_message(msg)
+                    self._new_data_event.set()
 
         except KeyboardInterrupt:
             self._consumer.close()
 
-    def on_message(self, message):
+    def _on_message(self, message):
         self._logger.debug(f"Received message: {message}")
+        if not message:
+            return
         self._buf.append(message)
+        self._new_data_event.set()
 
     def run(self):
         Thread(target=self.process_loop).start()
@@ -70,9 +72,9 @@ class KafkaFeaturesFeed:
     def apply_buf(self):
         """ Add the buf to the data then clear the buf """
         with self.data_lock:
-            self.data = self.data.append(self._buf)
+            new_df = pd.DataFrame(self._buf)
+            self.data = pd.concat([self.data, new_df]) if not self.data.empty else new_df
             self._buf = []
-            self.new_data_event.set()
 
     def is_alive(self, maxdelta: pd.Timedelta):
 
