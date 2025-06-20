@@ -24,7 +24,7 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
         # self.websocket_feed = None
         StrategyBase.__init__(self, config=config,
                               exchange_provider=exchange_provider,
-                              is_candles_feed=False,
+                              is_candles_feed=True,
                               is_bid_ask_feed=False,
                               is_level2_feed=False)
 
@@ -84,7 +84,7 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
 
         if signal != 0:
             # Calc last price, we expect new trade to be opened at this if signal is 1 or -1
-            price = self.candles_feed.preproc_data_df['close'][-1]
+            price = self.candles_feed.candles_cnt_by_interval["1min"]['close'][-1]
             stop_loss_price = price + price * self.stop_loss_coeff * signal
             take_profit_price = price + price * self.stop_loss_coeff * self.profit_loss_ratio
 

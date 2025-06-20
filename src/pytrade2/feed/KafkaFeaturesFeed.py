@@ -2,6 +2,7 @@ import json
 import logging
 import multiprocessing
 from threading import Thread
+from typing import Optional
 
 import pandas as pd
 from confluent_kafka.cimpl import Consumer
@@ -17,12 +18,13 @@ class KafkaFeaturesFeed:
         self._logger = logging.getLogger(self.__class__.__name__)
         self.data_lock = data_lock
         self._new_data_event = new_data_event
-        kafka_conf = self._create_kafka_conf(config)
-        self._consumer = Consumer(kafka_conf)
+        self._kafka_conf = self._create_kafka_conf(config)
+        self._consumer: Optional[Consumer] = None
         self._features_topic = config['pytrade2.feed.features.kafka.topic']
         self._buf = []
         self.data = pd.DataFrame()
-        self._logger.info(f"Features Feed created. Kafka topic: {self._features_topic}, bootstrap.servers: {kafka_conf.get('bootstrap.servers')}")
+        self._logger.info(
+            f"Features Feed created. Kafka topic: {self._features_topic}, bootstrap.servers: {self._kafka_conf.get('bootstrap.servers')}")
 
     def _create_kafka_conf(self, config: dict[str, str]):
         # kafka_conf = {
@@ -39,6 +41,8 @@ class KafkaFeaturesFeed:
         return kafka_conf
 
     def process_loop(self):
+        self._consumer = Consumer(self.kafka_conf)
+
         self._logger.info(f"Subscribing to Kafka topic:{self._features_topic}")
         self._consumer.subscribe([self._features_topic])
 

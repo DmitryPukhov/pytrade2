@@ -106,7 +106,7 @@ class CandlesFeed:
             # candles_new = pd.DataFrame(self.exchange_candles_feed.read_candles(self.ticker, period, cnt)) \
             #     .set_index("close_time", drop=False)
 
-            candles = candles_1min.resample(period, closed="right").agg({'open_time': 'first',
+            candles = candles_1min.resample(period, closed="right", label="right").agg({'open_time': 'first',
                                                                          'close_time': 'last',
                                                                          'open': 'first',
                                                                          'high': 'max',
