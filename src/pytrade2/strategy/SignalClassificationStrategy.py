@@ -1,8 +1,6 @@
 import logging
 from datetime import datetime
 from typing import Dict
-
-import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -197,6 +195,7 @@ class SignalClassificationStrategy(StrategyBase):
             self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df})
 
     def create_model(self, X_size, y_size):
+        import lightgbm as lgb
         if not self.model:
             # Initialize with multi-class parameters
             model = lgb.LGBMClassifier(

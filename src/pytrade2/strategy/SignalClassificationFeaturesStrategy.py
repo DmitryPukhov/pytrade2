@@ -1,7 +1,4 @@
-import logging
 from datetime import datetime
-from multiprocessing import RLock
-from typing import Dict
 
 import lightgbm as lgb
 import numpy as np
@@ -12,11 +9,7 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 
 from pytrade2.exch.Exchange import Exchange
-from pytrade2.features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
-from pytrade2.features.LowHighTargets import LowHighTargets
-from pytrade2.features.level2.Level2MultiIndiFeatures import Level2MultiIndiFeatures
 from pytrade2.feed.KafkaFeaturesFeed import KafkaFeaturesFeed
-from pytrade2.feed.StreamWithHistoryPreprocFeed import StreamWithHistoryPreprocFeed
 from pytrade2.metrics.MetricServer import MetricServer
 from pytrade2.strategy.common.StrategyBase import StrategyBase
 
@@ -60,7 +53,7 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
         return self._features_feed.data
 
     def prepare_xy(self):
-        return (pd.DataFrame(), pd.DataFrame())
+        return pd.DataFrame(), pd.DataFrame()
 
     def predict(self, x) -> pd.DataFrame:
         # Save to buffer, actual persist by schedule of data persister

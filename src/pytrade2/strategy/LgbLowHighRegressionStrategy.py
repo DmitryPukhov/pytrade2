@@ -10,7 +10,7 @@ from pytrade2.exch.Exchange import Exchange
 from pytrade2.strategy.common.StrategyBase import StrategyBase
 from pytrade2.features.LowHighTargets import LowHighTargets
 from pytrade2.features.CandlesMultiIndiFeatures import CandlesMultiIndiFeatures
-from pytrade2.strategy.signal.SignalByFutLowHigh import SignalByFutLowHigh
+from pytrade2.strategy.signal_.SignalByFutLowHigh import SignalByFutLowHigh
 
 
 class LgbLowHighRegressionStrategy(StrategyBase):
