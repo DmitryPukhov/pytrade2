@@ -12,6 +12,7 @@ dependencies = [
     "pyyaml",
     "requests",
     "urllib3",
+    "confluent-kafka",
     #"tensorflow~=2.16.1",
     "keras",
     "numpy",

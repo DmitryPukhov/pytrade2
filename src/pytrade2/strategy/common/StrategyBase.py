@@ -92,8 +92,8 @@ class StrategyBase:
         self.take_profit_min_coeff = config.get("pytrade2.strategy.takeprofit.min.coeff", 0.0)
         self.take_profit_max_coeff = config.get("pytrade2.strategy.takeprofit.max.coeff", float('inf'))
 
-        self.history_min_window = pd.Timedelta(config["pytrade2.strategy.history.min.window"])
-        self.history_max_window = pd.Timedelta(config["pytrade2.strategy.history.max.window"])
+        self.history_min_window = pd.Timedelta(config.get("pytrade2.strategy.history.min.window"))
+        self.history_max_window = pd.Timedelta(config.get("pytrade2.strategy.history.max.window"))
         self.feed_lag_max = pd.Timedelta(config.get("pytrade2.feed.lag.max", "1min"))
 
         self.trade_check_interval = timedelta(seconds=30)
