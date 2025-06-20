@@ -8,7 +8,7 @@ from threading import Thread, Event, Timer
 from typing import Dict
 
 import pandas as pd
-#import tensorflow.python.keras.backend
+# import tensorflow.python.keras.backend
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, MaxAbsScaler
@@ -47,14 +47,19 @@ class StrategyBase:
 
         self.is_periodical = False
         self.new_data_event: Event = Event()
-        self.candles_feed = self.bid_ask_feed = self.level2_feed = None
+        self.candles_feed = self.level2_feed = self.bid_ask_feed = None
+        self._feeds = []
         if is_candles_feed:
             self.candles_feed = CandlesFeed(config, self.ticker, exchange_provider, self.data_lock, self.new_data_event,
                                             strategy_name)
+            self._feeds.append(self.candles_feed)
         if is_level2_feed:
             self.level2_feed = Level2Feed(config, exchange_provider, self.data_lock, self.new_data_event)
+            self._feeds.append(self.level2_feed)
         if is_bid_ask_feed:
             self.bid_ask_feed = BidAskFeed(config, exchange_provider, self.data_lock, self.new_data_event)
+            self._feeds.append(self.bid_ask_feed)
+
         # self.learn_data_balancer = LearnDataBalancer()
         self.order_quantity = config["pytrade2.order.quantity"]
         self.is_trailing_stop = config.get("pytrade2.order.is_trailingstop", "false").lower() == "true"
@@ -110,20 +115,9 @@ class StrategyBase:
         self.broker = self.exchange_provider.broker(exchange_name)
 
         if not self.is_periodical:
-            for feed in (feed for feed in (self.candles_feed, self.level2_feed, self.bid_ask_feed) if feed is not None):
+            for feed in self._feeds:
                 feed.run()
-            # if self.candles_feed:
-            #     self.candles_feed.run()
-            # if self.level2_feed:
-            #     self.level2_feed.run()
-            # if self.bid_ask_feed:
-            #     self.bid_ask_feed.run()
-        # if self.candles_feed:
-        #     self.candles_feed.read_candles()
-        #     if not self.is_periodical:
-        #         self.candles_feed.run()
-        if self.level2_feed and not self.is_periodical:
-            self.level2_feed.run()
+
         self.risk_manager = RiskManager(self.broker, self._wait_after_loss)
         if not self.is_periodical:
             feed = self.exchange_provider.websocket_feed(exchange_name)
@@ -175,10 +169,9 @@ class StrategyBase:
 
     def is_alive(self):
 
-        feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
-        feeds_alive_dict = {feed.kind: feed.is_alive(self.feed_lag_max) for feed in feeds}
+        feeds_alive_dict = {feed.kind: feed.is_alive(self.feed_lag_max) for feed in self._feeds}
         is_alive = all(feeds_alive_dict.values())
-        #is_alive = all([feeds_alive_dict[feed.kind] for feed in feeds])
+        # is_alive = all([feeds_alive_dict[feed.kind] for feed in feeds])
         if not is_alive:
             self._logger.info(self.get_report())
             self._logger.error(f"Strategy is not alive for {self.feed_lag_max}: {feeds_alive_dict}")
@@ -197,7 +190,7 @@ class StrategyBase:
             report.update(self.broker.get_report())
         # Feeds reports
         for feed in filter(lambda f: hasattr(f, "get_report"),
-                           [self.candles_feed, self.bid_ask_feed, self.level2_feed]):
+                           self._feeds):
             report.update(feed.get_report())
             # msg.write("\n")
         return report
@@ -214,8 +207,7 @@ class StrategyBase:
 
     def can_learn(self) -> bool:
         """ Check preconditions for learning"""
-        feeds = filter(lambda f: f, [self.candles_feed, self.bid_ask_feed, self.level2_feed])
-        status = {feed.__class__.__name__: feed.has_min_history() for feed in feeds}
+        status = {feed.__class__.__name__: feed.has_min_history() for feed in self._feeds}
         has_min_history = all([f for f in status.values()])
         if not has_min_history:
             self._logger.info(f"Can not learn because some datasets have not enough data. Filled status {status}")
@@ -319,7 +311,7 @@ class StrategyBase:
                 self.model_persister.save_model(self.model)
 
                 # to avoid OOM
-                #tensorflow.keras.backend.clear_session()
+                # tensorflow.keras.backend.clear_session()
                 gc.collect()
                 self._logger.info("Learning completed")
                 learn_duration = datetime.utcnow() - start_time
@@ -354,7 +346,7 @@ class StrategyBase:
     def apply_buffers(self):
         """ Append new data from buffers to main data frames """
         with (self.data_lock):
-            [feed.apply_buf() for feed in [self.bid_ask_feed, self.candles_feed, self.level2_feed] if feed]
+            [feed.apply_buf() for feed in self._feeds]
 
     def process_new_data(self):
 
