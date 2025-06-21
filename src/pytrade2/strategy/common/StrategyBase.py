@@ -218,6 +218,9 @@ class StrategyBase:
         if is_periodical and (datetime.utcnow() - self.last_model_check_time) < self.model_check_interval:
             # For periodical update, skip if check interval is not elapsed
             return
+        if self.model_source == "create":
+            if not self.model:
+                self.model = self.create_model()
         if self.model_source == "local":
             # Get model from local file, usually this is for dev
             if not self.model:
@@ -241,7 +244,7 @@ class StrategyBase:
                 MetricServer.app_params["model"] = f"{self.model_version.name} v{self.model_version.version}"
         self.last_model_check_time = datetime.utcnow()
 
-    def create_model(self, x_size, y_size):
+    def create_model(self, x_size = None, y_size= None):
         raise NotImplementedError()
 
     def create_pipe(self, X, y) -> (Pipeline, Pipeline):

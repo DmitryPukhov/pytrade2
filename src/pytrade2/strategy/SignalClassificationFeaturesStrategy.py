@@ -121,7 +121,7 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
             signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
             self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df})
 
-    def create_model(self, X_size, y_size):
+    def create_model(self, x_size = None, y_size = None):
         if not self.model:
             # Initialize with multi-class parameters
             model = lgb.LGBMClassifier(
