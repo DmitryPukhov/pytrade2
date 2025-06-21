@@ -175,6 +175,8 @@ class CandlesFeed:
         for i, c in self.candles_by_interval.items():
             # If double candle interval passed, and we did not get a new candle, we are dead
             # If candles are empty, it can be initial download at start, we are still alive
+            if c.empty:
+                continue
 
             max_lag = pd.Timedelta(i) * 2
             lag = dt - c.index.max()
