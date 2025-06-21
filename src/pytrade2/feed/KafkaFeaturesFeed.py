@@ -41,7 +41,7 @@ class KafkaFeaturesFeed:
         return kafka_conf
 
     def process_loop(self):
-        self._consumer = Consumer(self.kafka_conf)
+        self._consumer = Consumer(self._kafka_conf)
 
         self._logger.info(f"Subscribing to Kafka topic:{self._features_topic}")
         self._consumer.subscribe([self._features_topic])
