@@ -1,15 +1,10 @@
 from datetime import datetime
 
-import lightgbm as lgb
-import numpy as np
 import pandas as pd
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline, make_pipeline
-from sklearn.preprocessing import StandardScaler, MaxAbsScaler
 
 from pytrade2.exch.Exchange import Exchange
 from pytrade2.feed.KafkaFeaturesFeed import KafkaFeaturesFeed
+from pytrade2.feed.LastCandle1MinFeed import LastCandle1MinFeed
 from pytrade2.metrics.MetricServer import MetricServer
 from pytrade2.strategy.common.StrategyBase import StrategyBase
 
@@ -24,11 +19,12 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
         # self.websocket_feed = None
         StrategyBase.__init__(self, config=config,
                               exchange_provider=exchange_provider,
-                              is_candles_feed=True,
+                              is_candles_feed=False,
                               is_bid_ask_feed=False,
                               is_level2_feed=False)
         self._features_feed = KafkaFeaturesFeed(config=config, data_lock=self.data_lock, new_data_event=self.new_data_event)
-        self._feeds.append(self._features_feed)
+        self.last_candle_feed = LastCandle1MinFeed(config=config, ticker = self.ticker, exchange_provider=exchange_provider, data_lock=self.data_lock, new_data_event=self.new_data_event)
+        self._feeds.extend([self.last_candle_feed, self._features_feed])
         self.target_period = config["pytrade2.strategy.predict.window"]
         self.is_learn_enabled = False # no learn, getting features from kafka
         self.is_learned = True
@@ -83,7 +79,7 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
 
         if signal != 0:
             # Calc last price, we expect new trade to be opened at this if signal is 1 or -1
-            price = self.candles_feed.candles_by_interval["1min"]["close"].values[-1]
+            price = self.last_candle_feed.last_candle["close"]
             stop_loss_price = price + price * self.stop_loss_coeff * signal
             take_profit_price = price + price * self.stop_loss_coeff * self.profit_loss_ratio
 

@@ -11,13 +11,12 @@ from pytrade2.feed.CandlesFeed import CandlesFeed
 
 class TestCandlesFeed(TestCase):
     @staticmethod
-    def new_candles_feed():
-        config = defaultdict(str)
-        config["pytrade2.feed.candles.periods"] = "1min,5min"
-        config["pytrade2.feed.candles.counts"] = "1,1"
-        config["pytrade2.feed.candles.history.days"] = "1"
-        feed = CandlesFeed(config, "ticker1", MagicMock(), RLock(), Event(), "test")
-        feed.candles_cnt_by_interval = {"1min": 10, "5min": 1}
+    def new_candles_feed(config={}):
+        final_config = defaultdict(str)
+        final_config["pytrade2.feed.candles.periods"] = config.get("pytrade2.feed.candles.periods", "1min,5min")
+        final_config["pytrade2.feed.candles.counts"] = config.get("pytrade2.feed.candles.counts", "1,1")
+        final_config["pytrade2.feed.candles.history.days"] = config.get("pytrade2.feed.candles.history.days", "1")
+        feed = CandlesFeed(final_config, "ticker1", MagicMock(), RLock(), Event(), "test")
         feed.read_candles = MagicMock()
         return feed
 
@@ -147,7 +146,7 @@ class TestCandlesFeed(TestCase):
     def test_is_alive_alive(self):
         candles_feed = self.new_candles_feed()
         # Small lag
-        candles = pd.DataFrame(index = [datetime.now()], data = {"close": 1})
+        candles = pd.DataFrame(index=[datetime.now()], data={"close": 1})
         candles_feed.candles_by_interval = {"1min": candles}
 
         self.assertTrue(candles_feed.is_alive(None))
@@ -155,7 +154,29 @@ class TestCandlesFeed(TestCase):
     def test_is_alive_not_alive(self):
         candles_feed = self.new_candles_feed()
         # Large lag
-        candles = pd.DataFrame(index = [datetime.now() - timedelta(minutes=10)], data = {"close": 1})
+        candles = pd.DataFrame(index=[datetime.now() - timedelta(minutes=10)], data={"close": 1})
         candles_feed.candles_by_interval = {"1min": candles}
 
         self.assertFalse(candles_feed.is_alive(None))
+
+    def test_last_1min_candle(self):
+        candles_feed = self.new_candles_feed(
+            {"pytrade2.feed.candles.periods": "1min", "pytrade2.feed.candles.counts": "1"})
+        self.assertEqual(candles_feed.candles_cnt_by_interval, {"1min": 1})
+        self.assertEqual(candles_feed.candles_by_interval.keys(), {"1min"})
+
+        # Received 2 candles, should go to buffer
+        candles_feed.on_candle({"interval": "1min", "open_time": pd.Timestamp("2025-06-22 16:50"),
+                                "close_time": pd.Timestamp("2025-06-22 16:51"), "open": 100, "high": 110, "low": 90,
+                                "close": 105, "vol": 100})
+        candles_feed.on_candle({"interval": "1min", "open_time": pd.Timestamp("2025-06-22 16:51"),
+                                "close_time": pd.Timestamp("2025-06-22 16:52"), "open": 100, "high": 110, "low": 90,
+                                "close": 105, "vol": 100})
+
+        self.assertEqual(len(candles_feed.candles_by_interval_buf["1min"]), 2)
+        self.assertTrue(candles_feed.candles_by_interval["1min"].empty)
+
+        # apply_buf should move candles to main candles_by_interval and clean buffer
+        candles_feed.apply_buf()
+        self.assertTrue(candles_feed.candles_by_interval_buf["1min"].empty)
+        self.assertEqual(len(candles_feed.candles_by_interval["1min"].index.tolist()), 2)

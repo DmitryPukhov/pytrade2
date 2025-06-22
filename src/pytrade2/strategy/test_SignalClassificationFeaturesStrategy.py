@@ -1,8 +1,9 @@
 from collections import defaultdict
-from multiprocessing import RLock
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
+
 import pandas as pd
+
 from pytrade2.strategy.SignalClassificationFeaturesStrategy import SignalClassificationFeaturesStrategy
 
 
@@ -61,7 +62,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
 
         # Out of market signal predicted
         strategy.predict = MagicMock(return_value=pd.DataFrame([1], columns=["signal"]))
-        strategy.candles_feed.candles_by_interval = {"1min": pd.DataFrame([{"close":100}])}
+        strategy.last_candle_feed.last_candle = {"close":100}
 
         strategy._features_feed._on_message(feature)
         strategy.process_new_data()
@@ -77,7 +78,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
 
         # Out of market signal predicted
         strategy.predict = MagicMock(return_value=pd.DataFrame([-1], columns=["signal"]))
-        strategy.candles_feed.candles_by_interval = {"1min": pd.DataFrame([{"close":100}])}
+        strategy.last_candle_feed.last_candle = {"close":100}
 
         strategy._features_feed._on_message(feature)
         strategy.process_new_data()
