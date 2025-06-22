@@ -25,7 +25,7 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
         StrategyBase.__init__(self, config=config,
                               exchange_provider=exchange_provider,
                               is_candles_feed=True,
-                              is_bid_ask_feed=True,
+                              is_bid_ask_feed=False,
                               is_level2_feed=False)
         self._features_feed = KafkaFeaturesFeed(config=config, data_lock=self.data_lock, new_data_event=self.new_data_event)
         self._feeds.append(self._features_feed)
