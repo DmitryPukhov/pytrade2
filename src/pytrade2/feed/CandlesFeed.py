@@ -134,6 +134,7 @@ class CandlesFeed:
 
     def apply_buf(self):
         """ Combine candles with buffers"""
+
         with (self.data_lock):
             for period, buf in self.candles_by_interval_buf.items():
                 self._logger.debug(f"Applying buffer for {period}")

@@ -60,7 +60,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
 
         # Out of market signal predicted
         strategy.predict = MagicMock(return_value=pd.DataFrame([1], columns=["signal"]))
-        strategy.bid_ask_feed.data = pd.DataFrame([{"bid": 99.0, "ask": 101.0}])
+        strategy.candles_feed.candles_by_interval = {"1min": pd.DataFrame([{"close":100}])}
 
         strategy._features_feed._on_message(feature)
         strategy.process_new_data()
@@ -68,7 +68,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
         calls = strategy.broker.create_cur_trade.call_args_list
         assert len(calls) == 1
         assert calls[0].kwargs["direction"] == 1
-        assert calls[0].kwargs["price"] == 101
+        assert calls[0].kwargs["price"] == 100
 
     def test_process_new_data_sell(self):
         feature = {"datetime": "2025-06-20 11:54:00", "value": 1}
@@ -76,7 +76,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
 
         # Out of market signal predicted
         strategy.predict = MagicMock(return_value=pd.DataFrame([-1], columns=["signal"]))
-        strategy.bid_ask_feed.data = pd.DataFrame([{"bid": 99.0, "ask": 101.0}])
+        strategy.candles_feed.candles_by_interval = {"1min": pd.DataFrame([{"close":100}])}
 
         strategy._features_feed._on_message(feature)
         strategy.process_new_data()
@@ -84,7 +84,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
         calls = strategy.broker.create_cur_trade.call_args_list
         assert len(calls) == 1
         assert calls[0].kwargs["direction"] == -1
-        assert calls[0].kwargs["price"] == 99
+        assert calls[0].kwargs["price"] == 100
 
 
 

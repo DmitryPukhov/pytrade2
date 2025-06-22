@@ -24,10 +24,9 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
         # self.websocket_feed = None
         StrategyBase.__init__(self, config=config,
                               exchange_provider=exchange_provider,
-                              is_candles_feed=False,
+                              is_candles_feed=True,
                               is_bid_ask_feed=True,
                               is_level2_feed=False)
-        print(f"self.data_lock={self.data_lock}, candles_feed.data_lock={self.bid_ask_feed.data_lock}")
         self._features_feed = KafkaFeaturesFeed(config=config, data_lock=self.data_lock, new_data_event=self.new_data_event)
         self._feeds.append(self._features_feed)
         self.target_period = config["pytrade2.strategy.predict.window"]
@@ -84,8 +83,7 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
 
         if signal != 0:
             # Calc last price, we expect new trade to be opened at this if signal is 1 or -1
-            price_name = "bid" if signal < 0 else "ask" # Buy: ask, Sell: bid
-            price = self.bid_ask_feed.data[price_name].iloc[-1]
+            price = self.candles_feed.candles_by_interval["1min"]["close"].values[-1]
             stop_loss_price = price + price * self.stop_loss_coeff * signal
             take_profit_price = price + price * self.stop_loss_coeff * self.profit_loss_ratio
 
