@@ -37,7 +37,8 @@ class LastCandle1MinFeed:
         if (period == self.period) and (
                 not self.last_candle or (candle["close_time"] > self.last_candle["close_time"])):
             self.last_candle = candle
-            self.new_data_event.set()
+            if self.new_data_event:
+                self.new_data_event.set()
 
     def has_min_history(self):
         """ If gathered required history """

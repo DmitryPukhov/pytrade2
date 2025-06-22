@@ -23,7 +23,7 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
                               is_bid_ask_feed=False,
                               is_level2_feed=False)
         self._features_feed = KafkaFeaturesFeed(config=config, data_lock=self.data_lock, new_data_event=self.new_data_event)
-        self.last_candle_feed = LastCandle1MinFeed(config=config, ticker = self.ticker, exchange_provider=exchange_provider, data_lock=self.data_lock, new_data_event=self.new_data_event)
+        self.last_candle_feed = LastCandle1MinFeed(config=config, ticker = self.ticker, exchange_provider=exchange_provider, data_lock=self.data_lock, new_data_event=None)
         self._feeds.extend([self.last_candle_feed, self._features_feed])
         self.target_period = config["pytrade2.strategy.predict.window"]
         self.is_learn_enabled = False # no learn, getting features from kafka
