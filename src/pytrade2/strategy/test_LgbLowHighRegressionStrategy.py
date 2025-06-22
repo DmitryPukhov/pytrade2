@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest import TestCase
+from unittest import TestCase, mock
 from unittest.mock import MagicMock
 
 import pandas as pd
@@ -13,6 +13,11 @@ class TestLgbLowHighRegressionStrategy(TestCase):
 
     def setUp(self):
         MetricServer.metrics = MagicMock()
+        self.candles_init_patch = mock.patch.object(CandlesFeed, '__init__', return_value=None)
+        self.candles_init_patch.start()
+
+    def tearDown(self):
+        self.candles_init_patch.stop()
 
     @classmethod
     def new_strategy(cls):
@@ -33,9 +38,6 @@ class TestLgbLowHighRegressionStrategy(TestCase):
                 "pytrade2.order.quantity": 0.001,
                 "pytrade2.broker.comissionpct": 0
                 }
-        CandlesFeed.__init__ = lambda \
-                self, config, ticker, exchange_provider, data_lock, new_data_event, strategy_name: None
-
         strategy = LgbLowHighRegressionStrategy(config=conf, exchange_provider=MagicMock())
         strategy.candles_feed = MagicMock()
         strategy.risk_manager = MagicMock()

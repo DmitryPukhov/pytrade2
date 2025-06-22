@@ -134,23 +134,26 @@ class CandlesFeed:
 
     def apply_buf(self):
         """ Combine candles with buffers"""
+        try:
+            with (self.data_lock):
+                for period, buf in self.candles_by_interval_buf.items():
+                    self._logger.debug(f"Applying buffer for {period}")
+                    if buf.empty or period not in self.candles_cnt_by_interval:
+                        self._logger.debug(
+                            f"Cannot apply buffer for period {period}. Buffer is good: {not buf.empty}, period is good: {period in self.candles_by_interval}")
+                        continue
+                    # candles + buf
+                    candles = self.candles_by_interval.get(period, pd.DataFrame())
+                    candles = pd.concat([df for df in [candles, buf] if not df.empty]).set_index("close_time", drop=False)
+                    candles_resampled = candles.resample(period, closed="right").agg(
+                        {'open_time': 'first', 'close_time': 'last', 'open': 'first', 'high': 'max', 'low': 'min',
+                         'close': 'last', 'vol': 'max'}).set_index('close_time', drop=False).sort_index()
 
-        with (self.data_lock):
-            for period, buf in self.candles_by_interval_buf.items():
-                self._logger.debug(f"Applying buffer for {period}")
-                if buf.empty or period not in self.candles_cnt_by_interval:
-                    self._logger.debug(
-                        f"Cannot apply buffer for period {period}. Buffer is good: {not buf.empty}, period is good: {period in self.candles_by_interval}")
-                    continue
-                # candles + buf
-                candles = self.candles_by_interval.get(period, pd.DataFrame())
-                candles = pd.concat([df for df in [candles, buf] if not df.empty]).set_index("close_time", drop=False)
-                candles_resampled = candles.resample(period, closed="right").agg(
-                    {'open_time': 'first', 'close_time': 'last', 'open': 'first', 'high': 'max', 'low': 'min',
-                     'close': 'last', 'vol': 'max'}).set_index('close_time', drop=False).sort_index()
-
-                self.candles_by_interval[period] = candles_resampled
-                self.candles_by_interval_buf[period] = pd.DataFrame()
+                    self.candles_by_interval[period] = candles_resampled
+                    self.candles_by_interval_buf[period] = pd.DataFrame()
+        except Exception as e:
+            logging.error(f"Error in candles feed: {self.__class__.__name__}: {e}")
+            raise e
 
     def on_candle(self, candle: {}):
         # self._logger.debug(f"Got candle {candle}")

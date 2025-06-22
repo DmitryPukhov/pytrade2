@@ -1,4 +1,5 @@
 from collections import defaultdict
+from multiprocessing import RLock
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 import pandas as pd
@@ -33,7 +34,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
         strategy.broker.cur_trade = None
 
         strategy.risk_manager = MagicMock()
-        strategy.bid_ask_feed = MagicMock()
+        strategy.candles_feed = MagicMock()
         return strategy
 
     def test_strategy_caught_new_data_event(self):
