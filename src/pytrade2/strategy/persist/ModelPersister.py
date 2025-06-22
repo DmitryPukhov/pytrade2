@@ -7,11 +7,10 @@ from pathlib import Path
 from typing import Dict
 
 import mlflow.sklearn
-#from keras.models import Model
+# from keras.models import Model
 from lightgbm import LGBMRegressor
-from sklearn.multioutput import MultiOutputRegressor
-
 from mlflow import MlflowClient
+from sklearn.multioutput import MultiOutputRegressor
 
 
 class ModelPersister:
@@ -32,7 +31,7 @@ class ModelPersister:
         return (obj.__class__.__name__ in {'Model', 'Sequential'} or
                 hasattr(obj, '_keras_api_names'))
 
-    def load_last_model(self, model  = None):
+    def load_last_model(self, model=None):
         try:
             saved_models = glob.glob(str(Path(self.model_dir, "*.*")))
             if not saved_models:
@@ -59,10 +58,9 @@ class ModelPersister:
 
     def save_model(self, model):
         model_path = str(Path(self.model_dir, datetime.utcnow().isoformat()))
-        #if isinstance(model, Model):
+        # if isinstance(model, Model):
         if self.is_keras_model(model):
             # Save keras
-            from keras.models import Model
 
             self._logger.debug(f"Save keras model to {model_path}")
             model.save_weights(model_path)
@@ -88,8 +86,18 @@ class ModelPersister:
                 os.remove(os.path.join(self.model_dir, file))
             self._logger.debug(f"Purged {len(purge_files)} files in {self.model_dir}")
 
-    def get_last_mlflow_trade_ready_model(self, model_name, load_func=mlflow.sklearn.load_model) -> (any, any, dict):
-        """ Load latest model and it's params from mlflow. The model should be tagged trade_ready.
+    def get_last_mlflow_trade_ready_model(self, model_name, load_func=mlflow.sklearn.load_model) -> (any, any, dict, any, any):
+        # Model itself
+        model, model_version, model_params = self._get_last_mlflow_trade_ready_model_like(model_name, load_func)
+        # X, y pipeline if exist
+        x_pipe_name = model_name + "_x_pipe"
+        x_pipe, _, _ = self.get_last_mlflow_trade_ready_model(x_pipe_name, mlflow.sklearn.load_model)
+        y_pipe, _, _ = self.get_last_mlflow_trade_ready_model(x_pipe_name, mlflow.sklearn.load_model)
+        return model, model_version, model_params, x_pipe, y_pipe
+
+    def _get_last_mlflow_trade_ready_model_like(self, model_name, load_func=mlflow.sklearn.load_model) -> (
+    any, any, dict):
+        """ Load latest model it's params and maybe pipelines from mlflow. The model should be tagged trade_ready.
         :return model, mlflow ModelVersion, params"""
         model, model_version, params = None, None, None
         try:

@@ -24,10 +24,10 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
         # self.websocket_feed = None
         StrategyBase.__init__(self, config=config,
                               exchange_provider=exchange_provider,
-                              is_candles_feed=True,
-                              is_bid_ask_feed=False,
+                              is_candles_feed=False,
+                              is_bid_ask_feed=True,
                               is_level2_feed=False)
-
+        print(f"self.data_lock={self.data_lock}, candles_feed.data_lock={self.bid_ask_feed.data_lock}")
         self._features_feed = KafkaFeaturesFeed(config=config, data_lock=self.data_lock, new_data_event=self.new_data_event)
         self._feeds.append(self._features_feed)
         self.target_period = config["pytrade2.strategy.predict.window"]
@@ -44,9 +44,9 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
     def can_learn(self) -> bool:
         """ Don't learn, only use the model from mlflow"""
         return False
-
-    def apply_buffers(self):
-        self._features_feed.apply_buf()
+    #
+    # def apply_buffers(self):
+    #     self._features_feed.apply_buf()
 
     def prepare_last_x(self) -> pd.DataFrame:
         self._logger.debug(f"Got {len(self._features_feed.data)} features")
@@ -84,7 +84,8 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
 
         if signal != 0:
             # Calc last price, we expect new trade to be opened at this if signal is 1 or -1
-            price = self.candles_feed.candles_cnt_by_interval["1min"]['close'][-1]
+            price_name = "bid" if signal < 0 else "ask" # Buy: ask, Sell: bid
+            price = self.bid_ask_feed.data[price_name].iloc[-1]
             stop_loss_price = price + price * self.stop_loss_coeff * signal
             take_profit_price = price + price * self.stop_loss_coeff * self.profit_loss_ratio
 
@@ -121,48 +122,3 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
             signal_ext_df = pd.DataFrame(data=[signal_ext]).set_index('datetime')
             self.data_persister.save_last_data(self.ticker, {'signal_ext': signal_ext_df})
 
-    def create_model(self, x_size = None, y_size = None):
-        if not self.model:
-            # Initialize with multi-class parameters
-            model = lgb.LGBMClassifier(
-                objective='multiclass',
-                num_class=3,
-                num_leaves=31,
-                learning_rate=0.05,
-                n_estimators=100,
-                random_state=42
-            )
-            print(f'Created new model {model}')
-            return model
-
-    def create_pipe(self, x, y) -> (Pipeline, Pipeline):
-        self._logger.debug(f"Creating x,y pipelines")
-        # Scale features time and float columns differently
-        time_cols = [col for col in x.columns if col.startswith("time")]
-        float_cols = list(set(x.columns) - set(time_cols))
-        x_pipe = Pipeline(
-            [("xscaler", ColumnTransformer([("xrs", StandardScaler(), float_cols)], remainder="passthrough").set_output(transform="pandas")),
-             ("xmms", MaxAbsScaler().set_output(transform="pandas"))]).set_output(transform="pandas")
-        x_pipe.fit(x)
-
-        # LBGM requires integer labels from 1 to n_classes
-        class AddTwo(BaseEstimator, TransformerMixin):
-            def __init__(self):
-                self.is_fitted_ = True
-
-            def fit(self, X, _=None):
-                return self
-
-            def transform(self, X):
-                # Adding 2 to every value in the dataset
-                #return  sklearn.utils.validation.column_or_1d(X) + 2
-                #return X + 2
-                return np.array(X).ravel() + 2
-
-            def inverse_transform(self, X):
-                #return X - 2
-                return np.array(X).ravel() - 2
-
-        y_pipe = make_pipeline(AddTwo())
-        y_pipe.fit(y)
-        return x_pipe, y_pipe

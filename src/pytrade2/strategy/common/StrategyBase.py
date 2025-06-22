@@ -226,14 +226,17 @@ class StrategyBase:
             if not self.model:
                 self.model = self.model_persister.load_last_model()
         elif self.model_source == "mlflow":
-            # Get model from mlflow server
-            model, model_version, params = self.model_persister.get_last_mlflow_trade_ready_model(self.model_name)
+            # Get model and maybe x_pipe, y_pipe from mlflow server
+            model, model_version, params, x_pipe, y_pipe = self.model_persister.get_last_mlflow_trade_ready_model(self.model_name)
             is_model_changed = model and model_version and (model_version != self.model_version)
             is_params_changed = params and (params != self.app_params)
             # Set model if changaed
             if is_model_changed:
                 self._logger.info(f"Updating model {self.model_name} from v{self.model_version} to {model_version}")
                 self.model, self.model_version = model, model_version
+                # If our model needs preprocessing
+                if x_pipe: self.X_pipe = x_pipe
+                if y_pipe: self.y_pipe = y_pipe
 
             # Set params i
             if is_params_changed:
