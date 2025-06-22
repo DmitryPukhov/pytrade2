@@ -91,8 +91,9 @@ class ModelPersister:
         model, model_version, model_params = self._get_last_mlflow_trade_ready_model_like(model_name, load_func)
         # X, y pipeline if exist
         x_pipe_name = model_name + "_x_pipe"
-        x_pipe, _, _ = self.get_last_mlflow_trade_ready_model(x_pipe_name, mlflow.sklearn.load_model)
-        y_pipe, _, _ = self.get_last_mlflow_trade_ready_model(x_pipe_name, mlflow.sklearn.load_model)
+        x_pipe, _, _ = self._get_last_mlflow_trade_ready_model_like(x_pipe_name, mlflow.sklearn.load_model)
+        y_pipe_name = model_name + "_y_pipe"
+        y_pipe, _, _ = self._get_last_mlflow_trade_ready_model_like(y_pipe_name, mlflow.sklearn.load_model)
         return model, model_version, model_params, x_pipe, y_pipe
 
     def _get_last_mlflow_trade_ready_model_like(self, model_name, load_func=mlflow.sklearn.load_model) -> (
@@ -117,7 +118,7 @@ class ModelPersister:
                 params = self.mlflow_client.get_run(model_version.run_id).data.params
                 self._logger.debug(f"Got strategy parameters: {params}")
             else:
-                self._logger.warning(f"Model: {model_name} not found")
+                self._logger.warning(f"Model: {model_name} trade ready not found")
         except Exception as e:
             self._logger.error(e)
 
