@@ -30,6 +30,10 @@ class TestLastCandle1MinFeed(TestCase):
         candle3 = {"interval": "1min", "open_time": pd.Timestamp("2025-06-22 16:52"),
                    "close_time": pd.Timestamp("2025-06-22 16:53"), "open": 100, "high": 110, "low": 90,
                    "close": 105, "vol": 100}
+        candle4_another_period = {"interval": "5min", "open_time": pd.Timestamp("2025-06-22 16:53"),
+                   "close_time": pd.Timestamp("2025-06-22 16:54"), "open": 100, "high": 110, "low": 90,
+                   "close": 105, "vol": 100}
+
 
         # Receive candle 1, 3
         feed.on_candle(candle1)
@@ -38,4 +42,7 @@ class TestLastCandle1MinFeed(TestCase):
         self.assertEqual(feed.last_candle, candle3)
         # Receive candle 2 from the past, should be ignored
         feed.on_candle(candle2)
+        self.assertEqual(feed.last_candle, candle3)
+        # Receive another period candle
+        feed.on_candle(candle4_another_period)
         self.assertEqual(feed.last_candle, candle3)

@@ -25,13 +25,17 @@ class LastCandle1MinFeed:
         self.last_candle = None
 
     def apply_buf(self):
-        """ Combine candles with buffers"""
+        """ Nothing to do"""
         ...
 
+    def run(self):
+        self.exchange_candles_feed.run()
+
     def on_candle(self, candle: {}):
-        # self._logger.debug(f"Got candle {candle}")
+        self._logger.debug(f"Got candle {candle}")
         period = str(candle["interval"])
-        if period == self.period and not self.last_candle or candle["close_time"] > self.last_candle["close_time"]:
+        if (period == self.period) and (
+                not self.last_candle or (candle["close_time"] > self.last_candle["close_time"])):
             self.last_candle = candle
             self.new_data_event.set()
 
