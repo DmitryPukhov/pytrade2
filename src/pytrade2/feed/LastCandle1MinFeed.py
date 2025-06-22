@@ -48,9 +48,9 @@ class LastCandle1MinFeed:
 
         max_lag = pd.Timedelta(self.period) * 2
         lag = datetime.now() - self.last_candle["close_time"] if self.last_candle else pd.Timedelta(0)
-        is_alive = self.last_candle is not None and lag < max_lag
+        is_alive = (self.last_candle is not None) and lag < max_lag
         if not is_alive:
             self._logger.warning(
-                f"{self.__class__.__name__} {self.ticker}:{i} is dead. lag: {lag}, max lag allowed: {max_lag}")
+                f"{self.__class__.__name__} {self.ticker}: is dead. lag: {lag}, max lag allowed: {max_lag}")
             return False
         return True

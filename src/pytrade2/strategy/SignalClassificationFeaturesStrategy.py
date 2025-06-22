@@ -77,7 +77,12 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
         # Metrics
         MetricServer.metrics.strategy.signal.signal.set(signal)
 
+
         if signal != 0:
+            if self.last_candle_feed.last_candle is None:
+                self._logger.info(f"Signal {signal}, but last candle is absent, cannot calculate last price")
+                return
+
             # Calc last price, we expect new trade to be opened at this if signal is 1 or -1
             price = self.last_candle_feed.last_candle["close"]
             stop_loss_price = price + price * self.stop_loss_coeff * signal
