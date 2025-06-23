@@ -15,7 +15,7 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: {{ toYaml .Values.command | nindent 12 }}
+          command: {{ toYaml .Values.image.command | nindent 12 }}
           resources: {}
           envFrom:
             - configMapRef:

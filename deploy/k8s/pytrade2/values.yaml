@@ -4,7 +4,9 @@ image:
   repository: "localhost:5000/pytrade2"
   tag: "latest"
   pullPolicy: IfNotPresent
-  command: ["python", "./App.py"]
+  #command: ["sleep", "infinity"]
+
+  #command: ["python", "./App.py"]
 
 persistence:
   data:

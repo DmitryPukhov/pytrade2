@@ -45,7 +45,9 @@ function create_env_configmap(){
 
   echo "Created successfully: $CONFIGMAP_PATH"
 }
-
+function redeploy_pytrade2_pvc(){
+  kubectl apply -f pytrade2-data/pvc.yaml
+}
 function redeploy_pytrade2_chart(){
   app_name="pytrade2"
   eval $(minikube docker-env)
@@ -67,5 +69,6 @@ function redeploy_pytrade2_chart(){
 # Exit on error
 set -e
 
+redeploy_pytrade2_pvc
 create_env_configmap
 redeploy_pytrade2_chart

@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir .
 ##############################################
 # Create a runtime image, often changed
 ##############################################
-FROM python:3.11-slim
+FROM python:3.12-slim as runtime
 
 # Install runtime system dependencies
 RUN apt-get update && \
@@ -44,9 +44,11 @@ WORKDIR /pytrade2
 
 # copy the content of the local src directory to the working directory
 COPY src/ .
+WORKDIR /pytrade2/pytrade2
+
 # Ensure scripts in virtual environment are executable
 ENV PATH="/opt/venv/bin:$PATH"
-
+ENV PYTHONPATH="/pytrade2"
 # Remove dev config
 RUN rm -f ./cfg/app-dev.yaml
 
