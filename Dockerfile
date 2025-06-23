@@ -1,7 +1,7 @@
 ##############################################
 # Build base image, rarely changed
 ##############################################
-FROM python:3.11-slim as builder
+FROM python:3.12-slim as builder
 
 # Install system dependencies first (including lightgbm requirements)
 RUN apt-get update && \
@@ -43,7 +43,7 @@ COPY --from=builder /opt/venv /opt/venv
 WORKDIR /pytrade2
 
 # copy the content of the local src directory to the working directory
-COPY pytrade2/ .
+COPY src/ .
 # Ensure scripts in virtual environment are executable
 ENV PATH="/opt/venv/bin:$PATH"
 
