@@ -45,7 +45,8 @@ class CandlesMultiIndiFeatures:
             params = dict()
         min_period = min(candles_by_periods.keys(), key=pd.Timedelta)
 
-        min_candles = candles_by_periods[min_period]
+        min_candles = candles_by_periods[min_period].sort_index()
+        #min_candles = min_candles.resample(min_period, closed='right', label='right').last().dropna()
 
         # time
         time_features = CandlesFeatures.time_features_of(min_candles)[['time_hour', 'time_minute']]
@@ -60,7 +61,8 @@ class CandlesMultiIndiFeatures:
             # (despite the method being documented for DataFrame.interpolate()).
             # Cannot directly interpolate with "time" method, use this hack
             #candles_interpolated = candles.set_index(candles.index.view('int64')).interpolate(method='time').set_index(candles.index)
-
+            #candles =candles.resample(period, closed='right', label='right').last().dropna()
+            candles = candles.sort_index()
             period_indicators = CandlesMultiIndiFeatures.indicators_of(
                 candles.interpolate(),
                 period,
