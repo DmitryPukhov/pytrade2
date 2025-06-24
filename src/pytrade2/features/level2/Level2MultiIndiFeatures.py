@@ -40,11 +40,8 @@ class Level2MultiIndiFeatures:
         return df
 
     @staticmethod
-    def level2_indicators_of(df_level2, period, params: dict = None):
+    def level2_indicators_of(df_level2, period, params: dict = CandlesMultiIndiFeatures.default_params):
         """ Single period indicators"""
-
-        if not params:
-            params = CandlesMultiIndiFeatures.default_params
 
         resampled = df_level2.resample("1min", closed="right", label="right").agg("mean")
         # resampled = rolling_level2(df_level2, period)
@@ -91,14 +88,14 @@ class Level2MultiIndiFeatures:
         return df
 
     @staticmethod
-    def level2_features_of(df_level2, periods):
+    def level2_features_of(df_level2, periods, params):
         # df = df_level2.copy()
         # del df["datetime"]
 
         level2_features = None
         for period in periods:
             period_indicators = Level2MultiIndiFeatures.level2_indicators_of(
-                df_level2, period)
+                df_level2, period, params.get(period, CandlesMultiIndiFeatures.default_params))
             if level2_features is None:
                 level2_features = period_indicators
             else:
