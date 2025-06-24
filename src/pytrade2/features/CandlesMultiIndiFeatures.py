@@ -108,8 +108,11 @@ class CandlesMultiIndiFeatures:
                                                   params["ichimoku"]["window3"], )
         df[f'cci_{period}_diff'] = trend.cci(resampled['high'], resampled['low'], resampled['close'],
                                              window=params["cca"]["window"], fillna=False).diff()
-        df[f'adx_{period}_diff'] = trend.adx(resampled['high'], resampled['low'], resampled['close'],
+        if not resampled.empty:
+            df[f'adx_{period}_diff'] = trend.adx(resampled['high'], resampled['low'], resampled['close'],
                                              window=params["adx"]["window"], fillna=False).diff()
+        else:
+            df[f'adx_{period}_diff'] = pd.Series([])
         df[f'rsi_{period}_diff'] = momentum.rsi(resampled['close'], window=params["rsi"]["window"], fillna=False).diff()
         df[f'stoch_{period}_diff'] = momentum.stoch(resampled['high'], resampled['low'], resampled['close'],
                                                     window=params["stoch"]["window"],
