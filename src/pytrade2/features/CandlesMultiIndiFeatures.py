@@ -73,9 +73,13 @@ class CandlesMultiIndiFeatures:
                 CandlesMultiIndiFeatures._log.debug(f"Indicators of period: {period}\n{period_indicators.tail()}")
 
         # Concat time and indicators columns
-        features = pd.concat([time_features] + indicators_features, axis=1).ffill().sort_index()
+        features = pd.concat([time_features.groupby(time_features.index).last()] + indicators_features, axis=1)
+        features = features.ffill().sort_index()
+
+        #features = pd.concat([time_features] + indicators_features, axis=1)
         if CandlesMultiIndiFeatures._log.isEnabledFor(logging.DEBUG):
             CandlesMultiIndiFeatures._log.debug(f"Resulted features with nans:\n{features.tail()}")
+
         features = features.dropna()
         if CandlesMultiIndiFeatures._log.isEnabledFor(logging.DEBUG):
             CandlesMultiIndiFeatures._log.debug(f"Resulted features dropna:\n{features.tail()}")
