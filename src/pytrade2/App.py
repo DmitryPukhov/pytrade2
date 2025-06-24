@@ -46,7 +46,7 @@ class App:
         # Load config, set up logging
         self.config = {key:val for key, val in os.environ.items()}
         self._logger.info(self._config_msg(self.config))
-        #self.config = self._load_config()
+        self.metrics_type = self.config.get("pytrade2.metrics.type", "push_to_gateway")
 
         self._logger.info("App initialized")
 
@@ -162,10 +162,15 @@ class App:
 
         # Create prometheus metrics endpoint
         MetricServer.metrics = Metrics("pytrade2", self.strategy.__class__.__name__)
-        MetricServer.app_config = {key: val for key, val in self.secured_config(self.config) if
-                                   key.startswith("pytrade2")}
-        MetricServer.auth_token = self.config.get("pytrade2.prometheus.token")
-        MetricServer.start_http_server()
+
+        # Start metrics server or periodical push to gateway
+        if self.metrics_type == "push_to_gateway":
+            threading.Thread(target=MetricServer.metrics.push_to_gateway_periodical).start()
+        else:
+            MetricServer.app_config = {key: val for key, val in self.secured_config(self.config) if
+                                       key.startswith("pytrade2")}
+            MetricServer.auth_token = self.config.get("pytrade2.prometheus.token")
+            MetricServer.start_http_server()
 
         # Watchdog starts after initial interval
         threading.Timer(60, self.watchdog_check).start()
