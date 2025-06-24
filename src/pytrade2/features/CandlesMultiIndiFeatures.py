@@ -46,7 +46,6 @@ class CandlesMultiIndiFeatures:
         min_period = min(candles_by_periods.keys(), key=pd.Timedelta)
 
         min_candles = candles_by_periods[min_period].sort_index()
-        #min_candles = min_candles.resample(min_period, closed='right', label='right').last().dropna()
 
         # time
         time_features = CandlesFeatures.time_features_of(min_candles)[['time_hour', 'time_minute']]
