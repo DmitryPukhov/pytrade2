@@ -56,6 +56,7 @@ class App:
         cfgpaths = ["cfg/log.yaml", "cfg/log-dev.yaml"]
         for cfgpath in cfgpaths:
             cfgdict = self._read_config_file(cfgpath)
+            print(f"Logging config: {cfgdict}")
             if cfgdict:
                 logging.config.dictConfig(cfgdict)
         self._logger = logging.getLogger(self.__class__.__name__)
