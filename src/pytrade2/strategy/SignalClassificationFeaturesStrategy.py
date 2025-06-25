@@ -4,10 +4,9 @@ import pandas as pd
 
 from pytrade2.exch.Exchange import Exchange
 from pytrade2.feed.KafkaFeaturesFeed import KafkaFeaturesFeed
-from pytrade2.feed.KafkaLastBidAskFeed import KafkaLastBidAskFeed
+from pytrade2.feed.LastCandle1MinFeed import LastCandle1MinFeed
 from pytrade2.metrics.MetricServer import MetricServer
 from pytrade2.strategy.common.StrategyBase import StrategyBase
-
 
 
 class SignalClassificationFeaturesStrategy(StrategyBase):
@@ -24,8 +23,8 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
                               is_bid_ask_feed=False,
                               is_level2_feed=False)
         self._features_feed = KafkaFeaturesFeed(config=config, data_lock=self.data_lock, new_data_event=self.new_data_event)
-        self._last_bid_ask_feed = KafkaLastBidAskFeed(config=config, data_lock=self.data_lock,new_data_event=self.new_data_event)
-        self._feeds.extend([self._last_bid_ask_feed, self._features_feed])
+        self.last_candle_feed = LastCandle1MinFeed(config=config, ticker = self.ticker, exchange_provider=exchange_provider, data_lock=self.data_lock, new_data_event=None)
+        self._feeds.extend([self.last_candle_feed, self._features_feed])
         self.target_period = config["pytrade2.strategy.predict.window"]
         self.is_learn_enabled = False # no learn, getting features from kafka
         self.is_learned = True
@@ -80,12 +79,12 @@ class SignalClassificationFeaturesStrategy(StrategyBase):
 
 
         if signal != 0:
-            if self._last_bid_ask_feed.last_bid_ask is None:
-                self._logger.info(f"Signal {signal}, but last price bid/ask data is absent, cannot calculate last price")
+            if self.last_candle_feed.last_candle is None:
+                self._logger.info(f"Signal {signal}, but last candle is absent, cannot calculate last price")
                 return
 
             # Calc last price, we expect new trade to be opened at this if signal is 1 or -1
-            price = self._last_bid_ask_feed.last_bid_ask['bid'] if signal == -1 else self._last_bid_ask_feed.last_bid_ask['ask']
+            price = self.last_candle_feed.last_candle["close"]
             stop_loss_price = price + price * self.stop_loss_coeff * signal
             take_profit_price = price + price * self.stop_loss_coeff * self.profit_loss_ratio
 
