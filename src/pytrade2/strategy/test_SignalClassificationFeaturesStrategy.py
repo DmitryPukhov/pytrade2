@@ -62,7 +62,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
 
         # Out of market signal predicted
         strategy.predict = MagicMock(return_value=pd.DataFrame([1], columns=["signal"]))
-        strategy.last_candle_feed.last_candle = {"close":100}
+        strategy._last_bid_ask_feed.last_bid_ask = {"ask":100}
 
         strategy._features_feed._on_message(feature)
         strategy.process_new_data()
@@ -78,7 +78,7 @@ class TestSignalClassificationFeaturesStrategy(TestCase):
 
         # Out of market signal predicted
         strategy.predict = MagicMock(return_value=pd.DataFrame([-1], columns=["signal"]))
-        strategy.last_candle_feed.last_candle = {"close":100}
+        strategy._last_bid_ask_feed.last_bid_ask = {"bid":100}
 
         strategy._features_feed._on_message(feature)
         strategy.process_new_data()
