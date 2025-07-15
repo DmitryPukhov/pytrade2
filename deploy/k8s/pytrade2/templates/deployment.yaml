@@ -22,7 +22,7 @@ spec:
                 name: pytrade2-env
           volumeMounts:
             - name: log-config-volume
-              mountPath: /pytrade2/cfg/log.yaml
+              mountPath: /pytrade2/pytrade2/cfg/log.yaml
               subPath: log.yaml
             - name: pytrade2-data
               mountPath: {{ .Values.persistence.data.mountPath | quote }}
